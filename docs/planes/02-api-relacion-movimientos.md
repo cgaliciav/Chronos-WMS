@@ -1,9 +1,9 @@
-# Plan 02 · API: relación explícita entre movimientos, transacciones y limpieza
+# Plan 02 · API: relación explícita entre movimientos, transacciones, limpieza y notificaciones propias
 
 > **Para quien ejecute este plan (Sonnet/Opus):** lee primero `api/CLAUDE.md`,
-> `docs/api/modelo-de-datos.md`, `docs/api/tipos-de-movimiento.md` y `docs/hallazgos-codigo.md`.
-> Ejecuta las fases en orden; cada una termina con pruebas verdes y un commit en una rama
-> `api/fase-N-…`. Donde haya una decisión abierta (sección 7) usa la opción **(por defecto)**.
+> `docs/api/modelo-de-datos.md`, `docs/api/tipos-de-movimiento.md`, `docs/hallazgos-codigo.md` y
+> `docs/decisiones.md` (las decisiones ya están tomadas; no las reabras). Ejecuta las fases en orden;
+> cada una termina con pruebas verdes y un commit en una rama `api/fase-N-…`.
 > **Nunca** ejecutes migraciones contra la base de producción desde este plan: las fases producen
 > archivos de migración y un procedimiento; la ejecución en producción la hace una persona con respaldo.
 
@@ -12,322 +12,335 @@
 `Movimiento` no tiene ninguna referencia al movimiento que le da origen. Una DEVOLUCIÓN (tipo 4),
 una BAJA (5/13/16) o una TRANSFERENCIA ORIGEN (7) no saben a qué PRÉSTAMO (3), RENTA EXTERNA (11)
 o TRANSFERENCIA DESTINO (12) corresponden. Hoy el sistema lo infiere con tres mecanismos frágiles
-(detallados en `docs/api/modelo-de-datos.md`, sección "Cómo se encadenan hoy los movimientos"):
-el `estatus` activo/inactivo como puntero al último movimiento, la suma por tipo y proyecto de
-`aceptarDevolucionBaja`, y la pila `InventarioActualHistorico` por `idOriginal`.
+(detallados en `docs/api/modelo-de-datos.md`): el `estatus` activo/inactivo como puntero al último
+movimiento, la suma por tipo y proyecto de `aceptarDevolucionBaja`, y la pila `InventarioActualHistorico`
+por `idOriginal`.
 
 Consecuencias observables:
 - No se puede saber qué préstamo quedó parcialmente devuelto ni cuánto falta.
 - Al deshacer (`quitar`) un movimiento que no es el último, se restaura una instantánea equivocada.
-- Si dos usuarios registran a la vez sobre el mismo artículo, pueden quedar dos movimientos `activo`.
-- Los reportes de "préstamos activos" (`funcionQueryListadoPrestamosPendientes`) dependen de
-  `ia.disponible = 'no-disponible'` y de `ROW_NUMBER()` por producto, no de los movimientos.
-- `Movimiento` no tiene fecha propia; se usa `operacion.fecha`, que no existe en movimientos sin operación.
+- Dos usuarios registrando a la vez sobre el mismo artículo pueden dejar dos movimientos `activo` o existencia negativa.
+- Los reportes de "préstamos activos" dependen de `ia.disponible = 'no-disponible'` y `ROW_NUMBER()`, no de los movimientos.
+- `Movimiento` no tiene fecha propia.
 
-## 2. Diseño propuesto
+## 2. Diseño
 
-### 2.1 Cambios de esquema
+### 2.1 Relación N:M `MovimientoRelacion` (decisión: una devolución puede cubrir varios préstamos)
 
 ```ts
-// entity/Movimiento.ts (fragmento)
-@CreateDateColumn() fecha: Date;                       // nuevo
+// entity/MovimientoRelacion.ts (nuevo)
+export enum RelacionTipo { DEVOLUCION = "devolucion", BAJA = "baja", TRANSFERENCIA = "transferencia", CIERRE_INVENTARIO = "cierre-inventario" }
 
-@Index()
-@ManyToOne(() => Movimiento, (m) => m.movimientosDerivados, { nullable: true, onDelete: "RESTRICT" })
-movimientoOrigen: Movimiento | null;                   // nuevo: FK movimientoOrigenId
-
-@OneToMany(() => Movimiento, (m) => m.movimientoOrigen)
-movimientosDerivados: Movimiento[];                    // nuevo (inverso)
-
-@Column({ type: "enum", enum: RelacionTipo, nullable: true })
-relacionTipo: RelacionTipo | null;                     // nuevo: DEVOLUCION | BAJA | TRANSFERENCIA | CIERRE_INVENTARIO
-
-@Column({ type: "numeric", precision: 15, scale: 4, transformer: numericTransformer })
-cantidad: number;                                      // existente; se añade transformer string→number
+@Entity()
+@Unique(["origen", "derivado"])
+export class MovimientoRelacion {
+  sesionId: number;
+  @PrimaryGeneratedColumn() id: number;
+  @Index() @ManyToOne(() => Movimiento, (m) => m.relacionesComoOrigen,   { nullable: false, onDelete: "RESTRICT" }) origen: Movimiento;   // la salida (3, 11, 12)
+  @Index() @ManyToOne(() => Movimiento, (m) => m.relacionesComoDerivado, { nullable: false, onDelete: "CASCADE"  }) derivado: Movimiento; // el regreso (4, 7, 13, 16, 5) o baja libre (8, 17)
+  @Column({ type: "numeric", precision: 15, scale: 4, transformer: numericTransformer }) cantidad: number; // cuánto del derivado se aplica a este origen
+  @Column({ type: "enum", enum: RelacionTipo }) tipo: RelacionTipo;
+  @CreateDateColumn() fecha: Date;
+}
 ```
 
 ```ts
-// entity/InventarioActualHistorico.ts (fragmento)
-@Index()
-@ManyToOne(() => Movimiento, { nullable: true, onDelete: "SET NULL" })
-movimiento: Movimiento | null;                         // nuevo: qué movimiento produjo esta instantánea
+// entity/Movimiento.ts (fragmento añadido)
+@CreateDateColumn() fecha: Date;                                                   // nuevo
+@OneToMany(() => MovimientoRelacion, (r) => r.origen)   relacionesComoOrigen: MovimientoRelacion[];
+@OneToMany(() => MovimientoRelacion, (r) => r.derivado) relacionesComoDerivado: MovimientoRelacion[];
+@Column({ type: "numeric", precision: 15, scale: 4, transformer: numericTransformer }) cantidad: number; // + transformer
+```
+
+```ts
+// entity/InventarioActualHistorico.ts (fragmento añadido)
+@Index() @ManyToOne(() => Movimiento, { nullable: true, onDelete: "SET NULL" }) movimiento: Movimiento | null; // qué movimiento produjo la instantánea
 ```
 
 ```ts
 // entity/common/MovimientoTipoId.ts (nuevo)
-export enum MovimientoTipoId {
-  COMPRA_LEGADO = 1, ALTA_LEGADO = 2, PRESTAMO = 3, DEVOLUCION = 4, BAJA_LEGADO = 5,
-  AJUSTE_INVENTARIO = 6, TRANSFERENCIA_ORIGEN = 7, BAJA_EN_INVENTARIO = 8, INVENTARIO = 9,
-  AJUSTE_ADMINISTRADOR = 10, RENTA_EXTERNA = 11, TRANSFERENCIA_DESTINO = 12,
-  BAJA_JUSTIFICADA = 13, ALTA = 14, COMPRA = 15, BAJA_INJUSTIFICADA = 16, BAJA_ADMINISTRADOR = 17,
-}
-export const TIPOS_ENTRADA   = [1, 2, 14, 15];          // crean saldo en almacén, sin origen
-export const TIPOS_SALIDA    = [3, 11, 12];             // abren un saldo pendiente (origen de cadena)
-export const TIPOS_REGRESO   = [4, 7, 13, 16, 5];       // consumen saldo de una salida del mismo proyecto
-export const TIPOS_BAJA_LIBRE= [8, 17];                 // cierran el inventario sin proyecto
+export enum MovimientoTipoId { COMPRA_LEGADO = 1, ALTA_LEGADO = 2, PRESTAMO = 3, DEVOLUCION = 4, BAJA_LEGADO = 5,
+  AJUSTE_INVENTARIO = 6, TRANSFERENCIA_ORIGEN = 7, BAJA_EN_INVENTARIO = 8, INVENTARIO = 9, AJUSTE_ADMINISTRADOR = 10,
+  RENTA_EXTERNA = 11, TRANSFERENCIA_DESTINO = 12, BAJA_JUSTIFICADA = 13, ALTA = 14, COMPRA = 15, BAJA_INJUSTIFICADA = 16, BAJA_ADMINISTRADOR = 17 }
+export const TIPOS_ENTRADA    = [1, 2, 14, 15];   // crean saldo en almacén; nunca son derivados
+export const TIPOS_SALIDA     = [3, 11, 12];      // abren saldo pendiente (origen)
+export const TIPOS_REGRESO    = [4, 7, 13, 16, 5];// consumen saldo (derivado)
+export const TIPOS_BAJA_LIBRE = [8, 17];          // cierran el inventario sin proyecto
 ```
 
-Reglas de negocio de la relación (**por defecto**, ver Q1):
-1. Un movimiento de `TIPOS_REGRESO` **debe** apuntar a un `movimientoOrigen` de `TIPOS_SALIDA`
-   del **mismo `inventarioActual`** y **mismo `proyecto`**, con **saldo pendiente > 0**.
-2. `saldoPendiente(origen) = origen.cantidad − Σ cantidad(derivados de TIPOS_REGRESO)`. Se calcula,
-   no se persiste (vista SQL `v_movimiento_saldo` para reportes; método en el servicio).
-3. `derivado.cantidad ≤ saldoPendiente(origen)`. Permite devoluciones parciales (varias devoluciones
-   → un préstamo). Una devolución **no** puede cubrir dos préstamos: se registran dos movimientos.
-4. TRANSFERENCIA: el 7 (origen) apunta al préstamo/renta del proyecto A; el 12 (destino) apunta al
-   movimiento 7 (no a un préstamo). Así la cadena es préstamo A → 7 → 12 → (devolución en B apunta al 12).
-5. `TIPOS_BAJA_LIBRE` (8, 17) apuntan opcionalmente al último movimiento con operación del inventario
-   (`relacionTipo = CIERRE_INVENTARIO`), solo para trazabilidad; no validan saldo.
-6. Si el cliente no envía `movimientoOrigenId`, el servicio lo **resuelve automáticamente**: la salida
-   más antigua con saldo > 0 del mismo inventario y proyecto (FIFO). Si hay más de una candidata con
-   saldo y el API recibe `strict=true`, devuelve 409 con la lista de candidatas para que el front elija.
-   Esto mantiene compatibilidad con el front actual, que no envía el origen.
-7. `estatus` `activo/inactivo` se **mantiene** durante la transición (lo lee el front y varios listados)
-   pero deja de ser la fuente de verdad: se recalcula a partir de la relación. Se marca `@deprecated`
-   y se elimina en una fase posterior (fuera de este plan).
+Reglas de negocio:
+1. Un movimiento de `TIPOS_REGRESO` tiene **una o más** filas en `movimiento_relacion` como `derivado`,
+   cada una contra un `origen` de `TIPOS_SALIDA` del **mismo `inventarioActual`** y **mismo `proyecto`**
+   con saldo pendiente > 0. `Σ relacion.cantidad == derivado.cantidad`.
+2. `saldoPendiente(origen) = origen.cantidad − Σ relacion.cantidad (donde origen = este movimiento)`.
+   Se calcula (método del servicio + vista SQL `v_movimiento_saldo` para reportes); no se persiste.
+3. `relacion.cantidad ≤ saldoPendiente(origen)` en el momento de crearla (bajo bloqueo, §2.2).
+4. TRANSFERENCIA: el 7 (origen) se relaciona como derivado de los préstamos/rentas del proyecto A; el 12
+   (destino) se relaciona como derivado del 7 con `tipo = TRANSFERENCIA`. Cadena: préstamo A → 7 → 12 → (devolución en B contra el 12).
+5. `TIPOS_BAJA_LIBRE` (8, 17): relación opcional `CIERRE_INVENTARIO` contra las salidas abiertas del
+   inventario (todas, por el saldo completo), solo para trazabilidad.
+6. **Resolución automática**: si el cliente no envía `relaciones: [{ origenId, cantidad }]`, el servicio
+   reparte `cantidad` entre las salidas abiertas del mismo inventario y proyecto por orden **FIFO**
+   (más antigua primero), generando tantas filas como haga falta. Con `strict=true` y más de una salida
+   candidata responde `409 { code, message, candidatas: [{ movimientoId, fecha, cantidad, saldo }] }`
+   para que el front elija. Compatible con el front actual, que no envía origen.
+7. `estatus` `activo/inactivo` se **mantiene** (lo lee el front) pero se recalcula desde la relación y
+   se marca `@deprecated`; su retiro queda fuera de este plan.
+8. **No hay backfill** de movimientos históricos (decisión): los movimientos anteriores a la migración
+   quedan sin relaciones. `aceptarDevolucionBaja` conserva un **modo de compatibilidad**: si el
+   inventario no tiene ninguna salida abierta con relaciones, cae a la suma por tipo actual (heurística
+   heredada) y lo registra en el log con nivel `warn`. Así las devoluciones de préstamos antiguos siguen funcionando.
 
 ### 2.2 Transacciones
 
 Todo caso de uso que toque `InventarioActual` + `InventarioActualHistorico` + `Movimiento` +
-`Operacion` (+ `OperacionDetalle`, `ProductoInventariado`, `Grupo.movimientos`) se ejecuta dentro de
-**una** transacción con `SELECT … FOR UPDATE` sobre la fila de `inventario_actual`
-(`queryBuilder.setLock("pessimistic_write")`), lo que elimina la carrera de dos movimientos `activo`.
+`MovimientoRelacion` + `Operacion` (+ `OperacionDetalle`, `ProductoInventariado`, tabla puente de `Grupo`)
+se ejecuta en **una** transacción con `SELECT … FOR UPDATE` sobre `inventario_actual` por `id`
+(`qb.setLock("pessimistic_write")`, sin relaciones eager dentro del lock).
 
 ### 2.3 Capa de servicios
 
-Los controladores pasan a ser delgados (parsear request, llamar servicio, responder). La lógica se
-mueve a `src/services/`:
-
 ```
 src/services/
-  MovimientoService.ts        registrarOperacion(), registrarCompra(), agregarOperacion(), deshacer(), resolverOrigen(), saldoPendiente()
-  InventarioService.ts        aplicarEfecto(tipo, inventario, cantidad)  (sustituye el switch de actualizarInventarioActual)
-  OperacionService.ts
-  GrupoService.ts
-  reglas/efectosInventario.ts tabla tipo → función pura (sin DB) que recibe {cantidad, cantidadAlmacen, disponible} y devuelve el nuevo estado o lanza AppError
+  MovimientoService.ts        registrarOperacion(), registrarCompra(), agregarOperacion(), deshacer(), resolverRelaciones(), saldoPendiente(), cadena()
+  InventarioService.ts        aplicarEfecto(tipo, inventario, cantidad) → usa reglas/efectosInventario
+  OperacionService.ts, GrupoService.ts, NotificacionService.ts (fase 7)
+  reglas/efectosInventario.ts tabla tipo → función pura {cantidad, cantidadAlmacen, disponible} → nuevo estado | AppError (sin TypeORM, 100 % testeable)
 ```
-
-`efectosInventario.ts` es **puro** (sin TypeORM) para poder probarlo exhaustivamente con Jest sin base de datos.
+Los controladores quedan delgados: parsear y validar request (`zod`), llamar al servicio, responder.
 
 ## 3. Fases
 
 ### Fase 0 · Entorno de pruebas reproducible
 
-**Objetivo:** poder ejecutar pruebas unitarias y de integración (MariaDB real) en local y CI.
+1. `api/docker-compose.test.yml`: `mariadb:10.11` (LTS; 10.4 está fuera de soporte) con
+   `MYSQL_DATABASE=almacen_test`, puerto `3307`, `healthcheck`. Este mismo compose sirve de **API de pruebas**
+   para los e2e del front (plan 01, fase 7), que hoy no existe.
+2. `api/.env.test` versionado sin secretos reales: `DB_HOST=127.0.0.1 DB_PORT=3307 DB_DATABASE_NAME=almacen_test DB_SYNCRO=true DB_LOGGING=error JWTSECRET=solo-pruebas-0123456789abcdef SALT_ROUNDS=4`.
+3. Dev deps: `jest@30`, `ts-jest`, `supertest`, `@types/supertest`; runtime: `mysql2` (reemplaza `mysql`, abandonado).
+4. `src/test/`: `dataSource.test.ts` (conexión de pruebas), `seed.ts` (17 `MovimientoTipo` con ids fijos
+   via `INSERT … ON DUPLICATE KEY UPDATE`, roles `ADMINISTRADOR` y los `GRUPOS-*` usados, usuario admin,
+   sesión, área, bodega, 2 proyectos, proveedor, tipo de factura, tipo de precio, tipo de producto),
+   `factories.ts` (`crearProductoConInventario`, `tokenPara`), `app.ts` (exporta `express()` sin `listen`;
+   `index.ts` solo arranca).
+5. `jest.config.js` con dos proyectos: `unit` (`*.test.ts`, sin DB) e `integration` (`*.int.test.ts`,
+   `globalSetup` espera a MariaDB y sincroniza, `maxWorkers: 1`). Scripts `test`, `test:unit`, `test:int`,
+   `test:int:up`.
+6. Arreglar/sustituir los dos tests existentes (hallazgo L16).
+7. `.github/workflows/api.yml`: servicio `mariadb`, `npm ci`, `npm run test:unit`, `npm run test:int`, `npx tsc --noEmit`.
 
-1. `api/docker-compose.test.yml`: servicio `mariadb:10.11` (LTS; 10.4 está fuera de soporte) con
-   `MYSQL_DATABASE=almacen_test`, puerto `3307`, `healthcheck`.
-2. `api/.env.test` (versionado, sin secretos reales): `DB_HOST=127.0.0.1 DB_PORT=3307 DB_DATABASE_NAME=almacen_test DB_SYNCRO=true DB_LOGGING=error JWTSECRET=test SALT_ROUNDS=4`.
-3. Dependencias dev: `jest@30` (o mantener 29), `ts-jest`, `supertest`, `@types/supertest`,
-   `mysql2` (reemplaza `mysql`, que está abandonado; TypeORM lo soporta con `type: "mariadb"`).
-4. `src/test/`:
-   - `dataSource.test.ts` → crea la conexión de pruebas (hoy `createConnection` de 0.2; en la fase 6 pasa a `DataSource`).
-   - `seed.ts` → inserta los 17 `MovimientoTipo` con sus ids fijos (`INSERT … ON DUPLICATE KEY UPDATE`),
-     2 `Rol` (`ADMINISTRADOR`, `GRUPOS-MOVIMIENTONUEVO`), 1 `Usuario` admin, 1 `Sesion`, 1 `Area`,
-     1 `Bodega`, 2 `Proyecto`, 1 `Proveedor`, 1 `FacturaTipo`, 1 `PrecioTipo`, 1 `ProductoTipo`.
-   - `factories.ts` → `crearProductoConInventario({cantidad, bodega})`, `tokenPara(usuario, sesion)`.
-   - `app.ts` → exporta la `express()` sin `listen` (extraer de `src/index.ts`; `index.ts` solo arranca).
-5. `jest.config.js`: dos proyectos: `unit` (`**/*.test.ts`, sin DB) e `integration`
-   (`**/*.int.test.ts`, `globalSetup` que espera a MariaDB y `synchronize`, `maxWorkers: 1`).
-   Scripts: `test`, `test:unit`, `test:int`, `test:int:up` (`docker compose -f docker-compose.test.yml up -d`).
-6. Arreglar los dos tests existentes: `Grupo.Controller.test.ts` mockea `./InventarioActual.Controller`
-   como objeto plano y el módulo exporta una **clase por defecto** (el mock debe ser `{ __esModule: true, default: { obtenerInventarioActualDeCodigo: jest.fn() } }`) y no mockea `res.json`; `Archivo.Controller.test.ts` es un placeholder: sustituir por una prueba real o borrarlo.
-7. `.github/workflows/api.yml`: `services: mariadb`, `npm ci`, `npm run test:unit`, `npm run test:int`, `npx tsc --noEmit`.
-
-**Aceptación:** `npm run test:unit` y `npm run test:int` verdes en local y CI; `tsc --noEmit` sin errores.
+**Aceptación:** `test:unit` y `test:int` verdes en local y CI; `tsc --noEmit` sin errores.
 
 ### Fase 1 · Pruebas de caracterización del comportamiento actual
 
-**Objetivo:** congelar lo que hace hoy el sistema antes de tocarlo (los cambios posteriores deben
-mantener estos escenarios verdes o modificarlos **a sabiendas**).
-
-Pruebas de integración (`src/services/__tests__/caracterizacion.int.test.ts`) vía HTTP con `supertest`:
-1. Compra (`POST /groups/new-purchase` + `PUT /groups/activity-purchase` tipo 15, cantidad 5) →
-   inventario `cantidadAlmacen=5, cantidad=0, disponible=no-disponible`; existe `OperacionDetalle`.
-2. Alta (tipo 14, cantidad 3) → `cantidadAlmacen=3, cantidad=3, disponible`.
-3. Préstamo (tipo 3, cantidad 2) sobre inventario con `cantidad=3` → `cantidad=1`; devolución (tipo 4,
-   cantidad 2) → `cantidad=3`; devolución extra → 400.
-4. Devolución en proyecto distinto al del préstamo → 401/400 (mensaje "no pertenece al proyecto").
+`src/services/__tests__/caracterizacion.int.test.ts` vía HTTP con `supertest`:
+1. Compra (`POST /groups/new-purchase` + `PUT /groups/activity-purchase` tipo 15, cantidad 5) → `cantidadAlmacen=5, cantidad=0, no-disponible`; existe `OperacionDetalle`.
+2. Alta (14, cantidad 3) → `3/3/disponible`.
+3. Préstamo (3, 2) sobre `cantidad=3` → `1`; devolución (4, 2) → `3`; devolución extra → 400.
+4. Devolución en proyecto distinto → 401/400.
 5. Préstamo sin existencia → 400.
-6. `DELETE /groups/activity` del último movimiento → inventario restaurado; del penúltimo →
-   **documentar el resultado actual** (se espera incorrecto; la prueba se marca `it.failing` o
-   `todo` y se corrige en fase 3).
-7. Dos préstamos concurrentes (`Promise.all` de dos POST) sobre `cantidad=1` → documentar (hoy puede
-   dejar `cantidad=-1` o dos `activo`); `it.failing`.
-8. Listado `POST /groups/active-activity-list` devuelve el préstamo activo.
-9. Edición de grupo compra (`PUT /groups/edit-purchase`) actualiza proyecto en las operaciones de todos sus movimientos (hoy `forEach(async)` sin `await`: la prueba debe **esperar** con `waitFor` y documentar la carrera).
+6. `DELETE /groups/activity` del último movimiento → inventario restaurado; del penúltimo → documentar (`it.failing`).
+7. Dos préstamos concurrentes sobre `cantidad=1` → documentar (`it.failing`).
+8. `POST /groups/active-activity-list` devuelve el préstamo activo.
+9. `PUT /groups/edit-purchase` propaga proyecto a las operaciones (hoy `forEach(async)`; esperar con `waitFor` y documentar).
+10. Login guarda `Sesion.IP` con el valor del body (comportamiento a cambiar en fase 2).
 
 **Aceptación:** suite verde con los `failing` explícitos; commit.
 
 ### Fase 2 · Correcciones de seguridad y errores evidentes (sin cambiar el modelo)
 
-Corregir los hallazgos **críticos/altos** de `docs/hallazgos-codigo.md` que no dependen del nuevo modelo:
-1. **Inyección SQL**: parametrizar `condicionesWhereAnd*` (`Grupo.Controller.ts`, `InventarioActual.Controller.ts`, `Usuario.Controller.ts`, etc.) construyendo `Brackets` con parámetros nombrados (`qb.andWhere("x.nombre LIKE :p0", { p0: "%…%" })`); lista blanca de columnas ordenables/filtrables por listado (`const CAMPOS_PERMITIDOS = {...}`); `obtenerInventarioActualDeCodigo` con `LIKE :codigo`; `funcionQueryListadoPrestamosPendientes` con `IN (:...ids)`.
-2. **Promesas sin `await`**: `GrupoController.quitarMovimiento` (`MovimientoController.quitar`), `MovimientoController.obtenerGrupo` (`res.json(getRepository…)` sin `await` y parámetro `:movimientoId` vs `{ id }`), `editarConCompra`/`editarConDetalle` (`forEach(async)` → `for…of` con `await`), `CommonController.quitarComentario` (`remove` sin await), suscriptor `nuevaOperacion` (al menos capturar el rechazo).
-3. **Numéricos como string**: `numericTransformer` (`from: v => v === null ? null : Number(v)`, `to: v => v`) en todas las columnas `numeric` (`Movimiento.cantidad`, `InventarioActual.cantidad/cantidadAlmacen`, `InventarioActualHistorico.*`, `OperacionDetalle.*`, `FacturaDetalle.*`, `ProductoPrecio.precio`, `OperacionPrecio.precio`); eliminar los `Number.parseFloat(x + " ")` y los `+=` sobre strings.
-4. `nuevoConInventario`: `mov.cantidad;` no asigna nada → `mov.cantidad = iac.cantidad`; filtrar por `bodegaId` (hoy toma todas las bodegas). **Confirmar con Q5.**
-5. `CommonController.listaSimpleGenerica`: `where: { st }` → `{ estatus }`.
-6. `CommonController.quitarArchivo`: `arch.id !== fileId` compara número con string → `Number(fileId)`.
-7. `checkJwt`: envía el token viejo en la cabecera `t` (`res.setHeader("t", token)`) en vez de `newToken`; decidir si se renueva (12 h en login, 90 d en renovación: **unificar**, ver Q6) y enviar el correcto.
-8. `pasada.ts`: `headers["x-forwarded-for'"]` (comilla extra).
-9. `index.ts`: el handler `process.on("exit")` es `async` y llama `process.exit` (recursivo); dejar solo SIGTERM/SIGINT con cierre ordenado.
-10. `ProductoPrecio.producto` declara el inverso equivocado (`producto.productoCaracteristicas`) → `producto.productoPrecios`.
-11. `Operacion.Controller.quitar`: `operacion.operacionDetalle` puede venir sin cargar → cargar relación antes de borrar.
-12. `TypeORM 0.2`: `findOne(undefined)`/`findOneOrFail(undefined)` devuelve la **primera fila**. Añadir guardas (`if (id == null) throw new AppError(..., 400)`) en `crearBaseOperacion`, `ProductoInventariadoController.guardar`, `nuevaOperacion` (suscriptor), `CommonController.editar`.
-13. `deploy.sh`: `--exclude ".git/"--rsync-path` sin espacio.
+Hallazgos de `docs/hallazgos-codigo.md` (sección A) que no dependen del nuevo modelo:
+1. **Inyección SQL** (C1-C3): parametrizar todos los `condicionesWhereAnd*` con `Brackets` y parámetros
+   nombrados; lista blanca de columnas filtrables/ordenables por listado (M1); `obtenerInventarioActualDeCodigo`
+   con `LIKE :codigo`; `IN (:...ids)` y guardas para arreglos vacíos (M11); `MATCH … AGAINST (:texto)`.
+2. **Archivos** (C4, H1, H2, H4): restaurar `checkJwt` en todos los `GET /file/*`; en `obtenerReporte`
+   usar `path.basename` + `res.sendFile(nombre, { root: RUTA_REPORTES })`; nombre de caché por `archivo.id`
+   + extensión derivada de `tipoMIME`; `fs.promises` en vez de callbacks con `throw`; `borrar` responde y espera.
+3. **Contraseñas** (C5): `renewpassword` no devuelve la contraseña; reactiva `EnviarMail.correoNuevoPassword`;
+   `passGenerator` con `crypto.randomInt`.
+4. **IP del cliente** (decisión): `app.set('trust proxy', process.env.TRUST_PROXY ?? 'loopback')` y
+   `sesion.IP = req.ip` en `Auth.login`; se **ignora** `body.ip`. Documentar `TRUST_PROXY` en `.env.example`
+   (en producción el valor es la IP/red del proxy inverso). Prueba: login con `X-Forwarded-For` desde
+   proxy confiable registra esa IP; desde origen no confiable registra la del socket.
+5. **Promesas sin `await`** (H4, H5, H7, H12, H13, H14, M9, M28, M31): corregir cada una; `forEach(async)` → `for…of`.
+6. **Numéricos como string** (H18): `numericTransformer` en todas las columnas `numeric`; eliminar `Number.parseFloat(x + " ")` y los `+=` sobre strings.
+7. **Asignación masiva** (H6): DTOs con `zod` por endpoint (`nuevoUsuarioSchema`, `editarInventarioSchema`…);
+   `Common.nuevo/editar` reciben solo campos permitidos. `PUT /current-inventory/edit` deja de aceptar `cantidad`, `cantidadAlmacen`, `disponible`.
+8. `getRepository(relacion)` desde body (H3): mapa cerrado `{ Grupo, Operacion, Producto, Proveedor, Proyecto, Usuario }`.
+9. `nuevoConInventario` (H15): `mov.cantidad = iac.cantidad`. El filtro por `bodegaId` **se revisa sobre la
+   marcha con el propietario** (hoy toma todas las bodegas): dejar prueba `it.todo` y hallazgo abierto.
+10. Resto: `listaSimpleGenerica` `{ st }` → `{ estatus }` (M27); `quitarArchivo`/`quitarComentario` comparar
+    con `Number()` (M8); `checkJwt` enviar `newToken` y unificar expiración a 12 h (H16; sin lista de
+    revocación por ahora, documentado); `pasada.ts` comilla (M25); `process.on("exit")` (M24); `ProductoPrecio`
+    inverso (M29); `Operacion.quitar` cargar `operacionDetalle` (M32); guardas `id == null` antes de `findOne`
+    (M2); `InventarioDetalle` condición invertida (M6); `excelFunctions` `:bodegasIds` (H11); handlers vacíos
+    (H9) responden `501 { message: "No implementado" }` en vez de colgar; `obtenerMovimientosInventario` lee
+    `req.body.inventarioActualId` (H10); `deploy.sh` espacio (M20); rate limit en `/auth/login`
+    (`express-rate-limit`, M3).
+11. **Sentry preparado** (decisión): actualizar a `@sentry/node@11`; `src/sentry.ts` inicializa solo si
+    `SENTRY_DSN` existe (`tracesSampleRate` desde env); `Sentry.setupExpressErrorHandler(app)` antes de
+    `errorMiddlewere`; `environment` = `NODE_ENV`; `release` = `version` de `package.json`. Eliminar `@sentry/tracing`.
 
-**Pruebas:** unitarias para `numericTransformer`, para los constructores de `where` (entrada maliciosa
-`"1' OR '1'='1"` produce consulta parametrizada), y las de caracterización siguen verdes (las de
-`quitar`/concurrencia pueden pasar de `failing` a verde si la corrección 2 ya basta; si pasan,
-quitar el `failing`).
+**Pruebas:** unitarias para `numericTransformer`, constructores de `where` (entrada `"1' OR '1'='1"`
+produce consulta parametrizada), `path.basename` en reportes (`..%2F` → 404), DTOs zod (campos extra se
+rechazan con 400); integración: `GET /file/:id` sin token → 401; login registra `req.ip`; `renewpassword`
+no incluye `c` en la respuesta. Las de caracterización siguen verdes (10 cambia a propósito).
 
-### Fase 3 · Nuevo modelo: relación origen ↔ derivado, fecha e histórico ligado
+### Fase 3 · Nuevo modelo: `MovimientoRelacion`, fecha, histórico ligado, migraciones
 
-1. **Migraciones en vez de `synchronize`**: añadir `src/migration/`, `migration:generate`/`migration:run`
-   en `package.json` (TypeORM 0.2: `ts-node ./node_modules/typeorm/cli.js migration:generate -n …`),
-   `DB_SYNCRO=false` en `.env.example` y `Dockerfile`. Primera migración `0001-baseline` generada
-   contra una BD creada con `synchronize` (debe salir **vacía**: prueba de que el esquema coincide).
-2. Migración `0002-movimiento-relacion`: columnas `movimiento.fecha` (default `CURRENT_TIMESTAMP(6)`),
-   `movimiento.movimientoOrigenId` (FK → `movimiento.id`, `ON DELETE RESTRICT`), `movimiento.relacionTipo`,
-   `inventario_actual_historico.movimientoId` (FK `ON DELETE SET NULL`), índices.
-3. Entidades: aplicar los fragmentos de §2.1 y crear `MovimientoTipoId.ts`.
-4. `MovimientoService.resolverOrigen(inventarioActualId, proyectoId, tipo, cantidad, origenIdOpcional)`:
-   consulta las salidas con saldo > 0 (subconsulta `SUM` de derivados), FIFO; valida reglas 1-5 de §2.1.
-5. `MovimientoService.registrarOperacion(...)` en transacción:
-   `FOR UPDATE` inventario → `efectosInventario` → guardar histórico **con `movimiento`** → guardar
-   operación → guardar movimiento (`movimientoOrigen`, `relacionTipo`, `fecha`) → actualizar `estatus`
-   de la cadena → `ProductoInventariado` → añadir al grupo. Sustituye `guardarConOperacion`,
-   `guardarConOperacionCompra`, `agregarOperacion` y el `switch` de `actualizarInventarioActual`.
-6. `MovimientoService.deshacer(movimientoId)`: solo permite deshacer si **no tiene derivados**
-   (409 en caso contrario, con la lista); restaura la instantánea **ligada a ese movimiento**
-   (no la última); reactiva el origen si corresponde; todo en transacción.
-7. Endpoints nuevos (`routes/movimientos.Routes.ts`), roles entre paréntesis:
-   - `GET /activity/:id/chain` (`MOVIMIENTO-DETALLE`) → origen, derivados, saldo pendiente.
-   - `GET /activity/open-by-inventory/:inventarioActualId?proyectoId=` (`MOVIMIENTO-HISTORIAL`) → salidas con saldo (candidatas a origen).
-   - `PUT /groups/activity` y `PUT /groups/activity-add-transaction` aceptan `movimientoOrigenId` opcional y `strict` opcional.
-8. Reescribir `aceptarDevolucionBaja` y `funcionQueryListadoPrestamosPendientes` sobre la relación
-   (saldo > 0) en vez de `disponible='no-disponible'`/`ROW_NUMBER`.
-9. **Backfill** `0003-backfill-relacion` (migración de datos, idempotente, con `--dry-run` que solo
-   reporta): por cada `inventario_actual`, recorrer movimientos con operación ordenados por
-   `operacion.fecha, movimiento.id`; mantener por proyecto la lista de salidas abiertas; cada regreso
-   consume FIFO; 12 se liga al 7 inmediatamente anterior del mismo inventario (preferir el mismo grupo).
-   Casos sin candidato o con exceso de cantidad se registran en `tabla migracion_relacion_pendiente`
-   (inventarioActualId, movimientoId, motivo) y **no** detienen la migración. `movimiento.fecha` se
-   rellena con `operacion.fecha` o, si no hay operación, con `grupo.fecha`.
-10. `convertMovementType`/exportador Supabase: incluir `movimientoOrigenId` si se sigue usando (Q7).
+1. **Migraciones en vez de `synchronize`**: `src/migration/`, scripts `migration:generate`/`migration:run`
+   (TypeORM 0.2: `ts-node ./node_modules/typeorm/cli.js migration:generate -n …`); `DB_SYNCRO=false` en
+   `.env.example`, `Dockerfile` y `.env.test` (las pruebas corren `migration:run`). Primera migración
+   `0001-baseline` generada contra una BD creada con `synchronize`: debe salir **vacía** (paridad).
+2. Migración `0002-movimiento-relacion`: tabla `movimiento_relacion` (FKs, índices, `UNIQUE(origenId, derivadoId)`),
+   `movimiento.fecha` (default `CURRENT_TIMESTAMP(6)`; para filas existentes se rellena con `operacion.fecha`
+   o `grupo.fecha` en la misma migración, único dato histórico que sí se completa), `inventario_actual_historico.movimientoId`,
+   vista `v_movimiento_saldo`.
+3. Entidades según §2.1 + `MovimientoTipoId.ts`.
+4. `MovimientoService.resolverRelaciones(inventarioActualId, proyectoId, tipo, cantidad, relacionesOpcionales, strict)`:
+   salidas abiertas (`saldo > 0`) FIFO; valida reglas 1-6; 409 con candidatas en modo `strict`.
+5. `MovimientoService.registrarOperacion(...)` transaccional: `FOR UPDATE` inventario → `efectosInventario` →
+   histórico **con `movimiento`** → operación → movimiento (`fecha`) → `movimiento_relacion` → `estatus` de la
+   cadena → `ProductoInventariado` → grupo. Sustituye `guardarConOperacion`, `guardarConOperacionCompra`,
+   `agregarOperacion` y el `switch` de `actualizarInventarioActual`.
+6. `MovimientoService.deshacer(movimientoId)`: solo si el movimiento **no es origen de ninguna relación**
+   (409 con la lista si lo es); borra sus relaciones como derivado (CASCADE) restaurando saldo; restaura la
+   instantánea **ligada a ese movimiento**; recalcula `estatus`; transaccional.
+7. Endpoints (`routes/movimientos.Routes.ts`, roles entre paréntesis):
+   - `GET /activity/:id/chain` (`MOVIMIENTO-DETALLE`) → `{ movimiento, relacionesComoDerivado:[{origen, cantidad, tipo}], relacionesComoOrigen:[…], saldoPendiente }`.
+   - `GET /activity/open-by-inventory/:inventarioActualId?proyectoId=` (`MOVIMIENTO-HISTORIAL`) → salidas con saldo.
+   - `PUT /groups/activity` y `PUT /groups/activity-add-transaction` aceptan `relaciones?: [{ origenId, cantidad }]` y `strict?: boolean`.
+   - `GET /activity/:id` incluye `fecha`, relaciones y `saldoPendiente`.
+8. Reescribir `aceptarDevolucionBaja` (con el modo de compatibilidad de la regla 8) y
+   `funcionQueryListadoPrestamosPendientes` sobre `v_movimiento_saldo`.
+9. Eliminar `convertMovementType`/`convertInvoiceType`/`export2supabase` (Supabase se retira; ver fase 4).
 
 **Pruebas:**
-- Unitarias (`efectosInventario.test.ts`): tabla de casos por tipo (17 tipos × estados: disponible,
-  sin existencia, baja, cantidad > existencia, cantidad ≤ 0) — 100 % de ramas.
-- Unitarias (`resolverOrigen.test.ts` con repositorios en memoria/mocks): FIFO, saldo parcial,
-  proyecto distinto, 12→7, candidatas múltiples con `strict`.
-- Integración: préstamo 5 → devoluciones 2 + 3 → saldo 0 → tercera devolución 409/400; transferencia
-  A→B→devolución en B; deshacer con derivados → 409; deshacer penúltimo ya no corrompe inventario
-  (la prueba `failing` de fase 1 pasa a verde); dos préstamos concurrentes sobre `cantidad=1` → uno
-  200 y otro 400, inventario `cantidad=0` (verde); backfill sobre un dataset sintético de 30
-  movimientos reproduce las relaciones esperadas y deja 2 casos en la tabla de pendientes.
-- `migration:generate` tras aplicar las migraciones no genera cambios (esquema sincronizado).
+- Unitarias `efectosInventario.test.ts`: 17 tipos × estados (disponible, sin existencia, baja, cantidad >
+  existencia, cantidad ≤ 0); 100 % de ramas.
+- Unitarias `resolverRelaciones.test.ts` (repositorios mock): FIFO que reparte 7 entre préstamos de 3 y 4
+  (dos filas); saldo parcial; proyecto distinto → error; 12 → 7; `strict` con candidatas múltiples → 409;
+  relaciones explícitas que exceden saldo → 400; suma de relaciones ≠ cantidad → 400.
+- Integración: préstamo 5 → devoluciones 2 + 3 → saldo 0 → tercera devolución 400; devolución de 7 que
+  cubre dos préstamos (3 + 4) crea 2 relaciones; transferencia A→B→devolución en B; deshacer un origen con
+  derivados → 409; deshacer el penúltimo ya no corrompe (pasa a verde); dos préstamos concurrentes sobre
+  `cantidad=1` → uno 200 y otro 400, `cantidad=0` (verde); inventario con préstamo **anterior a la
+  migración** (sin relaciones) acepta devolución por el modo de compatibilidad y lo registra en log.
+- `migration:generate` tras aplicar migraciones no produce cambios.
 
-**Aceptación:** suite completa verde; `DB_SYNCRO=false` en todos los entornos; documento
-`docs/api/procedimiento-migracion-produccion.md` (respaldo `mariadb-dump`, `migration:run`, backfill
-`--dry-run`, revisión de pendientes, backfill real, verificación con consultas de control).
+**Aceptación:** suite verde; `DB_SYNCRO=false` en todos los entornos; `docs/api/procedimiento-migracion-produccion.md`
+(respaldo `mariadb-dump`, `migration:run`, verificación con consultas de control, rollback con `migration:revert`).
 
 ### Fase 4 · Limpieza y optimización del código
 
-1. Borrar `src/entity-old/` (verificar que solo lo importa `Grupo.Controller.ts` como código muerto),
-   `src/excel.ts` si no se referencia, imports muertos (`setSourceMapRange`, `isJSDocReadonlyTag`,
-   `register` de ts-node en `manejoErrores.ts`, `indexOf` de lodash en `ProductoCaracteristica.ts`),
-   bloques comentados > 20 líneas, `console.log` → logger `pino` con nivel por `LOG_CONSOLE_VERBOSE`.
-2. `package.json`: mover `@types/*`, `typescript`, `ts-node`, `ts-node-dev` a `devDependencies`;
-   eliminar `request`, `request-promise`, `request-stats` (sustituir el log de peticiones por
-   `pino-http` o `morgan`), `@sentry/tracing`, `express-prom-bundle`/`prom-client`,
-   `@supabase/supabase-js`, `@magicbell/core`, `password-generator`/`randomstring`, `lodash`, `moment`
-   **si no se usan** (confirmar con grep; ver `docs/hallazgos-codigo.md`). `body-parser` → `express.json()`.
-3. Sustituir magic numbers por `MovimientoTipoId` en todo `src` (`grep -n "== 15\|=== 3\|case 1[0-9]"`).
-4. Unificar los tres patrones de controlador (`new Promise`, `.then`, `async/await`) en `async/await`
-   con un wrapper `asyncHandler(fn)` que haga `next(error)` (o Express 5, que lo hace solo; ver fase 5).
-5. Eliminar `eager: true` de las relaciones pesadas (`Producto.*`, `Sesion.usuario`, `Grupo.sesion`) y
-   cargar explícitamente en cada consulta; medir con `maxQueryExecutionTime` antes/después en los
-   listados `list-antd` (objetivo: reducir el número de consultas por petición a < 10 en `GET /activity/:id`).
-6. Renombrar archivos con typos manteniendo exports (`ProductoCaractetistica.Controller.ts` →
-   `ProductoCaracteristica.Controller.ts`, `InventarioAcutalHistorico.ts` → `InventarioActualHistorico.ts`,
-   `LogPeticiones.Controllers.ts` → `LogPeticiones.Controller.ts`), con `git mv` y actualización de imports.
-7. `tsconfig.json`: `"strict": true` progresivo (`noImplicitAny` primero, `strictNullChecks` por carpeta),
-   `target: ES2022`, `skipLibCheck`.
-8. `Dockerfile`: `node:24-alpine`, build multi-stage (`tsc` → `node build/index.js`), usuario no root,
-   `.nvmrc` = 24, script `start` = `node build/index.js` (no `ts-node` en producción).
+1. Borrar `src/entity-old/`, `src/excel.ts`, código Supabase (`obtenerGenerarArchivo*Supabase`,
+   `export2Supabase`, `convert*`), imports muertos (`setSourceMapRange`, `isJSDocReadonlyTag`, `register`,
+   lodash sin uso), bloques comentados > 20 líneas, archivos vacíos (`LogPeticiones.Controllers.ts`,
+   `LogOperacion.Controller.ts`). `console.log` → `pino` (nivel por `LOG_CONSOLE_VERBOSE`), `pino-http`
+   sustituye `request-stats` para `LogPeticiones`.
+2. `package.json`: `@types/*`, `typescript`, `ts-node`, `ts-node-dev` a `devDependencies`; eliminar
+   `@supabase/supabase-js`, `@magicbell/core`, `@sentry/tracing`, `express-prom-bundle`, `prom-client`,
+   `request`, `request-promise`, `request-stats`, `@types/request*`, `randomstring`, `file-type`, `moment`,
+   `lodash`, `password-generator`; declarar `dotenv` (M19); `body-parser` → `express.json()`. Script `test`.
+3. Magic numbers → `MovimientoTipoId` en todo `src`. Front: coordinar la corrección de los tipos que envía
+   (`7.inventario/nuevo` envía 15, `3.bajas/nuevo` envía 5; hallazgo L18/F6) **revisándolo con el propietario**.
+4. Unificar controladores en `async/await` + `asyncHandler` (o Express 5 en fase 5).
+5. Quitar `eager: true` de relaciones pesadas y cargar explícitamente; medir con `maxQueryExecutionTime`
+   (objetivo: `GET /activity/:id` < 10 consultas).
+6. Renombrar archivos con typos (`ProductoCaractetistica`, `InventarioAcutalHistorico`, `LogPeticiones.Controllers`) con `git mv`.
+7. `tsconfig.json`: `strict: true` progresivo, `target: ES2022`, `skipLibCheck`; eliminar `exclude` obsoleto.
+8. `Dockerfile`: `node:24-alpine`, multi-stage (`tsc` → `node build/index.js`), usuario no root, `WORKDIR`
+   y `VOLUME` coherentes (`/code/exogrid`), sin devDeps; `.nvmrc` = 24; corregir `deploy*.sh` (commit/tag
+   después del despliegue, `docker rm -f` tolerante).
 
-**Pruebas:** toda la suite; `tsc --noEmit`; `npm audit --omit=dev` sin críticas; comparación de
-tiempos de los 5 endpoints más usados antes/después (`autocannon` o `k6`, 30 s, documentar en
-`docs/api/rendimiento.md`).
+**Pruebas:** suite completa; `tsc --noEmit`; `npm audit --omit=dev` sin críticas; `autocannon` 30 s sobre
+los 5 endpoints más usados antes/después → `docs/api/rendimiento.md`.
 
 ### Fase 5 · Actualización de dependencias de runtime
 
 | Paquete | Actual | Objetivo | Nota |
 |---|---|---|---|
-| node | 14 (Docker) / README dice 12 | 24 LTS | TypeORM 1.x exige ≥ 20.19. |
-| express | 4.17 | 5.3 | Manejo nativo de promesas rechazadas en handlers; `req.query` ya no es escribible; rutas con `:id([0-9]+)` → `:id` + validación o `path-to-regexp` v8 sintaxis `{/:id}`; revisar `router.get("/:id([0-9]+)")` (23 archivos de rutas). |
-| helmet | 5 | 8 | Config por defecto más estricta (CSP): verificar que el front sirve imágenes `blob:`/`data:`. |
-| jsonwebtoken | 8.5 | 9 | Exige `algorithms` explícitos en `verify`; secretos ≥ 32 bytes. |
-| bcryptjs | 2.4 | 3 | API igual; ESM+CJS. |
-| multer | 1.4 | 2.5 | 1.x tiene CVEs; API igual. |
-| sharp | 0.30 | 0.35 | Binarios prebuilt para Node 24. |
-| class-validator | 0.13 | 0.15 | `forbidUnknownValues` por defecto `true` → validar DTOs explícitos. |
-| exceljs, nodemailer, cors, typescript 5.9 | | últimas | TypeScript 7 (puerto nativo) solo cuando TypeORM confirme compatibilidad de decoradores. |
+| node | 14 | 24 LTS | TypeORM 1.x exige ≥ 20.19; Sentry 11 soporta 22/24. |
+| express | 4.17 | 5.3 | Promesas rechazadas van a `next` solas; `req.query` solo lectura; rutas `:id([0-9]+)` → `:id` + validación zod (23 archivos de rutas). |
+| helmet | 5 | 8 | CSP por defecto: verificar imágenes `blob:`/`data:` del front. |
+| jsonwebtoken | 8.5 | 9 | `algorithms` explícitos; secreto ≥ 32 bytes (validar al arrancar). |
+| bcryptjs | 2.4 | 3 | API igual. |
+| multer | 1.4 | 2.5 | 1.x tiene CVEs; añadir `limits.fileSize`. |
+| sharp | 0.30 | 0.35 | Prebuilt para Node 24. |
+| class-validator | 0.13 | 0.15 (o retirar a favor de zod) | `forbidUnknownValues` por defecto. |
+| @sentry/node | 6 | 11 | ya en fase 2. |
+| exceljs, nodemailer, cors, typescript 5.9, pino | | últimas | TypeScript 7 solo cuando TypeORM confirme decoradores. |
 
-**Pruebas:** suite completa + prueba de humo de subida de archivo (`POST /item/file`) y de Excel (`/reports/*`).
+**Pruebas:** suite completa + humo de subida de archivo (`POST /item/file`) y Excel (`/reports/*`) +
+`rutas.int.test.ts` que recorre todas las rutas con token admin esperando ≠ 404 (detecta la nueva sintaxis de Express 5).
 
-### Fase 6 · TypeORM 0.2 → 1.x (opcional, recomendado; ver Q4)
+### Fase 6 · TypeORM 0.2 → 1.x
 
-1. `src/data-source.ts` con `new DataSource({...})`; `AppDataSource.initialize()` en `index.ts`;
-   eliminar `conexionORM.ts`/`ormconfig.js`/`createConnections`.
-2. Reemplazos mecánicos (codemod + revisión): `getRepository(X)` → `AppDataSource.getRepository(X)`
-   (o inyectar `EntityManager` en servicios para transacciones); `findOne(id)` → `findOneBy({ id })`;
-   `findOneOrFail(id, { relations: [...] })` → `findOneOrFail({ where: { id }, relations: { a: true } })`;
-   `findByIds(ids)` → `findBy({ id: In(ids) })`; `loadEagerRelations` igual; `getConnection()` → `AppDataSource`;
-   suscriptor: `event.connection` → `event.manager`.
+1. `src/data-source.ts` con `new DataSource({...})`; `AppDataSource.initialize()` en `index.ts`; borrar
+   `conexionORM.ts`/`ormconfig.js`/`createConnections`.
+2. Reemplazos: `getRepository(X)` → `AppDataSource.getRepository(X)` (o `EntityManager` inyectado en servicios
+   para transacciones); `findOne(id)` → `findOneBy({ id })`; `findOneOrFail(id, { relations: [...] })` →
+   `findOneOrFail({ where: { id }, relations: { a: true } })`; `findByIds(ids)` → `findBy({ id: In(ids) })`;
+   `getConnection()` → `AppDataSource`; suscriptor `event.connection` → `event.manager`.
 3. CLI: `typeorm-ts-node-commonjs migration:generate src/migration/Nombre -d src/data-source.ts`.
-4. Driver `mysql2`.
 
-**Pruebas:** la suite completa es la prueba de regresión; además `migration:generate` vacío.
+**Pruebas:** suite completa; `migration:generate` vacío.
+
+### Fase 7 · Sistema de notificaciones propio (sustituye MagicBell)
+
+**Objetivo:** avisar a usuarios de eventos del sistema (reporte listo, préstamo vencido, devolución pendiente)
+sin servicio externo. El front lo consume con `NotificacionesCampana` (plan 01).
+
+1. Entidad `Notificacion`: `id`, `usuario` (ManyToOne), `titulo`, `mensaje`, `tipo` (`reporte`, `prestamo`,
+   `sistema`), `enlace` (ruta del front o `GET /file/report/:nombre`), `leida: boolean`, `fecha`, `fechaLectura`.
+   Migración `0004-notificacion`.
+2. `NotificacionService`: `crear(usuarioId, …)`, `listar(usuarioId, { soloNoLeidas, pagina })`, `marcarLeida`,
+   `marcarTodasLeidas`, `contarNoLeidas`. Emisor interno (`EventEmitter`) para SSE.
+3. Endpoints (`routes/notificaciones.Routes.ts`, todos `checkJwt`): `GET /notifications?unread=1`,
+   `GET /notifications/count`, `PUT /notifications/:id/read`, `PUT /notifications/read-all`,
+   `GET /notifications/stream` (Server-Sent Events con `text/event-stream`; reconexión del cliente; fallback
+   del front a polling cada 60 s si SSE falla).
+4. Productores: `Reportes.Controller` crea la notificación al terminar (o fallar) la generación del Excel
+   (sustituye los bloques MagicBell comentados y corrige H8: el `catch` ya no relanza, notifica);
+   tarea programada (`node-cron` o `setInterval` al arrancar) que notifica préstamos con saldo abierto más
+   antiguos que `DIAS_CUARENTENA`.
+5. Retención: job diario que borra notificaciones leídas con más de 90 días.
+
+**Pruebas:** unitarias del servicio (mocks); integración: generar un reporte crea notificación para el
+solicitante; `GET /notifications/count` refleja no leídas; `PUT read` cambia estado y `fechaLectura`;
+SSE entrega un evento al crear notificación (supertest con stream); un usuario no ve notificaciones de otro.
 
 ## 4. Orden y dependencias
 
 ```
-F0 entorno de pruebas ─▶ F1 caracterización ─▶ F2 correcciones ─▶ F3 modelo + backfill ─▶ F4 limpieza ─▶ F5 deps ─▶ F6 TypeORM 1.x
+F0 entorno ─▶ F1 caracterización ─▶ F2 correcciones (+IP, +Sentry) ─▶ F3 modelo + migraciones ─▶ F4 limpieza (−Supabase) ─▶ F5 deps ─▶ F6 TypeORM 1.x ─▶ F7 notificaciones
 ```
-F2 puede intercalarse con F3 si el ejecutor lo prefiere, pero las pruebas de F1 deben existir antes de
-cualquier cambio de comportamiento.
+F7 puede adelantarse tras F3 si el front la necesita antes.
 
 ## 5. Cambios de contrato con el front (coordinar con plan 01)
 
-- `PUT /groups/activity` y `PUT /groups/activity-add-transaction`: nuevos campos opcionales
-  `movimientoOrigenId`, `strict`; nuevo error 409 `{ code, message, candidatas: [...] }`.
-- `GET /activity/:id` incluye `fecha`, `movimientoOrigen {id, cantidad, operacion.movimientoTipo, operacion.proyecto}`,
-  `movimientosDerivados[]`, `saldoPendiente`.
-- `DELETE /groups/activity` puede devolver 409 si el movimiento tiene derivados.
-- Pantalla `operaciones/movimiento/detalle` del front: mostrar la cadena (origen/derivados/saldo).
-- Formularios de devolución/baja/transferencia: selector opcional de origen cuando hay varias candidatas.
+- `POST /auth/login`: `ip` del body se ignora.
+- `PUT /groups/activity`, `PUT /groups/activity-add-transaction`: campos opcionales `relaciones`, `strict`; nuevo 409 con `candidatas`.
+- `GET /activity/:id`: `fecha`, `relacionesComoDerivado`, `relacionesComoOrigen`, `saldoPendiente`. Nuevo `GET /activity/:id/chain`.
+- `DELETE /groups/activity`: 409 si el movimiento es origen de relaciones.
+- `PUT /current-inventory/edit`: ya no acepta `cantidad`, `cantidadAlmacen`, `disponible`.
+- Handlers vacíos responden 501.
+- Nuevo recurso `/notifications` (fase 7).
 
 ## 6. Riesgos
 
 | Riesgo | Mitigación |
 |---|---|
-| Backfill ambiguo en datos históricos | `--dry-run`, tabla de pendientes, no bloquear; revisión manual con consultas de control. |
-| `synchronize: true` en producción borra/crea columnas sin control | Fase 3 paso 1 lo desactiva **antes** de añadir columnas; baseline vacía demuestra paridad. |
-| Front depende de `estatus` activo/inactivo | Se mantiene y se recalcula; retiro en fase posterior. |
-| Bloqueo pesimista en MariaDB con `eager` masivo | Cargar `inventario_actual` con `FOR UPDATE` solo por `id`, sin relaciones; el resto fuera del lock. |
-| Express 5 cambia sintaxis de rutas | Pruebas de integración por ruta (fase 0 crea `rutas.int.test.ts` que recorre todas las rutas con token admin y espera ≠ 404). |
+| Movimientos históricos sin relaciones | Modo de compatibilidad (regla 8) + log `warn`; se podrá hacer backfill después con el respaldo. |
+| `synchronize: true` en producción | Fase 3 paso 1 lo desactiva antes de añadir tablas; baseline vacía demuestra paridad. |
+| Front depende de `estatus` activo/inactivo | Se mantiene y se recalcula. |
+| Bloqueo pesimista con `eager` masivo | `FOR UPDATE` solo por `id`, sin relaciones. |
+| Express 5 cambia sintaxis de rutas | `rutas.int.test.ts` recorre todas las rutas. |
+| `trust proxy` mal configurado registra la IP del proxy | Prueba de integración con `X-Forwarded-For`; `TRUST_PROXY` documentado. |
 
-## 7. Dudas abiertas
+## 7. Puntos a revisar sobre la marcha con el propietario
 
-- **Q1** ¿Una devolución puede cubrir **varios préstamos** a la vez (N:M)? Por defecto no: 1 origen por
-  movimiento derivado; si se necesita N:M se crea tabla `movimiento_relacion (origenId, derivadoId, cantidad)`.
-- **Q2** Resolución automática de origen: ¿FIFO (más antiguo primero) o LIFO (más reciente)? Por defecto FIFO.
-- **Q3** ¿Se hace **backfill** del histórico o solo se relacionan movimientos nuevos? Por defecto backfill con dry-run.
-- **Q4** ¿Incluir la migración a **TypeORM 1.x** (fase 6) en este esfuerzo o dejarla para después?
-- **Q5** `nuevoConInventario` toma inventarios de **todas** las bodegas aunque el grupo tiene `bodegaId`: ¿es intencional?
-- **Q6** Duración del JWT: login 12 h, renovación 90 d y hoy no se renueva. ¿Cuál debe ser?
-- **Q7** ¿Siguen en uso **Supabase** (`export2supabase`), **MagicBell** y **Sentry** en el API? Si no, se eliminan.
-- **Q8** ¿Existe respaldo reciente de la BD de producción y una copia en MariaDB ≥ 10.11 para ensayar el backfill?
-- **Q9** Tipos 6, 9 y 10 no tienen efecto en inventario hoy. ¿Deben tenerlo?
+- `nuevoConInventario` toma inventarios de **todas** las bodegas aunque el grupo tiene `bodegaId` (fase 2, paso 9).
+- El front envía tipo 15 (COMPRA) al crear un inventario y el tipo legado 5 en bajas (fase 4, paso 3).
+- Tipos 6, 9 y 10 no tienen efecto en inventario hoy.
+- Duración del JWT (hoy 12 h sin renovación efectiva; se unifica a 12 h en fase 2).

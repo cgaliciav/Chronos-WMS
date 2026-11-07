@@ -52,5 +52,7 @@ uso (layout, `ACL`, `Login`, páginas de error). No añadas código nuevo dentro
 ## Qué no hacer
 
 - No actualices `antd`, `react` o `react-router` de forma aislada: sigue el orden de fases del plan 01
-  (CRA→Vite primero, luego React 19/Router 8, luego antd 5 → 6, luego retirar Clean UI).
+  (CRA→Vite+TypeScript primero, luego React 19/Router 8/Zustand, luego antd 5 → 6, luego retirar Clean UI).
+- Decisiones ya tomadas (`docs/decisiones.md`): Vite + npm, Zustand (no redux ni RTK), TypeScript a la par,
+  solo tema claro, sin MagicBell (notificaciones propias), sin `api.ipify.org` (la IP la toma el API).
 - No borres `components/cleanui/system/ACL` sin su reemplazo (`app/auth/ACL`, plan 01 fase 6): lo importan 76 archivos.

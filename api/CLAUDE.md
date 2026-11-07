@@ -59,6 +59,12 @@ Ver `.env.example`. Imprescindibles: `JWTSECRET`, `SALT_ROUNDS`, `DB_HOST/PORT/U
 `PORT_ALMACEN_API`, rutas de archivos (`RUTA_ARCHIVOS`, `RUTA_REPORTES`, `UPLOADS`, `ARCHIVOS_AUXILIARES`,
 `IMAGENES_IMPORTACION`), `SMTP_*`, `DIAS_CUARENTENA`.
 
+## Decisiones tomadas (`docs/decisiones.md`)
+
+Relación entre movimientos **N:M** (`movimiento_relacion`), **sin backfill** de históricos, IP de sesión
+desde `req.ip` (no del body), Sentry preparado tras `SENTRY_DSN`, Supabase y MagicBell se retiran
+(notificaciones propias en plan 02 fase 7), MariaDB ≥ 10.11 para pruebas.
+
 ## Qué no hacer
 
 - No ejecutes `synchronize`/migraciones contra producción desde una sesión automatizada.

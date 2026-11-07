@@ -28,6 +28,8 @@ No hay `node_modules` ni base de datos en este repositorio; cada app se instala 
 
 ## Estado de la documentación
 
+- `docs/decisiones.md`: decisiones tomadas por el propietario (Vite+npm, Zustand, TypeScript, sin tema
+  oscuro, sin MagicBell ni Supabase, Sentry preparado, IP en el API, relación N:M, sin backfill). **No las reabras.**
 - `docs/hallazgos-codigo.md`: fallos conocidos con archivo:línea y severidad. Si corriges uno, márcalo ahí.
 - `docs/planes/01-front-actualizacion-antd.md`: plan por fases para Vite + React 19 + antd 6 y retirar Clean UI.
 - `docs/planes/02-api-relacion-movimientos.md`: plan por fases para la relación origen→derivado entre
