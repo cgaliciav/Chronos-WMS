@@ -1,7 +1,7 @@
 import { join } from "path";
 import { NextFunction, Request, Response } from "express";
-import { existsSync, readFileSync } from "fs";
-import { access, writeFile } from "fs/promises";
+import { readFileSync } from "fs";
+import { access, rename } from "fs/promises";
 import sharp from 'sharp';
 import { getRepository } from "typeorm";
 import { Archivo } from "../entity/Archivo";
@@ -10,6 +10,7 @@ import { AppError } from "../helpers/errorClases";
 import CommonController from "./common/Common.Controller";
 import { esImagen, extensionSegura, nombreArchivoSeguro } from "../helpers/archivosSeguros";
 import { idSeguro } from "../helpers/ids";
+import { escribirAtomico, olvidarArchivoEnCache, rutaTemporal } from "../helpers/cacheArchivos";
 import { Grupo } from "../entity/Grupo";
 import { Operacion } from "../entity/Operacion";
 import { Producto } from "../entity/Producto";
@@ -53,7 +54,7 @@ const obtenerGenerarArchivo = async (archivoId: number | string): Promise<string
 
   const fileName = join(RUTA_ARCHIVO, `${archivo.id}${extensionSegura(archivo.tipoMIME, archivo.nombre)}`);
   if (!(await existe(fileName))) {
-    await writeFile(fileName, archivo.data);
+    await escribirAtomico(fileName, archivo.data); // temporal + rename: nunca se sirve a medio escribir (M17)
   }
   return fileName;
 };
@@ -121,7 +122,10 @@ class ArchivoController {
   static quitar = async (archivo: Archivo, sesionId: number) => {
     // const archivo = await getRepository(Archivo).findOneOrFail(archivoId);
     archivo.sesionId = sesionId;
-    return await getRepository(Archivo).remove(archivo);
+    const id = archivo.id;
+    const quitado = await getRepository(Archivo).remove(archivo);
+    await olvidarArchivoEnCache(process.env.RUTA_ARCHIVOS, id); // no dejar copias en disco de un archivo borrado
+    return quitado;
   };
 
   static borrar = async (req: Request, res: Response, next: NextFunction) => {
@@ -161,13 +165,14 @@ class ArchivoController {
     try {
       const nombreArchivo = await obtenerGenerarArchivo(id);
       const nuevoNombreArchivo = `${nombreArchivo}-thumbnail`;
-      if (!existsSync(nuevoNombreArchivo)) {
+      if (!(await existe(nuevoNombreArchivo))) {
         await asegurarImagen(id);
-        const sharpResultado = await sharp(nombreArchivo)
+        const temporal = rutaTemporal(nuevoNombreArchivo);
+        await sharp(nombreArchivo)
           .resize(64, 64)
           .withMetadata()
-          .toFile(nuevoNombreArchivo);
-        // console.log('*****SHARP obtenerThumbnailId*******************',sharpResultado)
+          .toFile(temporal);
+        await rename(temporal, nuevoNombreArchivo);
       }
       res.sendFile(nuevoNombreArchivo);
     } catch (error) {
@@ -187,13 +192,14 @@ class ArchivoController {
       const splitId = id.split(".");
       const nombreArchivo = await obtenerGenerarArchivo(splitId[0]);
       const nuevoNombreArchivo = `${nombreArchivo}-catalog`;
-      if (!existsSync(nuevoNombreArchivo)) {
+      if (!(await existe(nuevoNombreArchivo))) {
         await asegurarImagen(splitId[0]);
-        const sharpResultado = await sharp(nombreArchivo)
+        const temporal = rutaTemporal(nuevoNombreArchivo);
+        await sharp(nombreArchivo)
           .resize(300, 300, { fit: "contain" })
           .withMetadata()
-          .toFile(nuevoNombreArchivo);
-        // console.log('*****SHARP obtenerCatagoloId*******************',sharpResultado)
+          .toFile(temporal);
+        await rename(temporal, nuevoNombreArchivo);
       }
       res.sendFile(nuevoNombreArchivo);
     } catch (error) {
@@ -213,13 +219,14 @@ class ArchivoController {
       const splitId = id.split(".");
       const nombreArchivo = await obtenerGenerarArchivo(splitId[0]);
       const nuevoNombreArchivo = `${nombreArchivo}-review`;
-      if (!existsSync(nuevoNombreArchivo)) {
+      if (!(await existe(nuevoNombreArchivo))) {
         await asegurarImagen(splitId[0]);
-        const sharpResultado = await sharp(nombreArchivo)
+        const temporal = rutaTemporal(nuevoNombreArchivo);
+        await sharp(nombreArchivo)
           .resize(600, 600, { fit: "contain" })
           .withMetadata()
-          .toFile(nuevoNombreArchivo);
-        // console.log('*****SHARP obtenerCatagoloId*******************',sharpResultado)
+          .toFile(temporal);
+        await rename(temporal, nuevoNombreArchivo);
       }
       res.sendFile(nuevoNombreArchivo);
     } catch (error) {

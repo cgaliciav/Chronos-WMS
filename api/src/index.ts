@@ -5,6 +5,7 @@ import { conectarORM } from "./conexionORM";
 import { crearApp } from "./app";
 import { iniciarSentry } from "./sentry";
 import { LogPeticiones } from "./entity/LogPeticiones";
+import { iniciarLimpiezaCache } from "./helpers/cacheArchivos";
 
 import requestStats from "request-stats";
 import { getRepository } from "typeorm";
@@ -18,6 +19,7 @@ import { getRepository } from "typeorm";
   }
   if (iniciarSentry()) console.log("Sentry activo");
   await conectarORM();
+  iniciarLimpiezaCache(); // caché de archivos (CACHE_ARCHIVOS_DIAS) y reportes (REPORTES_DIAS), hallazgo M17
 
   const app = crearApp();
 
