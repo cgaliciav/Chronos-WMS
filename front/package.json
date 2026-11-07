@@ -2,6 +2,9 @@
   "name": "cleanui-admin-template-react-cra",
   "version": "3.15.17",
   "private": true,
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "start": "react-app-rewired start",
     "build": "react-app-rewired build",

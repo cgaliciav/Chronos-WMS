@@ -154,6 +154,18 @@ fase se corrige cada uno.
 | F20 | Duplicados de plantilla | `components/kit` vs `kit-*` (≈ 26 k LOC) y `cleanui` vs `cui-*`, ambos parcialmente vivos; 184 páginas demo (21 k LOC); `services/menu/roles.txt` UTF-16 con endpoints `localhost:4100`. |
 | F21 | Dependencias | Node 10 fijado con `axios ^1.1` (requiere ≥ 12); `react-scripts 3.4.1`, `node-sass 4`, `moment 2.24` fijado por `resolutions`; librerías sin uso en negocio: chart.js, chartist, c3, react-stockcharts, d3-*, draft-js, react-draft-wysiwyg, react-jvectormap, react-sortable-tree, react-sortablejs, sortablejs, react-stickynode, @rowno/sparkline, react-highlight-words, react-resizable, prop-types, lodash, clear-cache, reactstrap. |
 
+### B.4 Encontrados en la fase 0 del plan 01 (2026-11-07)
+
+Detalle en `docs/front/inventario-rutas.md` (sección "Observaciones") y `docs/front/baseline/README.md`.
+
+| # | Severidad | Ubicación | Descripción |
+|---|---|---|---|
+| F22 | Media | `src/pages/operaciones/componentes/articuloMovimiento.js:43` | `productoPrecios?.find(pp => pp.precioTipo.id === 2).precio` sin comprobar `undefined`: si el producto no tiene precio de tipo 2, `/movimientos/detalle` lanza `TypeError` y muestra la página de error. |
+| F23 | Media | `src/services/menu/index.js` vs `<ACL>` de las páginas | Dos familias de códigos de rol: solo 9 de 43 entradas de menú usan el mismo código que el ACL de su página. Un usuario con solo el código del menú ve la entrada y el ACL lo manda a `/auth/401`. Confirmar en BD que los perfiles tienen ambos códigos antes de unificar en el `ACL`/`useMenuItems` de la fase 6. |
+| F24 | Media | `src/router.js` (redirección `/`); `pages/catalogos/7.inventarioVisual`; `pages/reportes/{6.porUsuario,3.cierreProyecto}` | Códigos de rol erróneos: la redirección inicial mira `VALIDACIONES` pero la página exige `V-CATALOGO-VALIDACIONES`; `V-CATALOGO-INVENTARIO` (menú) vs `V-CATALOGO-INVENTARIOS` (ACL); `/reportes/por-usuario` usa el ACL y los endpoints de `/prestamos/activos` (copia sin terminar); `/reportes/de-cierre` solo admite `ADMINISTRADOR` aunque el menú pide `V-REPORTES-GENERAL`. |
+| F25 | Baja | `src/pages/catalogos/5.porFacturas` | Llama a `list-catalog-project` en vez de `list-catalog-invoices`; la ruta está fuera del menú (entrada comentada con `/catalogo/por-Facturas`). |
+| F26 | Baja | `src/services/axios/*` | 25 métodos sin uso (17 en `grupos`); clases con nombre copiado (`productoInventariado` → `ProductoValidado`, `roles` → `ProyectoPeticiones`); `generalGet` arma `/<recurso>/<ruta>/undefined` si falta el parámetro. |
+
 ---
 
 ## C. Estado tras la fase 2 del plan 02 (2026-11-07)
