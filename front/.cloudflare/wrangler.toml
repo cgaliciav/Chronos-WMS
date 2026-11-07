@@ -1,0 +1,10 @@
+name = "cleanui-react"
+type = "webpack"
+account_id = "792461088a4c863230f3faee467094b1"
+# workers_dev = true
+route = "react.cleanuitemplate.com/*"
+zone_id = "f97fb61fdf15fe0e0461e9b715430db1"
+
+[site]
+bucket = "../build"
+entry-point = "workers-site"

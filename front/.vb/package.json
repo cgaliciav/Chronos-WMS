@@ -1,0 +1,11 @@
+{
+  "name": "vb-config-react",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "tree": "node ./generateFileTree"
+  },
+  "dependencies": {
+    "dree": "^2.4.14"
+  }
+}

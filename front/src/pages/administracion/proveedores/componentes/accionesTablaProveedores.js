@@ -1,0 +1,24 @@
+import { notification } from "antd";
+import ProveedorPeticiones from "services/axios/proveedores";
+
+
+export default class AccionesTablaProveedores{
+
+  static inhabilitarProveedor=(id)=>{
+    ProveedorPeticiones.inhabilitar(id)
+      .then(() => {
+        notification.success({
+          message: 'Proveedor inhabilitado correctamente',
+        })
+        document.location.reload();
+      })
+      .catch(error => {
+        notification.error({
+          message: error.message,
+          // description: error.message,
+        })
+      })
+
+  }
+
+}

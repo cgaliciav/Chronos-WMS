@@ -1,0 +1,54 @@
+@import 'components/mixins.scss';
+
+.carousel {
+  :global(.ant-carousel .slick-dots li button) {
+    background-color: gray;
+    height: 10px;
+    border-radius: 5px;
+    border: 2px solid whitesmoke;
+    opacity: 0.9;
+  }
+
+  :global(.slick-dots li.slick-active button) {
+    background-color: whitesmoke;
+    border-radius: 5px;
+    border: 3px solid black;
+    height: 12px;
+    opacity: 0.9;
+  }
+}
+
+.hacerGrande {
+  position: absolute;
+  top: rem(20);
+  left: rem(25);
+  // color: $gray-2;
+
+  // &:focus {
+  //   color: $gray-3;
+
+  //   &:hover {
+  //     color: $gray-1;
+  //   }
+  // }
+}
+
+[data-kit-theme='dark'] {
+  .carousel {
+    :global(.ant-carousel .slick-dots li button) {
+      background-color: gray;
+      height: 11px;
+      border-radius: 5px;
+      border: 2px solid whitesmoke;
+      opacity: 0.9;
+    }
+
+    :global(.slick-dots li.slick-active button) {
+      background-color: whitesmoke;
+      border-radius: 5px;
+      border: 3px solid black;
+      height: 12px;
+      opacity: 0.9;
+    }
+  }
+}

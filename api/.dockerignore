@@ -1,0 +1,8 @@
+node_modules
+.env
+.env.*
+!.env.example
+deploy*.sh
+deploy_history
+.git
+.vscode

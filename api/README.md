@@ -1,0 +1,61 @@
+# Almacen API
+
+Proyecto originalmente pensado para el almacen de teleset/sony en Mexico.
+El proyecto ha ido cambiando constantemente. 
+Fehca de terminacion estimada: 7-ago-2020
+
+03-AGOSTO-2024 cambios relacionados con la edicion de compras.
+
+### Programacion y anexas
+- NodeJS 12.16.1
+- MariaDB 10.4
+- TypeORM 0.2.24
+
+### Variables de entorno necesarias
+
+Ver `.env.example`. Los secretos nunca se versionan.
+
+- SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASS / SMTP_FROM
+
+- JWTSECRET=<secreto>
+- SALT_ROUNDS=10
+- API_ALMACEN=https://almacen-api.localto.net
+- RUTA_ARCHIVOS=/mnt/d/exogrid/AlmacenTeleset_v2/exogrid/archivos/
+- RUTA_REPORTES=/mnt/d/exogrid/AlmacenTeleset_v2/exogrid/reportes/
+- UPLOADS=/mnt/d/exogrid/AlmacenTeleset_v2/exogrid/uploads/
+- ARCHIVOS_AUXILIARES=/mnt/d/exogrid/AlmacenTeleset_v2/exogrid/auxiliares/
+- DIAS_CUARENTENA=120
+- LOG_CONSOLE_VERBOSE=error
+- IMAGENES_IMPORTACION=/mnt/d/exogrid/AlmacenTeleset_v2/exogrid/imgproductos/
+- PORT_ALMACEN_API=4100
+- DB_HOST=localhost
+- DB_USER=almacen_usr
+- DB_PORT=3306
+- DB_PASSWORD=<secreto>
+- DB_DATABASE_NAME=almacen_sony_migracion
+-  DB_SYNCRO=true
+- DB_CACHE=true
+- DB_LOGGING=all 
+
+### Referencias
+https://medium.com/javascript-in-plain-english/creating-a-rest-api-with-jwt-authentication-and-role-based-authorization-using-typescript-fbfa3cab22a4
+https://typeorm.io/#/
+
+
+## Pendientes 290905
+- Crear una nueva branch para sacar toda la información de la BD o modificar la BD Actual?
+- Direccionar la DB de pruebas a la local que tengo en docker
+- En el DB de docker crear el usuario necesario para no usar root
+
+- Reestructurar la DB.
+- Se debe crear el registro de devolucion asociado directamente al registro de prestamo (verificar caso de compra)
+- Las compras deben poder ser realizadas y despues cambiar los datos de la factura
+- Cambiar productos de facturas
+- Los campos de los reportes son distintos
+- Las devoluciones deben ser mas inteligentes para poder determinar cuando fueron prestadas a otras personas o incluso producciones y notificar el hecho.
+- Las devoluciones Nunca deben duplicarse
+- Los prestamos no deben duplicarse
+- Deben poder hacerse transferencias de prestamos
+- Impresion de etiquetas
+- Mandar de un resultado de busqueda a la creacion de un reporte
+- Los grupos de productos puenden no estar asociados a ningun movimiento. 
