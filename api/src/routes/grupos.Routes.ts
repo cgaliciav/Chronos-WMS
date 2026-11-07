@@ -72,6 +72,5 @@ router.post("/create-list-from-report-activity",[checkJwt,checkRole(["ADMINISTRA
 router.post("/similar-names-count",[checkJwt],GrupoController.obtenerCanteoNombresSimilares)
 
 
-router.get("/export-to-supabase/:id([0-9]+)",[checkJwt,checkRole(["ADMINISTRADOR"])], GrupoController.export2supabase)
 
 export default router;

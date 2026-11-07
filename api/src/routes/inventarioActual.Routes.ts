@@ -28,7 +28,6 @@ router.post("/list-catalog-invoices",[checkJwt,checkRole(["ADMINISTRADOR","INVEN
 
 router.post("/get-activity-inventory",[checkJwt,checkRole(["ADMINISTRADOR","INVENTARIOACTUAL-LISTADOMOVIMIENTOSINVENTARIO"])], InventarioActualController.obtenerMovimientosInventario);
 
-router.get("/export-to-supabase/:id([0-9]+)",[checkJwt,checkRole(["ADMINISTRADOR"])], InventarioActualController.export2Supabase);
 
 
 export default router;
