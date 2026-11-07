@@ -28,6 +28,7 @@ import InventarioActualController, {
 } from "./InventarioActual.Controller";
 import MovimientoController from "./Movimiento.Controller";
 import MovimientoService from "../services/MovimientoService";
+import { TIPOS_ORIGEN } from "../entity/common/MovimientoTipoId";
 import ProductoController from "./Producto.Controller";
 import { autogenerarCodigo } from "./ProductoClave.Controller";
 // import { supabase } from "../helpers/_SupabaseConfig";
@@ -217,55 +218,83 @@ const obtenerMovimientosConOperacionDeGrupo = async (
     .where("grupos.id =:grupoId", { grupoId })
     .getMany();
 
+/**
+ * Préstamos (y compras, rentas, transferencias) pendientes de regreso (plan 02 fase 3, paso 8):
+ *  - Movimientos nuevos: salidas con saldo > 0 en `v_movimiento_saldo`; una fila por salida abierta.
+ *  - Inventarios que solo tienen movimientos legados (sin relaciones): heurística anterior, el último movimiento
+ *    `activo` de cada producto con el inventario `no-disponible`.
+ * Mismos filtros que antes en ambas ramas (proyecto, usuarios de la operación, áreas). `bodegasIds` no se usaba.
+ */
 const funcionQueryListadoPrestamosPendientes = (
   proyectoId: number | string,
   usuariosIds: (number | string)[],
   areasIds: (number | string)[],
   bodegasIds: (number | string)[]
 ) => {
-  const subQuery = getConnection()
+  const areas = areasIds?.length > 0 ? idsSeguros(areasIds, "areasIds") : undefined;
+  const proyecto = proyectoId && proyectoId !== "0" && proyectoId !== 0 ? idSeguro(proyectoId, "proyectoId") : undefined;
+  const usuarios = usuariosIds?.length > 0 ? idsSeguros(usuariosIds, "usuariosIds") : undefined;
+  const aplicarFiltrosComunes = (qb: SelectQueryBuilder<any>) => {
+    if (areas) qb.andWhere("p.areaId IN (:...pp_areasIds)", { pp_areasIds: areas });
+    if (proyecto !== undefined) qb.andWhere("o.proyectoId = :pp_proyectoId", { pp_proyectoId: proyecto });
+    if (usuarios) {
+      qb.andWhere("o.id IN (SELECT ou.operacionId FROM operacion_usuarios_usuario ou WHERE ou.usuarioId IN (:...pp_usuariosIds))", {
+        pp_usuariosIds: usuarios,
+      });
+    }
+    return qb;
+  };
+
+  const nuevos = aplicarFiltrosComunes(
+    getConnection()
+      .createQueryBuilder()
+      .select("v.movimientoId")
+      .from("v_movimiento_saldo", "v")
+      .innerJoin("movimiento", "mv", "mv.id = v.movimientoId")
+      .innerJoin("operacion", "o", "o.id = mv.operacionId")
+      .innerJoin("inventario_actual", "ia", "ia.id = v.inventarioActualId")
+      .innerJoin("producto", "p", "p.id = ia.productoId")
+      .where("v.legado = 0")
+      .andWhere("v.saldo > 0")
+      .andWhere(`v.movimientoTipoId IN (${TIPOS_ORIGEN.join(", ")})`)
+  );
+
+  const rankeados = aplicarFiltrosComunes(
+    getConnection()
+      .createQueryBuilder()
+      .select("m.id", "movimientoId")
+      .addSelect("ROW_NUMBER() OVER (PARTITION BY p.id ORDER BY o.fecha DESC)", "rn")
+      .from("movimiento", "m")
+      .innerJoin("operacion", "o", "o.id = m.operacionId")
+      .innerJoin("inventario_actual", "ia", "ia.id = m.inventarioActualId")
+      .innerJoin("producto", "p", "p.id = ia.productoId")
+      .where("m.estatus = 'activo'")
+      .andWhere("ia.disponible = 'no-disponible'")
+      .andWhere(
+        `NOT EXISTS (SELECT 1 FROM movimiento mn INNER JOIN operacion onn ON onn.id = mn.operacionId
+                      WHERE mn.inventarioActualId = ia.id AND mn.legado = 0 AND onn.movimientoTipoId IN (${TIPOS_ORIGEN.join(", ")}))`
+      )
+  );
+  const legados = getConnection()
     .createQueryBuilder()
-    .select("m.id", "movimientoId")
-    .addSelect("o.fecha", "FechaOperacion")
-    .addSelect("ROW_NUMBER() OVER (PARTITION BY p.id ORDER BY o.fecha DESC)", "rn")
-    .from("movimiento", "m")
-    .innerJoin("operacion", "o", "o.id = m.operacionId")
-    .innerJoin("inventario_actual", "ia", "ia.id = m.inventarioActualId")
-    .innerJoin("producto", "p", "p.id = ia.productoId")
-    .leftJoin("proyecto", "pj", "o.proyectoId = pj.id")
-    .where("m.estatus = 'activo'")
-    .andWhere("ia.disponible = 'no-disponible'");
-  if (areasIds?.length > 0)
-    subQuery.andWhere("p.areaId IN (:...pp_areasIds)", { pp_areasIds: idsSeguros(areasIds, "areasIds") });
-
-  if (proyectoId && proyectoId !== "0" && proyectoId !== 0)
-    subQuery.andWhere("o.proyectoId = :pp_proyectoId", { pp_proyectoId: idSeguro(proyectoId, "proyectoId") });
-
-  if (usuariosIds?.length > 0) {
-    subQuery.andWhere((qb) => {
-      const operacionUsuariosSubQuery = qb
-        .subQuery()
-        .select("ou.operacionId")
-        .from("operacion_usuarios_usuario", "ou")
-        .where("ou.usuarioId IN (:...pp_usuariosIds)")
-        .getQuery();
-      return "o.id IN " + operacionUsuariosSubQuery;
-    });
-    subQuery.setParameter("pp_usuariosIds", idsSeguros(usuariosIds, "usuariosIds"));
-  }
-
-  const movimientosQry = getConnection().createQueryBuilder()
-    .select("RankedMovimientos.movimientoId", "movimientoId")
-    .from("(" + subQuery.getQuery() + ")", "RankedMovimientos")
-    .setParameters(subQuery.getParameters())
-    .where("rn = 1")
-    .orderBy("RankedMovimientos.FechaOperacion", "DESC");
-
-
+    .select("rk.movimientoId")
+    .from("(" + rankeados.getQuery() + ")", "rk")
+    .where("rk.rn = 1");
 
   return funcionQueryListadoMovimientos()
-    .where("movimiento.id IN (" + movimientosQry.getQuery() + ")")
-    .setParameters(movimientosQry.getParameters());
+    .where(`(movimiento.id IN (${nuevos.getQuery()}) OR movimiento.id IN (${legados.getQuery()}))`)
+    .setParameters({ ...nuevos.getParameters(), ...rankeados.getParameters() });
+};
+
+/** Añade `saldoPendiente` (null para movimientos legados) a cada movimiento de un listado. */
+const conSaldoPendiente = async (movimientos: Movimiento[]) => {
+  if (movimientos.length === 0) return movimientos;
+  const filas = await getConnection().query(
+    "SELECT movimientoId, saldo, legado FROM v_movimiento_saldo WHERE movimientoId IN (?)",
+    [movimientos.map((m) => m.id)]
+  );
+  const saldos = new Map<number, number | null>(filas.map((f: any) => [Number(f.movimientoId), Number(f.legado) === 1 ? null : Number(f.saldo)]));
+  return movimientos.map((m) => Object.assign(m, { saldoPendiente: saldos.get(m.id) ?? null }));
 };
 
 const funcionQueryListadoMovimientos = () => {
@@ -929,13 +958,9 @@ class GrupoController {
         qry.andWhere(condicionesWhere.sql, condicionesWhere.parametros);
       }
       const filtered = await qry.getCount();
-      const qryResult = await qry
-        .orderBy(campoOrden, direccion)
-        .skip(starts)
-        .take(pageSize)
-        .getMany();
-
-      // const parte=qryResult.slice(starts,starts+pageSize);
+      const qryResult = await conSaldoPendiente(
+        await qry.orderBy(campoOrden, direccion).skip(starts).take(pageSize).getMany()
+      );
 
       res.json({
         results: qryResult,
