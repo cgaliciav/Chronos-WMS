@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import LogGeneralController from "../controllers/LogGeneral.Controller";
 import { LogTipo } from "../entity/LogGeneral";
+import { AppError } from "../helpers/errorClases";
 // import { getRepository } from "typeorm";
 
 // import { LogTipo, LogGeneral } from "../entity/LogGeneral";
@@ -78,6 +79,7 @@ const errorMiddlewere = (err:any, req: Request, res: any, next: NextFunction) =>
 
     res.status(err.statusCode)
     .json({
+      ...(err instanceof AppError && err.detalle ? err.detalle : {}),
       code: status,
       message: message,
     });

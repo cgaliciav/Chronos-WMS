@@ -6,12 +6,9 @@ import { Producto } from "./Producto";
 import { EstatusEstado } from "./common/NombreEstatus";
 
 
-export enum InventarioDisponible {
-    DISPONIBLE = "disponible",
-    NO_DISPONIBLE = "no-disponible",
-    BAJA = "baja",
-    CUARENTENA = "cuarentena"
-}
+import { InventarioDisponible } from "./common/InventarioDisponible";
+
+export { InventarioDisponible };
 
 @Entity()
 export class InventarioActual {

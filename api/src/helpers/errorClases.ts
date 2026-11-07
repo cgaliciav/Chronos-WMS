@@ -2,12 +2,14 @@
 export class AppError extends Error {
     statusCode:number;
     status:string;
-    // isOperational:boolean;
+    /** Campos adicionales que el middleware de errores añade a la respuesta JSON (p. ej. `candidatas` en un 409). */
+    detalle?: Record<string, unknown>;
 
-    constructor(message:string, statusCode?:number) {
+    constructor(message:string, statusCode?:number, detalle?: Record<string, unknown>) {
       super(message); 
   
       this.statusCode = statusCode || 500;
+      this.detalle = detalle;
       switch(statusCode){
         case 401:
           this.status="Sin autorización";
@@ -26,6 +28,9 @@ export class AppError extends Error {
           break;
         case 408:
           this.status="Solicitud expirada";
+          break;
+        case 409:
+          this.status="Conflicto";
           break;
         default:
           this.status = `${statusCode}`.startsWith('4') ? `${statusCode} Solicitud Incorrecta` : `${statusCode} Error en servidor`;
