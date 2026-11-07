@@ -1,0 +1,253 @@
+/**
+ * Pruebas de CARACTERIZACIÓN (plan 02, fase 1): fijan el comportamiento actual del API antes de
+ * cambiarlo. Donde el comportamiento actual es incorrecto se usa `it.failing` con la expectativa
+ * correcta: cuando alguien lo arregle, la prueba pasará a rojo y habrá que quitar el `failing`.
+ */
+import "./env";
+import { Express } from "express";
+import supertest from "supertest";
+import { getRepository } from "typeorm";
+import { crearApp } from "../app";
+import { Sesion } from "../entity/Sesion";
+import { cerrarPruebas, conectarPruebas } from "./conexion";
+import {
+  clienteAdmin,
+  crearArticulo,
+  crearGrupoCompra,
+  crearGrupoDetalle,
+  inventarioDe,
+  movimientosDe,
+  registrarOperacion,
+} from "./factories";
+import { SEMILLA } from "./seed";
+
+const esperarHasta = async <T>(fn: () => Promise<T>, condicion: (v: T) => boolean, ms = 3000) => {
+  const inicio = Date.now();
+  let valor = await fn();
+  while (!condicion(valor) && Date.now() - inicio < ms) {
+    await new Promise((r) => setTimeout(r, 50));
+    valor = await fn();
+  }
+  return valor;
+};
+
+describe("caracterización: operaciones de almacén", () => {
+  let app: Express;
+  let api: ReturnType<typeof clienteAdmin>;
+  let grupoCompraId: number;
+  let grupoAltaId: number;
+  let grupoPrestamoAId: number;
+  let grupoDevolucionAId: number;
+  let grupoDevolucionBId: number;
+
+  beforeAll(async () => {
+    await conectarPruebas();
+    app = crearApp();
+    api = clienteAdmin(app);
+    grupoCompraId = (await crearGrupoCompra(api)).id;
+    grupoAltaId = (await crearGrupoDetalle(api, 14)).id;
+    grupoPrestamoAId = (await crearGrupoDetalle(api, 3, SEMILLA.proyectoAId)).id;
+    grupoDevolucionAId = (await crearGrupoDetalle(api, 4, SEMILLA.proyectoAId)).id;
+    grupoDevolucionBId = (await crearGrupoDetalle(api, 4, SEMILLA.proyectoBId)).id;
+  });
+  afterAll(cerrarPruebas);
+
+  // 1
+  it("COMPRA (15) de 5 unidades deja el artículo no disponible con cantidad 0 y guarda el detalle de precios", async () => {
+    const { movimiento, inventarioActualId } = await crearArticulo(api, { grupoId: grupoCompraId, cantidad: 5, precio: 200 });
+    const inv = await inventarioDe(inventarioActualId);
+    expect(inv.cantidad).toBe(0);
+    expect(inv.disponible).toBe("no-disponible");
+    expect(movimiento.operacion.operacionDetalle).toEqual(
+      expect.objectContaining({ precioUnitario: 200, precioTotal: 1000, moneda: "MXP" })
+    );
+    expect(movimiento.operacion.movimientoTipo.id).toBe(15);
+  });
+
+  it.failing("COMPRA (15) de 5 unidades debería dejar cantidadAlmacen = 5 (hoy 5.0001: suma de string + número)", async () => {
+    // agregarMovimientoCompra crea el inventario con cantidad = cantidadAlmacen = 5 y después el switch de
+    // actualizarInventarioActual vuelve a sumar 5. Como la columna numeric llega como string ("5.0000"),
+    // "5.0000" + 5 = "5.00005", que MariaDB redondea a 5.0001 (hallazgos H18 y H21). Si solo se corrige el
+    // tipo numérico, el resultado sería 10: ambas correcciones van juntas en la fase 2.
+    const { inventarioActualId } = await crearArticulo(api, { grupoId: grupoCompraId, cantidad: 5, precio: 200 });
+    expect((await inventarioDe(inventarioActualId)).cantidadAlmacen).toBe(5);
+  });
+
+  // 2
+  it("ALTA (14) de 3 unidades deja el artículo disponible con 3/3", async () => {
+    // Pasa por casualidad: "3.0000" + 3 = "3.00003" se redondea a 3.0000 (ver la prueba failing de COMPRA).
+    const { inventarioActualId } = await crearArticulo(api, { grupoId: grupoAltaId, cantidad: 3, movimientoTipoId: 14 });
+    const inv = await inventarioDe(inventarioActualId);
+    expect(inv.cantidad).toBe(3);
+    expect(inv.cantidadAlmacen).toBe(3);
+    expect(inv.disponible).toBe("disponible");
+  });
+
+  // 3
+  it("PRÉSTAMO (3) de 2 sobre 3 deja 1; DEVOLUCIÓN (4) de 2 regresa a 3; una devolución extra se rechaza", async () => {
+    const { codigo, inventarioActualId } = await crearArticulo(api, { grupoId: grupoAltaId, cantidad: 3, movimientoTipoId: 14 });
+
+    const prestamo = await registrarOperacion(api, { codigo, cantidad: 2, movimientoTipoId: 3, grupoId: grupoPrestamoAId });
+    expect(prestamo.status).toBe(200);
+    expect((await inventarioDe(inventarioActualId)).cantidad).toBe(1);
+
+    const devolucion = await registrarOperacion(api, { codigo, cantidad: 2, movimientoTipoId: 4, grupoId: grupoDevolucionAId });
+    expect(devolucion.status).toBe(200);
+    const inv = await inventarioDe(inventarioActualId);
+    expect(inv.cantidad).toBe(3);
+    expect(inv.disponible).toBe("disponible");
+
+    const extra = await registrarOperacion(api, { codigo, cantidad: 1, movimientoTipoId: 4, grupoId: grupoDevolucionAId });
+    expect(extra.status).toBe(400);
+    expect((await inventarioDe(inventarioActualId)).cantidad).toBe(3);
+
+    const movimientos = await movimientosDe(inventarioActualId);
+    expect(movimientos.map((m) => m.operacion?.movimientoTipo.id)).toEqual([14, 3, 4]);
+    expect(movimientos.map((m) => m.estatus)).toEqual(["inactivo", "inactivo", "activo"]);
+  });
+
+  // 4
+  it("una DEVOLUCIÓN en un proyecto distinto al del préstamo se rechaza", async () => {
+    const { codigo, inventarioActualId } = await crearArticulo(api, { grupoId: grupoAltaId, cantidad: 1, movimientoTipoId: 14 });
+    expect((await registrarOperacion(api, { codigo, cantidad: 1, movimientoTipoId: 3, grupoId: grupoPrestamoAId })).status).toBe(200);
+
+    const res = await registrarOperacion(api, {
+      codigo, cantidad: 1, movimientoTipoId: 4, grupoId: grupoDevolucionBId, proyectoId: SEMILLA.proyectoBId,
+    });
+    expect(res.status).toBe(401);
+    expect(res.body.message).toMatch(/no pertenece al proyecto/);
+    expect((await inventarioDe(inventarioActualId)).cantidad).toBe(0);
+  });
+
+  // 5
+  it("un PRÉSTAMO sin existencia se rechaza con 400", async () => {
+    const { codigo } = await crearArticulo(api, { grupoId: grupoCompraId, cantidad: 1 }); // compra: cantidad 0
+    const res = await registrarOperacion(api, { codigo, cantidad: 1, movimientoTipoId: 3, grupoId: grupoPrestamoAId });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/NO HAY EXISTENCIA/);
+  });
+
+  it("no se pueden crear artículos (tipos 1, 2, 14, 15) desde PUT /groups/activity", async () => {
+    const { codigo } = await crearArticulo(api, { grupoId: grupoAltaId, cantidad: 1, movimientoTipoId: 14 });
+    const res = await registrarOperacion(api, { codigo, cantidad: 1, movimientoTipoId: 14, grupoId: grupoAltaId });
+    expect(res.status).toBe(400);
+  });
+
+  // 6a
+  it("deshacer el ÚLTIMO movimiento restaura el inventario", async () => {
+    const { codigo, inventarioActualId } = await crearArticulo(api, { grupoId: grupoAltaId, cantidad: 3, movimientoTipoId: 14 });
+    const prestamo = await registrarOperacion(api, { codigo, cantidad: 2, movimientoTipoId: 3, grupoId: grupoPrestamoAId });
+    expect((await inventarioDe(inventarioActualId)).cantidad).toBe(1);
+
+    const res = await api.delete("/groups/activity").send({ movimientoId: prestamo.body.id });
+    expect(res.status).toBe(200);
+    // el borrado no se espera en el servidor (hallazgo H13): hay que sondear
+    const movimientos = await esperarHasta(() => movimientosDe(inventarioActualId), (m) => m.length === 1);
+    expect(movimientos).toHaveLength(1);
+    const inv = await esperarHasta(() => inventarioDe(inventarioActualId), (i) => i.cantidad === 3);
+    expect(inv.cantidad).toBe(3);
+    expect(inv.disponible).toBe("disponible");
+    expect(movimientos[0].estatus).toBe("activo"); // el alta vuelve a ser el movimiento activo
+  });
+
+  // 6b
+  it.failing("deshacer el PENÚLTIMO movimiento debería dejar el inventario coherente (hoy restaura la instantánea equivocada)", async () => {
+    const { codigo, inventarioActualId } = await crearArticulo(api, { grupoId: grupoAltaId, cantidad: 5, movimientoTipoId: 14 });
+    const prestamo1 = await registrarOperacion(api, { codigo, cantidad: 1, movimientoTipoId: 3, grupoId: grupoPrestamoAId });
+    const prestamo2 = await registrarOperacion(api, { codigo, cantidad: 2, movimientoTipoId: 3, grupoId: grupoPrestamoAId });
+    expect(prestamo1.status).toBe(200);
+    expect(prestamo2.status).toBe(200);
+    expect((await inventarioDe(inventarioActualId)).cantidad).toBe(2);
+
+    await api.delete("/groups/activity").send({ movimientoId: prestamo1.body.id });
+    await esperarHasta(() => movimientosDe(inventarioActualId), (m) => m.length === 2);
+    const inv = await esperarHasta(() => inventarioDe(inventarioActualId), (i) => i.cantidad !== 2);
+    // Correcto: 5 - 2 (el préstamo que sigue vigente) = 3. Hoy devuelve 4 (instantánea previa al préstamo 2).
+    expect(inv.cantidad).toBe(3);
+  });
+
+  // 7
+  it("dos PRÉSTAMOS concurrentes sobre una sola unidad: se documenta la carrera (sin transacciones)", async () => {
+    const { codigo, inventarioActualId } = await crearArticulo(api, { grupoId: grupoAltaId, cantidad: 1, movimientoTipoId: 14 });
+    const intentos = await Promise.all(
+      Array.from({ length: 4 }, () => registrarOperacion(api, { codigo, cantidad: 1, movimientoTipoId: 3, grupoId: grupoPrestamoAId }))
+    );
+    const exitos = intentos.filter((r) => r.status === 200).length;
+    const inv = await inventarioDe(inventarioActualId);
+    const activos = (await movimientosDe(inventarioActualId)).filter((m) => m.estatus === "activo").length;
+    const coherente = exitos === 1 && inv.cantidad === 0 && activos === 1;
+    if (!coherente) {
+      console.warn("CARRERA OBSERVADA (hallazgo C7):", { exitos, cantidad: inv.cantidad, activos });
+    }
+    // Comportamiento esperado tras la fase 3: exactamente un éxito, cantidad 0 y un solo movimiento activo.
+    // Hoy solo se documenta; la aserción estricta se activa en la fase 3.
+    expect(intentos.map((r) => r.status).every((s) => s === 200 || s === 400)).toBe(true);
+  });
+
+  // 8
+  it("POST /groups/active-activity-list devuelve el préstamo pendiente", async () => {
+    const { codigo, inventarioActualId } = await crearArticulo(api, { grupoId: grupoAltaId, cantidad: 1, movimientoTipoId: 14 });
+    const prestamo = await registrarOperacion(api, { codigo, cantidad: 1, movimientoTipoId: 3, grupoId: grupoPrestamoAId });
+    expect(prestamo.status).toBe(200);
+
+    const res = await api.post("/groups/active-activity-list").send({
+      proyectoId: SEMILLA.proyectoAId,
+      usuariosIds: [],
+      areasIds: [SEMILLA.areaId],
+      bodegasIds: [SEMILLA.bodegaId],
+      sortField: "movimiento.id",
+      pagination: { current: 1, pageSize: 100 },
+      filters: {},
+    });
+    expect(res.status).toBe(200);
+    const ids = res.body.results.map((m: any) => m.inventarioActual.id);
+    expect(ids).toContain(inventarioActualId);
+    expect(res.body.pagination.totalItems).toBeGreaterThanOrEqual(1);
+  });
+
+  it.failing("POST /groups/active-activity-list sin sortField debería responder 200 (hoy 500: ORDER BY id ambiguo)", async () => {
+    const res = await api.post("/groups/active-activity-list").send({
+      proyectoId: SEMILLA.proyectoAId, usuariosIds: [], areasIds: [SEMILLA.areaId], bodegasIds: [SEMILLA.bodegaId],
+      pagination: { current: 1, pageSize: 10 }, filters: {},
+    });
+    expect(res.status).toBe(200);
+  });
+
+  // 9
+  it("PUT /groups/edit-purchase cambia el proyecto de las operaciones del grupo (hoy sin esperar las promesas)", async () => {
+    const grupo = await crearGrupoCompra(api, SEMILLA.proyectoAId);
+    const { inventarioActualId } = await crearArticulo(api, { grupoId: grupo.id, cantidad: 1 });
+    const res = await api.put("/groups/edit-purchase").send({
+      grupoId: grupo.id,
+      proyectoId: SEMILLA.proyectoBId,
+      usuariosIds: [SEMILLA.adminId],
+      numero: `${grupo.nombre}-E`,
+      fechaEmision: "2026-02-01",
+      total: 100,
+      impuestos: 16,
+      montoIngresado: 100,
+      proveedorId: SEMILLA.proveedorId,
+      facturaTipoId: SEMILLA.facturaTipoId,
+    });
+    expect(res.status).toBe(200);
+    const movimientos = await esperarHasta(
+      () =>
+        getRepository("Movimiento" as any)
+          .createQueryBuilder("m")
+          .leftJoinAndSelect("m.operacion", "o")
+          .leftJoinAndSelect("o.proyecto", "p")
+          .where("m.inventarioActualId = :id", { id: inventarioActualId })
+          .getMany() as Promise<any[]>,
+      (m) => m[0]?.operacion?.proyecto?.id === SEMILLA.proyectoBId
+    );
+    expect(movimientos[0].operacion.proyecto.id).toBe(SEMILLA.proyectoBId);
+  });
+
+  // 10
+  it("el login guarda en la sesión la IP que envía el cliente en el body (se cambiará por req.ip en la fase 2)", async () => {
+    const res = await supertest(app).post("/auth/login").send({ c: SEMILLA.adminCorreo, p: SEMILLA.adminPassword, ip: "203.0.113.9" });
+    expect(res.status).toBe(200);
+    const sesion = await getRepository(Sesion).findOne({ order: { id: "DESC" } });
+    expect(sesion.IP).toBe("203.0.113.9");
+  });
+});
