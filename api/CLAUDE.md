@@ -3,8 +3,9 @@
 API REST del almacén. **Node 22** (`.nvmrc`, `Dockerfile node:22-alpine`) · **Express 4** ·
 **TypeORM 0.2.41** (`getRepository`, `createConnection`) · **MariaDB** · TypeScript 5.9 **no estricto**.
 Arranque: `npm run dev` (ts-node-dev) o `npm start` (ts-node). Puerto `PORT_ALMACEN_API` (4100 dev).
-Pruebas: `npm run test:unit` (sin BD), `npm run test:int` (MariaDB de `.env.test`, recrea el esquema),
-`npm run typecheck`. Guía completa en `docs/api/pruebas.md`.
+Pruebas: `npm run test:unit` (sin BD), `npm run test:int` (MariaDB de `.env.test`, recrea el esquema con las
+migraciones), `npm run typecheck`. Guía completa en `docs/api/pruebas.md`.
+Esquema: **migraciones** (`src/migration/`, `npm run migration:show|run|revert|generate`); `DB_SYNCRO=false`.
 
 ## Mapa del código
 
@@ -13,15 +14,20 @@ src/index.ts            bootstrap: dotenv, conectarORM(), crearApp(), listen, se
 src/app.ts              crearApp(): express + cors + helmet + body-parser + rutas + errorMiddlewere (sin listen; lo usan las pruebas)
 src/entity/index.ts     ENTIDADES y SUSCRIPTORES explícitos (úsalos en lugar de globs)
 src/test/               env.ts, conexion.ts, seed.ts (SEMILLA), factories.ts, resetDb.ts, *.int.test.ts
-src/conexionORM.ts      createConnection(s) con ormconfig.js (entities src/entity/**/*.ts, synchronize por DB_SYNCRO)
+src/conexionORM.ts      createConnection con ormconfig.js; avisa si hay migraciones pendientes o DB_SYNCRO=true
+src/migration/          migraciones (baseline idempotente + MovimientoRelacion) e index.ts con la lista MIGRACIONES
+src/services/           MovimientoService (registrar/deshacer/relacionar, transaccional), guardasRelacion,
+                        reglas/efectosInventario.ts y reglas/planificarRelaciones.ts (funciones puras)
 src/routes/*.Routes.ts  un router por recurso; cada ruta lleva [checkJwt, checkRole([...])]
 src/middlewares/        verificarJwt (cabecera `auth`), verificarRol (roles + áreas/bodegas/proyectos en res.locals), manejoErrores (AppError → JSON {code,message}), pasada (log)
-src/controllers/        clases con métodos estáticos (req,res,next); la lógica de negocio vive AQUÍ (no hay capa de servicios)
+src/controllers/        clases con métodos estáticos (req,res,next); parsean, llaman a servicios o hacen CRUD y responden.
+                        Los movimientos ya pasan por src/services; el resto de la lógica sigue en controladores
 src/controllers/common/Common.Controller.ts  CRUD genérico: listaTabla(Qry/And), nuevo, editar, habilitar/deshabilitar/finalizar, comentarios, archivos
 src/entity/             entidades TypeORM (ver docs/api/modelo-de-datos.md); entity-old/ es código muerto
 src/subscriber/         GeneralSubscriber: auditoría automática en LogFuncionamiento usando entity.sesionId
-src/helpers/            errorClases (AppError), filtrosTabla (filtros/orden parametrizados), ids (idSeguro), numericTransformer,
-                        archivosSeguros, enviarMail (nodemailer), excelFunctions (reportes exceljs, 2 800 líneas), passGenerator
+src/helpers/            errorClases (AppError, con `detalle` para respuestas 409), filtrosTabla (filtros/orden parametrizados),
+                        ids (idSeguro), numericTransformer, archivosSeguros, cacheArchivos (escritura atómica y limpieza),
+                        enviarMail (nodemailer), excelFunctions (reportes exceljs, 2 800 líneas), passGenerator
 src/esquemas/           esquemas zod de los cuerpos de petición (se aplican con middlewares/validar.ts)
 src/sentry.ts           Sentry preparado: solo se inicializa con SENTRY_DSN
 ```
@@ -35,11 +41,15 @@ Documentación detallada: `docs/api/modelo-de-datos.md`, `docs/api/tipos-de-movi
   **Movimiento** = una línea del listado: `cantidad` de un **InventarioActual** (existencia de un
   producto en una bodega). **Operacion** = la acción aplicada al movimiento (tipo, proyecto, usuarios, fecha).
 - Registrar una operación (`PUT /groups/activity`) pasa por `GrupoController.agregarMovimiento` →
-  `MovimientoController.guardarConOperacion` → `actualizarInventarioActual` (switch por tipo) →
-  `InventarioActualController.guardarHistorico` (instantánea para deshacer) → `OperacionController.guardar`.
-  Hoy **nada es transaccional**.
-- `Movimiento.estatus` `activo` marca el último movimiento con operación de cada inventario; no hay FK
-  entre una devolución y su préstamo (ese es el problema que resuelve el plan 02).
+  `MovimientoService.registrarOperacion`: **una transacción** que bloquea el inventario (`FOR UPDATE`), calcula el
+  efecto (`reglas/efectosInventario`), resuelve las relaciones con las salidas abiertas (`reglas/planificarRelaciones`,
+  FIFO o `relaciones` explícitas) y guarda operación, movimiento, instantánea ligada, inventario, `movimiento_relacion`,
+  `estatus`, `ProductoInventariado` y grupo. `DELETE /groups/activity` → `MovimientoService.deshacer`.
+- La relación devolución → préstamo es explícita (`MovimientoRelacion`, N:M con cantidad). Saldo pendiente =
+  vista `v_movimiento_saldo`. Los movimientos anteriores a la fase 3 tienen `legado = true` y no tienen relaciones
+  (modo de compatibilidad, `docs/api/modelo-de-datos.md`). `Movimiento.estatus` está `@deprecated` (lo lee el front).
+- Para escribir dentro de una transacción usa el `EntityManager` que recibe el callback de
+  `MovimientoService.enTransaccion` (no `getRepository`), y la primera sentencia debe ser el bloqueo.
 - `sesionId` en las entidades **no es columna**: lo lee el suscriptor de auditoría. Siempre asígnalo
   (`registro.sesionId = jwtPayload.si`) antes de `save`.
 - JWT: `{ ui: usuarioId, u: nombre, si: sesionId }`, 12 h, cabecera `auth`. `res.locals.jwtPayload`.
@@ -61,17 +71,21 @@ Documentación detallada: `docs/api/modelo-de-datos.md`, `docs/api/tipos-de-movi
 - Las columnas `numeric` ya exponen `number` gracias a `numericTransformer`; al declarar una nueva columna
   `numeric` añade el transformer.
 - Rutas que sirve el navegador sin cabeceras (`<img>`, descargas) usan `checkJwtArchivos` (acepta `?auth=`).
-- Usa los ids de `MovimientoTipo` por su significado (`docs/api/tipos-de-movimiento.md`); cuando exista
-  `MovimientoTipoId` (plan 02) úsalo en vez de números.
+- Usa `MovimientoTipoId` y las clases `TIPOS_*` (`src/entity/common/MovimientoTipoId.ts`) en vez de números
+  (`docs/api/tipos-de-movimiento.md`). Quedan números sueltos en controladores antiguos (fase 4).
+- Al cambiar una entidad: `npm run migration:generate -- NombreDelCambio`, revisa el archivo, añádelo a
+  `src/migration/index.ts`. `npm run test:int` falla si las migraciones no reproducen las entidades.
+- Archivos de código con finales de línea CRLF (casi todos los controladores y entidades): consérvalos al editar.
 - Nuevos listados: reutiliza `CommonController.listaTablaQryAnd` y define una lista blanca de columnas filtrables/ordenables.
 - No añadas dependencias en `dependencies` que sean de desarrollo (`@types/*`, `typescript`, `ts-node`).
 
 ## Variables de entorno
 
 Ver `.env.example`. Imprescindibles: `JWTSECRET`, `SALT_ROUNDS`, `DB_HOST/PORT/USER/PASSWORD/DATABASE_NAME`,
-`DB_SYNCRO` (**debe ser `false` en producción cuando existan migraciones**), `DB_LOGGING`,
+`DB_SYNCRO` (**`false`**: el esquema lo cambian las migraciones), `DB_LOGGING`,
 `PORT_ALMACEN_API`, rutas de archivos (`RUTA_ARCHIVOS`, `RUTA_REPORTES`, `UPLOADS`, `ARCHIVOS_AUXILIARES`,
-`IMAGENES_IMPORTACION`), `SMTP_*`, `DIAS_CUARENTENA`.
+`IMAGENES_IMPORTACION`), `SMTP_*`, `DIAS_CUARENTENA`, `CACHE_ARCHIVOS_DIAS`, `REPORTES_DIAS`.
+`ENV_FILE=.env.test npm run migration:show` apunta la CLI de TypeORM a otro archivo de variables.
 
 ## Decisiones tomadas (`docs/decisiones.md`)
 
@@ -82,5 +96,7 @@ desde `req.ip` (no del body), Sentry preparado tras `SENTRY_DSN`, Supabase y Mag
 ## Qué no hacer
 
 - No ejecutes `synchronize`/migraciones contra producción desde una sesión automatizada.
-- No borres `InventarioActualHistorico` ni cambies la lógica de `quitar` sin leer el plan 02 (fase 3).
+- No modifiques una migración ya publicada: crea otra. No uses `synchronize` para "arreglar" el esquema.
+- No cambies existencias (`cantidad`, `cantidadAlmacen`, `disponible`) ni crees o borres operaciones y relaciones
+  fuera de `MovimientoService`: perderías el bloqueo, la instantánea ligada y las relaciones.
 - No cambies rutas HTTP ni el contrato `list-antd` sin actualizar `docs/api/endpoints.md` y el front.

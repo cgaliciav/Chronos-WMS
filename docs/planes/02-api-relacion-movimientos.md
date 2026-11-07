@@ -191,7 +191,36 @@ produce consulta parametrizada), `path.basename` en reportes (`..%2F` → 404), 
 rechazan con 400); integración: `GET /file/:id` sin token → 401; login registra `req.ip`; `renewpassword`
 no incluye `c` en la respuesta. Las de caracterización siguen verdes (10 cambia a propósito).
 
-### Fase 3 · Nuevo modelo: `MovimientoRelacion`, fecha, histórico ligado, migraciones
+### Fase 3 · Nuevo modelo: `MovimientoRelacion`, fecha, histórico ligado, migraciones ✅ (hecha el 2026-11-07)
+
+> **Resultado:** criterios de aceptación cumplidos (suite unitaria y de integración en verde, `DB_SYNCRO=false` en
+> todos los entornos, procedimiento en `docs/api/procedimiento-migracion-produccion.md`). Código en
+> `api/src/migration/`, `api/src/services/` (`MovimientoService`, `reglas/efectosInventario.ts`,
+> `reglas/planificarRelaciones.ts`, `guardasRelacion.ts`) y `api/src/entity/` (`MovimientoRelacion`,
+> `common/MovimientoTipoId.ts`). Pruebas en `src/test/relaciones.int.test.ts`, `src/services/*.test.ts` y
+> `src/services/reglas/*.test.ts` (no en `src/services/__tests__/`, para seguir la convención de la fase 0).
+> Contrato con el front: `docs/api/endpoints.md` ("Cambios de la fase 3").
+>
+> **Desviaciones respecto de lo escrito abajo (decididas al implementar):**
+> - Columna `movimiento.legado` (no prevista): la migración marca con `1` todo lo existente. Sin ella no se puede
+>   distinguir una salida antigua (sin relaciones porque no hubo backfill) de una nueva sin devoluciones, y la regla 8
+>   necesita esa distinción. La vista y el listado de pendientes excluyen los legados; el modo de compatibilidad usa
+>   la heurística anterior solo sobre ellos (y sobre la parte no relacionada de los regresos nuevos).
+> - La **COMPRA (15) es origen** (`TIPOS_ORIGEN = [3, 11, 12, 15]`): el artículo comprado queda en el proyecto
+>   (`cantidad 0`) hasta su primera devolución, como ya asumía `aceptarDevolucionBaja`. Sin esto, la primera
+>   devolución de cada compra caería siempre en el modo de compatibilidad.
+> - `deshacer` no restaura siempre la instantánea: salidas, regresos y altas se revierten con su **efecto inverso**
+>   (restaurar la instantánea de un movimiento que no es el último sigue siendo incorrecto); compras y bajas, que fijan
+>   valores absolutos, restauran su instantánea ligada y solo si son el último movimiento.
+> - Baseline: la migración inicial contiene el esquema completo pero es **idempotente** (no hace nada si `movimiento`
+>   existe). Así sirve para crear la BD de pruebas y queda vacía en producción. La paridad se verificó una vez y cada
+>   `npm run test:int` comprueba que las migraciones reproducen las entidades.
+> - El 401 por "proyecto distinto" pasa a 400 (el front solo muestra el mensaje).
+> - Añadido: 409 al cambiar el proyecto de operaciones ya relacionadas (`edit-details`, `edit-purchase`,
+>   `/transaction/edit`), y alta de artículos (`activity-purchase`) transaccional (M10).
+> - Pendientes heredados de la fase 2 también resueltos: revocación de sesión en `checkJwt` (H16) y limpieza/escritura
+>   atómica del caché de archivos (M17).
+> - Se encontró y corrigió que `api/.env.test` nunca se había versionado (el `.gitignore` raíz lo excluía).
 
 1. **Migraciones en vez de `synchronize`**: `src/migration/`, scripts `migration:generate`/`migration:run`
    (TypeORM 0.2: `ts-node ./node_modules/typeorm/cli.js migration:generate -n …`); `DB_SYNCRO=false` en
