@@ -3,12 +3,17 @@
 API REST del almacén. **Node 14** (Dockerfile; `.nvmrc` 14.17; README dice 12) · **Express 4** ·
 **TypeORM 0.2.41** (`getRepository`, `createConnection`) · **MariaDB** · TypeScript 4.5 **no estricto**.
 Arranque: `npm run dev` (ts-node-dev) o `npm start` (ts-node). Puerto `PORT_ALMACEN_API` (4100 dev).
-Pruebas: `npx jest` (config en `jest.config.js`; **los dos tests existentes no pasan**, ver hallazgos L16).
+Node para desarrollo/pruebas: 22 (`.nvmrc`); el `Dockerfile` sigue en 14 hasta la fase 4 del plan 02.
+Pruebas: `npm run test:unit` (sin BD), `npm run test:int` (MariaDB de `.env.test`, recrea el esquema),
+`npm run typecheck`. Guía completa en `docs/api/pruebas.md`.
 
 ## Mapa del código
 
 ```
-src/index.ts            bootstrap: dotenv, conectarORM(), express, cors, helmet, body-parser, rutas, errorMiddlewere, request-stats → LogPeticiones
+src/index.ts            bootstrap: dotenv, conectarORM(), crearApp(), listen, señales, request-stats → LogPeticiones
+src/app.ts              crearApp(): express + cors + helmet + body-parser + rutas + errorMiddlewere (sin listen; lo usan las pruebas)
+src/entity/index.ts     ENTIDADES y SUSCRIPTORES explícitos (úsalos en lugar de globs)
+src/test/               env.ts, conexion.ts, seed.ts (SEMILLA), factories.ts, resetDb.ts, *.int.test.ts
 src/conexionORM.ts      createConnection(s) con ormconfig.js (entities src/entity/**/*.ts, synchronize por DB_SYNCRO)
 src/routes/*.Routes.ts  un router por recurso; cada ruta lleva [checkJwt, checkRole([...])]
 src/middlewares/        verificarJwt (cabecera `auth`), verificarRol (roles + áreas/bodegas/proyectos en res.locals), manejoErrores (AppError → JSON {code,message}), pasada (log)

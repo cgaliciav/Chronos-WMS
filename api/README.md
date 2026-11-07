@@ -11,7 +11,7 @@ guía para agentes en [`CLAUDE.md`](CLAUDE.md), fallos conocidos en
 - Node.js 14 (`Dockerfile` `node:14.21-alpine`, `.nvmrc` 14.17.1) — el plan 02 propone Node 24 LTS
 - MariaDB (10.4 en el servidor original; 10.4 está fuera de soporte, se recomienda ≥ 10.11)
 - TypeORM 0.2.41, Express 4.17, TypeScript 4.5
-- Scripts: `npm run dev` (ts-node-dev), `npm start` (ts-node), `npx jest` (pruebas; ver hallazgos L16)
+- Scripts: `npm run dev` (ts-node-dev), `npm start` (ts-node), `npm run typecheck`, `npm run test:unit`, `npm run test:int` (ver [`../docs/api/pruebas.md`](../docs/api/pruebas.md))
 
 ### Historia
 Proyecto originalmente pensado para el almacén de Teleset/Sony en México; ha ido cambiando constantemente.

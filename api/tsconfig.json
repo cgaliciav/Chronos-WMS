@@ -17,9 +17,10 @@
       "importHelpers": true,
       "forceConsistentCasingInFileNames": true,
       "removeComments": true,
-      "resolveJsonModule": true
+      "resolveJsonModule": true,
+      "skipLibCheck": true
    },
    "exclude": [
-      "src/controllers/_Importacion.Controller.ts"
+      "src/excel.ts"
    ]
 }

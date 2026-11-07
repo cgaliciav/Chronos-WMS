@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from "express";
-import { register } from "ts-node";
 import LogGeneralController from "../controllers/LogGeneral.Controller";
 import { LogTipo } from "../entity/LogGeneral";
 // import { getRepository } from "typeorm";

@@ -4,6 +4,7 @@
 |---|---|
 | [`api/modelo-de-datos.md`](api/modelo-de-datos.md) | Entidades TypeORM, diagrama ER, convenciones y cómo se encadenan hoy los movimientos |
 | [`api/tipos-de-movimiento.md`](api/tipos-de-movimiento.md) | Los 17 tipos de movimiento, su efecto sobre el inventario y su clasificación |
+| [`api/pruebas.md`](api/pruebas.md) | Cómo ejecutar y escribir las pruebas unitarias e integración del API |
 | [`api/endpoints.md`](api/endpoints.md) | Catálogo de rutas HTTP con roles y controladores |
 | [`front/arquitectura.md`](front/arquitectura.md) | Stack, estructura, flujo de autenticación y convenciones del front |
 | [`decisiones.md`](decisiones.md) | Decisiones del propietario que fijan el alcance de los planes |

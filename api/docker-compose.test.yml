@@ -1,0 +1,22 @@
+# Base de datos para las pruebas de integración del API (y, más adelante, API de pruebas para el front).
+#   docker compose -f docker-compose.test.yml up -d
+#   npm run test:int
+# Sin Docker: instala MariaDB >= 10.11 y crea la BD/usuario de .env.test (ver docs/api/pruebas.md).
+services:
+  mariadb:
+    image: mariadb:10.11
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: almacen_test
+      MARIADB_USER: almacen_test
+      MARIADB_PASSWORD: almacen_test
+    ports:
+      - "3307:3306"
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    tmpfs:
+      - /var/lib/mysql
