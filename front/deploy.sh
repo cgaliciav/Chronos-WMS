@@ -39,11 +39,7 @@ set -e  # Para que el script se detenga ante cualquier error
 # git tag -a "v$new_version" -m "Testing version $new_version"
 # echo "Tag v$new_version creado."
 
-# # 3. Ejecutar el comando "yarn build"
-# echo "Ejecutando 'yarn build'..."
-# export NODE_OPTIONS=--max_old_space_size=4096
-# yarn build
-# echo "'yarn build' finalizado correctamente."
+# # 3. Compilar (ejecutar antes 'npm ci && npm run build' si no hay build/)
 
 # 4. Copiar el contenido de la carpeta "./build" al servidor remoto
 REMOTE_USER="cesargv"
@@ -58,4 +54,4 @@ echo "Actualizando permisos de carpeta $REMOTE_DIR ..."
 
 ssh $REMOTE_USER@$REMOTE_HOST "sudo chown -R www-data:www-data ${REMOTE_DIR} && sudo find ${REMOTE_DIR} -type d -exec chmod 755 {} \; && sudo find ${REMOTE_DIR} -type f -exec chmod 644 {} \;"
 
-echo "Proceso completado exitosamente. v$new_version"
+echo "Proceso completado exitosamente. v$(node -p "require('./package.json').version")"

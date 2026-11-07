@@ -1,1 +1,4 @@
-/src/components/kit/vendors/antd/themes
+build
+node_modules
+public
+package-lock.json

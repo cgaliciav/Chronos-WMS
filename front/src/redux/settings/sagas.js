@@ -1,7 +1,8 @@
 import { all, takeEvery, put } from 'redux-saga/effects'
 import store from 'store'
 import qs from 'qs'
-import { history, store as reduxStore } from 'index'
+import history from 'redux/history'
+import reduxStore from 'redux/store'
 import actions from './actions'
 
 export function* CHANGE_SETTING({ payload: { setting, value } }) {
@@ -39,7 +40,7 @@ export function* SET_PRIMARY_COLOR({ payload: { color } }) {
 }
 
 export function* SET_THEME({ payload: { theme } }) {
-  const nextTheme = theme === 'dark' ? 'dark' : 'default'
+  const nextTheme = 'default' // plan 01 D10: solo tema claro (el store de tema se elimina en la fase 3)
   yield document.querySelector('html').setAttribute('data-kit-theme', nextTheme)
   yield reduxStore.dispatch({
     type: 'settings/CHANGE_SETTING',
@@ -121,7 +122,7 @@ export function* SETUP() {
 
   // detect isMobileView setting on app load and window resize
   const isMobileView = (load = false) => {
-    const currentState = global.window.innerWidth < 768
+    const currentState = window.innerWidth < 768
     const prevState = store.get('app.settings.isMobileView')
     if (currentState !== prevState || load) {
       reduxStore.dispatch({
@@ -136,7 +137,7 @@ export function* SETUP() {
 
   // detect viewport width on app load and window resize
   const isMenuToggled = () => {
-    const shouldToggle = global.window.innerWidth < 1024
+    const shouldToggle = window.innerWidth < 1024
     const prevState = store.get('app.settings.isMenuCollapsed')
     if (shouldToggle || prevState) {
       reduxStore.dispatch({

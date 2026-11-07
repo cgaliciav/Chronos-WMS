@@ -1,5 +1,5 @@
 // Capturas de referencia del front legado con el API simulado (route interception de Playwright).
-// Uso: node capturar.js <dir-build> <dir-salida>
+// Uso: node capturar.js <dir-build | URL de un servidor ya levantado> <dir-salida>
 const http = require('http')
 const fs = require('fs')
 const path = require('path')
@@ -9,13 +9,14 @@ const [buildDir, outDir] = process.argv.slice(2)
 fs.mkdirSync(outDir, { recursive: true })
 
 const tipos = { '.js': 'text/javascript', '.css': 'text/css', '.html': 'text/html', '.png': 'image/png', '.svg': 'image/svg+xml', '.json': 'application/json', '.woff': 'font/woff', '.woff2': 'font/woff2', '.ttf': 'font/ttf' }
-const server = http.createServer((req, res) => {
+const externo = /^https?:/.test(buildDir)
+const server = externo ? null : http.createServer((req, res) => {
   let f = path.join(buildDir, decodeURIComponent(req.url.split('?')[0]))
   if (!fs.existsSync(f) || fs.statSync(f).isDirectory()) f = path.join(buildDir, 'index.html')
   res.writeHead(200, { 'Content-Type': tipos[path.extname(f)] || 'application/octet-stream' })
   fs.createReadStream(f).pipe(res)
 }).listen(0)
-const base = `http://localhost:${server.address().port}`
+const base = externo ? buildDir.replace(/\/$/, '') : `http://localhost:${server.address().port}`
 
 const tabla = { results: [], pagination: { current: 1, pageSize: 10, total: 0, totalItems: 0 }, filtered: 0 }
 const usuario = { id: 1, correo: 'admin@prueba.mx', nombre: 'Administrador Prueba', avatar: '', roles: ['ADMINISTRADOR'] }
@@ -74,13 +75,13 @@ const rutas = [
     })
     await context.route(/magicbell/, r => r.abort())
     await page.goto(`${base}/#${ruta}`)
-    await page.waitForTimeout(3500)
+    await page.waitForTimeout(externo ? 6000 : 3500)
     await page.screenshot({ path: path.join(outDir, `${nombre}.png`) })
     informe.push({ nombre, ruta, url: page.url().replace(base, ''), errores: [...new Set(errores)], peticiones: [...peticiones] })
     await context.close()
   }
   await browser.close()
-  server.close()
+  if (server) server.close()
   fs.writeFileSync(path.join(outDir, 'informe.json'), JSON.stringify(informe, null, 2))
   for (const i of informe) console.log(`${i.nombre} → ${i.url} | errores: ${i.errores.length} | ${i.peticiones.join(', ')}`)
 })()

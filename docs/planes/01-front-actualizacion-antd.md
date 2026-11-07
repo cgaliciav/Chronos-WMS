@@ -191,6 +191,35 @@ customize-cra, react-app-rewired, react-scripts, node-sass, less, less-loader, b
 resolver; `npm run lint`; checklist de humo.
 **Aceptación:** la app arranca con Vite; login y las 10 rutas críticas funcionan igual que antes. Commit.
 
+> **Ejecutada (2026-11-07).** `npm ci`, `npm run typecheck`, `npm run lint` (0 errores, 174 avisos del código
+> heredado), `npm test` y `npm run build` en verde con Node 24; las 10 rutas críticas cargan sin errores en
+> `build`, `preview` y `dev`. Comparación visual en `docs/front/baseline/README.md` (diferencias aceptadas:
+> antd 4.24 y retirada del `Sidebar`). Desviaciones:
+> - **TypeScript 5.9** (ya existe la 7.0, pero `typescript-eslint` exige `< 6.1`). `tsconfig.json` (app) +
+>   `tsconfig.node.json` (`vite.config.ts` con tipos de Node), `tsc -b` en `build`/`typecheck`.
+> - **ESLint 10 sin `eslint-plugin-react`** (no admite ESLint 10): typescript-eslint (parser también para `.js/.jsx`),
+>   `@eslint-react/eslint-plugin`, `react-hooks` y `eslint-config-prettier`. En `.js/.jsx` heredados las reglas de
+>   estilo son avisos; `pages/reportes/5.inventario` (huérfana y rota, F29) está excluida.
+> - Los `.js` **sin** JSX (`services/`, `redux/`, `locales/`, `acciones*`) siguen en `.js`: renombrarlos a `.ts`
+>   con `strict` rompe el typecheck; se convierten al tiparlos en la fase 3. Los 142 con JSX pasaron a `.jsx`
+>   (detectados con el parser de TypeScript, no con la regex).
+> - `src/redux/store.js` y `src/redux/history.js` en vez de `src/store.js`/`src/history.js`: con `baseUrl: src`
+>   esos nombres taparían los paquetes npm `store` e `history`.
+> - **Tema antd sin `antd/dist/antd.less`:** `src/styles/antd.less` compila los componentes dentro de
+>   `[data-kit-theme='default']` (el atributo se conserva fijo en `index.html`) y un plugin PostCSS en
+>   `vite.config.ts` sustituye a `AntdThemeLoader`. Sin ese ámbito, `kit-vendors/antd/css` se impone a antd en todos
+>   los componentes (botones ghost rellenos, etc.). Se retira en la fase 4. Además, dos ajustes de compatibilidad:
+>   `!important` en el fondo de los botones ghost (como antd 4.2) y `height: auto` en los títulos de grupo del menú
+>   (el minificador convertía `height: 1.5715` en px).
+> - Dependencias: `react-intl` fijado en 4.5.4 y `overrides` de `intl-messageformat(-parser)` (la resolución nueva
+>   mezclaba versiones incompatibles); `moment` fijado con `overrides`; `clear-cache` sustituido por
+>   `helpers/limpiarCache.ts` (su `.d.ts` no compila).
+> - Corregidos al migrar (F28): `import * as moment`, `global.window`, export del store antes de las sagas y
+>   `Form.useForm` condicional. También se quitó el selector de tema del store (`SET_THEME` fija `default`).
+> - `deploy-production.sh`/`deploy.sh` pasan a npm ya en esta fase (no en la 7) para no dejar el despliegue roto.
+> - Sin script `test:e2e` hasta la fase 7 (Playwright). Vite 8 sugiere `resolve.tsconfigPaths` nativo en lugar de
+>   `vite-tsconfig-paths`; se mantiene el plugin (resuelve `baseUrl`) y se reevaluará en la fase 3.
+
 ### Fase 3 · React 19 + React Router 8 + Zustand (fin de redux) + servicios en TypeScript
 
 1. `npm i react@19 react-dom@19 react-router@8 zustand@5 && npm i -D @types/react@19 @types/react-dom@19 && npm un react-router-dom connected-react-router history redux react-redux redux-saga redux-logger react-transition-group store qs`.

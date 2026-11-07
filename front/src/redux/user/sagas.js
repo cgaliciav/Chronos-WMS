@@ -1,6 +1,6 @@
 import { all, takeEvery, put, call, select } from 'redux-saga/effects'
 import { notification } from 'antd'
-import { history } from 'index'
+import history from 'redux/history'
 // import * as firebase from 'services/firebase'
 import * as jwt from 'services/jwt'
 import actions from './actions'

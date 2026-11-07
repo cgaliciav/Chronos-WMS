@@ -9,16 +9,21 @@ Documentación: [`../docs/front/arquitectura.md`](../docs/front/arquitectura.md)
 [`CLAUDE.md`](CLAUDE.md), fallos conocidos en [`../docs/hallazgos-codigo.md`](../docs/hallazgos-codigo.md).
 
 ### Stack actual
-- Node 14 (`.nvmrc`; el build legado está verificado con 14.21.3), Yarn v1.22
-- React 16.13, antd 4.2, redux + redux-saga, react-router-dom 5 (hash), Create React App 3.4 + react-app-rewired
+- Node 24 (`.nvmrc`, `engines` con `engine-strict`), npm
+- Vite 8 + TypeScript 5.9 (`allowJs`: el código heredado sigue en `.js/.jsx` y se convierte por fases)
+- React 16.14, antd 4.24, redux + redux-saga, react-router-dom 5 (hash)
 
 ### Variables de entorno
-Ver `.env.example`: `REACT_APP_API_URL` (por defecto `/api/`).
+Ver `.env.example`: `VITE_API_URL` (por defecto `/api/`), `VITE_SENTRY_DSN`, `VITE_NOTIFICACIONES`.
 
 ### Inicio rápido
 ```bash
 nvm use
-yarn install
-yarn start      # desarrollo
-yarn build      # producción (carpeta build/, la despliegan deploy*.sh)
+npm ci
+npm run dev        # desarrollo en http://localhost:3000 (proxy /api → http://localhost:4100)
+npm run build      # typecheck + producción en build/ (la despliegan deploy*.sh)
+npm run preview    # sirve build/
+npm run lint       # ESLint 10 (flat config)
+npm run typecheck  # tsc -b
+npm test           # Vitest
 ```

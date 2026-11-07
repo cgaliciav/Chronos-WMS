@@ -27,3 +27,5 @@ node_modules
 /deploy_history
 
 /.vscode
+# TypeScript (tsc -b)
+*.tsbuildinfo

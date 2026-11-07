@@ -39,6 +39,7 @@ No hay `node_modules` ni base de datos en este repositorio; cada app se instala 
 
 1. Lee el `CLAUDE.md` de la app que vas a tocar.
 2. Si el cambio corresponde a una fase de un plan, sigue sus pasos y sus criterios de aceptación.
-3. Ejecuta las pruebas de la app (`npm test` en `api/`; en `front/` aún no existen: ver plan 01, fase 7).
+3. Ejecuta las pruebas de la app (`npm test` en `api/`; en `front/`, `npm run lint`, `npm run typecheck`,
+   `npm test` y `npm run build`: aún no hay pruebas, llegan en el plan 01 fase 3).
 4. Commits pequeños y descriptivos en español; no mezcles cambios de `api/` y `front/` salvo que un
    cambio de contrato lo exija (y entonces documenta el contrato en `docs/api/endpoints.md`).

@@ -3,7 +3,7 @@ import store from 'store'
 import { notification } from 'antd'
 // import apiLocation from './apiLocation.json'
 
-console.log(process.env.NODE_ENV,process.env.REACT_APP_API_URL);
+if (import.meta.env.DEV) console.log(import.meta.env.MODE, import.meta.env.VITE_API_URL)
 
 const getAPIConfig = () => {
   // Obtener protocolo, dominio y puerto
@@ -15,7 +15,7 @@ const getAPIConfig = () => {
     : `${protocol}//${hostname}`;
   
   // La ruta de la API desde variables de entorno o valor por defecto
-  const apiPath = process.env.REACT_APP_API_URL || '/api/';
+  const apiPath = import.meta.env.VITE_API_URL || '/api/';
 
   // Asegurarnos que apiPath comience con /
   const normalizedAPIPath = apiPath.startsWith('/') ? apiPath : `/${apiPath}`;
@@ -89,7 +89,7 @@ export class PeticionBase {
 
   static listado = (portionEndPoint, parametros = {}) =>
     new Promise((resolve, reject) => {
-      if (process.env.NODE_ENV !== 'production') console.log('---PARAMETROS listado', parametros)
+      if (import.meta.env.DEV) console.log('---PARAMETROS listado', parametros)
       apiClient({
         method: 'post',
         url: `/${portionEndPoint}/list-antd`,
@@ -113,7 +113,7 @@ export class PeticionBase {
 
   static editar = (portionEndPoint, parametros = {}) =>
     new Promise((resolve, reject) => {
-      if (process.env.NODE_ENV !== 'production') console.log('---PARAMETROS editar', parametros)
+      if (import.meta.env.DEV) console.log('---PARAMETROS editar', parametros)
       apiClient({
         method: 'put',
         url: `/${portionEndPoint}/edit`,
@@ -127,7 +127,7 @@ export class PeticionBase {
 
   static nuevo = (portionEndPoint, parametros = {}) =>
     new Promise((resolve, reject) => {
-      if (process.env.NODE_ENV !== 'production') console.log('---PARAMETROS nuevo', parametros)
+      if (import.meta.env.DEV) console.log('---PARAMETROS nuevo', parametros)
       apiClient({
         method: 'post',
         url: `/${portionEndPoint}/new`,
@@ -171,7 +171,7 @@ export class PeticionBase {
 
   static generalPut = (portionEndPoint, endEndPoint, parametros = {}) =>
     new Promise((resolve, reject) => {
-      if (process.env.NODE_ENV !== 'production') console.log('---PARAMETROS PUT', parametros)
+      if (import.meta.env.DEV) console.log('---PARAMETROS PUT', parametros)
       apiClient({
         method: 'put',
         url: `/${portionEndPoint}/${endEndPoint}`,
@@ -185,7 +185,7 @@ export class PeticionBase {
 
   static generalPost = (portionEndPoint, endEndPoint, parametros = {}) =>
     new Promise((resolve, reject) => {
-      if (process.env.NODE_ENV !== 'production') console.log('---PARAMETROS POST', parametros)
+      if (import.meta.env.DEV) console.log('---PARAMETROS POST', parametros)
       apiClient({
         method: 'post',
         url: `/${portionEndPoint}/${endEndPoint}`,
@@ -199,7 +199,7 @@ export class PeticionBase {
 
   static generalPostBlob = (portionEndPoint, endEndPoint, parametros = {}) =>
     new Promise((resolve, reject) => {
-      if (process.env.NODE_ENV !== 'production') console.log('---PARAMETROS POST', parametros)
+      if (import.meta.env.DEV) console.log('---PARAMETROS POST', parametros)
       apiClient({
         method: 'post',
         url: `/${portionEndPoint}/${endEndPoint}`,
