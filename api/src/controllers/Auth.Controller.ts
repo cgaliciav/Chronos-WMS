@@ -1,6 +1,6 @@
 
 import { NextFunction, Request, Response } from "express";
-import { firmarToken } from "../middlewares/verificarJwt";
+import { firmarToken, olvidarSesion } from "../middlewares/verificarJwt";
 import { getRepository } from "typeorm";
 import { Sesion } from "../entity/Sesion";
 import { Usuario } from "../entity/Usuario";
@@ -17,6 +17,7 @@ const terminarSesion = async(sesionId:number) =>{
     sesion.fechaFin = new Date();
     await getRepository(Sesion).save(sesion);
   }
+  olvidarSesion(sesionId); // el token deja de valer de inmediato (checkJwt consulta fechaFin)
 
 }
 

@@ -110,6 +110,19 @@ describe("fase 2 · seguridad", () => {
       expect(res.headers.t).not.toBe(tokenAdmin());
     });
 
+    it("tras el logout el token de esa sesión deja de valer (fase 3: revocación por Sesion.fechaFin)", async () => {
+      const login = await supertest(app).post("/auth/login").send({ c: SEMILLA.adminCorreo, p: SEMILLA.adminPassword });
+      expect(login.status).toBe(200);
+      const token = login.body.t;
+      expect((await supertest(app).get("/user/current").set("auth", token)).status).toBe(200);
+      expect((await supertest(app).post("/auth/logout").set("auth", token)).status).toBe(200);
+      const despues = await supertest(app).get("/user/current").set("auth", token);
+      expect(despues.status).toBe(401);
+      expect(despues.body.message).toMatch(/Sesión terminada/);
+      // las demás sesiones siguen vigentes
+      expect((await api.get("/user/current")).status).toBe(200);
+    });
+
     it("el login limita intentos por IP", async () => {
       const limite = Number(process.env.LOGIN_MAX_INTENTOS ?? 20);
       let ultimo = 0;
