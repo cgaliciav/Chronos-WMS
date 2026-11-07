@@ -1,7 +1,7 @@
 import {Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn, OneToMany, ManyToOne, Index} from "typeorm";
 import { numericTransformer } from "../helpers/numericTransformer";
 // import { Bodega } from "./Bodega";
-// import { Movimiento } from "./Movimiento";
+import { Movimiento } from "./Movimiento";
 // import { Producto } from "./Producto";
 import { EstatusEstado } from "./common/NombreEstatus";
 import { InventarioDisponible } from "./InventarioActual";
@@ -40,6 +40,11 @@ export class InventarioActualHistorico {
     @Index()
     @Column({type:"int"})
     idOriginal:number;
+
+    /** Movimiento que produjo la instantánea (estado del inventario ANTES de aplicarlo). Null en las anteriores a la fase 3. */
+    @Index()
+    @ManyToOne(() => Movimiento, { nullable: true, onDelete: "SET NULL" })
+    movimiento:Movimiento | null;
 
     // @ManyToOne(type => Bodega, bodega => bodega.inventariosActual,{eager:true})
     // bodega:Bodega;
