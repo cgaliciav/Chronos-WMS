@@ -1,31 +1,23 @@
-import {Connection, createConnection, createConnections} from "typeorm";
-// import configuraciones from "../ormconfig.js";
-export let conexion:Connection;
-export let conexionV1:Connection;
-// TYPEORM_CONNECTION = mysql
-// TYPEORM_HOST = localhost
-// TYPEORM_USERNAME = root
-// TYPEORM_PASSWORD =
-// TYPEORM_DATABASE = test
-// TYPEORM_PORT = 3000
-// TYPEORM_SYNCHRONIZE = true
-// TYPEORM_LOGGING = true
-// TYPEORM_ENTITIES = entity/*.js,modules/**/entity/*.js
-// TYPEORM_MIGRATIONS
-// TYPEORM_SUBSCRIBERS
+import { Connection, createConnection } from "typeorm";
 
-export let conectarORM = async ()=>{
-// console.log(configuraciones);
-    if(process.env.NODE_ENV!=='production'){
-        [conexion,conexionV1]=await createConnections();
-        console.log("conectado a nuevo sistema");
-        console.log("conectado viejo sistema");
-    }
-    else{
-        conexion=await createConnection();
-        console.log("conectado a nuevo sistema");
-    }
-    
+export let conexion: Connection;
 
-    // conexion=await createConnection("default")
+/**
+ * Abre la conexión "default" de ormconfig.js. No ejecuta migraciones: en producción las aplica una persona
+ * con respaldo (docs/api/procedimiento-migracion-produccion.md). Si hay migraciones pendientes se avisa en
+ * la consola, porque el código nuevo puede depender de tablas o columnas que aún no existen.
+ */
+export const conectarORM = async () => {
+  conexion = await createConnection();
+  console.log("conectado a la base de datos");
+  if (conexion.options.synchronize) {
+    console.warn("ADVERTENCIA: DB_SYNCRO=true. El esquema debe cambiarse con migraciones (npm run migration:run).");
+  }
+  try {
+    if (await conexion.showMigrations()) {
+      console.warn("ADVERTENCIA: hay migraciones pendientes. Ejecuta `npm run migration:run` tras respaldar la BD.");
+    }
+  } catch (error) {
+    console.warn("No se pudo comprobar el estado de las migraciones:", error.message);
+  }
 };

@@ -19,9 +19,10 @@ ENV DB_HOST=mariadb
 ENV DB_USER=almacen_usr
 ENV DB_PORT=3306
 ENV DB_DATABASE_NAME=almacen_sony_migracion
-ENV DB_SYNCRO=true
+# El esquema lo cambian las migraciones (docs/api/procedimiento-migracion-produccion.md)
+ENV DB_SYNCRO=false
 ENV DB_CACHE=true
-ENV DB_LOGGING=all
+ENV DB_LOGGING=error
 
 EXPOSE $PORT_ALMACEN_API
 VOLUME ["/code/exogrid"]

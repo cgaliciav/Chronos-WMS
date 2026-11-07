@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import { Connection, ConnectionOptions, createConnection, getConnectionManager } from "typeorm";
 import { ENTIDADES, SUSCRIPTORES } from "../entity";
+import { MIGRACIONES } from "../migration";
 
 /** Opciones de conexión para pruebas, independientes de ormconfig.js y del cwd (clases explícitas, sin glob). */
 export const opcionesConexionPruebas = (extra: Partial<ConnectionOptions> = {}): ConnectionOptions =>
@@ -16,6 +17,7 @@ export const opcionesConexionPruebas = (extra: Partial<ConnectionOptions> = {}):
     logging: false,
     entities: ENTIDADES,
     subscribers: SUSCRIPTORES,
+    migrations: MIGRACIONES,
     ...extra,
   } as ConnectionOptions);
 
