@@ -9,7 +9,7 @@ let configuraciones = [
         "database": process.env.DB_DATABASE_NAME, 
         "synchronize": process.env.DB_SYNCRO==='true',
         //"cache":process.env.DB_CACHE==='true',
-        "logging": process.env.DB_LOGGING.split(',').length === 0 ? false : process.env.DB_LOGGING.split(','),
+        "logging": !process.env.DB_LOGGING || process.env.DB_LOGGING === "false" ? false : process.env.DB_LOGGING === "all" ? "all" : process.env.DB_LOGGING.split(','),
         "maxQueryExecutionTime": 30000,
         "entities": [
             "src/entity/**/*.ts"

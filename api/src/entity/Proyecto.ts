@@ -23,7 +23,7 @@ export class Proyecto extends NombreEstatus{
     productor:string;
 
     @Column({default:false})
-    esExterno:Boolean;
+    esExterno:boolean;
     
     @OneToMany( type => GrupoDetalle, grupoDetalle => grupoDetalle.proyecto)
     gruposDetalle:GrupoDetalle[];

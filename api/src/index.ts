@@ -3,6 +3,7 @@ import "reflect-metadata";
 
 import { conectarORM } from "./conexionORM";
 import { crearApp } from "./app";
+import { iniciarSentry } from "./sentry";
 import { LogPeticiones } from "./entity/LogPeticiones";
 
 import requestStats from "request-stats";
@@ -11,6 +12,11 @@ import { getRepository } from "typeorm";
 (async () => {
   console.log("******PROCESO EN", process.env.NODE_ENV);
   if (process.env.NODE_ENV !== "production") dotenv.config({ quiet: true });
+  if (!process.env.JWTSECRET || process.env.JWTSECRET.length < 32) {
+    console.error("JWTSECRET debe existir y tener al menos 32 caracteres. Abortando.");
+    process.exit(1);
+  }
+  if (iniciarSentry()) console.log("Sentry activo");
   await conectarORM();
 
   const app = crearApp();

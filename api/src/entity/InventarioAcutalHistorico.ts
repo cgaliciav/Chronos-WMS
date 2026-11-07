@@ -1,4 +1,5 @@
 import {Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn, OneToMany, ManyToOne, Index} from "typeorm";
+import { numericTransformer } from "../helpers/numericTransformer";
 // import { Bodega } from "./Bodega";
 // import { Movimiento } from "./Movimiento";
 // import { Producto } from "./Producto";
@@ -21,10 +22,10 @@ export class InventarioActualHistorico {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({type:"numeric", precision:15 , scale:4, default:0 })
+    @Column({type:"numeric", precision:15 , scale:4, default:0, transformer: numericTransformer })
     cantidad:number;   // Cantidad disponible en stock
 
-    @Column({type:"numeric", precision:15 , scale:4, default:0 })
+    @Column({type:"numeric", precision:15 , scale:4, default:0, transformer: numericTransformer })
     cantidadAlmacen:number;  // Cantidad que fue dada de alta (por compra o alta) en el almacén
 
     @Column({type:"enum" , enum: EstatusEstado ,  default:EstatusEstado.ACTIVO})

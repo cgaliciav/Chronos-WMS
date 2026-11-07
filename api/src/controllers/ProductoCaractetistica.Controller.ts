@@ -2,6 +2,8 @@
 
 import { Request, Response, NextFunction } from "express";
 import { getRepository } from "typeorm";
+import { AppError } from "../helpers/errorClases";
+import { idSeguro } from "../helpers/ids";
 import { Producto } from "../entity/Producto";
 import { ProductoCaracteristica } from "../entity/ProductoCaracteristica";
 
@@ -84,11 +86,15 @@ class ProductoCaracteristicaController{
         const {jwtPayload}=res.locals;
         try{
 
-            const producto=await getRepository(Producto).findOneOrFail(productoId,{relations:["productoCaracteristicas"],loadEagerRelations:false});
-            producto.productoCaracteristicas=producto.productoCaracteristicas.filter(pc=>pc.id!=productoCaracteristicasId);
+            const caracteristicaId = idSeguro(productoCaracteristicasId, "productoCaracteristicasId");
+            const producto=await getRepository(Producto).findOneOrFail(idSeguro(productoId, "productoId"),{relations:["productoCaracteristicas"],loadEagerRelations:false});
+            if(!producto.productoCaracteristicas.some(pc=>pc.id===caracteristicaId)){
+                throw new AppError("La característica no pertenece al producto",404); // hallazgo M8
+            }
+            producto.productoCaracteristicas=producto.productoCaracteristicas.filter(pc=>pc.id!==caracteristicaId);
             
             await ProductoCaracteristicaController.quitar(
-                [await getRepository(ProductoCaracteristica).findOneOrFail(productoCaracteristicasId)],
+                [await getRepository(ProductoCaracteristica).findOneOrFail(caracteristicaId)],
                 jwtPayload.si
             )
 

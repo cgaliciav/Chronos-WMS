@@ -5,11 +5,12 @@ import { InventarioActual, InventarioDisponible } from "../entity/InventarioActu
 import { Operacion } from "../entity/Operacion";
 import { Producto } from "../entity/Producto";
 import { AppError } from "../helpers/errorClases";
+import { andWhereIn, textoBusquedaBooleana } from "../helpers/filtrosTabla";
+import { idSeguro, idsSeguros } from "../helpers/ids";
 import CommonController, { ResultadoTabla } from "./common/Common.Controller";
 import InventarioActualHistoricoController from "./InventarioActualHistorico.Controller";
 import ProductoController from "./Producto.Controller";
 // import { supabase } from "../helpers/_SupabaseConfig";
-import { obtenerGenerarArchivoSupabase } from "./Archivo.Controller";
 import { InventarioEstado } from '../entity/ProductoInventariado';
 import { ValidacionEstado } from "../entity/ProductoValidado";
 
@@ -74,28 +75,22 @@ const queryBusquedaCatalogo = ({
     estados,
     con_foto,
 }) => {
-    const subquery = getRepository(Producto)
-        .createQueryBuilder("producto")
-        .select("producto.id")
-        .where(new Brackets(qb =>
-            qb
-                .where(
-                    `MATCH(producto.titulo) AGAINST ('${textoBusqueda}' IN BOOLEAN MODE)`
-                )
-                .orWhere(
-                    `MATCH(producto.descripcion) AGAINST ('${textoBusqueda}' IN BOOLEAN MODE)`
-                )
-        ))
-        .orderBy(`MATCH(producto.titulo) AGAINST ('${textoBusqueda}' IN BOOLEAN MODE) + MATCH(producto.descripcion) AGAINST ('${textoBusqueda}' IN BOOLEAN MODE)`, "DESC")
-        ;
+    const query = queryBusqueda().where("precioTipo.id=2");
+    andWhereIn(query, "area.id", idsSeguros(areasIds ?? [], "areasIds"), "areasIds");
+    andWhereIn(query, "inventarioActual.disponible", estados ?? [], "estados");
 
-    const query = queryBusqueda()
-        .where("precioTipo.id=2")
-        .andWhere("area.id in (:...areasIds)", { areasIds })
-        // .andWhere("bodega.id in (:...bodegaIds)", { bodegaIds })
-        .andWhere("inventarioActual.disponible in (:...estados)", { estados });
-
-    if ((textoBusqueda !== "") && (textoBusqueda ?? false)) {
+    const texto = textoBusquedaBooleana(textoBusqueda);
+    if (texto !== null) {
+        // Búsqueda de texto completo con el literal ESCAPADO por el driver y sin operadores booleanos sueltos
+        // (antes se interpolaba sin escapar: hallazgo C2). MariaDB no admite parámetros preparados dentro de AGAINST(...).
+        const subquery = getRepository(Producto)
+            .createQueryBuilder("producto")
+            .select("producto.id")
+            .where(new Brackets(qb =>
+                qb
+                    .where(`MATCH(producto.titulo) AGAINST (${texto} IN BOOLEAN MODE)`)
+                    .orWhere(`MATCH(producto.descripcion) AGAINST (${texto} IN BOOLEAN MODE)`)
+            ));
         query.andWhere('producto.id IN (' + subquery.getQuery() + ')');
     }
     // if ((textoBusqueda !== "") && (textoBusqueda ?? false)) {
@@ -180,11 +175,13 @@ const queryBusquedaCodigos = (codigosBusqueda: (number | string)[]) => {
     return (
         queryBusqueda()
             .where(new Brackets(qb => {
+                // LIKE parametrizado por código (hallazgo C2)
                 codigosBusqueda.forEach((cod, idx) => {
+                    const parametro = { [`codigo${idx}`]: `%${String(cod).trim()}%` };
                     if (idx === 0)
-                        qb.where(`productoClaves.barras LIKE '%${cod}%'`);
+                        qb.where(`productoClaves.barras LIKE :codigo${idx}`, parametro);
                     else
-                        qb.orWhere(`productoClaves.barras LIKE '%${cod}%'`);
+                        qb.orWhere(`productoClaves.barras LIKE :codigo${idx}`, parametro);
                 })
                 return qb
             }))
@@ -209,16 +206,16 @@ const queryBusquedaProyecto = ({
     // queryBusquedaOperacion
     const query = queryBusquedaOperacion()
         .where("precioTipo.id=2")
-        .andWhere("proyecto.id=:proyectoId", { proyectoId })
-        .andWhere("area.id in (:...areasIds)", { areasIds })
-        .andWhere("bodega.id in (:...bodegaIds)", { bodegaIds })
-        .andWhere("movimientoTipo.id in (:...movimientosTipoIds)", { movimientosTipoIds })
-    // .andWhere("inventarioActual.disponible in (:...edos)",{estados});
-    if (textoBusqueda !== "") {
+        .andWhere("proyecto.id=:proyectoId", { proyectoId: idSeguro(proyectoId, "proyectoId") });
+    andWhereIn(query, "area.id", idsSeguros(areasIds ?? [], "areasIds"), "areasIds");
+    andWhereIn(query, "bodega.id", idsSeguros(bodegaIds ?? [], "bodegaIds"), "bodegaIds");
+    andWhereIn(query, "movimientoTipo.id", idsSeguros(movimientosTipoIds ?? [], "movimientosTipoIds"), "movimientosTipoIds");
+    const texto = textoBusquedaBooleana(textoBusqueda);
+    if (texto !== null) {
         query.andWhere(new Brackets(qb =>
-            qb.where(`MATCH(producto.titulo) AGAINST ('${textoBusqueda}' IN BOOLEAN MODE)`)
-                .orWhere(`MATCH(producto.descripcion) AGAINST ('${textoBusqueda}' IN BOOLEAN MODE)`)
-        ))
+            qb.where(`MATCH(producto.titulo) AGAINST (${texto} IN BOOLEAN MODE)`)
+                .orWhere(`MATCH(producto.descripcion) AGAINST (${texto} IN BOOLEAN MODE)`)
+        ));
     }
 
     return query;
@@ -317,22 +314,23 @@ class InventarioActualController {
             .leftJoin("producto.productoClaves", "productoClaves")
             .addSelect("productoClaves.barras")
             .leftJoin("producto.productoPrecios", "productoPrecios")
-            .addSelect("productoClaves.barras")
+            .addSelect("productoPrecios.precio")
             .leftJoin("productoPrecios.precioTipo", "precioTipo")
             .addSelect("precioTipo.nombre")
-            .where('inventarioActual.id= :id', { id })
+            .where('inventarioActual.id= :id', { id: idSeguro(id, "inventarioActualId") })
         const registro = await qry.getOne();
         if (registro === undefined || registro === null) {
-            throw new AppError(`Hay mas de un artículo para el inventarioActualId ${id}`, 400)
+            throw new AppError(`No existe el inventario ${id}`, 404)
         }
         return registro
     }
 
     static obtenerInventarioActualDeCodigo = async (codigo: string) => {
 
-        if (codigo.length < 4) {
+        if (typeof codigo !== "string" || codigo.trim().length < 4) {
             throw new AppError("Código inválido", 400);
         }
+        codigo = codigo.trim();
         const qry = getRepository(InventarioActual)
             .createQueryBuilder("inventarioActual")
             .innerJoinAndSelect("inventarioActual.producto", "producto")
@@ -351,7 +349,7 @@ class InventarioActualController {
         if (codigo.length >= 10) {
             qry.where("productoClaves.barras=:codigo", { codigo })
         } else {
-            qry.where(`productoClaves.barras LIKE '%${codigo}'`)
+            qry.where("productoClaves.barras LIKE :codigo", { codigo: `%${codigo}` })
         }
         const registros = await qry.getMany();
         if (registros.length > 1) {
@@ -374,13 +372,11 @@ class InventarioActualController {
         const { inventarioActualId } = req.body;
         const { jwtPayload } = res.locals;
         try {
-            InventarioActualController.quitar(
-                await getRepository(InventarioActual).findOneOrFail(
-                    inventarioActualId,
-                    { relations: ["producto"] }
-                ),
+            await InventarioActualController.quitar(
+                await getRepository(InventarioActual).findOneOrFail(idSeguro(inventarioActualId, "inventarioActualId"), { relations: ["producto"] }),
                 jwtPayload.si
             );
+            res.json();
         } catch (error) {
             next(error);
         }
@@ -606,13 +602,15 @@ class InventarioActualController {
             ...body } = req.body;
         const { jwtPayload } = res.locals;
         try {
-            const inventarioActual = await getRepository(InventarioActual).findOneOrFail(inventarioActualId, { relations: ["bodega"] });
-            inventarioActual.bodega = await getRepository(Bodega).findOneOrFail(bodegaId);
+            const inventarioActual = await getRepository(InventarioActual).findOneOrFail(idSeguro(inventarioActualId, "inventarioActualId"), { relations: ["bodega"] });
+            inventarioActual.bodega = await getRepository(Bodega).findOneOrFail(idSeguro(bodegaId, "bodegaId"));
+            // cantidad, cantidadAlmacen y disponible solo cambian con movimientos (hallazgo H6)
             const resp = await CommonController.editarConRegistro(
                 getRepository(InventarioActual),
                 inventarioActual,
                 body,
-                jwtPayload.si
+                jwtPayload.si,
+                ["fechaDisponibilidad"]
             );
 
             res.json(resp);
@@ -632,7 +630,6 @@ class InventarioActualController {
             const { pageSize } = pagination;
             const starts = pageSize * page - pageSize;
 
-            console.log(body);
             const qry = queryBusquedaCatalogo(body);
             const conteoTotal = await qry.getCount();
             qry.skip(starts).take(pageSize);
@@ -661,17 +658,17 @@ class InventarioActualController {
             pagination,
             codigosBusqueda } = req.body;
         try {
-            if (codigosBusqueda === undefined)
-                throw new AppError("Codigos indefinidos", 401);
-            if (codigosBusqueda.length === 0)
-                throw new AppError("Codigos indefinidos", 401);
+            const codigos: string[] = (Array.isArray(codigosBusqueda) ? codigosBusqueda : String(codigosBusqueda ?? "").split('\n'))
+                .map((c) => String(c).trim())
+                .filter((c) => c.length > 0);
+            if (codigos.length === 0)
+                throw new AppError("Codigos indefinidos", 400);
 
             const page = pagination.current ? pagination.current : 1;
             const { pageSize } = pagination;
             const starts = pageSize * page - pageSize;
 
-
-            const qry = queryBusquedaCodigos(codigosBusqueda.split('\n'));
+            const qry = queryBusquedaCodigos(codigos);
             const conteoTotal = await qry.getCount();
 
             qry.skip(starts).take(pageSize);
@@ -761,9 +758,8 @@ class InventarioActualController {
 
     // TODO busqueda Catalogo por factura sistema viejo... y actual?
     static busquedaCatalogoFacturas = async (req: Request, res: Response, next: NextFunction) => {
-        //# factura
-        // proveedor
-        // XXX HACER LA BUSQUEDA BASANDONOS EN POR PRODUCTO CARACTERÍSTICAS 
+        // Pendiente de implementar (búsqueda por factura/proveedor). Antes la petición se quedaba colgada (hallazgo H9).
+        next(new AppError("Búsqueda por facturas no implementada", 501));
     }
 
     // TODO SE PODRÍA HACER QUE TODAS LAS LISTAS SE MUESTREN EN FORMA DE CATALOGO???
@@ -778,7 +774,8 @@ class InventarioActualController {
     // -9	INVENTARIO	activo
     // -6	AJUSTE INVENTARIO	activo
     static obtenerMovimientosInventario = async (req: Request, res: Response, next: NextFunction) => {
-        const { id } = req.params; // inventarioActualId
+        // La ruta es POST sin :id; el id viene en el body (hallazgo H10). Se acepta también en params por compatibilidad.
+        const id = idSeguro(req.body?.inventarioActualId ?? req.params?.id, "inventarioActualId");
 
         try {
             res.json(

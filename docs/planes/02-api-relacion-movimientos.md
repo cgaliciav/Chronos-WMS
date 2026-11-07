@@ -111,7 +111,7 @@ Los controladores quedan delgados: parsear y validar request (`zod`), llamar al 
 
 ## 3. Fases
 
-### Fase 0 · Entorno de pruebas reproducible
+### Fase 0 · Entorno de pruebas reproducible ✅ (hecha el 2026-11-07, commit d6034e6)
 
 1. `api/docker-compose.test.yml`: `mariadb:10.11` (LTS; 10.4 está fuera de soporte) con
    `MYSQL_DATABASE=almacen_test`, puerto `3307`, `healthcheck`. Este mismo compose sirve de **API de pruebas**
@@ -131,7 +131,7 @@ Los controladores quedan delgados: parsear y validar request (`zod`), llamar al 
 
 **Aceptación:** `test:unit` y `test:int` verdes en local y CI; `tsc --noEmit` sin errores.
 
-### Fase 1 · Pruebas de caracterización del comportamiento actual
+### Fase 1 · Pruebas de caracterización del comportamiento actual ✅ (hecha, commit 0bf97a9)
 
 `src/services/__tests__/caracterizacion.int.test.ts` vía HTTP con `supertest`:
 1. Compra (`POST /groups/new-purchase` + `PUT /groups/activity-purchase` tipo 15, cantidad 5) → `cantidadAlmacen=5, cantidad=0, no-disponible`; existe `OperacionDetalle`.
@@ -147,7 +147,12 @@ Los controladores quedan delgados: parsear y validar request (`zod`), llamar al 
 
 **Aceptación:** suite verde con los `failing` explícitos; commit.
 
-### Fase 2 · Correcciones de seguridad y errores evidentes (sin cambiar el modelo)
+### Fase 2 · Correcciones de seguridad y errores evidentes (sin cambiar el modelo) ✅ (hecha)
+
+> Resultado: ver `docs/hallazgos-codigo.md` sección C y `docs/api/endpoints.md` ("Cambios de la fase 2").
+> Se adelantaron de la fase 5: TypeScript 5.9 (zod 4 lo exige), `@types/node` 22 y `Dockerfile` en `node:22`
+> (Sentry 11 exige Node ≥ 20). Pendientes de esta fase que pasan a la 3: revocación de sesión al hacer logout
+> (requiere consultar `Sesion.fechaFin` en `checkJwt`), limpieza del caché de archivos (M17).
 
 Hallazgos de `docs/hallazgos-codigo.md` (sección A) que no dependen del nuevo modelo:
 1. **Inyección SQL** (C1-C3): parametrizar todos los `condicionesWhereAnd*` con `Brackets` y parámetros

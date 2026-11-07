@@ -2,27 +2,11 @@ import { NextFunction, Request, Response } from "express";
 import { getRepository } from "typeorm";
 import { Area } from "../entity/Area";
 import CommonController from "./common/Common.Controller";
+import { construirFiltros } from "../helpers/filtrosTabla";
 
 
-const condicionesWhereAnd=(filters:any)=>{
-    const condicionesWhere:string[]=[];
-    for (const key in filters) {
-        if(filters[key]===null || filters[key]===undefined)
-            continue;
-        if(key.indexOf("nombre")>=0||key.indexOf("correo")>=0){
-            condicionesWhere.push(`area.${key} LIKE '%${filters[key].pop()}%'`)
-        } else {
-            condicionesWhere.push(`area.${key} IN (${filters[key].map(it=>`'${it}'`).join(",")})`)
-        }
-    }
-  
-    if(condicionesWhere.length>0){
-        return condicionesWhere.join(' AND ');
-    } else {
-        return "";
-    }
-  
-  }
+// Filtros de las tablas antd, parametrizados (antes se interpolaban llaves y valores: hallazgo C1).
+const condicionesWhereAnd = (filters: any) => construirFiltros(filters, { alias: "area" });
 
 class AreaController{
 

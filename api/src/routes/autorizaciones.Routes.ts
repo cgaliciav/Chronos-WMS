@@ -1,10 +1,12 @@
 import { Router } from "express";
 import AuthController from "../controllers/Auth.Controller";
 import { checkJwt } from "../middlewares/verificarJwt";
+import { validarBody } from "../middlewares/validar";
+import { loginSchema } from "../esquemas";
 
 const router = Router();
 //Login route
-router.post("/login", AuthController.login);
+router.post("/login", [validarBody(loginSchema)], AuthController.login);
 
 router.post("/logout",[checkJwt], AuthController.logout);
 

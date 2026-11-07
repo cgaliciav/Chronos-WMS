@@ -1,4 +1,5 @@
 import {Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn, ManyToOne, ManyToMany,} from "typeorm";
+import { numericTransformer } from "../helpers/numericTransformer";
 
 import { InventarioActual } from "./InventarioActual";
 import { Producto } from "./Producto";
@@ -15,7 +16,7 @@ export class Movimiento {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({type:"numeric", precision:15 , scale:4 })
+    @Column({type:"numeric", precision:15 , scale:4, transformer: numericTransformer })
     cantidad:number;
 
     @Column({type:"enum" , enum: EstatusEstado ,  default:EstatusEstado.ACTIVO})

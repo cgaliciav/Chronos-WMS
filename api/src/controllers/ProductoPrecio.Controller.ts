@@ -6,6 +6,7 @@ import { PrecioTipo } from "../entity/PrecioTipo";
 import { Producto } from "../entity/Producto";
 import { ProductoPrecio } from "../entity/ProductoPrecio";
 import LogGeneralController from "./LogGeneral.Controller";
+import { idSeguro } from "../helpers/ids";
 // 1	DEPRECIACION	activo
 // 2	COMPRA ORIGEN	activo
 // 3	RENTA INTERNA	activo
@@ -231,13 +232,11 @@ class ProductoPrecioController {
     const { jwtPayload } = res.locals;
 
     try {
-      const productoPrecio = await getRepository(ProductoPrecio).findOneOrFail(
-        productoPrecioId
-      );
+      const productoPrecio = await getRepository(ProductoPrecio).findOneOrFail(idSeguro(productoPrecioId, "productoPrecioId"));
       await ProductoPrecioController.modificar(
-        precio,
+        Number(precio),
         productoPrecio,
-        jwtPayload,
+        jwtPayload.si, // antes se pasaba el objeto jwtPayload completo (hallazgo M4)
         moneda,
       );
       res.json();

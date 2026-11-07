@@ -7,6 +7,23 @@ Montaje: `app.use("/", routes)` en `src/index.ts`; en producción el front llama
 del usuario. `ADMIN` = `ADMINISTRADOR` (siempre incluido salvo que se indique). **jwt** = solo
 `checkJwt`. **—** = sin autenticación.
 
+**Cambios de la fase 2 del plan 02 (coordinar con el front):**
+- `GET /file/*` exigen token: cabecera `auth` **o** parámetro `?auth=<jwt>` (para `<img src>`). Con la variable
+  `ARCHIVOS_PUBLICOS=true` siguen públicos durante la transición. El front debe añadir `?auth=` a las URLs de
+  imágenes/miniaturas/reportes (plan 01, fase 3).
+- `POST /auth/login` ignora `ip` del body; la IP de la sesión es la de la conexión (`TRUST_PROXY`). Hay límite de
+  intentos por IP (`LOGIN_MAX_INTENTOS`, 429 al superarlo).
+- `PUT /user/renewpassword` responde `{ correo, enviado: true }` y envía la contraseña por correo (ya no la devuelve).
+- `PUT /groups/activity`, `/activity-purchase`, `/activity-add-transaction`, `DELETE /groups/activity`,
+  `POST /user/new`, `PUT /user/edit`, `PUT /current-inventory/edit` validan el cuerpo con zod: campos
+  desconocidos se descartan y los inválidos responden `400 { message: "Error de validación en: campo, …" }`.
+- `PUT /current-inventory/edit` solo acepta `bodegaId` y `fechaDisponibilidad`.
+- Los `sortField` y las llaves de `filters` deben ser identificadores (`columna` o `alias.columna`); otra cosa → 400.
+- Handlers sin implementar (`/reports/by-use`, `/by-group-detail`, `/by-invoice`, `/by-inventory`,
+  `/current-inventory/list-catalog-invoices`) responden `501`.
+- Token sin firma válida o ausente → `401`; registro inexistente → `404 REGISTRO NO ENCONTRADO`.
+- Las columnas `numeric` (`cantidad`, `cantidadAlmacen`, precios, totales) llegan como **número** en el JSON (antes string `"5.0000"`).
+
 Contrato de listados `*/list-antd` y `*/list-by-*`: body `{ sortField, sortOrder, pagination:{current,pageSize}, filters }`
 → `{ results, filtered, pagination:{ current, pageSize, total, totalItems } }`
 (`CommonController.listaTabla*`).
@@ -22,7 +39,7 @@ Contrato de listados `*/list-antd` y `*/list-by-*`: body `{ sortField, sortOrder
 | Método | Ruta | Roles | Controlador |
 |---|---|---|---|
 | GET | `/activity/prior-activity/:id` | MOVIMIENTO-ULTIMOMOVIMIENTO | `Movimiento.obtenerUltimoMovimiento` (`:id` = inventarioActualId) |
-| GET | `/activity/get-group/:id` | MOVIMIENTO-OBTENERGRUPO | `Movimiento.obtenerGrupo` (**roto**, ver hallazgo H12) |
+| GET | `/activity/get-group/:id` | MOVIMIENTO-OBTENERGRUPO | `Movimiento.obtenerGrupo` (corregido en fase 2) |
 | GET | `/activity/:id` | MOVIMIENTO-DETALLE | `Movimiento.obtenerId` |
 | GET | `/activity/history-by-current-inventory/:id` | MOVIMIENTO-HISTORIAL | `Movimiento.obtenerHistorialMovimiento` |
 
@@ -56,10 +73,10 @@ Contrato de listados `*/list-antd` y `*/list-by-*`: body `{ sortField, sortOrder
 | Método | Ruta | Roles | Nota |
 |---|---|---|---|
 | GET | `/current-inventory/:id` | INVENTARIOACTUAL-DETALLE | |
-| PUT | `/current-inventory/edit` | INVENTARIOACTUAL-EDITAR | asignación masiva (hallazgo H6) |
-| DELETE | `/current-inventory/delete` | INVENTARIOACTUAL-BORRAR | no responde (H5) |
-| POST | `/current-inventory/list-catalog-{general,codes,deregister,project,invoices}` | INVENTARIOACTUAL-CATALOGO* | búsquedas de catálogo (`invoices` vacío) |
-| POST | `/current-inventory/get-activity-inventory` | INVENTARIOACTUAL-LISTADOMOVIMIENTOSINVENTARIO | siempre `[]` (H10) |
+| PUT | `/current-inventory/edit` | INVENTARIOACTUAL-EDITAR | solo `bodegaId` y `fechaDisponibilidad` |
+| DELETE | `/current-inventory/delete` | INVENTARIOACTUAL-BORRAR | |
+| POST | `/current-inventory/list-catalog-{general,codes,deregister,project,invoices}` | INVENTARIOACTUAL-CATALOGO* | búsquedas de catálogo (`invoices` → 501) |
+| POST | `/current-inventory/get-activity-inventory` | INVENTARIOACTUAL-LISTADOMOVIMIENTOSINVENTARIO | body `{ inventarioActualId }` |
 | GET | `/current-inventory/export-to-supabase/:id` | ADMIN | legado |
 
 ## Operaciones (`/transaction`)
@@ -72,10 +89,10 @@ Contrato de listados `*/list-antd` y `*/list-by-*`: body `{ sortField, sortOrder
 ## Archivos (`/file`)
 | Método | Ruta | Roles | Nota |
 |---|---|---|---|
-| GET | `/file/:id` · `/thumbnail/:id` · `/catalog/:id` · `/review/:id` · `/report/:id` | **—** | públicos (H1); `report` con path traversal (C4) |
+| GET | `/file/:id` · `/thumbnail/:id` · `/catalog/:id` · `/review/:id` · `/report/:id` | jwt (cabecera `auth` o `?auth=`) | `ARCHIVOS_PUBLICOS=true` los deja públicos (transición) |
 | POST | `/file/file` | ARCHIVO-ARCHIVOSUBIR | multer `upload.single('file')`, body `{relacion, id}` |
 | DELETE | `/file/file` | ARCHIVO-ARCHIVOBORRAR | |
-| DELETE | `/file/:id` | ARCHIVO-BORRAR | no responde (H4) |
+| DELETE | `/file/:id` | ARCHIVO-BORRAR | |
 | POST | `/file/get-response-interface` | ARCHIVO-ARCHIVODATOS | |
 
 ## Catálogos CRUD (`/area`, `/warehouse`, `/supplier`, `/project`, `/user`, `/role`, `/invoice-kind`, `/parameters`)
@@ -85,7 +102,7 @@ Patrón común (`CommonController`): `GET /list-names` (`*-LISTASIMPLE`), `POST 
 (`*-COMENTARIONUEVO`/`*-COMENTARIOBORRAR`). Extras:
 - `/supplier/list-dynamic` (PROVEEDOR-LISTADINAMICA), `/project/list-names-inbound|outbound`.
 - `/user/current` (jwt), `/user/password` (jwt, cambia la propia), `/user/renewpassword`
-  (USUARIO-GENERERARPASSWORD; devuelve la contraseña en claro, C5), `/user/get-areas|get-warehouses|get-projects` (jwt),
+  (USUARIO-GENERERARPASSWORD; envía la contraseña por correo), `/user/get-areas|get-warehouses|get-projects` (jwt),
   `/user/list-names-full`, `/user/list-names-dynamic`.
 - `/role/list-names-dynamic` (GET que lee `req.body`).
 - `/parameters/edit` (PARAMETROS-EDITAR), `GET /parameters/comment` (PARAMETROS-LISTAR; lista parámetros).
@@ -105,4 +122,4 @@ Patrón común (`CommonController`): `GET /list-names` (`*-LISTASIMPLE`), `POST 
 | Método | Ruta | Roles | Nota |
 |---|---|---|---|
 | POST | `/reports/by-group` · `/by-project` · `/by-project-final` | REPORTE-GRUPO · -PROYECTO · -CIERRE | generan Excel en segundo plano en `RUTA_REPORTES`; se descargan por `GET /file/report/:nombre` |
-| POST | `/reports/by-use` · `/by-group-detail` · `/by-invoice` · `/by-inventory` | REPORTE-* | handlers vacíos (H9) |
+| POST | `/reports/by-use` · `/by-group-detail` · `/by-invoice` · `/by-inventory` | REPORTE-* | `501 No implementado` |

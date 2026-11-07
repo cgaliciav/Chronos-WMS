@@ -193,7 +193,7 @@ class GrupoDetalleController {
       grupoDetalle.inventarioDetalle !== undefined &&
       grupoDetalle.inventarioDetalle !== null
     ) {
-      InventarioDetalleController.quitar(
+      await InventarioDetalleController.quitar(
         grupoDetalle.inventarioDetalle,
         sesionId
       );
@@ -202,7 +202,7 @@ class GrupoDetalleController {
       grupoDetalle.facturaDetalle !== undefined &&
       grupoDetalle.facturaDetalle !== null
     ) {
-      FacturaDetalleController.quitar(grupoDetalle.facturaDetalle, sesionId);
+      await FacturaDetalleController.quitar(grupoDetalle.facturaDetalle, sesionId);
     }
     return grupoDetalleRemovido;
   };

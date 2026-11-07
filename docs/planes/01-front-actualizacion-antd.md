@@ -346,7 +346,10 @@ Pasos:
 
 | Front necesita | Plan 02 |
 |---|---|
-| Login sin `ip` en el body (D15) | Fase 2: `app.set('trust proxy', …)` y `sesion.IP = req.ip` |
+| Login sin `ip` en el body (D15) | Fase 2 ✅: `trust proxy` y `sesion.IP = req.ip`; el body `ip` se ignora |
+| URLs de imágenes/miniaturas/reportes con `?auth=<token>` (los `GET /file/*` ya exigen token; `ARCHIVOS_PUBLICOS=true` en el API mantiene el comportamiento viejo mientras el front no lo envíe) | Fase 2 ✅ (API). Front: fase 3, en `services/axios` añadir `conToken(url)` y usarlo en `columnasTablaOperaciones`, `imagenesEnCarrusel`, `subirArchivos` y en las URLs que devuelve `get-response-interface` |
+| Respuestas numéricas: `cantidad`, `cantidadAlmacen`, precios y totales llegan como `number` (antes string) | Fase 2 ✅ (API). Front: revisar los `parseFloat`/`Number()` redundantes al tipar `types/api.ts` |
+| `PUT /user/renewpassword` ya no devuelve la contraseña (`{ correo, enviado }`) | Fase 2 ✅ (API). Front: la pantalla de regenerar contraseña debe mostrar "enviada por correo" |
 | Endpoints de notificaciones para `NotificacionesCampana` (D14) | Fase 7: `GET /notifications`, `PUT /notifications/:id/read`, `GET /notifications/stream` |
 | Nuevos campos de `GET /activity/:id` (`fecha`, `relacionesOrigen`, `relacionesDerivadas`, `saldoPendiente`) y 409 con candidatas en `PUT /groups/activity` | Fase 3 |
 | API de pruebas para e2e (opcional) | Fase 0 (`docker-compose.test.yml`) |

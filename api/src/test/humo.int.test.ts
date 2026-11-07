@@ -34,7 +34,7 @@ describe("humo: la aplicación arranca contra MariaDB de pruebas", () => {
 
   it("GET /user/current exige token", async () => {
     const sinToken = await supertest(app).get("/user/current");
-    expect(sinToken.status).toBe(500); // comportamiento actual: JsonWebTokenError llega al middleware con statusCode 500
+    expect(sinToken.status).toBe(401);
     const conToken = await clienteAdmin(app).get("/user/current");
     expect(conToken.status).toBe(200);
     expect(conToken.body.correo).toBe(SEMILLA.adminCorreo);

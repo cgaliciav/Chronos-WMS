@@ -12,450 +12,257 @@ import { Rol } from "../../entity/Rol";
 import { Sesion } from "../../entity/Sesion";
 import { Usuario } from "../../entity/Usuario";
 import { AppError } from "../../helpers/errorClases";
+import { aplicarFiltros, columnaSegura, direccionSegura, FiltrosSql } from "../../helpers/filtrosTabla";
+import { idSeguro } from "../../helpers/ids";
 import ArchivoController from "../Archivo.Controller";
 
-interface PaginacionANTD{
-    current:number,
-    pageSize:number,
-    total:number, //total filtraado
-    totalItems:number,
+interface PaginacionANTD {
+  current: number;
+  pageSize: number;
+  total: number; // total filtrado
+  totalItems: number;
 }
-interface ResultadoTabla{
-    results:(Usuario|Area|Bodega|Grupo|Proyecto|Proveedor|Rol|any)[],
-    pagination:PaginacionANTD,
-    filtered:number
+interface ResultadoTabla {
+  results: (Usuario | Area | Bodega | Grupo | Proyecto | Proveedor | Rol | any)[];
+  pagination: PaginacionANTD;
+  filtered: number;
 }
 
+/** Parámetros que envían las tablas de antd. */
+interface ParametrosTabla {
+  sortField?: string | string[];
+  sortOrder?: string;
+  pagination?: { current?: number; pageSize?: number };
+  filters?: Record<string, unknown>;
+}
+
+/** Función de filtrado: devuelve SQL parametrizado (`FiltrosSql`) o, por compatibilidad, un string SIN datos del cliente. */
+type FnFiltrado = (filters: any) => FiltrosSql | string;
+
+/** Campos que nunca se copian desde el body a una entidad (asignación masiva). */
+const CAMPOS_PROHIBIDOS = new Set(["id", "password", "sesionId", "estatus"]);
+
+const copiarCampos = (registro: any, body: any, camposPermitidos?: string[]) => {
+  if (!body || typeof body !== "object") return;
+  for (const key of Object.keys(body)) {
+    if (CAMPOS_PROHIBIDOS.has(key)) continue;
+    if (camposPermitidos && !camposPermitidos.includes(key)) continue;
+    registro[key] = body[key];
+  }
+};
+
+const paginacionDe = ({ pagination }: ParametrosTabla) => {
+  const page = Number(pagination?.current ?? 1) || 1;
+  const pageSize = Math.min(Math.max(Number(pagination?.pageSize ?? 10) || 10, 1), 500);
+  return { page, pageSize, starts: pageSize * page - pageSize };
+};
 
 export default class {
-    static listaSimpleGenerica= async <T extends Usuario|Area|Bodega|Grupo|Proyecto|Proveedor|Rol> (repo:Repository<T>,campos:string[],estatus:EstatusEstado=EstatusEstado.ACTIVO):Promise<T[]> => {
-        // let loco:T[];
-        const options:FindManyOptions<T>={
-            select:campos.map(c=>c as (keyof (T)))
-          }
-        const st:string = estatus;
-        options.where={st};
-        
-          
-        return await repo.find(options);
+  static listaSimpleGenerica = async <T extends Usuario | Area | Bodega | Grupo | Proyecto | Proveedor | Rol>(
+    repo: Repository<T>,
+    campos: string[],
+    estatus: EstatusEstado = EstatusEstado.ACTIVO
+  ): Promise<T[]> => {
+    const options: FindManyOptions<T> = {
+      select: campos.map((c) => c as keyof T),
+      where: { estatus } as any, // antes filtraba por una columna inexistente `st` (hallazgo M27)
+    };
+    return await repo.find(options);
+  };
+
+  static BusquedaListaSimpleCompleta = async <T extends Usuario | Area | Bodega | Grupo | Proyecto | Proveedor | Rol>(
+    repo: Repository<T>,
+    camposSelect: string[],
+    busqueda: string = ""
+  ): Promise<T[]> => {
+    const options: FindManyOptions<T> = {
+      select: camposSelect.map((cs) => cs as keyof T),
+    };
+    if (busqueda.length > 0) options.where = { nombre: Like(`%${busqueda}%`) } as any; // Like() va parametrizado
+    return await repo.find(options);
+  };
+
+  static listaSimple = (repo: Repository<any>, campos: string[], estatus: EstatusEstado = EstatusEstado.ACTIVO) =>
+    repo.find({
+      select: campos,
+      where: { estatus },
+      order: { id: "DESC" },
+    });
+
+  /**
+   * Listado paginado para tablas antd sobre una entidad simple. El alias del QueryBuilder es el nombre de
+   * la tabla (`usuario`, `area`, …), que es el prefijo que usan los filtros del front.
+   */
+  static listaTabla = async (
+    repo: Repository<any>,
+    parametros: ParametrosTabla,
+    fnFiltrado: FnFiltrado
+  ): Promise<ResultadoTabla> => {
+    const alias = repo.metadata.tableName;
+    return this.listaTablaQryAnd(parametros, () => repo.createQueryBuilder(alias), fnFiltrado, `${alias}.id`, "DESC");
+  };
+
+  static listaTablaQry = async (parametros: ParametrosTabla, fnQuery: () => SelectQueryBuilder<any>, fnFiltrado: FnFiltrado) =>
+    this.listaTablaQryAnd(parametros, fnQuery, fnFiltrado);
+
+  static listaTablaQryAnd = async (
+    parametros: ParametrosTabla,
+    fnQuery: () => SelectQueryBuilder<any>,
+    fnFiltrado: FnFiltrado,
+    ordenPorDefecto = "id",
+    direccionPorDefecto: "ASC" | "DESC" = "ASC"
+  ): Promise<ResultadoTabla> => {
+    const { sortField, sortOrder, filters } = parametros;
+    const campoOrden = columnaSegura(sortField, ordenPorDefecto);
+    const direccion = sortOrder === undefined ? direccionPorDefecto : direccionSegura(sortOrder);
+    const { page, pageSize, starts } = paginacionDe(parametros);
+
+    const qry = fnQuery();
+    const conteoTotal = await qry.getCount();
+
+    aplicarFiltros(qry, fnFiltrado(filters ?? {}));
+    const conteoFiltrado = await qry.getCount();
+
+    qry.orderBy(campoOrden, direccion);
+    qry.skip(starts).take(pageSize);
+    const qryResult = await qry.getMany();
+
+    return {
+      results: qryResult,
+      filtered: conteoFiltrado,
+      pagination: {
+        current: page,
+        pageSize,
+        total: conteoFiltrado,
+        totalItems: conteoTotal,
+      },
+    };
+  };
+
+  static obtenerIdQuery = (fnQuery: SelectQueryBuilder<any>) => fnQuery.getOne();
+
+  static obtenerId = (repo: Repository<any>, relaciones: string[], id: number | string) =>
+    repo.findOneOrFail(idSeguro(id), {
+      relations: relaciones,
+      loadEagerRelations: false,
+    });
+
+  /** Crea un registro copiando del body solo campos permitidos (nunca id, password, sesionId, estatus). */
+  static nuevo = async (repo: Repository<any>, registro: any, body: any, sesionId: number, camposPermitidos?: string[]) => {
+    registro.sesionId = sesionId;
+    copiarCampos(registro, body, camposPermitidos);
+    const error = await validate(registro);
+    if (error.length > 0) {
+      const errorMap = error.map((obj) => obj.property);
+      throw new AppError(`Error de validación en: ${errorMap.join(", ")}`, 400);
     }
-    static BusquedaListaSimpleCompleta = async <T extends Usuario|Area|Bodega|Grupo|Proyecto|Proveedor|Rol> (repo:Repository<T>,camposSelect:string[],busqueda:string=""):Promise<T[]> => {
+    await repo.save(registro);
+    return registro;
+  };
 
-        const options:FindManyOptions<T>={
-          select:camposSelect.map(cs=>cs as (keyof T))
-        }
-        if(busqueda.length>0)
-          options.where={nombre:Like(`%${busqueda}%`)}
-        
-        // const repo:Repository<T> = getRepository(T);
-      
-        return await repo.find( options )
-      }
+  static editar = async (repo: Repository<any>, body: any, sesionId: number, camposPermitidos?: string[]) => {
+    const registro = await repo.findOneOrFail(idSeguro(body?.id));
+    return this.editarConRegistro(repo, registro, body, sesionId, camposPermitidos);
+  };
 
-    static listaSimple=(repo:Repository<any>,campos:string[],estatus:EstatusEstado=EstatusEstado.ACTIVO)=>
-        new Promise<any[]>( ( resolve, reject )  => {
-            // (typeof repo) as type;
-            repo.find({
-                select:campos,
-                where:{estatus},
-                order:{id:"DESC"}
-              })
-            .then( respuesta => {
-                resolve( respuesta )
-            })
-            .catch(err => {
-                // console.error( err );
-                // LogGeneralController.InsertarLog(LogTipo.ERROR,"CommonController.listaSimple",err);
-                // reject( new Error("Error al intentar obtener el listado. Si el problema persiste consulte a su administrador") )
-                reject(err)
-            } )
-        } )
-        
-        // page, results, sortField, sortOrder
-    static listaTabla= async(repo:Repository<any>,{sortField, sortOrder, pagination, filters},fnFiltrado:(filters:any)=>string) =>
-        new Promise<ResultadoTabla>( async ( resolve, reject) =>{
-            const campoOrden:string=sortField?sortField:"id";
-            let direccion:string='DESC';
-            const page = (pagination.current===undefined?1:pagination.current);
-            const {pageSize} = pagination;                
-            const starts = pageSize*page - pageSize;
-
-            if(sortOrder !== undefined){ 
-                direccion=(sortOrder=='descend')?"DESC":"ASC";
-            }
-
-            try {
-                const parametrosFind = {skip:starts,
-                    take:pageSize,
-                    order:{},
-                    where:fnFiltrado(filters)
-                };
-    
-                parametrosFind.order[campoOrden]=direccion;
-                
-                const results=await repo.find( parametrosFind );
-                const filtered=await repo.count( parametrosFind );
-                const respuesta:ResultadoTabla={
-                    results,
-                    // filtered:results.length,
-                    filtered,
-                    pagination:{
-                        current:page,
-                        pageSize,
-                        total:filtered,
-                        totalItems:await repo.count()
-                    }
-                }
-                resolve(respuesta)
-            } catch (error) {
-                reject(error)
-            }
-          } );
-
-    static listaTablaQry = async ({sortField, sortOrder, pagination, filters},fnQuery:()=>SelectQueryBuilder<any> ,fnFiltrado:(filters:any)=>string) => {
-        const campoOrden:string=sortField?sortField:"id";
-        let direccion:string='ASC';
-        const page = (pagination.current===undefined?1:pagination.current);
-        const {pageSize} = pagination;                
-        const starts = pageSize*page - pageSize;
-
-        if(sortOrder !== undefined){ 
-            direccion=(sortOrder=='descend')?"DESC":"ASC";
-        }
-
-        const qry=fnQuery();
-        const conteoTotal= await qry.getCount();
-
-        const condicionesWhere = fnFiltrado(filters);
-        if(condicionesWhere.length>0){
-            console.log("listaTablaQry-------------------",condicionesWhere);
-            qry.where(condicionesWhere)
-        }
-        const conteoFiltrado = await qry.getCount();
-
-        qry.orderBy(campoOrden,direccion as ("ASC"|"DESC"));
-        qry.skip(starts).take(pageSize);
-        const qryResult = await qry.getMany();
-
-        const respuesta:ResultadoTabla={
-            results:qryResult,
-            filtered:conteoFiltrado,
-            pagination:{
-                current:page,
-                pageSize,
-                //   total: conteoTotal
-                total:conteoFiltrado,
-                totalItems:conteoTotal,
-            }
-    
-          }
-        return respuesta;
+  static editarConRegistro = async (repo: Repository<any>, registro: any, body: any, sesionId: number, camposPermitidos?: string[]) => {
+    registro.sesionId = sesionId;
+    copiarCampos(registro, body, camposPermitidos);
+    const error = await validate(registro);
+    if (error.length > 0) {
+      const errorMap = error.map((obj) => obj.property);
+      throw new AppError(`Error de validación en: ${errorMap.join(", ")}`, 400);
     }
+    await repo.save(registro);
+    return registro;
+  };
 
-    static listaTablaQryAnd = async ({sortField, sortOrder, pagination, filters},fnQuery:()=>SelectQueryBuilder<any> ,fnFiltrado:(filters:any)=>string) => {
-        const campoOrden:string|string[]=sortField?sortField:"id";
-        let direccion:string='ASC';
-        const page = (pagination.current===undefined?1:pagination.current);
-        const {pageSize} = pagination;                
-        const starts = pageSize*page - pageSize;
+  private static cambiarEstatus = async (repo: Repository<any>, id: number | string, sesionId: number, estatus: EstatusEstado) => {
+    const registro = await repo.findOneOrFail({ where: { id: idSeguro(id) } });
+    registro.estatus = estatus;
+    registro.sesionId = sesionId;
+    const reg = await repo.save(registro);
+    return { estatus: reg.estatus };
+  };
 
-        if(sortOrder !== undefined){ 
-            direccion=(sortOrder=='descend')?"DESC":"ASC";
-        }
+  static habilitar = (repo: Repository<any>, id: number | string, sesionId: number) =>
+    this.cambiarEstatus(repo, id, sesionId, EstatusEstado.ACTIVO);
 
-        const qry=fnQuery();
-        const conteoTotal= await qry.getCount();
+  static deshabilitar = (repo: Repository<any>, id: number | string, sesionId: number) =>
+    this.cambiarEstatus(repo, id, sesionId, EstatusEstado.INACTIVO);
 
-        const condicionesWhere = fnFiltrado(filters);
-        if(condicionesWhere.length>0){
-            console.log("listaTablaQry-------------------",condicionesWhere);
-            qry.andWhere(condicionesWhere)
-        }
-        const conteoFiltrado = await qry.getCount();
+  static finalizar = (repo: Repository<any>, id: number | string, sesionId: number) =>
+    this.cambiarEstatus(repo, id, sesionId, EstatusEstado.FINALIZADO);
 
-        console.log("listaTablaORDER-------------------",campoOrden);
-        if(!Array.isArray(campoOrden)){
-            qry.orderBy(campoOrden,direccion as ("ASC"|"DESC"));
-        } else {
-            console.log("listaTablaORDER------------->>>>",campoOrden.slice(campoOrden.length-2).join('.'));
-            qry.orderBy(campoOrden.slice(campoOrden.length-2).join('.'),direccion as ("ASC"|"DESC"));
-        }
-        qry.skip(starts).take(pageSize);
-        const qryResult = await qry.getMany();
+  static eliminadoLogico = (repo: Repository<any>, id: number | string, sesionId: number) =>
+    this.cambiarEstatus(repo, id, sesionId, EstatusEstado.ELIMINADO);
 
-        const respuesta:ResultadoTabla={
-            results:qryResult,
-            filtered:conteoFiltrado,
-            pagination:{
-                current:page,
-                pageSize,
-                //   total: conteoTotal
-                total:conteoFiltrado,
-                totalItems:conteoTotal,
-            }
-    
-          }
-        return respuesta;
+  private static conComentarios = (repo: Repository<any>, id: number) =>
+    repo
+      .createQueryBuilder("repo")
+      .leftJoinAndSelect("repo.comentarios", "comentarios")
+      .leftJoinAndSelect("comentarios.sesion", "comentariosSesion")
+      .leftJoinAndSelect("comentariosSesion.usuario", "comentariosSesionUsuario")
+      .where("repo.id=:id", { id })
+      .getOne();
+
+  static agregarComentario = async (repo: Repository<any>, idRepo: number | string, sesionId: number, comentario: string) => {
+    const sesion = await getRepository(Sesion).findOneOrFail(idSeguro(sesionId, "sesionId"));
+    const comen = new Comentario();
+    comen.comentario = comentario;
+    comen.sesion = sesion;
+    comen.sesionId = sesionId;
+    const [registro, comentarioGuardado] = await Promise.all([
+      repo.findOneOrFail(idSeguro(idRepo), { relations: ["comentarios"] }),
+      getRepository(Comentario).save(comen),
+    ]);
+    registro.sesionId = sesionId;
+    registro.comentarios.push(comentarioGuardado);
+    const guardado = await repo.save(registro);
+    return this.conComentarios(repo, guardado.id);
+  };
+
+  static quitarComentario = async (repo: Repository<any>, idRepo: number | string, sesionId: number, idComen: number | string) => {
+    const comentarioId = idSeguro(idComen, "idComentario");
+    const registro = await repo.findOneOrFail(idSeguro(idRepo), { relations: ["comentarios"] });
+    // Solo se puede quitar un comentario que pertenezca al registro (IDOR, hallazgo M8)
+    if (!registro.comentarios.some((c: Comentario) => c.id === comentarioId)) {
+      throw new AppError("El comentario no pertenece al registro", 404);
     }
-
-    static obtenerIdQuery = (fnQuery:SelectQueryBuilder<any>) =>
-        new Promise<any>( ( resolve, reject)  => {
-            fnQuery
-            .getOne()
-            .then(respuesta => {
-                resolve( respuesta )
-            })
-            .catch(err => {
-                reject(err)
-            })
-        } )
-
-    static obtenerId = (repo:Repository<any>,relaciones:string[],id:number|string) =>
-        new Promise<any>( ( resolve, reject)  => {
-            console.log("obtenerId llamado>>>>>>>>>", repo.target);
-            repo.findOneOrFail(id,{ 
-                relations: relaciones, 
-                loadEagerRelations:false,
-            })
-            .then(respuesta => {
-                console.log("obtenerId resolve>>>>>>>>>",repo.target);
-                resolve( respuesta )
-            })
-            .catch(err => {
-                console.log("obtenerId catch>>>>>>>>>", repo.target);
-                reject(err)
-            })
-        } )        
-    
-    static nuevo=(repo:Repository<any>,registro:any,body:any,sesionId:number) =>
-        new Promise<any>( async ( resolve, reject ) =>{
-            try {
-                registro.sesionId = sesionId;
-                for (const key in body) {
-                    registro[key] = body[key];
-                }
-                const error = await validate(registro);
-                if (error.length > 0) {
-                    let errorMap = error.map(obj=>obj.property);
-                    reject(new AppError(`Error de validación en: ${errorMap.join(", ")}` ));
-                    return;
-                } 
-                
-                await repo.save(registro)
-                resolve(registro)
-            } catch (error) {
-                reject(error)
-            }
-        } );
-
-    static editar=(repo:Repository<any>, body:any, sesionId:number) =>
-        new Promise<any>( async ( resolve, reject ) =>{
-            try{
-                let registro = await repo.findOneOrFail(body.id);
-                registro.sesionId = sesionId;
-                for (const key in body) {
-                    if(key != 'id'){
-                        registro[key] = body[key];
-                    }
-                }
-                const error = await validate(registro);
-                if (error.length > 0) {
-                    let errorMap = error.map(obj=>obj.property);
-                    reject(new AppError(`Error de validación en: ${errorMap.join(", ")}` ,400));
-                    return;
-                } 
-                
-                await repo.save(registro);
-                resolve(registro);
-            }
-            catch(error){
-                reject(error)
-            }
-
-    } );
-    
-    static editarConRegistro=(repo:Repository<any>, registro:any, body:any, sesionId:number) =>
-        new Promise<any>( async ( resolve, reject ) =>{
-            try{
-                registro.sesionId = sesionId;
-                for (const key in body) {
-                    if(key != 'id'){
-                        registro[key] = body[key];
-                    }
-                }
-                const error = await validate(registro);
-                if (error.length > 0) {
-                    let errorMap = error.map(obj=>obj.property);
-                    reject(new AppError(`Error de validación en: ${errorMap.join(", ")}` ,400));
-                    return;
-                } 
-                
-                await repo.save(registro);
-                resolve(registro);
-            }
-            catch(error){
-                reject(error);
-            }
-
-    } );
-
-    static habilitar=( repo: Repository<any>, id: number|string, sesionId:number ) =>
-        new Promise<any>( ( resolve, reject ) =>{
-            repo.findOneOrFail({ where: { id } })
-            .then(registro => {
-                registro.estatus = EstatusEstado.ACTIVO;
-                registro.sesionId = sesionId; 
-                return repo.save(registro)
-            })
-            .then((reg)=>{
-                resolve( { estatus: reg.estatus} )
-            })
-            .catch(erro=>{
-                reject(erro)
-            });        
-        } );
-    
-    static deshabilitar = ( repo: Repository<any>, id: number|string, sesionId:number ) =>
-        new Promise<any>( ( resolve, reject ) =>{
-            repo.findOneOrFail({ where: { id } })
-            .then(registro => {
-                registro.estatus = EstatusEstado.INACTIVO;
-                registro.sesionId = sesionId; 
-                return repo.save( registro ) 
-            })
-            .then((reg)=>{
-                resolve( { estatus: reg.estatus} )
-            })
-            .catch(erro=>{
-                reject(erro)
-            });        
-        } );
-    
-    static finalizar = ( repo: Repository<any>, id: number|string, sesionId:number ) =>
-        new Promise<any>( async ( resolve, reject ) =>{
-            repo.findOneOrFail({ where: { id } })
-            .then(registro => {
-                registro.estatus = EstatusEstado.FINALIZADO;
-                registro.sesionId = sesionId; 
-                return repo.save( registro ) 
-            })
-            .then((reg)=>{
-                resolve( { estatus: reg.estatus} )
-            })
-            .catch(erro=>{
-                reject(erro)
-            });        
-        } );
-    
-    static eliminadoLogico = ( repo: Repository<any>, id: number|string, sesionId:number ) =>
-        new Promise<any>( async ( resolve, reject ) =>{
-            repo.findOneOrFail({ where: { id } })
-            .then(registro => {
-                registro.estatus = EstatusEstado.ELIMINADO;
-                registro.sesionId = sesionId; 
-                return repo.save( registro ) 
-            })
-            .then((reg)=>{
-                resolve( { estatus: reg.estatus} )
-            })
-            .catch(erro=>{
-                reject(erro)
-            });        
-        } );
-    
-    static agregarComentario = ( repo: Repository<any>, idRepo: number|string, sesionId:number, comentario:string ) =>
-        new Promise<any> ( ( resolve, reject) => {
-            getRepository(Sesion)
-            .findOneOrFail(sesionId)
-            .then(sesion =>{
-                let comen = new Comentario;
-                comen.comentario = comentario;
-                comen.sesion = sesion;
-                comen.sesionId = sesionId;
-                return Promise.all([
-                    repo.findOneOrFail(idRepo,{relations:["comentarios"]}),
-                    getRepository(Comentario).save(comen)
-                ])
-            })
-            .then(([registro,commet])=>{
-                registro.sesionId = sesionId;
-                registro.comentarios.push(commet);
-                return repo.save(registro);
-            })
-            .then(registroGuardado=>repo
-                .createQueryBuilder("repo")
-                .leftJoinAndSelect("repo.comentarios","comentarios")
-                .leftJoinAndSelect("comentarios.sesion","comentariosSesion")
-                .leftJoinAndSelect("comentariosSesion.usuario","comentariosSesionUsuario")
-                .where("repo.id=:id",{id:registroGuardado.id})
-                .getOne()
-            )
-            .then(repoComentarios=>{
-                resolve(repoComentarios);
-            })
-            .catch(error=>{
-                reject(error)
-            });    
-        } )
-
-
-    static quitarComentario = ( repo: Repository<any>, idRepo: number|string, sesionId:number, idComen: number|string ) =>
-        new Promise<any> ( ( resolve, reject) => {
-            
-            repo.findOneOrFail(idRepo,{relations:["comentarios"]})
-                .then(registro=>{
-                    // let comentario = new Comentario;
-                    registro.sesionId = sesionId ;
-                    registro.comentarios = registro.comentarios.filter(comenta => {
-                        comenta.sesionId = sesionId;
-                        return comenta.id != idComen
-                    })
-                    return repo.save(registro)
-                })
-                .then((registroGuardado)=>repo
-                    .createQueryBuilder("repo")
-                    .leftJoinAndSelect("repo.comentarios","comentarios")
-                    .leftJoinAndSelect("comentarios.sesion","comentariosSesion")
-                    .leftJoinAndSelect("comentariosSesion.usuario","comentariosSesionUsuario")
-                    .where("repo.id=:id",{id:registroGuardado.id})
-                    .getOne()
-                )
-                .then(async repoComentarios=>{
-                    let com= await getRepository(Comentario).findOne(idComen);
-                    if(com!==undefined){
-                        getRepository(Comentario).remove(com);
-                    }
-                    resolve(repoComentarios);
-                })
-                .catch(erro=>{
-                    reject(erro)
-                });        
-            } )
-
-
-    static agregarArchivo = async (repo: Repository<any>, idRepo: number|string, sesionId:number, file:any ) =>{
-        const repoItem=await repo.findOneOrFail(idRepo,{relations:["archivos"]});
-        repoItem.sesionId=sesionId;
-        const archivoResultado=await ArchivoController.guardar(file,sesionId);
-
-        repoItem.archivos.push(archivoResultado.archivo);
-        await repo.save(repoItem);
-
-        return (archivoResultado.rf)
+    registro.sesionId = sesionId;
+    registro.comentarios = registro.comentarios.filter((c: Comentario) => c.id !== comentarioId);
+    const guardado = await repo.save(registro);
+    const com = await getRepository(Comentario).findOne(comentarioId);
+    if (com !== undefined) {
+      com.sesionId = sesionId;
+      await getRepository(Comentario).remove(com);
     }
-    
-    static quitarArchivo = async (repo: Repository<any>, idRepo: number|string, sesionId:number, fileId:number|string ) =>{
-        const repoItem=await repo.findOneOrFail(idRepo,{relations:["archivos"]});
-        repoItem.sesionId=sesionId;
-        repoItem.archivos = repoItem.archivos.filter(arch=>arch.id!==fileId);
-        
-        await ArchivoController.quitar(
-            await getRepository(Archivo).findOneOrFail(fileId),
-            sesionId);
-        await repo.save(repoItem);
+    return this.conComentarios(repo, guardado.id);
+  };
+
+  static agregarArchivo = async (repo: Repository<any>, idRepo: number | string, sesionId: number, file: any) => {
+    const repoItem = await repo.findOneOrFail(idSeguro(idRepo), { relations: ["archivos"] });
+    repoItem.sesionId = sesionId;
+    const archivoResultado = await ArchivoController.guardar(file, sesionId);
+
+    repoItem.archivos.push(archivoResultado.archivo);
+    await repo.save(repoItem);
+
+    return archivoResultado.rf;
+  };
+
+  static quitarArchivo = async (repo: Repository<any>, idRepo: number | string, sesionId: number, fileId: number | string) => {
+    const archivoId = idSeguro(fileId, "archivoId");
+    const repoItem = await repo.findOneOrFail(idSeguro(idRepo), { relations: ["archivos"] });
+    // Solo se puede quitar un archivo que pertenezca al registro (IDOR, hallazgo M8)
+    if (!repoItem.archivos.some((a: Archivo) => a.id === archivoId)) {
+      throw new AppError("El archivo no pertenece al registro", 404);
     }
-
-
+    repoItem.sesionId = sesionId;
+    repoItem.archivos = repoItem.archivos.filter((arch: Archivo) => arch.id !== archivoId);
+    await repo.save(repoItem);
+    await ArchivoController.quitar(await getRepository(Archivo).findOneOrFail(archivoId), sesionId);
+  };
 }
 
-export { PaginacionANTD, ResultadoTabla };
+export { PaginacionANTD, ResultadoTabla, ParametrosTabla, FnFiltrado };

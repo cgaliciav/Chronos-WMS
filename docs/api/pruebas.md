@@ -41,6 +41,15 @@ Los ids fijos están en `SEMILLA`.
 
 > Nunca apuntes `.env.test` a una base real: `resetDb.ts` la destruye.
 
+## Suites existentes
+
+| Archivo | Qué cubre |
+|---|---|
+| `src/test/humo.int.test.ts` | arranque, login, token, roles |
+| `src/test/caracterizacion.int.test.ts` | escenarios de negocio (compra, alta, préstamo, devolución, deshacer, concurrencia, listados, edición, IP). Los `it.failing` documentan lo que corrige la fase 3 |
+| `src/test/seguridad.int.test.ts` | fase 2: archivos con token y sin recorrido de rutas, contraseñas, rate limit, inyección en filtros/orden/búsquedas, validación zod, promesas esperadas, 501 |
+| `src/helpers/*.test.ts`, `src/esquemas/index.test.ts`, `src/middlewares/manejoErrores.test.ts` | unitarias de los helpers de seguridad y validación |
+
 ## Escribir pruebas
 
 - **Unitarias**: sin TypeORM. Si el módulo bajo prueba importa controladores, mockea

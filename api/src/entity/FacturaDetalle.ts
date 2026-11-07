@@ -1,4 +1,5 @@
 import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToOne} from "typeorm";
+import { numericTransformer } from "../helpers/numericTransformer";
 import { Proveedor } from "./Proveedor";
 import { FacturaTipo } from "./FacturaTipo";
 import { GrupoDetalle } from "./GrupoDetalle";
@@ -17,13 +18,13 @@ export class FacturaDetalle {
     @Column()
     fechaEmision:Date;
 
-    @Column({type:"numeric", precision:15 , scale:2 })
+    @Column({type:"numeric", precision:15 , scale:2, transformer: numericTransformer })
     total:number;
 
-    @Column({type:"numeric", precision:15 , scale:2 })
+    @Column({type:"numeric", precision:15 , scale:2, transformer: numericTransformer })
     impuestos:number;
 
-    @Column({type:"numeric", precision:15 , scale:2 })
+    @Column({type:"numeric", precision:15 , scale:2, transformer: numericTransformer })
     montoIngresado:number;
 
     @ManyToOne(type => Proveedor, proveedor => proveedor.facturasDetalle,{eager:true})

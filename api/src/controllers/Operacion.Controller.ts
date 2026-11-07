@@ -7,6 +7,7 @@ import { Proyecto } from "../entity/Proyecto";
 import { Usuario } from "../entity/Usuario";
 import OperacionDetalleController from "./OperacionDetalle.Controller";
 import { AppError } from "../helpers/errorClases";
+import { idOpcional, idSeguro, idsSeguros } from "../helpers/ids";
 
 const crearBaseOperacion = async (
   tipoMovimientoId: number | string,
@@ -15,16 +16,14 @@ const crearBaseOperacion = async (
   sesionId: number
 ) => {
   const operacion = new Operacion();
-  operacion.movimientoTipo = await getRepository(MovimientoTipo).findOneOrFail(
-    tipoMovimientoId
-  );
-  if (proyectoId !== undefined && proyectoId !== null) {
-    operacion.proyecto = await getRepository(Proyecto).findOneOrFail(
-      proyectoId
-    );
+  operacion.movimientoTipo = await getRepository(MovimientoTipo).findOneOrFail(idSeguro(tipoMovimientoId, "movimientoTipoId"));
+  const proyecto = idOpcional(proyectoId, "proyectoId");
+  if (proyecto !== undefined) {
+    operacion.proyecto = await getRepository(Proyecto).findOneOrFail(proyecto);
   }
-  if (usuariosIds !== undefined && usuariosIds !== null) {
-    operacion.usuarios = await getRepository(Usuario).findByIds(usuariosIds);
+  const usuarios = idsSeguros(usuariosIds, "usuariosIds");
+  if (usuarios !== undefined) {
+    operacion.usuarios = await getRepository(Usuario).findByIds(usuarios);
   }
   operacion.sesionId = sesionId;
   return operacion;
@@ -76,11 +75,13 @@ class OperacionController {
 
   // quitar --> quitar la operacion
   static quitar = async (operacion: Operacion, sesionId: number) => {
+    // La relación puede no venir cargada (hallazgo M32)
+    const detalle =
+      operacion.operacionDetalle !== undefined
+        ? operacion.operacionDetalle
+        : (await getRepository(Operacion).findOne(operacion.id, { relations: ["operacionDetalle"], loadEagerRelations: false }))?.operacionDetalle;
     const operacionQuitada = await getRepository(Operacion).remove(operacion);
-    await OperacionDetalleController.quitar(
-      operacion.operacionDetalle,
-      sesionId
-    );
+    await OperacionDetalleController.quitar(detalle, sesionId);
     return operacionQuitada;
   };
 

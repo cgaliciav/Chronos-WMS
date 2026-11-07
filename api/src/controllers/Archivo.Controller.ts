@@ -1,12 +1,35 @@
-import { dirname, basename, extname, join } from "path";
+import { join } from "path";
 import { NextFunction, Request, Response } from "express";
-import { existsSync, readFileSync, writeFile } from "fs";
+import { existsSync, readFileSync } from "fs";
+import { access, writeFile } from "fs/promises";
 import sharp from 'sharp';
 import { getRepository } from "typeorm";
 import { Archivo } from "../entity/Archivo";
 import { InventarioActual } from "../entity/InventarioActual";
 import { AppError } from "../helpers/errorClases";
 import CommonController from "./common/Common.Controller";
+import { esImagen, extensionSegura, nombreArchivoSeguro } from "../helpers/archivosSeguros";
+import { idSeguro } from "../helpers/ids";
+import { Grupo } from "../entity/Grupo";
+import { Operacion } from "../entity/Operacion";
+import { Producto } from "../entity/Producto";
+import { Proveedor } from "../entity/Proveedor";
+import { Proyecto } from "../entity/Proyecto";
+import { Usuario } from "../entity/Usuario";
+
+/** Entidades a las que el cliente puede adjuntar archivos/comentarios. Antes `getRepository(relacion)` aceptaba cualquier nombre (hallazgo H3). */
+export const RELACIONES_PERMITIDAS: Record<string, any> = { Grupo, Operacion, Producto, Proveedor, Proyecto, Usuario };
+export const repositorioDeRelacion = (relacion: unknown) => {
+  if (typeof relacion !== "string" || !RELACIONES_PERMITIDAS[relacion]) {
+    throw new AppError(`Relación no permitida: ${String(relacion)}`, 400);
+  }
+  return getRepository(RELACIONES_PERMITIDAS[relacion]);
+};
+
+/** 15 MiB (antes el límite era 16 000 000 bytes y el mensaje decía 15 MB; hallazgo L4). Lo usa también multer. */
+export const TAMANO_MAXIMO_ARCHIVO = 15 * 1024 * 1024;
+
+const existe = (ruta: string) => access(ruta).then(() => true).catch(() => false);
 
 
 
@@ -19,134 +42,39 @@ interface ResponseFile {
   type: string,
 }
 
-interface ResponseFileSupabase {
-  image_url: string,
-  image_url_thumbnail?: string,
-  image_url_catalog?: string,
-}
+/**
+ * Materializa el BLOB en disco (caché) y devuelve la ruta. El nombre en disco se construye con el id y la
+ * extensión derivada del tipo MIME, nunca con el nombre que subió el usuario (hallazgo H2: recorrido de rutas).
+ */
+const obtenerGenerarArchivo = async (archivoId: number | string): Promise<string> => {
+  const archivo = await getRepository(Archivo).findOneOrFail(idSeguro(archivoId, "archivoId"));
+  const RUTA_ARCHIVO = process.env.RUTA_ARCHIVOS;
+  if (RUTA_ARCHIVO === undefined) throw new AppError("RUTA ARCHIVO indefinida");
 
-interface ResponseFileSupabase2 {
-  file_path: string,
-  file_type: string,
-  image_url_thumbnail?: string,
-  image_url_catalog?: string,
-}
-
-export const obtenerGenerarArchivoComentarioSupabase = async (archivoId: number | string): Promise<ResponseFileSupabase2> => {
-  try {
-    const archivo = await getRepository(Archivo).findOneOrFail(archivoId);
-
-    // const uploadbBuffer = await sharp(archivo.data).jpeg({ quality: 100 }).withMetadata().toBuffer()  //toFile(`${fileName}-ORIGINAL.jpg`); // toBuffer(); // toFile(`${archivo.id}-ORIGINAL.jpg`);
-    // const uploadbBuffer64 = await sharp(archivo.data).resize(64).jpeg().withMetadata().toBuffer(); //toFile(`${fileName}-64.jpg`);
-    // const uploadbBuffer300 = await sharp(archivo.data).resize(300).jpeg().withMetadata().toBuffer(); //toFile(`${fileName}-300.jpg`);
-    //upload a file to a bucket
-
-
-
-
-    const validFileName = archivo.nombre.replace(/[^a-zA-Z0-9-_\.]/g, '_');
-    // const { error } = await supabase.storage.from('comments-attachments').upload(`${archivo.id}-${validFileName}`, archivo.data, { contentType: archivo.tipoMIME, upsert:true, metadata: { "originalFileName": archivo.nombre } });
-    // const { error: error64 } = await supabase.storage.from('products-images').upload(`thumbnail/${archivo.id}.jpg`, uploadbBuffer64, { contentType: 'image/jpeg' });
-    // const { error: error300 } = await supabase.storage.from('products-images').upload(`catalog/${archivo.id}.jpg`, uploadbBuffer300, { contentType: 'image/jpeg' });
-
-    // if (error /* || error64 || error300 */) {
-    //   console.error('Error uploading file: ', { archivoId, error: error.message /*, error64, error300 */ });
-    //   throw new AppError("Error al subir archivo", 501);
-    // }
-    // const { data: dataO } = supabase.storage.from('products-images').getPublicUrl(`${archivo.id}.jpg`);
-    // const { data: dataT } = supabase.storage.from('products-images').getPublicUrl(`thumbnail/${archivo.id}.jpg`);
-    // const { data: dataC } = supabase.storage.from('products-images').getPublicUrl(`catalog/${archivo.id}.jpg`);
-
-    return {
-      file_path: `${archivo.id}-${validFileName}`,
-      file_type: archivo.tipoMIME,
-      // image_url_thumbnail: dataT.publicUrl,
-      // image_url_catalog: dataC.publicUrl
-    };
-
-
-  } catch (error) {
-    console.log("Error al subir archivo", error);
-    // throw new AppError("Error al subir archivo", 501);
-
+  const fileName = join(RUTA_ARCHIVO, `${archivo.id}${extensionSegura(archivo.tipoMIME, archivo.nombre)}`);
+  if (!(await existe(fileName))) {
+    await writeFile(fileName, archivo.data);
   }
+  return fileName;
+};
 
-}
-
-
-export const obtenerGenerarArchivoSupabase = async (archivoId: number | string): Promise<ResponseFileSupabase> => {
-  try {
-    const archivo = await getRepository(Archivo).findOneOrFail(archivoId);
-    if (!archivo.tipoMIME.startsWith('image/')) {
-      throw new AppError("El archivo no es una imagen", 400);
-    }
-
-    const uploadbBuffer = await sharp(archivo.data).jpeg({ quality: 100 }).withMetadata().toBuffer()  //toFile(`${fileName}-ORIGINAL.jpg`); // toBuffer(); // toFile(`${archivo.id}-ORIGINAL.jpg`);
-    // const uploadbBuffer64 = await sharp(archivo.data).resize(64).jpeg().withMetadata().toBuffer(); //toFile(`${fileName}-64.jpg`);
-    // const uploadbBuffer300 = await sharp(archivo.data).resize(300).jpeg().withMetadata().toBuffer(); //toFile(`${fileName}-300.jpg`);
-
-    //upload a file to a bucket
-
-    // const { error } = await supabase.storage.from('products-images').upload(`${archivo.id}.jpg`, uploadbBuffer, { contentType: 'image/jpeg', metadata: { "originalFileName": archivo.nombre } });
-    // const { error: error64 } = await supabase.storage.from('products-images').upload(`thumbnail/${archivo.id}.jpg`, uploadbBuffer64, { contentType: 'image/jpeg' });
-    // const { error: error300 } = await supabase.storage.from('products-images').upload(`catalog/${archivo.id}.jpg`, uploadbBuffer300, { contentType: 'image/jpeg' });
-
-    // if (error /* || error64 || error300 */) {
-    //   console.error('Error uploading file: ', { archivoId, error: error.message,  /*, error64, error300 */ });
-    //   throw new AppError("Error al subir archivo", 501);
-    // }
-
-    // GET THE PUBLIC URL
-    // const { data: dataO } = supabase.storage.from('products-images').getPublicUrl(`${archivo.id}.jpg`);
-    // const { data: dataT } = supabase.storage.from('products-images').getPublicUrl(`thumbnail/${archivo.id}.jpg`);
-    // const { data: dataC } = supabase.storage.from('products-images').getPublicUrl(`catalog/${archivo.id}.jpg`);
-
-    return {
-      image_url: `${archivo.id}.jpg`,
-      // image_url_thumbnail: dataT.publicUrl,
-      // image_url_catalog: dataC.publicUrl
-    };
-
-
-  } catch (error) {
-    console.log("Error al subir archivo", error);
-    // throw new AppError("Error al subir archivo", 501);
-
+/** Las miniaturas solo se generan para imágenes; otros tipos respondían 500 desde sharp (hallazgo M17). */
+const asegurarImagen = async (archivoId: number | string) => {
+  const archivo = await getRepository(Archivo).findOne(idSeguro(archivoId, "archivoId"), { select: ["id", "tipoMIME"] });
+  if (!archivo || !esImagen(archivo.tipoMIME)) {
+    throw new AppError("El archivo no es una imagen", 400);
   }
+};
 
-}
-
-
-
-const obtenerGenerarArchivo = (archivoId: number | string) => (
-  new Promise<string>((resolve, reject) => {
-    getRepository(Archivo)
-      .findOneOrFail(archivoId)
-      .then(async (archivo) => {
-        const RUTA_ARCHIVO = process.env.RUTA_ARCHIVOS;
-        if (RUTA_ARCHIVO === undefined)
-          throw new AppError("RUTA ARCHIVO indefinida");
-
-        const fileName = join(RUTA_ARCHIVO, `${archivo.id}-${archivo.nombre}`);
-
-        if (!existsSync(fileName)) {
-          writeFile(fileName, archivo.data, (err => {
-            if (!err) {
-              resolve(fileName);
-            } else {
-              console.log("Error al crear archivo", err);
-              throw new AppError("Error al crear archivo", 501);
-            }
-          }))
-        }
-        else {
-          resolve(fileName);
-        }
-      })
-      .catch(error => {
-        reject(error)
-      })
-  }))
+/** Estructura que espera el componente Upload de antd. La miniatura se decide por tipo MIME (hallazgo M16). */
+const respuestaArchivo = (archivo: Archivo): ResponseFile => ({
+  uid: (archivo.id * -1).toString(10),
+  name: archivo.nombre,
+  status: "done",
+  url: `${process.env.API_ALMACEN}/file/${archivo.id}`,
+  thumbUrl: esImagen(archivo.tipoMIME) ? `${process.env.API_ALMACEN}/file/thumbnail/${archivo.id}` : "",
+  type: archivo.tipoMIME,
+});
 
 class ArchivoController {
   static guardar = async (
@@ -156,15 +84,18 @@ class ArchivoController {
     orden: number = 0,
     nota: string = ""
   ) => {
-    if (file.size > 16000000) {
+    if (!file) {
+      throw new AppError("No se recibió ningún archivo", 400);
+    }
+    if (file.size > TAMANO_MAXIMO_ARCHIVO) {
       throw new AppError(
-        "ARCHIVO DEMASIADO GRANDE. EL ARCHIVO NO PUEDE SOBREPASAR DE LOS 15MB",
+        `ARCHIVO DEMASIADO GRANDE. EL ARCHIVO NO PUEDE SOBREPASAR DE LOS ${TAMANO_MAXIMO_ARCHIVO / (1024 * 1024)}MB`,
         400
       );
     }
 
     const archivo = new Archivo();
-    archivo.nombre = file.originalname;
+    archivo.nombre = nombreArchivoSeguro(file.originalname);
     archivo.sesionId = sesionId;
     archivo.tipoMIME = file.mimetype;
     archivo.tipo = tipo;
@@ -178,17 +109,7 @@ class ArchivoController {
     }
     await getRepository(Archivo).save(archivo);
 
-    const rf: ResponseFile = {
-      uid: (archivo.id * -1).toString(10),
-      name: archivo.nombre,
-      status: "done",
-      url: `${process.env.API_ALMACEN}/file/${archivo.id}`,
-      thumbUrl:
-        archivo.tipo.toLowerCase().indexOf("image") >= 0
-          ? `${process.env.API_ALMACEN}/file/thumbnail/${archivo.id}`
-          : "",
-      type: archivo.tipoMIME,
-    };
+    const rf: ResponseFile = respuestaArchivo(archivo);
 
     return {
       id: archivo.id,
@@ -204,13 +125,11 @@ class ArchivoController {
   };
 
   static borrar = async (req: Request, res: Response, next: NextFunction) => {
-    const { archivoId } = req.body;
+    const archivoId = idSeguro(req.params.id ?? req.body?.archivoId, "archivoId");
     const { jwtPayload } = res.locals;
     try {
-      ArchivoController.quitar(
-        await getRepository(Archivo).findOneOrFail(archivoId),
-        jwtPayload.si
-      );
+      await ArchivoController.quitar(await getRepository(Archivo).findOneOrFail(archivoId), jwtPayload.si);
+      res.json();
     } catch (error) {
       next(error);
     }
@@ -243,6 +162,7 @@ class ArchivoController {
       const nombreArchivo = await obtenerGenerarArchivo(id);
       const nuevoNombreArchivo = `${nombreArchivo}-thumbnail`;
       if (!existsSync(nuevoNombreArchivo)) {
+        await asegurarImagen(id);
         const sharpResultado = await sharp(nombreArchivo)
           .resize(64, 64)
           .withMetadata()
@@ -265,15 +185,10 @@ class ArchivoController {
 
     try {
       const splitId = id.split(".");
-      // console.info("***************************************splitId",splitId,id)
       const nombreArchivo = await obtenerGenerarArchivo(splitId[0]);
-      const nuevoNombreArchivo2 = join(dirname(nombreArchivo), `catalog-${id}`);
       const nuevoNombreArchivo = `${nombreArchivo}-catalog`;
-
-      // const filename = nombreArchivo.replace(/^.*[\\\/]/, '')
-      // console.info("***************************************nuevoNombreArchivo",{nuevoNombreArchivo,nuevoNombreArchivo2})
-      // const nuevoNombreArchivo = `${id}`;
       if (!existsSync(nuevoNombreArchivo)) {
+        await asegurarImagen(splitId[0]);
         const sharpResultado = await sharp(nombreArchivo)
           .resize(300, 300, { fit: "contain" })
           .withMetadata()
@@ -296,15 +211,10 @@ class ArchivoController {
 
     try {
       const splitId = id.split(".");
-      // console.info("***************************************splitId",splitId,id)
       const nombreArchivo = await obtenerGenerarArchivo(splitId[0]);
-      const nuevoNombreArchivo2 = join(dirname(nombreArchivo), `review-${id}`);
       const nuevoNombreArchivo = `${nombreArchivo}-review`;
-
-      // const filename = nombreArchivo.replace(/^.*[\\\/]/, '')
-      // console.info("***************************************nuevoNombreArchivo",{nuevoNombreArchivo,nuevoNombreArchivo2})
-      // const nuevoNombreArchivo = `${id}`;
       if (!existsSync(nuevoNombreArchivo)) {
+        await asegurarImagen(splitId[0]);
         const sharpResultado = await sharp(nombreArchivo)
           .resize(600, 600, { fit: "contain" })
           .withMetadata()
@@ -343,17 +253,7 @@ class ArchivoController {
 
     try {
       const archivos = await getRepository(Archivo).findByIds(ids);
-      const respuestaArchivos: ResponseFile[] = archivos.map((archivo) => ({
-        uid: (archivo.id * -1).toString(10),
-        name: archivo.nombre,
-        status: "done",
-        url: `${process.env.API_ALMACEN}/file/${archivo.id}`,
-        thumbUrl:
-          archivo.tipo.toLowerCase().indexOf("image") >= 0
-            ? `${process.env.API_ALMACEN}/file/thumbnail/${archivo.id}`
-            : "",
-        type: archivo.tipoMIME,
-      }));
+      const respuestaArchivos: ResponseFile[] = archivos.map(respuestaArchivo);
       res.json(respuestaArchivos);
     } catch (error) {
       next(error);
@@ -371,7 +271,7 @@ class ArchivoController {
     try {
       res.json(
         await CommonController.agregarArchivo(
-          getRepository(relacion),
+          repositorioDeRelacion(relacion),
           id,
           jwtPayload.si,
           file
@@ -391,7 +291,7 @@ class ArchivoController {
     const { jwtPayload } = res.locals;
     try {
       await CommonController.quitarArchivo(
-        getRepository(relacion),
+        repositorioDeRelacion(relacion),
         id,
         jwtPayload.si,
         archivoId
@@ -407,15 +307,15 @@ class ArchivoController {
     res: Response,
     next: NextFunction
   ) => {
-    const { id: nombreArchivo } = req.params;
-
     try {
-      // const nuevoNombreArchivo = `${id}`;
-      const ruta = `${process.env.RUTA_REPORTES}${nombreArchivo}`;
-      if (!existsSync(ruta)) {
-        throw new AppError("El reporte no existe", 401);
+      // Solo el nombre base, servido desde la carpeta de reportes como raíz (hallazgo C4: recorrido de rutas).
+      const nombreArchivo = nombreArchivoSeguro(req.params.id);
+      const raiz = process.env.RUTA_REPORTES;
+      if (!raiz) throw new AppError("RUTA_REPORTES indefinida");
+      if (!(await existe(join(raiz, nombreArchivo)))) {
+        throw new AppError("El reporte no existe", 404);
       }
-      res.sendFile(ruta);
+      res.sendFile(nombreArchivo, { root: raiz, dotfiles: "deny" });
     } catch (error) {
       next(error);
     }

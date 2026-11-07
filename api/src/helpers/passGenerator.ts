@@ -1,4 +1,9 @@
-import generatePassword from "password-generator";
+import { randomInt } from "crypto";
+
+const ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789?-";
+/** Contraseña aleatoria con CSPRNG (antes `password-generator` usaba Math.random; hallazgo L1). */
+const generatePassword = (longitud: number) =>
+  Array.from({ length: longitud }, () => ALFABETO[randomInt(ALFABETO.length)]).join("");
 
 let maxLength = 20;
 let minLength = 8;
@@ -29,9 +34,9 @@ export default class  passGenerator{
        
       static generarPassword= ()=> {
         let password = "";
-        let randomLength = Math.floor(Math.random() * (maxLength - minLength)) + minLength;
+        const randomLength = randomInt(12, maxLength + 1);
         while (!passGenerator.esPasswordValido(password)) {
-          password = generatePassword(randomLength, false, /[\w\d\?\-]/);
+          password = generatePassword(randomLength);
         }
         return password;
       }    

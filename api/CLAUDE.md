@@ -1,9 +1,8 @@
 # api/ · guía para agentes
 
-API REST del almacén. **Node 14** (Dockerfile; `.nvmrc` 14.17; README dice 12) · **Express 4** ·
-**TypeORM 0.2.41** (`getRepository`, `createConnection`) · **MariaDB** · TypeScript 4.5 **no estricto**.
+API REST del almacén. **Node 22** (`.nvmrc`, `Dockerfile node:22-alpine`) · **Express 4** ·
+**TypeORM 0.2.41** (`getRepository`, `createConnection`) · **MariaDB** · TypeScript 5.9 **no estricto**.
 Arranque: `npm run dev` (ts-node-dev) o `npm start` (ts-node). Puerto `PORT_ALMACEN_API` (4100 dev).
-Node para desarrollo/pruebas: 22 (`.nvmrc`); el `Dockerfile` sigue en 14 hasta la fase 4 del plan 02.
 Pruebas: `npm run test:unit` (sin BD), `npm run test:int` (MariaDB de `.env.test`, recrea el esquema),
 `npm run typecheck`. Guía completa en `docs/api/pruebas.md`.
 
@@ -21,7 +20,10 @@ src/controllers/        clases con métodos estáticos (req,res,next); la lógic
 src/controllers/common/Common.Controller.ts  CRUD genérico: listaTabla(Qry/And), nuevo, editar, habilitar/deshabilitar/finalizar, comentarios, archivos
 src/entity/             entidades TypeORM (ver docs/api/modelo-de-datos.md); entity-old/ es código muerto
 src/subscriber/         GeneralSubscriber: auditoría automática en LogFuncionamiento usando entity.sesionId
-src/helpers/            errorClases (AppError), enviarMail (nodemailer), excelFunctions (reportes exceljs, 2 800 líneas), passGenerator
+src/helpers/            errorClases (AppError), filtrosTabla (filtros/orden parametrizados), ids (idSeguro), numericTransformer,
+                        archivosSeguros, enviarMail (nodemailer), excelFunctions (reportes exceljs, 2 800 líneas), passGenerator
+src/esquemas/           esquemas zod de los cuerpos de petición (se aplican con middlewares/validar.ts)
+src/sentry.ts           Sentry preparado: solo se inicializa con SENTRY_DSN
 ```
 
 Documentación detallada: `docs/api/modelo-de-datos.md`, `docs/api/tipos-de-movimiento.md`,
@@ -48,10 +50,17 @@ Documentación detallada: `docs/api/modelo-de-datos.md`, `docs/api/tipos-de-movi
 - Métodos de controlador `static nombre = async (req, res, next) => { try { … res.json(x) } catch (e) { next(e) } }`.
   **Siempre `await`** las promesas (varios fallos actuales son promesas sueltas) y **siempre responde**.
 - Consultas con QueryBuilder **parametrizadas** (`:param`, `IN (:...ids)`); nunca interpoles valores del
-  request en SQL (hay inyecciones conocidas en los `condicionesWhereAnd`).
-- Ids del body: conviértelos con `Number()` y valida antes de `findOne`. En TypeORM 0.2,
+  request en SQL. Para filtros de tablas usa `construirFiltros`/`aplicarFiltros`, para `IN` con arreglos
+  `andWhereIn`, para `sortField` `columnaSegura`, y para `MATCH … AGAINST` `textoBusquedaBooleana`
+  (todo en `helpers/filtrosTabla.ts`).
+- Ids del body: `idSeguro(x)` / `idsSeguros(xs)` (`helpers/ids.ts`) antes de `findOne`. En TypeORM 0.2,
   `findOne(undefined)` devuelve la **primera fila**.
-- `numeric` → string: usa `Number(x)` (o el `numericTransformer` cuando exista) antes de sumar/comparar.
+- Cuerpos de petición nuevos: esquema zod en `src/esquemas/index.ts` + `validarBody(esquema)` en la ruta
+  (`.strip()` para descartar campos desconocidos). `CommonController.nuevo/editar` nunca copian
+  `id`, `password`, `sesionId` ni `estatus` del body.
+- Las columnas `numeric` ya exponen `number` gracias a `numericTransformer`; al declarar una nueva columna
+  `numeric` añade el transformer.
+- Rutas que sirve el navegador sin cabeceras (`<img>`, descargas) usan `checkJwtArchivos` (acepta `?auth=`).
 - Usa los ids de `MovimientoTipo` por su significado (`docs/api/tipos-de-movimiento.md`); cuando exista
   `MovimientoTipoId` (plan 02) úsalo en vez de números.
 - Nuevos listados: reutiliza `CommonController.listaTablaQryAnd` y define una lista blanca de columnas filtrables/ordenables.

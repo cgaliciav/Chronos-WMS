@@ -1,4 +1,5 @@
 import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable, ManyToOne} from "typeorm";
+import { numericTransformer } from "../helpers/numericTransformer";
 import { Producto } from "./Producto";
 import { PrecioTipo } from "./PrecioTipo";
 import { Operacion } from "./Operacion";
@@ -11,7 +12,7 @@ export class OperacionPrecio {
     id: number;
 
     
-    @Column({type:"numeric", precision:15 , scale:4 })
+    @Column({type:"numeric", precision:15 , scale:4, transformer: numericTransformer })
     precio:number
 
     @ManyToOne(type => PrecioTipo , precioTipo => precioTipo.productoPrecios,{eager:true})

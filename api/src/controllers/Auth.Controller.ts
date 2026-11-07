@@ -1,6 +1,6 @@
 
 import { NextFunction, Request, Response } from "express";
-import * as jwt from "jsonwebtoken";
+import { firmarToken } from "../middlewares/verificarJwt";
 import { getRepository } from "typeorm";
 import { Sesion } from "../entity/Sesion";
 import { Usuario } from "../entity/Usuario";
@@ -24,7 +24,7 @@ class AuthController {
 
   static login = async (req: Request, res: Response, next:NextFunction) => {
     
-    let { c, p ,ip} = req.body;
+    const { c, p } = req.body; // la IP ya no se toma del body (decisión 3c): viene de la conexión
     let usuario: Usuario;
     try {
 
@@ -50,15 +50,11 @@ class AuthController {
       let sesion = new Sesion;
       sesion.usuario=usuario;
       
-      sesion.IP=(ip===undefined)?"desconodida":ip;
+      sesion.IP = (req.ip ?? "desconocida").slice(0, 50);
 
       await getRepository(Sesion).save(sesion);
 
-      const t = jwt.sign(
-        { ui: usuario.id, u: usuario.nombre, si:sesion.id },
-        process.env.JWTSECRET,
-        { expiresIn: "12h" }
-      );
+      const t = firmarToken({ ui: usuario.id, u: usuario.nombre, si: sesion.id });
 
       res.json({t});
     } catch (error) {

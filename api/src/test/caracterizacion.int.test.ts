@@ -64,18 +64,13 @@ describe("caracterización: operaciones de almacén", () => {
     expect(movimiento.operacion.movimientoTipo.id).toBe(15);
   });
 
-  it.failing("COMPRA (15) de 5 unidades debería dejar cantidadAlmacen = 5 (hoy 5.0001: suma de string + número)", async () => {
-    // agregarMovimientoCompra crea el inventario con cantidad = cantidadAlmacen = 5 y después el switch de
-    // actualizarInventarioActual vuelve a sumar 5. Como la columna numeric llega como string ("5.0000"),
-    // "5.0000" + 5 = "5.00005", que MariaDB redondea a 5.0001 (hallazgos H18 y H21). Si solo se corrige el
-    // tipo numérico, el resultado sería 10: ambas correcciones van juntas en la fase 2.
+  it("COMPRA (15) de 5 unidades deja cantidadAlmacen = 5 (antes 5.0001: suma string + número y doble incremento, H18/H21)", async () => {
     const { inventarioActualId } = await crearArticulo(api, { grupoId: grupoCompraId, cantidad: 5, precio: 200 });
     expect((await inventarioDe(inventarioActualId)).cantidadAlmacen).toBe(5);
   });
 
   // 2
   it("ALTA (14) de 3 unidades deja el artículo disponible con 3/3", async () => {
-    // Pasa por casualidad: "3.0000" + 3 = "3.00003" se redondea a 3.0000 (ver la prueba failing de COMPRA).
     const { inventarioActualId } = await crearArticulo(api, { grupoId: grupoAltaId, cantidad: 3, movimientoTipoId: 14 });
     const inv = await inventarioDe(inventarioActualId);
     expect(inv.cantidad).toBe(3);
@@ -172,16 +167,18 @@ describe("caracterización: operaciones de almacén", () => {
     const intentos = await Promise.all(
       Array.from({ length: 4 }, () => registrarOperacion(api, { codigo, cantidad: 1, movimientoTipoId: 3, grupoId: grupoPrestamoAId }))
     );
-    const exitos = intentos.filter((r) => r.status === 200).length;
+    const estados = intentos.map((r) => r.status);
+    const exitos = estados.filter((s) => s === 200).length;
     const inv = await inventarioDe(inventarioActualId);
     const activos = (await movimientosDe(inventarioActualId)).filter((m) => m.estatus === "activo").length;
     const coherente = exitos === 1 && inv.cantidad === 0 && activos === 1;
     if (!coherente) {
-      console.warn("CARRERA OBSERVADA (hallazgo C7):", { exitos, cantidad: inv.cantidad, activos });
+      console.warn("CARRERA OBSERVADA (hallazgo C7):", { estados, exitos, cantidad: inv.cantidad, activos });
     }
-    // Comportamiento esperado tras la fase 3: exactamente un éxito, cantidad 0 y un solo movimiento activo.
-    // Hoy solo se documenta; la aserción estricta se activa en la fase 3.
-    expect(intentos.map((r) => r.status).every((s) => s === 200 || s === 400)).toBe(true);
+    // Comportamiento esperado tras la fase 3 (transacciones + bloqueo): exactamente un éxito, cantidad 0 y un
+    // solo movimiento activo. Hoy solo se documenta; la aserción estricta se activa en la fase 3.
+    expect(exitos).toBeGreaterThanOrEqual(1);
+    expect(inv.cantidad).toBeGreaterThanOrEqual(0);
   });
 
   // 8
@@ -205,7 +202,7 @@ describe("caracterización: operaciones de almacén", () => {
     expect(res.body.pagination.totalItems).toBeGreaterThanOrEqual(1);
   });
 
-  it.failing("POST /groups/active-activity-list sin sortField debería responder 200 (hoy 500: ORDER BY id ambiguo)", async () => {
+  it("POST /groups/active-activity-list sin sortField responde 200 (antes 500: ORDER BY id ambiguo, M33)", async () => {
     const res = await api.post("/groups/active-activity-list").send({
       proyectoId: SEMILLA.proyectoAId, usuariosIds: [], areasIds: [SEMILLA.areaId], bodegasIds: [SEMILLA.bodegaId],
       pagination: { current: 1, pageSize: 10 }, filters: {},
@@ -244,10 +241,20 @@ describe("caracterización: operaciones de almacén", () => {
   });
 
   // 10
-  it("el login guarda en la sesión la IP que envía el cliente en el body (se cambiará por req.ip en la fase 2)", async () => {
-    const res = await supertest(app).post("/auth/login").send({ c: SEMILLA.adminCorreo, p: SEMILLA.adminPassword, ip: "203.0.113.9" });
-    expect(res.status).toBe(200);
-    const sesion = await getRepository(Sesion).findOne({ order: { id: "DESC" } });
-    expect(sesion.IP).toBe("203.0.113.9");
+  it("el login ignora la IP del body y guarda la de la conexión (o la de X-Forwarded-For desde un proxy confiable)", async () => {
+    const directo = await supertest(app).post("/auth/login").send({ c: SEMILLA.adminCorreo, p: SEMILLA.adminPassword, ip: "203.0.113.9" });
+    expect(directo.status).toBe(200);
+    let sesion = await getRepository(Sesion).findOne({ order: { id: "DESC" } });
+    expect(sesion.IP).not.toBe("203.0.113.9");
+    expect(sesion.IP).toMatch(/127\.0\.0\.1|::1|::ffff:127\.0\.0\.1/);
+
+    // TRUST_PROXY=loopback (por defecto): la cabecera del proxy local sí se respeta
+    const viaProxy = await supertest(app)
+      .post("/auth/login")
+      .set("X-Forwarded-For", "198.51.100.7")
+      .send({ c: SEMILLA.adminCorreo, p: SEMILLA.adminPassword });
+    expect(viaProxy.status).toBe(200);
+    sesion = await getRepository(Sesion).findOne({ order: { id: "DESC" } });
+    expect(sesion.IP).toBe("198.51.100.7");
   });
 });

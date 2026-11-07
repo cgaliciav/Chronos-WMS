@@ -1,6 +1,7 @@
 import { stream, Table, Workbook, Worksheet } from "exceljs";
 import { performance } from "perf_hooks";
 import { Brackets, getConnection, getRepository, SelectQueryBuilder } from "typeorm";
+import { aplicarFiltros, columnaSegura, direccionSegura } from "./filtrosTabla";
 import {
   condicionesWhereAnd as condicionesWhereAndGrupo,
   condicionesWhereAndPrestamosActivos,
@@ -913,10 +914,10 @@ const agregarImagenes = async (
     if (item.producto.archivos.length > 0) {
 
       const idImage = workbook.addImage({
-        buffer: await sharp(item.producto.archivos[0].data)
+        buffer: (await sharp(item.producto.archivos[0].data)
           .resize(64, 64)
           .withMetadata().toFormat('jpg')
-          .toBuffer(),
+          .toBuffer()) as any, // exceljs tipa `buffer` con un Buffer antiguo incompatible con @types/node 22
         extension: "jpeg",
       });
       sheet.addImage(idImage, {
@@ -956,7 +957,7 @@ const agregarImagenesMovimiento = async (
       // );
       if (file === undefined) continue;
       const idImage = workbook.addImage({
-        buffer: await sharp(file.data).resize(64, 64).withMetadata().toFormat('jpg').toBuffer(),
+        buffer: (await sharp(file.data).resize(64, 64).withMetadata().toFormat('jpg').toBuffer()) as any, // tipos de exceljs vs @types/node 22
         extension: "jpeg",
       });
       sheet.addImage(idImage, {
@@ -994,7 +995,7 @@ const agregarImagenesMovimientoFotoGrande = async (
       // );
       if (file === undefined) continue;
       const idImage = workbook.addImage({
-        buffer: await sharp(file.data).resize(400, null, { fit: 'inside' }).withMetadata().toFormat('jpg').toBuffer(),
+        buffer: (await sharp(file.data).resize(400, null, { fit: 'inside' }).withMetadata().toFormat('jpg').toBuffer()) as any, // tipos de exceljs vs @types/node 22
         extension: "jpeg",
       });
       sheet.addImage(idImage, {
@@ -1035,7 +1036,7 @@ const agregarImagenesMovimientoCompra = async (
       // );
       if (file === undefined) continue;
       const idImage = workbook.addImage({
-        buffer: await sharp(file.data).resize(64, 64).withMetadata().toFormat('jpg').toBuffer(),
+        buffer: (await sharp(file.data).resize(64, 64).withMetadata().toFormat('jpg').toBuffer()) as any, // tipos de exceljs vs @types/node 22
         extension: "jpeg",
       });
 
@@ -1085,7 +1086,7 @@ async function agregarHojaMovimientos(
 
 
   const qry = funcionQueryListadoMovimientos().where(
-    "proyecto.id IN (:proyectosId) and movimientoTipo.id IN (:tiposMovimientosId)",
+    "proyecto.id IN (:...proyectosId) and movimientoTipo.id IN (:...tiposMovimientosId)",
     { proyectosId, tiposMovimientosId }
   );
 
@@ -1093,33 +1094,23 @@ async function agregarHojaMovimientos(
     qry.andWhere(
       new Brackets((qb) =>
         qb
-          .where("operacionUsuarios.id in (:usuariosIds)", { usuariosIds })
-          .orWhere("usuario.id in (:usuariosIds)", { usuariosIds })
+          .where("operacionUsuarios.id in (:...usuariosIds)", { usuariosIds })
+          .orWhere("usuario.id in (:...usuariosIds)", { usuariosIds })
       )
     );
   }
   if (areasId?.length > 0) {
-    qry.andWhere("area.id in (:areasId)", { areasId });
+    qry.andWhere("area.id in (:...areasId)", { areasId });
   }
   if (bodegasId?.length > 0) {
-    qry.andWhere("bodega.id in (:bodegasIds)", { bodegasId });
+    qry.andWhere("bodega.id in (:...bodegasIds)", { bodegasIds: bodegasId }); // antes :bodegasIds vs bodegasId (hallazgo H11)
   }
 
   if (filters) {
-    const condicionesWhere = condicionesWhereAndGrupo(filters);
-    if (condicionesWhere.length > 0) {
-      qry.andWhere(condicionesWhere);
-    }
+    aplicarFiltros(qry, condicionesWhereAndGrupo(filters));
   }
 
-  if (!Array.isArray(campoOrden)) {
-    qry.orderBy(campoOrden, direccion as "ASC" | "DESC");
-  } else {
-    qry.orderBy(
-      campoOrden.slice(campoOrden.length - 2).join("."),
-      direccion as "ASC" | "DESC"
-    );
-  }
+  qry.orderBy(columnaSegura(campoOrden, "movimiento.id"), direccionSegura(direccion === "DESC" ? "descend" : direccion === "ASC" ? "ascend" : direccion));
 
   const qryResultados = qry.clone();
 
@@ -1243,21 +1234,10 @@ async function agregarHojaPrestamosActivos(
   );
 
   if (filters) {
-    const condicionesWhere = condicionesWhereAndPrestamosActivos(filters);
-    if (condicionesWhere.length > 0) {
-      console.log("condicionesWherecondicionesWhere", condicionesWhere);
-      qry.andWhere(condicionesWhere);
-    }
+    aplicarFiltros(qry, condicionesWhereAndPrestamosActivos(filters));
   }
 
-  if (!Array.isArray(campoOrden)) {
-    qry.orderBy(campoOrden, direccion as "ASC" | "DESC");
-  } else {
-    qry.orderBy(
-      campoOrden.slice(campoOrden.length - 2).join("."),
-      direccion as "ASC" | "DESC"
-    );
-  }
+  qry.orderBy(columnaSegura(campoOrden, "movimiento.id"), direccionSegura(direccion === "DESC" ? "descend" : direccion === "ASC" ? "ascend" : direccion));
 
   const qryResultados = qry.clone();
 
@@ -1874,7 +1854,7 @@ const reportePorGrupo = async (body: any) => {
   );
 
 
-  const campoOrden: string | string[] = sortField ? sortField : "grupo.id";
+  const campoOrden: string = columnaSegura(sortField, "grupo.id");
   let direccion: string = "ASC";
 
   if (sortOrder !== undefined) {
@@ -1886,21 +1866,9 @@ const reportePorGrupo = async (body: any) => {
   const qry = funcionQueryListadoMovimientos().where("grupo.id=:grupoId", {
     grupoId,
   });
-  const condicionesWhere = condicionesWhereAndGrupo(filters);
-  if (condicionesWhere.length > 0) {
-    // console.log("listaTablaQry------nombreReporte-------------",condicionesWhere);
-    // process.send({r:0,message:"5"});
-    qry.andWhere(condicionesWhere);
-  }
+  aplicarFiltros(qry, condicionesWhereAndGrupo(filters));
 
-  if (!Array.isArray(campoOrden)) {
-    qry.orderBy(campoOrden, direccion as "ASC" | "DESC");
-  } else {
-    qry.orderBy(
-      campoOrden.slice(campoOrden.length - 2).join("."),
-      direccion as "ASC" | "DESC"
-    );
-  }
+  qry.orderBy(columnaSegura(campoOrden, "movimiento.id"), direccionSegura(direccion === "DESC" ? "descend" : direccion === "ASC" ? "ascend" : direccion));
 
   //clonar qry para obtener el total de registros
   const qryTotal = qry.clone();
@@ -2087,7 +2055,7 @@ const reportePorGrupoFotoGrande = async (body: any) => {
   );
 
 
-  const campoOrden: string | string[] = sortField ? sortField : "grupo.id";
+  const campoOrden: string = columnaSegura(sortField, "grupo.id");
   let direccion: string = "ASC";
 
   if (sortOrder !== undefined) {
@@ -2099,21 +2067,9 @@ const reportePorGrupoFotoGrande = async (body: any) => {
   const qry = funcionQueryListadoMovimientos().where("grupo.id=:grupoId", {
     grupoId,
   });
-  const condicionesWhere = condicionesWhereAndGrupo(filters);
-  if (condicionesWhere.length > 0) {
-    // console.log("listaTablaQry------nombreReporte-------------",condicionesWhere);
-    // process.send({r:0,message:"5"});
-    qry.andWhere(condicionesWhere);
-  }
+  aplicarFiltros(qry, condicionesWhereAndGrupo(filters));
 
-  if (!Array.isArray(campoOrden)) {
-    qry.orderBy(campoOrden, direccion as "ASC" | "DESC");
-  } else {
-    qry.orderBy(
-      campoOrden.slice(campoOrden.length - 2).join("."),
-      direccion as "ASC" | "DESC"
-    );
-  }
+  qry.orderBy(columnaSegura(campoOrden, "movimiento.id"), direccionSegura(direccion === "DESC" ? "descend" : direccion === "ASC" ? "ascend" : direccion));
 
   //clonar qry para obtener el total de registros
   const qryTotal = qry.clone();
@@ -2298,7 +2254,7 @@ const reportePorProyecto = async (body: any) => {
     : [movimientoTipoId];
 
   const qry = funcionQueryListadoMovimientos().where(
-    "proyecto.id=:proyectoId and movimientoTipo.id IN (:tiposMovimineto)",
+    "proyecto.id=:proyectoId and movimientoTipo.id IN (:...tiposMovimineto)",
     { proyectoId, tiposMovimineto }
   );
 
@@ -2306,31 +2262,21 @@ const reportePorProyecto = async (body: any) => {
     qry.andWhere(
       new Brackets((qb) =>
         qb
-          .where("operacionUsuarios.id in (:usuariosIds)", { usuariosIds })
-          .orWhere("usuario.id in (:usuariosIds)", { usuariosIds })
+          .where("operacionUsuarios.id in (:...usuariosIds)", { usuariosIds })
+          .orWhere("usuario.id in (:...usuariosIds)", { usuariosIds })
       )
     );
   }
   if (areasIds?.length > 0) {
-    qry.andWhere("area.id in (:areasIds)", { areasIds });
+    qry.andWhere("area.id in (:...areasIds)", { areasIds });
   }
   if (bodegasIds?.length > 0) {
-    qry.andWhere("bodega.id in (:bodegasIds)", { bodegasIds });
+    qry.andWhere("bodega.id in (:...bodegasIds)", { bodegasIds });
   }
 
-  const condicionesWhere = condicionesWhereAndGrupo(filters);
-  if (condicionesWhere.length > 0) {
-    qry.andWhere(condicionesWhere);
-  }
+  aplicarFiltros(qry, condicionesWhereAndGrupo(filters));
 
-  if (!Array.isArray(campoOrden)) {
-    qry.orderBy(campoOrden, direccion as "ASC" | "DESC");
-  } else {
-    qry.orderBy(
-      campoOrden.slice(campoOrden.length - 2).join("."),
-      direccion as "ASC" | "DESC"
-    );
-  }
+  qry.orderBy(columnaSegura(campoOrden, "movimiento.id"), direccionSegura(direccion === "DESC" ? "descend" : direccion === "ASC" ? "ascend" : direccion));
 
   console.log("<<<<<<<<<<<>>>>>>>>>>>>>>>>>>qry", qry.getSql());
 
@@ -2489,31 +2435,21 @@ const reportePorProyectoCompras = async (body: any) => {
     qry.andWhere(
       new Brackets((qb) =>
         qb
-          .where("operacionUsuarios.id in (:usuariosIds)", { usuariosIds })
-          .orWhere("usuario.id in (:usuariosIds)", { usuariosIds })
+          .where("operacionUsuarios.id in (:...usuariosIds)", { usuariosIds })
+          .orWhere("usuario.id in (:...usuariosIds)", { usuariosIds })
       )
     );
   }
   if (areasIds?.length > 0) {
-    qry.andWhere("area.id in (:areasIds)", { areasIds });
+    qry.andWhere("area.id in (:...areasIds)", { areasIds });
   }
   if (bodegasIds?.length > 0) {
-    qry.andWhere("bodega.id in (:bodegasIds)", { bodegasIds });
+    qry.andWhere("bodega.id in (:...bodegasIds)", { bodegasIds });
   }
 
-  const condicionesWhere = condicionesWhereAndGrupo(filters);
-  if (condicionesWhere.length > 0) {
-    qry.andWhere(condicionesWhere);
-  }
+  aplicarFiltros(qry, condicionesWhereAndGrupo(filters));
 
-  if (!Array.isArray(campoOrden)) {
-    qry.orderBy(campoOrden, direccion as "ASC" | "DESC");
-  } else {
-    qry.orderBy(
-      campoOrden.slice(campoOrden.length - 2).join("."),
-      direccion as "ASC" | "DESC"
-    );
-  }
+  qry.orderBy(columnaSegura(campoOrden, "movimiento.id"), direccionSegura(direccion === "DESC" ? "descend" : direccion === "ASC" ? "ascend" : direccion));
 
   // console.log("SQL", qry.getSql());
 
@@ -2688,20 +2624,9 @@ const reportePorPrestamosRentasActivas = async (body: any) => {
     bodegasIds
   );
 
-  const condicionesWhere = condicionesWhereAndPrestamosActivos(filters);
-  if (condicionesWhere.length > 0) {
-    console.log("condicionesWherecondicionesWhere", condicionesWhere);
-    qry.andWhere(condicionesWhere);
-  }
+  aplicarFiltros(qry, condicionesWhereAndPrestamosActivos(filters));
 
-  if (!Array.isArray(campoOrden)) {
-    qry.orderBy(campoOrden, direccion as "ASC" | "DESC");
-  } else {
-    qry.orderBy(
-      campoOrden.slice(campoOrden.length - 2).join("."),
-      direccion as "ASC" | "DESC"
-    );
-  }
+  qry.orderBy(columnaSegura(campoOrden, "movimiento.id"), direccionSegura(direccion === "DESC" ? "descend" : direccion === "ASC" ? "ascend" : direccion));
 
   const tbl = await agregarTabla(
     sheet,
