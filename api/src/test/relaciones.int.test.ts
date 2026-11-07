@@ -228,6 +228,27 @@ describe("fase 3 · relación entre movimientos", () => {
     expect(await movimientosDe(inventarioActualId)).toHaveLength(1);
   });
 
+  it("no se puede cambiar el proyecto de un listado cuyos movimientos ya tienen relaciones (409); sin relaciones sí", async () => {
+    const { codigo } = await articulo(2);
+    const listado = (await crearGrupoDetalle(api, 3, A)).id;
+    const prestamo = await api.put("/groups/activity").send({ codigo, cantidad: 2, movimientoTipoId: 3, proyectoId: A, usuariosIds: [SEMILLA.adminId], grupoId: listado });
+    expect(prestamo.status).toBe(200);
+    const editar = (proyectoId: number) =>
+      api.put("/groups/edit-details").send({ grupoId: listado, proyectoId, usuariosIds: [SEMILLA.adminId], movimientoTipoId: 3 });
+
+    expect((await editar(A)).status).toBe(200); // mismo proyecto: permitido
+    await operar(codigo, 4, 1); // la devolución queda relacionada con el préstamo
+    const bloqueado = await editar(B);
+    expect(bloqueado.status).toBe(409);
+    expect(bloqueado.body.movimientos).toEqual([prestamo.body.id]);
+    expect((await api.get(`/activity/${prestamo.body.id}`)).body.operacion.proyecto.id).toBe(A);
+
+    const otro = await articulo(1);
+    const libre = (await crearGrupoDetalle(api, 3, A)).id;
+    await api.put("/groups/activity").send({ codigo: otro.codigo, cantidad: 1, movimientoTipoId: 3, proyectoId: A, grupoId: libre });
+    expect((await api.put("/groups/edit-details").send({ grupoId: libre, proyectoId: B, usuariosIds: [], movimientoTipoId: 3 })).status).toBe(200);
+  });
+
   describe("POST /groups/active-activity-list sobre v_movimiento_saldo", () => {
     const listar = async (extra: Record<string, unknown> = {}) => {
       const res = await api.post("/groups/active-activity-list").send({

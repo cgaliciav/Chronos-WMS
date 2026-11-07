@@ -8,6 +8,7 @@ import { Usuario } from "../entity/Usuario";
 import OperacionDetalleController from "./OperacionDetalle.Controller";
 import { AppError } from "../helpers/errorClases";
 import { idOpcional, idSeguro, idsSeguros } from "../helpers/ids";
+import { exigirProyectoEditable } from "../services/guardasRelacion";
 
 const crearBaseOperacion = async (
   tipoMovimientoId: number | string,
@@ -122,6 +123,7 @@ class OperacionController {
     const { jwtPayload } = res.locals;
 
     try {
+      await exigirProyectoEditable({ operacionId: idSeguro(operacionId, "operacionId") }, proyectoId);
       await OperacionController.modificar(
         await getRepository(Operacion).findOneOrFail(operacionId, {
           relations: ["movimientoTipo", "proyecto", "usuarios"],

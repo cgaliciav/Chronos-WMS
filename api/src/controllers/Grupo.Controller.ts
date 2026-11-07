@@ -28,6 +28,7 @@ import InventarioActualController, {
 } from "./InventarioActual.Controller";
 import MovimientoController from "./Movimiento.Controller";
 import MovimientoService from "../services/MovimientoService";
+import { exigirProyectoEditable } from "../services/guardasRelacion";
 import { TIPOS_ORIGEN } from "../entity/common/MovimientoTipoId";
 import ProductoController from "./Producto.Controller";
 import { autogenerarCodigo } from "./ProductoClave.Controller";
@@ -1060,6 +1061,7 @@ class GrupoController {
     try {
       const grupo = await funcionQueryId(grupoId).getOne();
       if (grupo === undefined) throw new AppError("Grupo ID no encontrado");
+      await exigirProyectoEditable({ grupoId }, proyectoId); // antes de modificar nada (plan 02 fase 3)
       const resp = await CommonController.editar(
         getRepository(Grupo),
         { nombre: numero, id: grupoId },
@@ -1127,6 +1129,7 @@ class GrupoController {
     try {
       const grupo = await funcionQueryId(grupoId).getOne();
       if (grupo === undefined) throw new AppError("Grupo ID no encontrado");
+      await exigirProyectoEditable({ grupoId }, proyectoId); // antes de modificar nada (plan 02 fase 3)
 
       await GrupoDetalleController.editar(
         grupo.grupoDetalle,
