@@ -2,6 +2,8 @@ import { Router } from "express";
 import InventarioActualController from "../controllers/InventarioActual.Controller";
 import { checkJwt } from "../middlewares/verificarJwt";
 import { checkRole } from "../middlewares/verificarRol";
+import { validarBody } from "../middlewares/validar";
+import { inventarioEditarSchema } from "../esquemas";
 
 const router = Router();
 
@@ -16,7 +18,7 @@ const router = Router();
 router.delete("/delete",[checkJwt,checkRole(["ADMINISTRADOR","INVENTARIOACTUAL-BORRAR"])], InventarioActualController.borrar);
 
 router.get("/:id([0-9]+)",[checkJwt,checkRole(["ADMINISTRADOR","INVENTARIOACTUAL-DETALLE"])],InventarioActualController.obtenerId)
-router.put("/edit",[checkJwt,checkRole(["ADMINISTRADOR","INVENTARIOACTUAL-EDITAR"])], InventarioActualController.editar);
+router.put("/edit",[checkJwt,checkRole(["ADMINISTRADOR","INVENTARIOACTUAL-EDITAR"]),validarBody(inventarioEditarSchema)], InventarioActualController.editar);
 
 router.post("/list-catalog-general",[checkJwt,checkRole(["ADMINISTRADOR","INVENTARIOACTUAL-CATALOGOGENERAL"])], InventarioActualController.busquedaCatalogoGeneral);
 router.post("/list-catalog-codes",[checkJwt,checkRole(["ADMINISTRADOR","INVENTARIOACTUAL-CATALOGOCODIGOS"])], InventarioActualController.busquedaCatalogoCodigo);

@@ -2,6 +2,8 @@ import { Router } from "express";
 import UsuarioController from "../controllers/Usuario.Controller";
 import { checkJwt } from "../middlewares/verificarJwt";
 import { checkRole } from "../middlewares/verificarRol";
+import { validarBody } from "../middlewares/validar";
+import { regenerarPasswordSchema, usuarioEditarSchema, usuarioNuevoSchema } from "../esquemas";
 
 const router = Router();
 
@@ -15,14 +17,14 @@ router.post("/list-antd",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-LISTADETA
 router.put("/disable/:id([0-9]+)",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-DEHABILITAR"])],UsuarioController.deshabilitar)
 router.put("/enable/:id([0-9]+)",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-HABILITAR"])],UsuarioController.habilitar)
 router.get("/:id([0-9]+)",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-DETALLE"])],UsuarioController.obtenerId)
-router.put("/edit",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-EDITAR"])],UsuarioController.editar)
-router.post("/new",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-NUEVO"])],UsuarioController.nuevo)
+router.put("/edit",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-EDITAR"]),validarBody(usuarioEditarSchema)],UsuarioController.editar)
+router.post("/new",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-NUEVO"]),validarBody(usuarioNuevoSchema)],UsuarioController.nuevo)
 
 router.post("/comment",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-COMENTARIONUEVO"])],UsuarioController.agregarComentario)
 router.delete("/comment",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-COMENTARIOBORRAR"])],UsuarioController.quitarComentario)
 
 router.get("/current",[checkJwt], UsuarioController.actual);
-router.put("/renewpassword",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-GENERERARPASSWORD"])],UsuarioController.regenerarPassword)
+router.put("/renewpassword",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-GENERERARPASSWORD"]),validarBody(regenerarPasswordSchema)],UsuarioController.regenerarPassword)
 router.put("/password",[checkJwt],UsuarioController.cambiarPassword)
 
 router.get("/get-areas",[checkJwt],UsuarioController.obtenerAreas)

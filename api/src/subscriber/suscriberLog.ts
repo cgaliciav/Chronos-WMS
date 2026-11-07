@@ -47,11 +47,13 @@ const nuevaOperacion = async (connection:Connection,entity:any,funcionamiento:Fu
         }
     }
     try {
-        const sesion = await connection.getRepository(Sesion).findOneOrFail(sesionId);
-        logOp.sesion=sesion
+        // findOneOrFail(undefined) devolvería la PRIMERA sesión (TypeORM 0.2): se registra sin sesión (hallazgo M31)
+        if (sesionId !== undefined && sesionId !== null) {
+            logOp.sesion = await connection.getRepository(Sesion).findOne(sesionId);
+        }
         await connection.getRepository(LogFuncionamiento).save(logOp)
     } catch (error) {
-        console.log("Error en suscriptor", error);
+        if (process.env.NODE_ENV !== "test") console.log("Error en suscriptor", error.message);
     }
 }
 
@@ -60,15 +62,15 @@ const nuevaOperacion = async (connection:Connection,entity:any,funcionamiento:Fu
 export class GeneralSubscriber implements EntitySubscriberInterface{
 
     afterInsert(event: InsertEvent<any>){
-        nuevaOperacion(event.connection,event.entity,FuncionamientoEstado.NUEVO);
+        void nuevaOperacion(event.connection,event.entity,FuncionamientoEstado.NUEVO);
     }
     
     afterUpdate(event: UpdateEvent<any>){
-        nuevaOperacion(event.connection,event.entity,FuncionamientoEstado.ACTUALIZACION);
+        void nuevaOperacion(event.connection,event.entity,FuncionamientoEstado.ACTUALIZACION);
     }
 
     beforeRemove(event:RemoveEvent<any>){
-        nuevaOperacion(event.connection,event.entity,FuncionamientoEstado.ELIMINACION);
+        void nuevaOperacion(event.connection,event.entity,FuncionamientoEstado.ELIMINACION);
     }
 
 

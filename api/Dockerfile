@@ -1,4 +1,4 @@
-FROM node:14.21-alpine
+FROM node:22-alpine
 
 # Set work directory
 WORKDIR /code_test
@@ -26,7 +26,7 @@ ENV DB_LOGGING=all
 EXPOSE $PORT_ALMACEN_API
 VOLUME ["/code/exogrid"]
 
-RUN npm i -g typescript@4.9.5 ts-node@10.9.1
+RUN npm i -g typescript@5.9.3 ts-node@10.9.2
 # Install dependencies
 COPY package*.json ./
 RUN npm install

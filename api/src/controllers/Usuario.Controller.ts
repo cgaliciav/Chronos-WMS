@@ -1,6 +1,5 @@
 import { validate } from "class-validator";
 import { NextFunction, Request, Response } from "express";
-import { filter } from "lodash";
 import { getRepository } from "typeorm";
 import { Area } from "../entity/Area";
 import { Bodega } from "../entity/Bodega";
@@ -13,6 +12,7 @@ import EnviarMail from "../helpers/enviarMail";
 import { AppError } from "../helpers/errorClases";
 import passGenerator from "../helpers/passGenerator";
 import CommonController, { ResultadoTabla } from "./common/Common.Controller";
+import { aplicarFiltros, columnaSegura, construirFiltros, direccionSegura } from "../helpers/filtrosTabla";
 import LogGeneralController from "./LogGeneral.Controller";
 
 
@@ -32,32 +32,14 @@ import LogGeneralController from "./LogGeneral.Controller";
 //   })
 // }
 
-const condicionesWhereAnd=(filters:any)=>{
-  const condicionesWhere:string[]=[];
-  for (const key in filters) {
-    if(filters[key]===null || filters[key]===undefined)
-      continue;
-    if(key.indexOf("nombre")>=0||key.indexOf("correo")>=0){
-      condicionesWhere.push(`usuario.${key} LIKE '%${filters[key].pop()}%'`)
-    } else if(key.indexOf("vencimiento")>=0){
-      condicionesWhere.push(`(usuario.${key} BETWEEN ${filters[key][0]} AND ${filters[key][1]})`)
-    } else if(key.indexOf("estatusExtendido")>=0){
-      // condicionesWhere.push(`${key} IN (${filters[key].join(",")})`)
-      condicionesWhere.push(`(if(usuario.estatus="inactivo","inactivo",if(usuario.vencimiento <= current_timestamp() ,"vencido","activo"))) IN (${filters[key].map(it=>`'${it}'`).join(",")})`)
-    } else {
-      // condicionesWhere.push(`usuario.${key} IN (${filters[key].join(",")})`)
-      condicionesWhere.push(`usuario.${key} IN (${filters[key].map(it=>`'${it}'`).join(",")})`)
-      
-    }
-  }
-
-  if(condicionesWhere.length>0){
-    return condicionesWhere.join(' AND ');
-  } else {
-    return "";
-  }
-
-}
+// Filtros de la tabla de usuarios, parametrizados (hallazgo C1). `estatusExtendido` es una columna calculada.
+const ESTATUS_EXTENDIDO = 'if(usuario.estatus="inactivo","inactivo",if(usuario.vencimiento <= current_timestamp() ,"vencido","activo"))';
+const condicionesWhereAnd = (filters: any) =>
+  construirFiltros(filters, {
+    alias: "usuario",
+    especiales: (llave, valores, parametro) =>
+      llave === "estatusExtendido" ? `(${ESTATUS_EXTENDIDO}) IN (${valores.map(parametro).join(",")})` : undefined,
+  });
 
 class UsuarioController{
 
@@ -100,19 +82,12 @@ class UsuarioController{
 //TABLA SEGUN LO REQUIEREN LAS TABLAS DE ANTD
   static listaTabla = async (req: Request, res: Response,next:NextFunction) =>{
     try {
-      console.error("BODY",req.body);
-
       const {sortField, sortOrder, pagination, filters} = req.body;
-      const campoOrden:string=sortField?sortField:"usuario.id";
-      let direccionOrden:string='ASC';
+      const campoOrden = columnaSegura(sortField, "usuario.id");
+      const direccionOrden = direccionSegura(sortOrder);
       const page = (pagination.current===undefined?1:pagination.current);
       const {pageSize} = pagination;                
       let starts = pageSize*page - pageSize;
-      console.log("page",page);
-  
-      if(sortOrder !== undefined) {
-        direccionOrden=(sortOrder=='descend')?"DESC":"ASC"
-      }
 
       // console.error("OTROS",{campoOrden,direccionOrden,starts})
       // console.log('*************** FILTERS',filters);
@@ -121,25 +96,16 @@ class UsuarioController{
       .createQueryBuilder("usuario")
       // .select(["usuario.id","usuario.nombre","usuario.correo","usuario.vencimiento","usuario.estatus"])
       .select(["usuario.id"])
-      .addSelect('if(usuario.estatus="inactivo","inactivo",if(usuario.vencimiento <= current_timestamp() ,"vencido","activo"))',"estatusExtendido")
+      .addSelect(ESTATUS_EXTENDIDO,"estatusExtendido")
       
-      const condicionesWhere = condicionesWhereAnd(filters);
-      if(condicionesWhere.length>0){
-        queryVencimiento.where(condicionesWhere)
-      }
-      // console.log("***********************************",queryVencimiento.getSql(),queryVencimiento.getParameters());
-      console.log("page",page);
+      aplicarFiltros(queryVencimiento, condicionesWhereAnd(filters));
 
       const filtered= await queryVencimiento.getCount();
-      const queryVencimientoResult = await queryVencimiento.orderBy(campoOrden,direccionOrden as ("ASC"|"DESC"))
+      const queryVencimientoResult = await queryVencimiento.orderBy(campoOrden,direccionOrden)
         .skip(starts)
         .take(pageSize)
         .getRawMany();
 
-        console.log("page",page);
-        
-
-      // console.error("queryVencimientoResult",queryVencimientoResult);
 
       const queryResult = await getRepository(Usuario)
         .findByIds(
@@ -153,19 +119,15 @@ class UsuarioController{
           ...queryResult.filter(qr=>qr.id===qv.usuario_id).pop(),
           estatusExtendido: qv.estatusExtendido,
           })),
-        // filtered:queryVencimientoResult.length,
-        filtered:await getRepository(Usuario).count(),
-        // totales:await getRepository(Usuario).count(),
+        filtered,
         pagination:{
           current:page,
           pageSize,
-          // total: await getRepository(Usuario).count()
           total:filtered,
           totalItems:await getRepository(Usuario).count()
         }
 
       } 
-      console.log("respuesta.pagination**************",respuesta.pagination)
       
       res.json( respuesta )
 
@@ -319,7 +281,7 @@ class UsuarioController{
         const errorMap = error.map(obj=>obj.property);
         throw new AppError(`Error de validación en: ${errorMap.join(", ")}`,400);
       }
-      getRepository(Usuario).save(usuario);
+      await getRepository(Usuario).save(usuario);
       res.json();
     } catch (error) {
       next(error)
@@ -357,30 +319,28 @@ class UsuarioController{
 
   }
 
-  // solo para administradores
-  static regenerarPassword = (req: Request, res: Response,next:NextFunction) => {
-    let { email } = req.body;
-
-    let { si } = res.locals.jwtPayload;
-
-    let password = passGenerator.generarPassword();
-    getRepository(Usuario)
-      .findOneOrFail({
-        select: ["id", "nombre", "correo", "password", "vencimiento", "estatus"], 
-        where:{correo: email },
-      } )
-      .then(usuario =>{
-        usuario.sesionId=si;
-        
-        usuario.password=password;
-        usuario.hashPassword();
-        return getRepository(Usuario).save(usuario)
-      })
-      .then(usuario=>{
-        // EnviarMail.correoNuevoPassword(usuario.correo,password);
-        res.json({ c: password} );
-      })
-      .catch(error => next(error));
+  // solo para administradores. La contraseña nueva se envía por correo; NUNCA en la respuesta (hallazgo C5).
+  static regenerarPassword = async (req: Request, res: Response,next:NextFunction) => {
+    const { email } = req.body;
+    const { si } = res.locals.jwtPayload;
+    try {
+      if (typeof email !== "string" || email.length === 0) {
+        throw new AppError("Correo requerido", 400);
+      }
+      const usuario = await getRepository(Usuario).findOneOrFail({
+        select: ["id", "nombre", "correo", "password", "vencimiento", "estatus"],
+        where: { correo: email },
+      });
+      const password = passGenerator.generarPassword();
+      usuario.sesionId = si;
+      usuario.password = password;
+      usuario.hashPassword();
+      await getRepository(Usuario).save(usuario);
+      EnviarMail.correoNuevoPassword(usuario.correo, password);
+      res.json({ correo: usuario.correo, enviado: true });
+    } catch (error) {
+      next(error);
+    }
   }
 
   // solo para administradores

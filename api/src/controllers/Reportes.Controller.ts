@@ -7,7 +7,7 @@ import { getRepository } from "typeorm";
 
 import { Usuario } from "../entity/Usuario";
 import EnviarMail from "../helpers/enviarMail";
-// import { AppError } from "../helpers/errorClases"
+import { AppError } from "../helpers/errorClases";
 import {
   reportePorGrupo,
   reportePorProyecto,
@@ -16,7 +16,6 @@ import {
   reporteGeneral, 
   reportePorGrupoFotoGrande
 } from "../helpers/excelFunctions";
-import { Movimiento } from "../entity/Movimiento";
 // import CommonController, { ResultadoTabla } from "./common/Common.Controller"
 // import { funcionQueryListadoMovimientos,condicionesWhereAnd as grupoCondicionesWhereAnd } from "./Grupo.Controller"
 
@@ -106,7 +105,8 @@ const funcionQueryReporteCierre = async (
     //   // actionUrl: `${process.env.API_ALMACEN}/file/report/${detalleArchivo.nombreReporte}`,
     //   recipients: [{ email: correo }],
     // });
-    throw error;
+    // No se relanza: la promesa corre sin await y un rechazo tiraría el proceso (hallazgo H8).
+    // En la fase 7 (notificaciones propias) se avisará al usuario del fallo.
   }
 };
 
@@ -134,7 +134,8 @@ const funcionQueryMovimientosActivosReporteProyecto = async (
     //   // actionUrl: `${process.env.API_ALMACEN}/file/report/${detalleArchivo.nombreReporte}`,
     //   recipients: [{ email: correo }],
     // });
-    throw error;
+    // No se relanza: la promesa corre sin await y un rechazo tiraría el proceso (hallazgo H8).
+    // En la fase 7 (notificaciones propias) se avisará al usuario del fallo.
   }
 };
 
@@ -163,7 +164,8 @@ const funcionQueryMovimientosReporteProyecto = async (
     //   // actionUrl: `${process.env.API_ALMACEN}/file/report/${detalleArchivo.nombreReporte}`,
     //   recipients: [{ email: correo }],
     // });
-    throw error;
+    // No se relanza: la promesa corre sin await y un rechazo tiraría el proceso (hallazgo H8).
+    // En la fase 7 (notificaciones propias) se avisará al usuario del fallo.
   }
 };
 
@@ -188,7 +190,8 @@ const funcionGenerarReportePorGrupo = async (body: any, correo: string) => {
     //   recipients: [{ email: correo }],
     // });
 
-    throw error;
+    // No se relanza: la promesa corre sin await y un rechazo tiraría el proceso (hallazgo H8).
+    // En la fase 7 (notificaciones propias) se avisará al usuario del fallo.
   }
 };
 
@@ -330,36 +333,24 @@ class ReporteController {
   };
 
   //TODO GENERAR REPORTE DE USO (CUANTO TIENE QUE SE REALIZÓ EL ULTIMO MOVIMIENTO QUE NO FUE INVENTARIO. EL ARTICULO NO DEBE ESTAR DADO DE BAJA)
-  static reportePorUso = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => { };
+  static reportePorUso = async (req: Request, res: Response, next: NextFunction) => {
+    next(new AppError("Reporte por uso no implementado", 501)); // antes la petición se quedaba colgada (hallazgo H9)
+  };
 
   //TODO REPORTE DE GRUPODETALLE (LISTADO DE ARTICULOS)
-  static reportePorGrupoDetalle = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
-    ///???????????????????????????
+  static reportePorGrupoDetalle = async (req: Request, res: Response, next: NextFunction) => {
+    next(new AppError("Reporte por detalle de grupo no implementado", 501));
   };
 
   //TODO REPORTE DE FACTURAS (LISTADO DE ARTICULOS)
-  static reportePorFactura = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
-    ///???????????????????????????
+  static reportePorFactura = async (req: Request, res: Response, next: NextFunction) => {
+    next(new AppError("Reporte por factura no implementado", 501));
   };
 
   //TODO REPORTE DE INVENTARIO (LISTADO DE ARTICULOS INVENTARIADOS Y POR INVENTARIAR)
-  static reporteDeInventario = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => { };
+  static reporteDeInventario = async (req: Request, res: Response, next: NextFunction) => {
+    next(new AppError("Reporte de inventario no implementado", 501));
+  };
 }
 
 // GENERAR REPORTE

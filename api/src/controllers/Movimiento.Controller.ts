@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from "express";
 import { getConnection, getRepository } from "typeorm";
-import { setSourceMapRange } from "typescript";
 import {
   InventarioActual,
   InventarioDisponible,
@@ -20,6 +19,7 @@ import OperacionController from "./Operacion.Controller";
 import ProductoInventariadoController from "./ProductoInventariado.Controller";
 import { EstatusEstado } from "../entity/common/NombreEstatus";
 import { Proyecto } from "../entity/Proyecto";
+import { idSeguro } from "../helpers/ids";
 
 const crearBaseMovimiento = async (
   cantidad: number,
@@ -146,11 +146,6 @@ const actualizarInventarioActualPrestamo = async (
   inventarioActual: InventarioActual,
   sesionId: number
 ) => {
-  console.log("*******************actualizarInventarioActualPrestamo", {
-    cantidad,
-    inventarioActual,
-  });
-
   if (inventarioActual.cantidad === 0) {
     throw new AppError("NO HAY EXISTENCIA DISPONIBLE DEL ARTÍCULO", 400);
   }
@@ -189,9 +184,7 @@ const actualizarInventarioActualDevolucion = async (
       400
     );
   }
-  const nuevaCantidad =
-    Number.parseFloat(inventarioActual.cantidad + " ") +
-    Number.parseFloat(cantidad + " ");
+  const nuevaCantidad = Number(inventarioActual.cantidad) + Number(cantidad);
 
   if (nuevaCantidad > inventarioActual.cantidadAlmacen) {
     throw new AppError(
@@ -219,8 +212,6 @@ const actualizarInventarioActualBaja = async (
 ) => {
   inventarioActual.sesionId = sesionId;
 
-  console.log("...............................actualizarInventarioActualBaja");
-
   if (!(await aceptarDevolucionBaja(inventarioActual.id, proyectoId))) {
     throw new AppError(
       "NO SE PUEDE REALIZAR LA OPERACION, EL PRODUCTO YA ESTA DEVUELTO O NO ES DE ESTE PROYECTO",
@@ -243,8 +234,6 @@ const actualizarInventarioActualBaja = async (
   // if (inventarioActual.cantidadAlmacen > inventarioActual.cantidad) {
   //   inventarioActual.cantidad = inventarioActual.cantidadAlmacen;
   // }
-
-  console.log(inventarioActual);
 
   return await InventarioActualController.guardar(inventarioActual, sesionId);
 };
@@ -281,8 +270,6 @@ const actualizarInventarioActualRentaExterna = async (
   inventarioActual: InventarioActual,
   sesionId: number
 ) => {
-  await InventarioActualController.guardarHistorico(inventarioActual, sesionId);
-
   if (inventarioActual.cantidad === 0) {
     throw new AppError("NO HAY EXISTENCIA DISPONIBLE DEL ARTÍCULO", 400);
   }
@@ -292,6 +279,8 @@ const actualizarInventarioActualRentaExterna = async (
       400
     );
   }
+  // El histórico se guarda DESPUÉS de validar; antes quedaba una instantánea huérfana si fallaba (hallazgo H20).
+  await InventarioActualController.guardarHistorico(inventarioActual, sesionId);
   inventarioActual.cantidad -= +cantidad;
   inventarioActual.sesionId = sesionId;
   if (inventarioActual.cantidad <= 0) {
@@ -335,14 +324,6 @@ const actualizarInventarioActual = async (
       400
     );
   }
-  console.log("//////////////////actualizarInventarioActual", {
-    cantidad,
-    inventarioActual,
-    tipoMovimientoId,
-    proyectoId,
-    sesionId,
-  });
-
   // let invAct:InventarioActual;
   const {
     producto: { id: poroductoId },
@@ -502,15 +483,16 @@ const agregarOperacionAMovimiento = async (
     movimiento.sesion = await getRepository(Sesion).findOneOrFail(sesionId);
 
     // desactivar el movimiento anterior
-    const movimientoActivo = await getRepository(Movimiento)
+    const movimientosActivos = await getRepository(Movimiento)
       .createQueryBuilder("movimiento")
       .where("movimiento.inventarioActual.id = :inventarioActualId", { inventarioActualId: movimiento.inventarioActual.id })
       .andWhere("movimiento.estatus = :estatus", { estatus: EstatusEstado.ACTIVO })
-      .getOne();
+      .getMany();
 
-    if (movimientoActivo) {
+    for (const movimientoActivo of movimientosActivos) {
       movimientoActivo.estatus = EstatusEstado.INACTIVO;
-      movimientoActivo.sesion = await getRepository(Sesion).findOneOrFail(sesionId);
+      movimientoActivo.sesion = movimiento.sesion;
+      movimientoActivo.sesionId = sesionId;
       await getRepository(Movimiento).save(movimientoActivo);
     }
 
@@ -636,7 +618,10 @@ class MovimientoController {
           throw new AppError("NO EXISTE MOVIMIENTO PREVIO", 404);
         }
         // obtener proyecto de proyectoId
-        const proyectoMovimiento = await getRepository(Proyecto).findOne(proyectoId, { loadEagerRelations: false });
+        const proyectoMovimiento =
+          proyectoId === undefined || proyectoId === null
+            ? undefined
+            : await getRepository(Proyecto).findOne(idSeguro(proyectoId, "proyectoId"), { loadEagerRelations: false });
 
         if (movimientoActual.operacion.proyecto.id !== +proyectoId) {
           throw new AppError(
@@ -656,7 +641,6 @@ class MovimientoController {
       proyectoId,
       sesionId
     );
-    console.log("guardarConOperacion", r);
     return await agregarOperacionAMovimiento(
       movimiento,
       tipoMovimientoId,
@@ -754,7 +738,6 @@ class MovimientoController {
     movimiento: Movimiento | undefined,
     sesionId: number
   ) => {
-    console.log("*******************************quitar ", movimiento);
     if (movimiento === undefined) {
       throw new AppError("Movimiento desconocido", 400);
     }
@@ -792,10 +775,6 @@ class MovimientoController {
         await InventarioActualHistoricoController.obtenerHistorico(
           inventarioActual.id
         );
-      console.log(
-        "*******************************InventarioActualHistoricoController ",
-        inventarioActualHistorico
-      );
       if (inventarioActualHistorico !== undefined) {
         inventarioActual.sesionId = sesionId;
         inventarioActual.cantidad = inventarioActualHistorico.cantidad;
@@ -884,9 +863,7 @@ class MovimientoController {
 
     // const {jwtPayload}=res.locals;
     try {
-      const r = await CommonController.obtenerIdQuery(funcionQueryId(id));
-      console.log("obtenerIdobtenerIdobtenerIdobtenerIdobtenerId", r);
-      res.json(r);
+      res.json(await CommonController.obtenerIdQuery(funcionQueryId(id)));
     } catch (error) {
       next(error);
     }
@@ -901,7 +878,7 @@ class MovimientoController {
     // const {jwtPayload}=res.locals;
     try {
       res.json(
-        getRepository(Movimiento)
+        await getRepository(Movimiento)
           .createQueryBuilder("movimiento")
           .leftJoinAndSelect("movimiento.grupos", "grupos")
           .leftJoinAndSelect("grupos.grupoDetalle", "grupoDetalle")
@@ -909,7 +886,7 @@ class MovimientoController {
           .leftJoin("grupoDetalle.movimientoTipo", "movimientoTipo")
           .addSelect("movimientoTipo.nombre")
           .addSelect("proyecto.nombre")
-          .where("movimiento.id=:movimientoId", { id })
+          .where("movimiento.id=:movimientoId", { movimientoId: id })
           .getOne()
       );
     } catch (error) {

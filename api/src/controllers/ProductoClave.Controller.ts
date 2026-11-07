@@ -5,18 +5,15 @@ import { getRepository } from "typeorm";
 import { Producto } from "../entity/Producto";
 import { ProductoClave } from "../entity/ProductoClave";
 import { AppError } from "../helpers/errorClases";
+import { idSeguro } from "../helpers/ids";
 
 const autogenerarCodigo=async()=>{
 
+    // TODO (fase 3): dos llamadas concurrentes pueden generar el mismo código; la restricción UNIQUE de `barras` lo detecta.
     const lastreg=await getRepository(ProductoClave).findOne({order:{id:"DESC"}})
-    console.log("autogenerarCodigo",lastreg);
-    const autoCodigo=(lastreg.id+5000).toString();
-    let fill:string;
-    if(autoCodigo.length<10){
-        fill="0".repeat(10-autoCodigo.length);  
-    }
+    const autoCodigo=((lastreg?.id ?? 0)+5000).toString();
     return {
-        barras:`${fill}${autoCodigo}`,
+        barras: autoCodigo.padStart(10, "0"),
         barrasTipo:'Autogenerada'
     }
 
@@ -32,7 +29,7 @@ class ProductoClaveController{
             const ppccNuevo=new ProductoClave();
             ppccNuevo.barras=ppcc.barras;
             ppccNuevo.barrasTipo=ppcc.barrasTipo;
-            ppccNuevo.sesionId
+            ppccNuevo.sesionId=sesionId;
             return ppccNuevo;
         })
 
@@ -92,15 +89,19 @@ class ProductoClaveController{
         const {jwtPayload}=res.locals;
         try{
 
-            const producto=await getRepository(Producto).findOneOrFail(productoId,{relations:["productoClaves"],loadEagerRelations:false});
+            const claveId = idSeguro(productoClaveId, "productoClaveId");
+            const producto=await getRepository(Producto).findOneOrFail(idSeguro(productoId, "productoId"),{relations:["productoClaves"],loadEagerRelations:false});
             
             const {productoClaves}=producto;
+            if(!productoClaves.some(pc=>pc.id===claveId)){
+                throw new AppError("El código no pertenece al producto",404); // hallazgo M8
+            }
             if(productoClaves.length===1){
                 throw new AppError("No se puede borrar el código. Debe exitir al menos un código en el producto",401);
             }
-            producto.productoClaves=productoClaves.filter(pc=>pc.id!=productoClaveId);
+            producto.productoClaves=productoClaves.filter(pc=>pc.id!==claveId);
 
-            const productoClavePorRemover = await getRepository(ProductoClave).findOneOrFail(productoClaveId);
+            const productoClavePorRemover = await getRepository(ProductoClave).findOneOrFail(claveId);
             productoClavePorRemover.sesionId=jwtPayload.si;
             await getRepository(ProductoClave).remove( productoClavePorRemover );
             

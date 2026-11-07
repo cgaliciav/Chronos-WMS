@@ -46,7 +46,7 @@ export class Usuario {
 
     @ManyToMany(type => Archivo)
     @JoinTable()
-    archivo:Archivo;
+    archivo:Archivo[];
 
     @ManyToMany(type => Area)
     @JoinTable()

@@ -2,6 +2,9 @@ import { NextFunction, Request, Response } from "express";
 import { getRepository } from "typeorm";
 import { Comentario } from "../entity/Comentario";
 import { Sesion } from "../entity/Sesion";
+import { AppError } from "../helpers/errorClases";
+import { idSeguro } from "../helpers/ids";
+import { repositorioDeRelacion } from "./Archivo.Controller";
 
 
 
@@ -33,16 +36,18 @@ class ComentarioController{
         const {jwtPayload}=res.locals;
         try {
             // console.log("jwtPayload",jwtPayload)
-            const repoItem:any=await getRepository(relacion).findOneOrFail(id,{relations:["comentarios"]});
+            if (typeof comentario !== "string" || comentario.trim().length === 0) {
+                throw new AppError("El comentario no puede estar vacío", 400);
+            }
+            const repo = repositorioDeRelacion(relacion);
+            const repoItem:any=await repo.findOneOrFail(idSeguro(id),{relations:["comentarios"]});
             repoItem.sesionId=jwtPayload.si;
             const comentarioResultado=await ComentarioController.guardar(comentario,jwtPayload.si);
 
             repoItem.comentarios.push(comentarioResultado);
-            await getRepository(relacion).save(repoItem);
+            await repo.save(repoItem);
 
-            res.json(
-                // await CommonController.agregarArchivo(getRepository(relacion),id,jwtPayload.si,file)
-                );
+            res.json();
         } catch (error) {
             next(error)
         }
@@ -52,18 +57,21 @@ class ComentarioController{
         const {id,comentarioId,relacion}=req.body;
         const {jwtPayload}=res.locals;
         try {
-            const repoItem:any=await getRepository(relacion).findOneOrFail(id,{relations:["comentarios"]});
+            const repo = repositorioDeRelacion(relacion);
+            const idComentario = idSeguro(comentarioId, "comentarioId");
+            const repoItem:any=await repo.findOneOrFail(idSeguro(id),{relations:["comentarios"]});
+            // Solo se borra un comentario que pertenezca al registro (hallazgo M8: IDOR y comparación número/string)
+            if (!repoItem.comentarios.some((c: Comentario) => c.id === idComentario)) {
+                throw new AppError("El comentario no pertenece al registro", 404);
+            }
             repoItem.sesionId=jwtPayload.si;
-            repoItem.comentarios = repoItem.comentarios.filter(comentario=>comentario.id!==comentarioId);
-            repoItem.sessionId = jwtPayload.si;
+            repoItem.comentarios = repoItem.comentarios.filter((c: Comentario) => c.id !== idComentario);
+            await repo.save(repoItem);
 
             await ComentarioController.quitar(
-                await getRepository(Comentario).findOneOrFail(comentarioId), 
+                await getRepository(Comentario).findOneOrFail(idComentario), 
                 jwtPayload.si
             );
-
-
-            await  getRepository(relacion).save(repoItem);
             res.json();
         } catch (error) {
             next(error)

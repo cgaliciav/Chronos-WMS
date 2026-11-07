@@ -47,7 +47,7 @@ REMOTE_PROJECT_DIR="~/teleset-almacen-test"
 #############################################
 echo "Copiando archivos al servidor remoto $REMOTE_USER@$REMOTE_HOST..."
 # Se excluye la carpeta node_modules para evitar copiar dependencias ya instaladas
-rsync -avz --exclude "node_modules" --exclude "deploy_history/" --exclude "deploy*.sh" --exclude ".vscode/" --exclude ".env" --exclude ".git/"--rsync-path="sudo rsync" ./ ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_BACKEND_DIR}
+rsync -avz --exclude "node_modules" --exclude "deploy_history/" --exclude "deploy*.sh" --exclude ".vscode/" --exclude ".env" --exclude ".git/" --rsync-path="sudo rsync" ./ ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_BACKEND_DIR}
 
 #############################################
 # 4. Conectarse al servidor remoto y gestionar el servicio backend

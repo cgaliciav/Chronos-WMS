@@ -1,0 +1,171 @@
+# Hallazgos en el código (auditoría estática, 2026-11-07)
+
+Revisión de lectura del código de `api/` y `front/` sin ejecutar la aplicación (no hay
+`node_modules` ni base de datos en este entorno). Cada hallazgo indica archivo:línea y la
+evidencia textual. Los marcados **[verificado]** se confirmaron leyendo la línea exacta; el resto
+proviene de la lectura completa del archivo por el auditor.
+
+Severidad: **Crítico** (explotable o corrompe datos), **Alto** (fallo funcional o seguridad
+relevante), **Medio** (lógica incorrecta acotada), **Bajo** (código muerto, configuración, estilo).
+
+Los planes `docs/planes/01-*.md` (front) y `docs/planes/02-*.md` (API, fases 2 y 4) indican en qué
+fase se corrige cada uno.
+
+---
+
+## A. API (`api/`)
+
+### A.1 Críticos
+
+| # | Ubicación | Categoría | Descripción | Evidencia |
+|---|---|---|---|---|
+| C1 **[verificado]** | `src/controllers/Usuario.Controller.ts:41-49`, `Area.Controller.ts:13-15`, `Bodega.Controller.ts:12-15`, `Proveedor.Controller.ts:14-16`, `Proyecto.Controller.ts:19-21`, `Grupo.Controller.ts:35-58` y `154-180`, `InventarioActual.Controller.ts` (varios `condicionesWhereAnd*`) | Seguridad · inyección SQL | **✅ Corregido (fase 2):** parámetros nombrados vía `construirFiltros` (`helpers/filtrosTabla.ts`) + lista blanca de identificadores. Todas las funciones `condicionesWhereAnd` interpolan **la llave** (nombre de columna) y **los valores** de `filters` (cuerpo de la petición) en SQL crudo que luego va a `repo.find({ where })` o `qry.andWhere()`. Afecta a todos los endpoints `list-antd`, `list-by-*` y a los reportes. | `condicionesWhere.push(\`usuario.${key} LIKE '%${filters[key].pop()}%'\`)` |
+| C2 | `src/controllers/InventarioActual.Controller.ts:83,86,89,185,187,219,220,354` | Seguridad · inyección SQL | **✅ Corregido (fase 2):** `andWhereIn`, `LIKE :param` y literal escapado por el driver en `MATCH … AGAINST`. Búsquedas de catálogo con `MATCH … AGAINST ('${textoBusqueda}')`, `LIKE '%${cod}%'` y `LIKE '%${codigo}'` sin parámetros. `obtenerInventarioActualDeCodigo` lo usan todas las operaciones por código de barras. | `qry.where(\`productoClaves.barras LIKE '%${codigo}'\`)` |
+| C3 | `src/helpers/excelFunctions.ts:1111,1249,1893,2106,2323,2506,2694` ← `Grupo.Controller.ts:35-58,154-180` | Seguridad · inyección SQL | **✅ Corregido (fase 2):** los reportes usan los mismos `condicionesWhereAnd` parametrizados. Los reportes (`/reports/by-group`, `/by-project`, `/by-project-final`) pasan `body.filters` a los `condicionesWhereAnd` de Grupo. | `qry.andWhere(condicionesWhere)` |
+| C4 **[verificado]** | `src/routes/archivos.Routes.ts:19` + `src/controllers/Archivo.Controller.ts:414-418` | Seguridad · lectura arbitraria de archivos, sin autenticación | **✅ Corregido (fase 2):** `nombreArchivoSeguro` + `sendFile(nombre, { root })` + token obligatorio. `GET /file/report/:id` concatena el parámetro a `RUTA_REPORTES` y hace `res.sendFile(ruta)` sin `root`; un `..%2F` codificado pasa el segmento único de Express. La ruta no tiene `checkJwt`. | `const ruta = \`${process.env.RUTA_REPORTES}${nombreArchivo}\`; … res.sendFile(ruta);` |
+| C5 **[verificado]** | `src/controllers/Usuario.Controller.ts:380-381` | Seguridad · toma de cuentas | **✅ Corregido (fase 2):** la contraseña se envía por correo; la respuesta es `{ correo, enviado }`. `PUT /user/renewpassword` devuelve la **nueva contraseña en claro** en la respuesta; el envío por correo está comentado. Quien tenga `USUARIO-GENERERARPASSWORD` puede entrar como cualquier usuario. | `// EnviarMail.correoNuevoPassword(...); res.json({ c: password} );` |
+| C6 | `Dockerfile:24,27` y `.env.example` | Configuración · integridad de datos | `DB_SYNCRO=true` en la imagen de producción: TypeORM `synchronize` altera el esquema en cada arranque (puede borrar columnas). `DB_LOGGING=all` registra todas las consultas con parámetros. No existen migraciones. | `ENV DB_SYNCRO=true` |
+| C7 **[verificado con prueba]** | Global (`grep transaction\|queryRunner` = 0 resultados) | Integridad · transacciones | Ninguna escritura es transaccional. Registrar una operación modifica `inventario_actual`, inserta `inventario_actual_historico`, `operacion`, `movimiento`, `producto_inventariado` y la tabla puente del grupo en pasos separados; un fallo intermedio deja el inventario alterado sin movimiento (o viceversa). Dos préstamos simultáneos sobre `cantidad=1` pueden dejar `cantidad=-1` o dos movimientos `activo` (la prueba de caracterización registró **4 préstamos exitosos de 4 intentos** sobre una unidad, con 4 movimientos `activo`). | `Movimiento.Controller.ts:652-666` (`actualizarInventarioActual` y luego `agregarOperacionAMovimiento`) |
+
+### A.2 Altos
+
+| # | Ubicación | Categoría | Descripción | Evidencia |
+|---|---|---|---|---|
+| H1 **[verificado]** | `src/routes/archivos.Routes.ts:15-19` | Seguridad | **✅ Corregido (fase 2):** `checkJwtArchivos` (cabecera `auth` o `?auth=`); `ARCHIVOS_PUBLICOS=true` solo para la transición. Todos los `GET /file/*` son públicos (las versiones con `checkJwt` están comentadas en 11-13). Facturas, fotos y adjuntos son enumerables por id entero. | `router.get("/:id",ArchivoController.obtenerId)` |
+| H2 | `src/controllers/Archivo.Controller.ts:130-140,167` | Seguridad · errores | **✅ Corregido (fase 2):** nombre en disco = `id` + extensión por MIME; `fs/promises`. El nombre de caché en disco usa `archivo.nombre` (nombre original subido) → `join(RUTA_ARCHIVO, "<id>-../../x")`; además `throw` dentro del callback de `writeFile` es una excepción no capturada (cae el proceso). | `writeFile(fileName, archivo.data, (err => {… else { throw new AppError(…) }}))` |
+| H3 | `src/controllers/Archivo.Controller.ts:374,394`; `Comentario.Controller.ts:36-66` | Seguridad | **✅ Corregido (fase 2):** `repositorioDeRelacion` con mapa cerrado de entidades. El nombre de la entidad viene del body (`relacion`) y se pasa a `getRepository(relacion)`: permite adjuntar archivos/comentarios a cualquier entidad; nombres desconocidos → 500. | `getRepository(relacion).findOneOrFail(id,…)` |
+| H4 **[verificado]** | `src/controllers/Archivo.Controller.ts:206-217` | Errores · IDOR | **✅ Corregido (fase 2):** responde, espera y usa el `:id` de la ruta. `DELETE /file/:id` nunca responde (la petición cuelga), no hace `await` de `quitar`, ignora `:id` y borra el `archivoId` del body sin comprobar pertenencia. | sin `res.json`, sin `await` |
+| H5 | `src/controllers/InventarioActual.Controller.ts:367-387` | Errores · integridad | **✅ Corregido (fase 2):** responde y espera (la transacción llega en la fase 3). `DELETE /current-inventory/delete`: mismo patrón (sin respuesta, sin `await`); `quitar` borra primero el `Producto` y luego el `InventarioActual` sin transacción. | `InventarioActualController.quitar(await …)` sin await |
+| H6 | `src/controllers/Usuario.Controller.ts:258-281` + `common/Common.Controller.ts:234-236`; `InventarioActual.Controller.ts:602-623` | Seguridad · asignación masiva | **✅ Corregido (fase 2):** `CommonController` nunca copia `id/password/sesionId/estatus`; esquemas zod en login, activity, activity-purchase, user new/edit, inventory edit. `Common.nuevo/editar` copian **todas** las llaves del body sobre la entidad. En `Usuario.nuevo` el body puede pisar el hash de `password`, `estatus` o `id`. `PUT /current-inventory/edit` permite fijar `cantidad`, `cantidadAlmacen`, `disponible` directamente, saltándose los movimientos. | `for (const key in body) { registro[key] = body[key]; }` |
+| H7 **[verificado]** | `src/controllers/Usuario.Controller.ts:322-323` | Errores | **✅ Corregido (fase 2):** `await`. `editar` no espera `save` y responde 200 antes de escribir; un fallo es un rechazo no manejado. | `getRepository(Usuario).save(usuario); res.json();` |
+| H8 | `src/controllers/Reportes.Controller.ts:109,137,166,191,212-313` | Errores | **✅ Corregido (fase 2):** el `catch` ya no relanza (aviso al usuario en la fase 7). Los generadores de reportes se lanzan sin `await` (correcto) pero **relanzan** dentro de la promesa suelta → rechazo no manejado en cada fallo (en Node ≥ 15 termina el proceso). El usuario nunca recibe aviso de fallo. | `} catch (error) { console.log(...); throw error; }` |
+| H9 | `src/controllers/Reportes.Controller.ts:333-362`; `routes/reportes.Routes.ts:13-16`; `InventarioActual.Controller.ts` (`busquedaCatalogoFacturas`) | Lógica | **✅ Corregido (fase 2):** responden `501 No implementado`. 5 rutas con handler vacío (`/reports/by-use`, `/by-group-detail`, `/by-invoice`, `/by-inventory`, `/current-inventory/list-catalog-invoices`): la petición cuelga hasta el timeout del cliente. | `static reportePorUso = async (req, res, next) => { };` |
+| H10 | `src/controllers/InventarioActual.Controller.ts:780-794` + `routes/inventarioActual.Routes.ts:27` | Lógica | **✅ Corregido (fase 2):** lee `body.inventarioActualId`. `obtenerMovimientosInventario` lee `req.params.id` pero la ruta es `POST /get-activity-inventory` sin `:id` → siempre devuelve `[]`. | `const { id } = req.params;` |
+| H11 **[verificado]** | `src/helpers/excelFunctions.ts:1105` | Lógica | **✅ Corregido (fase 2):** `IN (:...bodegasIds)` con el nombre correcto. Parámetro `:bodegasIds` vs objeto `{ bodegasId }` → TypeORM lanza error siempre que el reporte general lleve filtro de bodega. | `qry.andWhere("bodega.id in (:bodegasIds)", { bodegasId });` |
+| H12 **[verificado]** | `src/controllers/Movimiento.Controller.ts:903-914` | Lógica | **✅ Corregido (fase 2):** `await` y parámetro `movimientoId`. `obtenerGrupo`: `res.json(getRepository(...).getOne())` **sin `await`** (responde `{}`) y el parámetro se llama `:movimientoId` pero se pasa `{ id }` (error de TypeORM). | `.where("movimiento.id=:movimientoId", { id })` |
+| H13 **[verificado]** | `src/controllers/Grupo.Controller.ts:1950-1963` | Errores | **✅ Corregido (fase 2):** `await` + validación del id. `quitarMovimiento` llama `MovimientoController.quitar(...)` **sin `await`** y responde vacío; los errores de la reversión no llegan al cliente ni a `next`. | `MovimientoController.quitar(await …getOne(), jwtPayload.si); res.json();` |
+| H14 **[verificado]** | `src/controllers/Grupo.Controller.ts:1546-1559,1612-1621` | Errores · carrera | **✅ Corregido (fase 2):** `for…of` con `await`. `editarConCompra` y `editarConDetalle` usan `forEach(async …)` → las ediciones de operaciones no se esperan ni se capturan. | `(await obtenerMovimientosConOperacionDeGrupo(grupoId)).forEach(async (mov) => …)` |
+| H15 **[verificado]** | `src/controllers/Grupo.Controller.ts:1403-1409` | Lógica | **✅ Corregido (fase 2):** `mov.cantidad = iac.cantidad` y los movimientos se guardan antes de asociarlos (antes nunca se creaban). `nuevoConInventario`: `mov.cantidad;` es una expresión sin efecto (la cantidad queda `undefined`); además toma los inventarios de **todas** las bodegas aunque el grupo tiene `bodegaId`. | `mov.cantidad;` |
+| H16 | `src/controllers/Auth.Controller.ts:11-19,59-61` + `middlewares/verificarJwt.ts:21-31` | Seguridad | **✅ Corregido (fase 2):** se envía el token **nuevo** (12 h) en `t`; `algorithms: ["HS256"]`; `JWTSECRET` ≥ 32 caracteres validado al arrancar; rate limit en login. La revocación por sesión queda para la fase 3. Logout solo marca `Sesion.fechaFin`; `checkJwt` nunca consulta la sesión → el token de 12 h sigue siendo válido. `checkJwt` firma un token de **90 días** y luego envía el **viejo** en la cabecera `t`. No se valida que `JWTSECRET` exista al arrancar. | `res.setHeader("t", token);` |
+| H17 | `src/controllers/Movimiento.Controller.ts:785-813` + `InventarioActualHistorico.Controller.ts:20-22` | Integridad | Al deshacer un movimiento se restaura la **última** instantánea del inventario (`order id DESC` por `idOriginal`), no la del movimiento que se borra: deshacer un movimiento que no es el último corrompe `cantidad`/`cantidadAlmacen`. Las compras/altas (tipos 2, 14, 15) no guardan histórico (`guardarHistorico` comentado), así que deshacerlas deja el inventario alterado. | `obtenerHistorico(inventarioActual.id)` → `findOne({where:{idOriginal}, order:{id:"DESC"}})` |
+| H18 | `src/controllers/Movimiento.Controller.ts:103-114,129-142,154,286` | Lógica · numéricos | **✅ Corregido (fase 2):** `numericTransformer` en todas las columnas `numeric`. Las columnas `numeric` llegan como **string** del driver `mysql`. `cantidadAlmacen += +cantidad` concatena (`"10" + 5 = "105"`) y `cantidad === 0` nunca es verdadero (`"0" !== 0`). El propio código lo evidencia con `Number.parseFloat(inventarioActual.cantidad + " ")` en la devolución. | `inventarioActual.cantidadAlmacen += +cantidad;` |
+| H19 | `src/controllers/Movimiento.Controller.ts:505-515` | Integridad | **✅ Corregido (fase 2):** se desactivan **todos** los activos (`getMany`). Al desactivar el movimiento `activo` anterior se usa `getOne()` sin `orderBy`; si existe más de uno (por H7/C7) solo se desactiva uno arbitrario y la cadena queda inconsistente. | `.andWhere("movimiento.estatus = :estatus").getOne()` |
+| H20 | `src/controllers/Movimiento.Controller.ts:279-294` | Integridad | **✅ Corregido (fase 2):** se valida antes de guardar el histórico. `actualizarInventarioActualRentaExterna` guarda el histórico **antes** de validar existencia; si falla, queda una instantánea huérfana que corromperá el siguiente "deshacer". | `await guardarHistorico(...); if (inventarioActual.cantidad === 0) throw …` |
+| H21 **[verificado con prueba]** | `src/controllers/Grupo.Controller.ts:1845-1856` + `Movimiento.Controller.ts:109-110,135` | Integridad · numéricos | **✅ Corregido (fase 2):** el inventario nace en 0/0 y el efecto del tipo suma una sola vez (prueba: compra de 5 → 5). `agregarMovimientoCompra` crea el inventario con `cantidad = cantidadAlmacen = n` y después el `switch` de `actualizarInventarioActual` **vuelve a sumar n**. Como la columna llega como string, `"5.0000" + 5 = "5.00005"` → MariaDB guarda **5.0001** en una compra de 5 (la prueba `caracterizacion.int.test.ts` lo reproduce); en un alta de 3 da `"3.00003"` → 3.0000 por redondeo. Si solo se corrige el tipo numérico (H18) las compras y altas **duplicarían** la cantidad: ambas correcciones deben ir juntas. | `inventarioActual.cantidadAlmacen += +cantidad;` |
+
+### A.3 Medios
+
+| # | Ubicación | Categoría | Descripción |
+|---|---|---|---|
+| M1 | `Usuario.Controller.ts:106,134`; `common/Common.Controller.ts:136,178`; `excelFunctions.ts:1114-1119,1252-1257,1888-1895` | Seguridad | **✅ Corregido (fase 2):** `columnaSegura` para `sortField` en todos los listados y reportes. `sortField` del body va a `orderBy()` sin lista blanca (TypeORM 0.2 no escapa expresiones de orden). |
+| M2 | `Common.editar:254`, `Archivo:211`, `InventarioActual:378`, `ProductoClave:53,73,95`, `ProductoCaractetistica:65,87`, `ProductoPrecio:234` … | Seguridad | **✅ Corregido (fase 2):** `idSeguro`/`idsSeguros` antes de cada `findOne`. Ids del body sin tipar hacia `findOneOrFail(id)` en TypeORM 0.2.41 + `mysql`: un objeto como id se serializa en pares `clave='valor'` (inyección por objeto, clase CVE-2022-33171). Además `findOne(undefined)` devuelve la **primera fila** en 0.2 (`ProductoInventariado.guardar`, `crearBaseOperacion`, suscriptor). |
+| M3 | `Auth.Controller.ts:27-53` | Seguridad | **✅ Corregido (fase 2):** `express-rate-limit` en `/auth/login`; la IP viene de `req.ip` con `trust proxy`. Sin límite de intentos; correo inexistente → `EntityNotFound` vs contraseña incorrecta → 401 (enumeración de usuarios); la `IP` de sesión la envía el cliente (`req.body.ip`). |
+| M4 | `ProductoPrecio.Controller.ts:237-242` | Integridad | **✅ Corregido (fase 2):** `jwtPayload.si`. `editar` pasa el objeto `jwtPayload` completo como `sesionId` (debe ser `jwtPayload.si`). |
+| M5 | `ProductoPrecio.Controller.ts:29,80-89,187` | Lógica | Depreciación: `edad` siempre 0; `porcentajeEdad.concat(array5)` se descarta; el `reduce` aplica las 5 tasas al crear; si falta un `Parametro`, las tasas quedan en 0. |
+| M6 **[verificado]** | `InventarioDetalle.Controller.ts:13-15` | Lógica | **✅ Corregido (fase 2):** condición corregida. Condición invertida: `if(fechaFin===undefined) fechaFin = new Date(fechaFin)` → `Invalid Date` cuando falta, y nunca se asigna cuando viene. |
+| M7 | `ProductoClave.Controller.ts:35,339-347` | Lógica · concurrencia | **✅ Corregido (fase 2):** `sesionId` asignado; `padStart`; tabla vacía → 5000. `ppccNuevo.sesionId` expresión sin efecto; `autogenerarCodigo` falla con tabla vacía (`lastreg` undefined), produce `"undefined…"` si el código ≥ 10 caracteres y dos llamadas concurrentes generan el mismo código. |
+| M8 | `ProductoClave.Controller.ts:98-105`; `ProductoCaractetistica.Controller.ts:88-93`; `common/Common.Controller.ts:450` (`quitarArchivo`); `Comentario.Controller.ts:57,61` | Seguridad · lógica | **✅ Corregido (fase 2):** se verifica pertenencia al padre antes de borrar (404 si no). Al borrar hijos no se verifica que pertenezcan al padre (IDOR). `arch.id!==fileId` / `comentario.id!==comentarioId` comparan número con string → la relación nunca se filtra pero el hijo sí se borra. |
+| M9 | `GrupoDetalle.Controller.ts:186-208` | Errores · integridad | **✅ Corregido (fase 2):** `await`. `quitar` borra `GrupoDetalle` y lanza `InventarioDetalle.quitar`/`FacturaDetalle.quitar` sin `await`; `guardarFactura` no es atómico. |
+| M10 | `Producto.Controller.ts:24-66`; `ProductoPrecio.Controller.ts:189-211` | Transacciones | Crear producto = 4 `save` separados (características, claves, precios, producto); un fallo deja filas huérfanas. |
+| M11 | `InventarioActual.Controller.ts:94,96,213-215` | Lógica | **✅ Corregido (fase 2):** `andWhereIn` → `1=0` con arreglo vacío. `IN (:...areasIds)` con arreglo vacío → `IN ()` → error de sintaxis (500) cuando la UI no envía áreas/bodegas. |
+| M12 | `InventarioActual.Controller.ts:664-674` | Lógica | **✅ Corregido (fase 2):** acepta string multilínea o arreglo. `codigosBusqueda.length === 0` (arreglo) y luego `.split('\n')` (string): TypeError si llega arreglo. |
+| M13 | `InventarioActual.Controller.ts:308-329` | Lógica | **✅ Corregido (fase 2):** select y mensaje corregidos (404). `obtenerInventarioActualDeId` hace `addSelect("productoClaves.barras")` dos veces (nunca carga `productoPrecios.precio`) y el mensaje de "no encontrado" dice "Hay mas de un artículo". |
+| M14 | `InventarioActual.Controller.ts:644,682,714,746`; `Usuario.Controller.ts:157` | Lógica | `filtered` devuelve el tamaño de página o el total sin filtrar, no el conteo filtrado; `Usuario.listaTabla` ejecuta 3 `count()` por página. |
+| M15 | `ProductoValidado.Controller.ts:23`; `ProductoInventariado.Controller.ts:26,29,34` | Integridad | **✅ Corregido (fase 2):** `findOneOrFail`. `findOne(productoId)` puede ser `undefined` → fila con `producto = null`; `nombre` lleva sufijo `Math.random()`. |
+| M16 | `Archivo.Controller.ts:187,352` | Lógica | **✅ Corregido (fase 2):** `esImagen(tipoMIME)`. `thumbUrl` se decide por `archivo.tipo` (etiqueta libre) en vez de `tipoMIME` → casi siempre `""`. |
+| M17 | `Archivo.Controller.ts:125-145,245-252` | Rendimiento · concurrencia | **✅ Corregido (fase 2):** miniaturas solo para imágenes (400 en otro caso); la limpieza del caché sigue pendiente. Cada lectura materializa el BLOB a disco bajo `RUTA_ARCHIVOS` sin limpieza (el cron es un TODO en `Reportes.Controller.ts:24-26`); `existsSync` + `writeFile` compiten en peticiones concurrentes; blobs no imagen pasan por `sharp()` en `/thumbnail` → 500. |
+| M18 | `src/excel.ts` | Código muerto · lógica | Worker nunca lanzado (`fork` comentado). Si se usara: `conectarORM()` no se espera; `reporteGeneral(body.proyectoId, body.conFoto)` pasa 2 argumentos a una función de 1 objeto. |
+| M19 | `package.json` + `src/index.ts:1` | Configuración | **✅ Corregido (fase 2):** `dotenv` declarado. `dotenv` se importa pero **no está declarado**: se resuelve porque `typeorm@0.2` depende de él. TypeORM ≥ 0.3 lo elimina → la app no arranca. |
+| M20 **[verificado]** | `deploy.sh:52` | Configuración | **✅ Corregido (fase 2):** espacio añadido. Falta un espacio: `--exclude ".git/"--rsync-path="sudo rsync"` → `.git/` se copia al servidor y no se usa `sudo rsync`. Ambos scripts hacen `git commit`+`git tag` antes de desplegar y nunca `push`; `docker kill` con `set -e` aborta si el contenedor no existe. |
+| M21 | `Dockerfile:3,8-11,30-33`; `deploy.sh:69` | Configuración | `WORKDIR /code_test` pero rutas/`VOLUME` en `/code/exogrid`; el deploy de pruebas monta `-v ./exogrid:/code_test/exogrid` → archivos/reportes en el FS efímero. Producción corre `ts-node ./src/index.ts` (compila en cada arranque), `npm install` con devDeps, `node:14.21` (EOL). |
+| M22 | `helpers/enviarMail.ts:6-17,29-46,152-154` | Lógica | `headers` no es opción de transporte (se ignora); `transporter.verify()` hace red al importar; `enviarCorreoHTML` envía `text` (HTML crudo como texto). |
+| M23 **[verificado]** | `Grupo.Controller.ts:159,162`; `Reportes.Controller.ts:146` | Lógica | **✅ Corregido (fase 2):** `construirFiltros` con expresiones regulares correctas. `condicionesWhereAndPrestamosActivos`: `if (key.indexOf("nombre") || key.indexOf("correo"))` es verdadero para cualquier llave que no empiece por la palabra (−1 es truthy) → todo filtro se trata como LIKE y se le hace `.pop()`. Selección de tipo de reporte por magic id (`includes(15)`). |
+| M24 | `src/index.ts:116-128` | Lógica | **✅ Corregido (fase 2):** solo SIGTERM/SIGINT. Handler `process.on("exit", async …)` llama a `process.exit(0)` dentro del propio `exit` (recursivo) y los `await` no se ejecutan en `exit`. |
+| M25 | `src/middlewares/pasada.ts:8` | Lógica | **✅ Corregido (fase 2):** corregido. `headers["x-forwarded-for'"]` con comilla extra. |
+| M26 | `src/conexionORM.ts:20-26`; `ormconfig.js:11` | Configuración | **✅ Corregido (fase 2):** `DB_LOGGING` parseado correctamente. En no-producción `createConnections()` espera dos conexiones pero `ormconfig.js` define una (`conexionV1` es `undefined`); `DB_LOGGING.split(',').length === 0` nunca es verdadero. |
+| M27 | `common/Common.Controller.ts:33-41` | Lógica | **✅ Corregido (fase 2):** `{ estatus }`. `listaSimpleGenerica`: `options.where = { st }` filtra por una columna `st` inexistente (debe ser `estatus`). |
+| M28 | `common/Common.Controller.ts:392-397` | Errores | **✅ Corregido (fase 2):** `await`. `quitarComentario`: `getRepository(Comentario).remove(com)` sin `await`. |
+| M29 | `src/entity/ProductoPrecio.ts:20` | Modelo | **✅ Corregido (fase 2):** inverso `producto.productoPrecios`. El lado inverso apunta a `producto.productoCaracteristicas` en vez de `producto.productoPrecios`. |
+| M30 | `src/entity/Usuario.ts:46-48`; `Proyecto.ts:25` | Modelo | **✅ Corregido (fase 2):** tipos corregidos. `archivo: Archivo` tipado como objeto en un `ManyToMany`; `esExterno: Boolean` (tipo objeto). |
+| M31 | `src/subscriber/suscriberLog.ts:60-67,78-86` | Errores | **✅ Corregido (fase 2):** sin `sesionId` no se consulta la sesión; errores silenciados en pruebas. `nuevaOperacion` no se espera ni se captura; con `sesionId` undefined, `findOneOrFail(undefined)` devuelve la primera sesión (atribución incorrecta en la auditoría). |
+| M32 | `Operacion.Controller.ts:84-91` | Errores | **✅ Corregido (fase 2):** carga `operacionDetalle` si no viene. `quitar` borra `operacion.operacionDetalle` aunque la relación no esté cargada (`undefined`). |
+| M33 **[verificado con prueba]** | `Grupo.Controller.ts:998,1050` | Lógica | **✅ Corregido (fase 2):** orden por defecto `movimiento.id`. `listaTablaPendientesActivos` sin `sortField` usa `orderBy("id")` → `ER_BAD_FIELD_ERROR: Unknown column 'id' in 'ORDER BY'` (500) por la subconsulta de paginación con joins. El front siempre envía `sortField`, por eso no se nota. |
+
+### A.4 Bajos
+
+| # | Ubicación | Descripción |
+|---|---|---|
+| L1 | `helpers/passGenerator.ts:34` | **✅ Corregido (fase 2):** `crypto.randomInt`; `password-generator` eliminado. `password-generator` usa `Math.random` (no CSPRNG); `maxLength=20` también limita contraseñas elegidas por el usuario. |
+| L2 | `helpers/enviarMail.ts:93,105,116` | Contraseñas enviadas en claro por correo. |
+| L3 | `Auth.Controller.ts:84-88`; `routes/index.ts:68` | `/` y `/auth/version` exponen nombre y versión sin autenticación. |
+| L4 | `Archivo.Controller.ts:159-163` | **✅ Corregido (fase 2):** 15 MiB coherente en mensaje y `multer.limits`. Límite 16 000 000 bytes vs mensaje "15MB"; se valida después de que multer escribió el temporal; multer sin `limits`. |
+| L5 | `Archivo.Controller.ts:35-117`; `InventarioActual.Controller.ts:389-576,806-842`; `Grupo.Controller.ts:513-880` | Código Supabase muerto/comentado (≈ 600 líneas): `obtenerGenerarArchivo*Supabase`, `export2Supabase`, `convertAviability/…`, `convertMovementType/InvoiceType`. |
+| L6 | `InventarioActual.Controller.ts:123-176,196-198,228-231,762-767` | ≈ 55 líneas de consulta heredada comentada; `queryBusquedaFacturas` vacío. |
+| L7 | `Reportes.Controller.ts:6,19,39-62,97-108,…` | Import `Movimiento` sin uso, 5 bloques MagicBell comentados, funciones vacías, `jwtPayload.ui` sin efecto (211). |
+| L8 | `LogPeticiones.Controllers.ts` (0 bytes), `LogOperacion.Controller.ts` | Archivos vacíos/sin referencia; nombre en plural. |
+| L9 | `src/entity-old/*` (20 archivos) + `Grupo.Controller.ts:32` | Esquema heredado `teleset_almacen_200414`; único uso: import sin usar `Movimientos`. |
+| L10 | `Movimiento.Controller.ts:3`; `Grupo.Controller.ts:10`; `manejoErrores.ts:2`; `entity/ProductoCaracteristica.ts:2`; `Usuario.Controller.ts:3`; `enviarMail.ts:1` | **✅ Corregido (fase 2):** imports muertos eliminados en Movimiento, Grupo, manejoErrores, Usuario. Imports sin uso: `setSourceMapRange`, `isJSDocReadonlyTag` (de `typescript`), `register` (ts-node), `indexOf`/`filter`/`method` (lodash). |
+| L11 | `helpers/excelFunctions.ts` (2 810 líneas) | `reporteGeneral2`, `reporteMaquillajeGeneral` sin uso (hardcode `area.id=1`); pares casi duplicados `reportePorGrupo`/`…FotoGrande`, `reportePorProyecto`/`…Compras`; 5 variantes de `obtenerRenglonesMovimiento*`; nombres de archivo con `Math.random()`. |
+| L12 | `Proyecto.Controller.ts:35-49` | `listaSimpleExterna/Interna` cargan todos los proyectos y filtran en JS. |
+| L13 | `tsconfig.json:20-22`; `.hintrc` | `exclude` apunta a un archivo inexistente; `lib` mezcla es5/es6/ESNext; `strict: false`. |
+| L14 | `package.json` | Sin script `test`; `ngrok`/`dev2` con rutas Windows; `packageManager: yarn@3.2.3` pero solo hay `package-lock.json`; `@types/*`, `typescript`, `ts-node(-dev)` en `dependencies`; sin uso: `@supabase/supabase-js`, `@magicbell/core`, `@sentry/*`, `prom-client`, `express-prom-bundle`, `request`, `request-promise`, `@types/request*`, `randomstring`, `file-type`, `moment`; `lodash` marginal. |
+| L15 | `InventarioActual.Controller.ts:777-790` | `in (6,8,9)` hardcodeado bajo un comentario que lista `-8,-9,-6`. Magic numbers de `MovimientoTipo` en todo el código. |
+| L16 | `Grupo.Controller.test.ts`; `Archivo.Controller.test.ts` | **✅ Corregido (fase 2):** sustituidos por pruebas reales (fase 0). El primero mockea `typeorm` completo (rompe los decoradores al importar entidades) y `./InventarioActual.Controller` como objeto plano cuando el módulo exporta una clase por defecto; `res.json` no está mockeado → la prueba no puede pasar. El segundo es `expect(1+1).toBe(2)`. |
+| L17 | `README.md` | Dice Node 12.16 / MariaDB 10.4 / TypeORM 0.2.24; `.nvmrc` dice 14.17; `Dockerfile` usa 14.21; `package.json` 0.2.41. MariaDB 10.4 está fuera de soporte. |
+| L18 | Front `pages/operaciones/7.inventario/nuevo/index.js:35` y `3.bajas/nuevo/index.js:33` | El front envía `movimientoTipoId: 15` (COMPRA) para un inventario y el tipo legado `5` para bajas. |
+
+---
+
+## B. Front (`front/`)
+
+### B.1 Altos
+
+| # | Ubicación | Descripción | Evidencia |
+|---|---|---|---|
+| F1 | `src/services/axios/index.js:75` | El interceptor de error **devuelve** el error en lugar de rechazarlo: los `.then` de los servicios reciben el objeto `error` como respuesta y los `.catch` nunca se ejecutan. Las páginas pueden tratar un error como éxito. | `return error;` |
+| F2 | `src/services/axios/autorizacion/index.js:15` | El login depende de `https://api.ipify.org`; si ese servicio externo falla o está bloqueado, nadie puede iniciar sesión. | |
+| F3 | `src/services/axios/grupos/index.js:27` | `finalizar` hace `PUT groups/list-by-group-antd` (ruta del listado) en vez de `groups/closure/:id`. | `super.generalPut(portionEndPoint,"list-by-group-antd",parametros)` |
+| F4 | `src/redux/user/sagas.js:126-136` | `LOGOUT` reinicia `name/role/email` (llaves de la plantilla) en vez de `nombre/correo/permisos`: los permisos siguen en memoria tras cerrar sesión. | |
+| F5 | `src/redux/settings/sagas.js` (`SETUP`) | Cualquier parámetro de la query string se convierte en un ajuste del store en cada navegación (`qs.parse` + `changeSetting`). | |
+| F6 | `src/pages/operaciones/7.inventario/nuevo/index.js:35`; `3.bajas/nuevo/index.js:33` | Tipos de movimiento incorrectos/legados enviados al API (15 para inventario, 5 para baja). | |
+
+### B.2 Medios
+
+| # | Ubicación | Descripción |
+|---|---|---|
+| F7 | `src/components/cleanui/layout/Menu/index.js:29-49` | Listeners `touchstart/touchmove` en `document` sin limpieza (fuga). |
+| F8 | `src/components/cleanui/layout/MenuLeft/index.js:88`; `src/helpers/funcionesExtras.js:8,15` | `key={Math.random()}` en listas (re-render completo y pérdida de estado). |
+| F9 | `src/components/cleanui/layout/Sidebar/index.js:325` | Asigna `menuColor: 'light'`, valor inexistente (white/gray/dark). Tema por defecto `'dark'` en el store vs `data-kit-theme="default"` en `index.html`. |
+| F10 | `src/services/axios/index.js:6` | `console.log(NODE_ENV, REACT_APP_API_URL)` incondicional; URL de ngrok antigua en comentario (35). 68 `console.*` activos en 35 archivos de negocio (p. ej. `operaciones/componentes/formaAC.js:73,96` `console.log("hola")`). |
+| F11 | `src/pages/componentes/subirArchivos.js:97` | Lee el token directamente de `localStorage` para la cabecera de `Upload` en vez de usar el cliente axios (duplicación de la lógica de auth). |
+| F12 | Componentes antd obsoletos | `Row type="flex"` (prop v3, 35 usos), `Comment` (eliminado en v5), `visible` en Modal (8), `Menu.Item`/`SubMenu` como hijos (42), `Tabs.TabPane` (58), `Dropdown overlay` (10), `antd/lib/modal/Modal` import profundo. Ver plan 01. |
+| F13 | `src/locales/es-MX.js` | Usa `es_ES` de antd con `locale: 'en-MX'` (código inexistente). |
+
+### B.3 Bajos
+
+| # | Ubicación | Descripción |
+|---|---|---|
+| F14 | `tsconfing.json` (nombre mal escrito), `src/pages/reportes/2.movimientos/inde.js`, `src/pages/componentes/imaganesEnCarrusel.js` | Typos en nombres de archivo; `tsconfing.json` no se usa (no hay TS). |
+| F15 | `pages/reportes/{1.general,4.ultimoUso}/index.js`, `pages/reportes/componentes/tablaListadosReportes.js`, `pages/catalogos/articulos/editarInventarioActual/**`, `pages/administracion/parametros/editar/index.js` | Archivos vacíos o solo con TODO. |
+| F16 | `src/services/firebase.auth.service.js:8-13`; `index.js:29`; `.cloudflare/wrangler.toml` | Credenciales/ids de la plantilla (Firebase, DSN de Sentry comentado, `account_id` de Cloudflare del autor de la plantilla). `firebase` y `@sentry/react` se importan pero no están en `package.json`. |
+| F17 | `cleanui/layout/Footer/index.js`, `layouts/Auth/index.js`, `README.md` | Correo de soporte hardcodeado; README y `package.json` (`cleanui-admin-template-react-cra`) aún describen la plantilla. |
+| F18 | `global.scss` | Importa `~c3/c3.min.css` (dependencia transitiva, no declarada). `useBabelRc()` sin `.babelrc`; `babel-plugin-import` instalado y no usado; `.prettierignore`/`.stylelintignore` apuntan a `kit-vendors/antd/themes` mientras los temas usados están en `kit/vendors`. |
+| F19 | `deploy.sh:final` | `echo` usa `$new_version` indefinido (los pasos de bump están comentados). |
+| F20 | Duplicados de plantilla | `components/kit` vs `kit-*` (≈ 26 k LOC) y `cleanui` vs `cui-*`, ambos parcialmente vivos; 184 páginas demo (21 k LOC); `services/menu/roles.txt` UTF-16 con endpoints `localhost:4100`. |
+| F21 | Dependencias | Node 10 fijado con `axios ^1.1` (requiere ≥ 12); `react-scripts 3.4.1`, `node-sass 4`, `moment 2.24` fijado por `resolutions`; librerías sin uso en negocio: chart.js, chartist, c3, react-stockcharts, d3-*, draft-js, react-draft-wysiwyg, react-jvectormap, react-sortable-tree, react-sortablejs, sortablejs, react-stickynode, @rowno/sparkline, react-highlight-words, react-resizable, prop-types, lodash, clear-cache, reactstrap. |
+
+---
+
+## C. Estado tras la fase 2 del plan 02 (2026-11-07)
+
+Los hallazgos marcados **✅ Corregido (fase 2)** se resolvieron en el commit de la fase 2 y están cubiertos por
+`api/src/test/seguridad.int.test.ts`, `caracterizacion.int.test.ts` y las pruebas unitarias de `helpers/` y `esquemas/`.
+Siguen abiertos: C6 (`DB_SYNCRO` pasa a `false` con las migraciones de la fase 3), C7 (transacciones, fase 3),
+H17 (histórico ligado al movimiento, fase 3), M5 (depreciación; revisar con el propietario), M10 (fase 3), M14,
+M18, M21, M22, los L restantes (fase 4) y toda la sección B (plan 01).
+
+## D. Resumen por prioridad de corrección (original)
+
+1. **Inmediato (sin esperar los planes):** C4 (añadir `checkJwt` y `path.basename`/`root` en `obtenerReporte`), H1 (restaurar `checkJwt` en `GET /file/*`), C5 (no devolver la contraseña; reactivar el correo), C6 (`DB_SYNCRO=false` en Docker/producción tras verificar paridad del esquema), F1 (rechazar en el interceptor).
+2. **Plan 02 · Fase 2:** C1-C3, C7 (transacciones), H2-H20, M1-M32.
+3. **Plan 01 · Fases 3-7:** F2-F21.

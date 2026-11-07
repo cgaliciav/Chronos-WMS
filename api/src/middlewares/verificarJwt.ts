@@ -9,34 +9,47 @@ interface jwtPaylodType{
   si:number
 }
 
-export const checkJwt = (req: Request, res: Response, next: NextFunction) => {
-  //Get the jwt token from the head
-  const token = <string>req.headers["auth"];
-  // let jwtPayload;
-  
-  //Try to validate the token and get data
-  try {
-      //DONE: Poner 'JWTSECRET' en una variable de entorno.
-      // console.log("token recibido",token);
-    const jwtPayload:jwtPaylodType = jwt.verify(token, process.env.JWTSECRET) as jwtPaylodType;
-    res.locals.jwtPayload = jwtPayload;
-    const { ui, u, si } = jwtPayload;
-    console.log(`checkJwt>>>>> ${jwtPayload.u}`);
-    //The token is valid for 1 hour
-    //We want to send a new token on every request
-    const newToken = jwt.sign({ ui, u, si }, process.env.JWTSECRET, {
-        expiresIn: "90d"
-      });
-    res.setHeader("Access-Control-Expose-Headers", "t");
-    res.setHeader("t", token);
-  } catch (error) {
-    console.log(`checkJwt !!!!!!!!!!!!! ${error.name}`);
-    next(error);
-    return;
+/** Duración de los tokens (login y renovación). Antes: 12 h en login y 90 d en la renovación que nunca se enviaba. */
+export const DURACION_TOKEN = "12h";
+
+export const firmarToken = (payload: jwtPaylodType) => jwt.sign(payload, process.env.JWTSECRET, { expiresIn: DURACION_TOKEN });
+
+const verificarYRenovar = (token: string | undefined, res: Response) => {
+  if (!token) {
+    throw new AppError("Token requerido", 401);
   }
+  const jwtPayload = jwt.verify(token, process.env.JWTSECRET, { algorithms: ["HS256"] }) as jwtPaylodType;
+  res.locals.jwtPayload = jwtPayload;
+  const { ui, u, si } = jwtPayload;
+  // Se renueva el token en cada petición y se envía el NUEVO en la cabecera `t` (antes se enviaba el viejo).
+  res.setHeader("Access-Control-Expose-Headers", "t");
+  res.setHeader("t", firmarToken({ ui, u, si }));
+};
 
+/** Cabecera `auth`. Un JWT inválido o ausente responde 401. */
+export const checkJwt = (req: Request, res: Response, next: NextFunction) => {
+  try {
+    verificarYRenovar(req.headers["auth"] as string | undefined, res);
+    next();
+  } catch (error) {
+    next(error.name === "JsonWebTokenError" || error.name === "TokenExpiredError" ? new AppError("Token inválido", 401) : error);
+  }
+};
 
-
-  //Call the next middleware or controller
-  next();
+/**
+ * Para recursos que el navegador pide sin cabeceras (`<img src>`, descargas): acepta el token en la
+ * cabecera `auth` o en el parámetro de consulta `?auth=`. Si `ARCHIVOS_PUBLICOS=true` (transición
+ * hasta que el front envíe el token en las URLs de imagen) deja pasar sin token.
+ */
+export const checkJwtArchivos = (req: Request, res: Response, next: NextFunction) => {
+  const token = (req.headers["auth"] as string | undefined) ?? (typeof req.query.auth === "string" ? req.query.auth : undefined);
+  if (!token && process.env.ARCHIVOS_PUBLICOS === "true") {
+    return next();
+  }
+  try {
+    verificarYRenovar(token, res);
+    next();
+  } catch (error) {
+    next(error.name === "JsonWebTokenError" || error.name === "TokenExpiredError" ? new AppError("Token inválido", 401) : error);
+  }
 };

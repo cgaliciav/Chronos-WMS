@@ -7,7 +7,6 @@ import {
   Not,
   SelectQueryBuilder,
 } from "typeorm";
-import { isJSDocReadonlyTag } from "typescript";
 import { EstatusEstado } from "../entity/common/NombreEstatus";
 import { Grupo } from "../entity/Grupo";
 import {
@@ -17,6 +16,8 @@ import {
 import { Movimiento } from "../entity/Movimiento";
 import { Sesion } from "../entity/Sesion";
 import { AppError } from "../helpers/errorClases";
+import { andWhereIn, aplicarFiltros, columnaSegura, combinarFiltros, construirFiltros, direccionSegura } from "../helpers/filtrosTabla";
+import { idSeguro, idsSeguros } from "../helpers/ids";
 import CommonController from "./common/Common.Controller";
 import GrupoDetalleController from "./GrupoDetalle.Controller";
 import InventarioActualController, {
@@ -29,35 +30,9 @@ import MovimientoController from "./Movimiento.Controller";
 import ProductoController from "./Producto.Controller";
 import { autogenerarCodigo } from "./ProductoClave.Controller";
 // import { supabase } from "../helpers/_SupabaseConfig";
-import { Movimientos } from '../entity-old/Movimientos';
-import { obtenerGenerarArchivoComentarioSupabase, obtenerGenerarArchivoSupabase } from "./Archivo.Controller";
 
-const condicionesWhereAnd = (filters: any) => {
-  const condicionesWhere: string[] = [];
-  console.log("condicionesWhereAnd GRUPO--------------------", filters);
-  for (const key in filters) {
-    if (filters[key] === null || filters[key] === undefined) continue;
-    if (
-      key.indexOf("nombre") >= 0 ||
-      key.indexOf("barras") >= 0 ||
-      key.indexOf("titulo") >= 0
-    ) {
-      condicionesWhere.push(`${key} LIKE '%${filters[key].pop()}%'`);
-    } else if (key.indexOf("fecha") >= 0) {
-      condicionesWhere.push(
-        `(${key} BETWEEN ${filters[key][0]} AND ${filters[key][1]})`
-      );
-    } else {
-      condicionesWhere.push(`${key} IN (${filters[key].join(",")})`);
-    }
-  }
-
-  if (condicionesWhere.length > 0) {
-    return condicionesWhere.join(" AND ");
-  } else {
-    return "";
-  }
-};
+// Filtros de las tablas antd, parametrizados (hallazgos C1/C3). Las llaves traen alias ("grupo.nombre", "proyecto.id").
+const condicionesWhereAnd = (filters: any) => construirFiltros(filters, { textuales: /nombre|barras|titulo/, fechas: /fecha/ });
 
 const funcionQueryListado = () => {
   return getRepository(Grupo)
@@ -129,78 +104,16 @@ const funcionQueryInventario = () =>
     .leftJoin("operacion.movimientoTipo", "movimientoTipo")
     .addSelect(["movimientoTipo.nombre"]);
 
-const condicionesWhereAndInventarioPendiente = (filters: any) => {
-  const condicionesWhere: string[] = [];
-  for (const key in filters) {
-    if (key.indexOf("nombre") || key.indexOf("correo")) {
-      condicionesWhere.push(`${key} LIKE '%${filters[key].pop()}%'`);
-    } else if (key.indexOf("fecha")) {
-      condicionesWhere.push(
-        `(${key} BETWEEN ${filters[key][0]} AND ${filters[key][1]})`
-      );
-    } else {
-      condicionesWhere.push(`${key} IN (${filters[key].join(",")})`);
-    }
-  }
-  condicionesWhere.push("operacion.id is NULL");
+const condicionesWhereAndInventarioPendiente = (filters: any) =>
+  combinarFiltros(construirFiltros(filters, { textuales: /nombre|correo|barras|titulo/, fechas: /fecha/ }), "operacion.id is NULL");
 
-  if (condicionesWhere.length > 0) {
-    return condicionesWhere.join(" AND ");
-  } else {
-    return "";
-  }
-};
-
-const condicionesWhereAndPrestamosActivos = (filters: any) => {
-  const condicionesWhere: string[] = [];
-  console.log("filtersfiltersfiltersfiltersfilters", filters);
-  for (const key in filters) {
-    if (filters[key] === null || filters[key] === undefined) continue;
-    if (key.indexOf("nombre") || key.indexOf("correo")) {
-      condicionesWhere.push(`${key} LIKE '%${filters[key].pop()}%'`);
-    } else if (key.indexOf("fecha")) {
-      condicionesWhere.push(
-        `(${key} BETWEEN ${filters[key][0]} AND ${filters[key][1]})`
-      );
-    } else {
-      condicionesWhere.push(`${key} IN (${filters[key].join(",")})`);
-    }
-  }
-  console.log(
-    "condicionesWhereAndPrestamosActivoscondicionesWhereAndPrestamosActivos",
-    condicionesWhere
-  );
-
-  if (condicionesWhere.length > 0) {
-    return condicionesWhere.join(" AND ");
-  } else {
-    return "";
-  }
-};
+// Antes: `if (key.indexOf("nombre") || key.indexOf("correo"))` trataba CUALQUIER llave como LIKE (hallazgo M23).
+const condicionesWhereAndPrestamosActivos = (filters: any) =>
+  construirFiltros(filters, { textuales: /nombre|correo|barras|titulo/, fechas: /fecha/ });
 
 
-const condicionesWhereAndInventarioHecho = (filters: any) => {
-  const condicionesWhere: string[] = [];
-  for (const key in filters) {
-    if (key.indexOf("nombre") || key.indexOf("correo")) {
-      condicionesWhere.push(`${key} LIKE '%${filters[key].pop()}%'`);
-    } else if (key.indexOf("fecha")) {
-      condicionesWhere.push(
-        `(${key} BETWEEN ${filters[key][0]} AND ${filters[key][1]})`
-      );
-    } else {
-      condicionesWhere.push(`${key} IN (${filters[key].join(",")})`);
-    }
-  }
-  condicionesWhere.push("operacion.id is NOT NULL");
-
-  if (condicionesWhere.length > 0) {
-    return condicionesWhere.join(" AND ");
-  } else {
-    return "";
-  }
-  //CHECAR SI CUANDO SE ASIGNA UNA OPERACION HACE EL AJUSTE DE INVENTARIOACTUAL
-};
+const condicionesWhereAndInventarioHecho = (filters: any) =>
+  combinarFiltros(construirFiltros(filters, { textuales: /nombre|correo|barras|titulo/, fechas: /fecha/ }), "operacion.id is NOT NULL");
 
 const funcionQueryId = (id: number | string) => {
   return (
@@ -322,10 +235,10 @@ const funcionQueryListadoPrestamosPendientes = (
     .where("m.estatus = 'activo'")
     .andWhere("ia.disponible = 'no-disponible'");
   if (areasIds?.length > 0)
-    subQuery.andWhere(`p.areaId IN (${areasIds.join(',')})`);
+    subQuery.andWhere("p.areaId IN (:...pp_areasIds)", { pp_areasIds: idsSeguros(areasIds, "areasIds") });
 
-  if (proyectoId && proyectoId !== "0")
-    subQuery.andWhere(`o.proyectoId=${proyectoId}`);
+  if (proyectoId && proyectoId !== "0" && proyectoId !== 0)
+    subQuery.andWhere("o.proyectoId = :pp_proyectoId", { pp_proyectoId: idSeguro(proyectoId, "proyectoId") });
 
   if (usuariosIds?.length > 0) {
     subQuery.andWhere((qb) => {
@@ -333,13 +246,12 @@ const funcionQueryListadoPrestamosPendientes = (
         .subQuery()
         .select("ou.operacionId")
         .from("operacion_usuarios_usuario", "ou")
-        .where(`ou.usuarioId IN (${usuariosIds.join(',')})`)
+        .where("ou.usuarioId IN (:...pp_usuariosIds)")
         .getQuery();
       return "o.id IN " + operacionUsuariosSubQuery;
     });
+    subQuery.setParameter("pp_usuariosIds", idsSeguros(usuariosIds, "usuariosIds"));
   }
-
-  console.log(">>>>>>>subQuery.getQuery()", subQuery.getQuery(), { areasIds, proyectoId, usuariosIds });
 
   const movimientosQry = getConnection().createQueryBuilder()
     .select("RankedMovimientos.movimientoId", "movimientoId")
@@ -350,11 +262,9 @@ const funcionQueryListadoPrestamosPendientes = (
 
 
 
-  console.log(">>>>>>>movimientosQry.getQuery()", movimientosQry.getQuery());
-
-  return funcionQueryListadoMovimientos().where(
-    "movimiento.id IN (" + movimientosQry.getQuery() + ")"
-  );
+  return funcionQueryListadoMovimientos()
+    .where("movimiento.id IN (" + movimientosQry.getQuery() + ")")
+    .setParameters(movimientosQry.getParameters());
 };
 
 const funcionQueryListadoMovimientos = () => {
@@ -914,28 +824,19 @@ class GrupoController {
           ? movimientoTipoId
           : [movimientoTipoId];
         const result = funcionQueryListadoMovimientos().where(
-          "proyecto.id=:proyectoId and movimientoTipo.id IN (:tiposMovimineto)",
-          { proyectoId, tiposMovimineto }
+          "proyecto.id=:proyectoId and movimientoTipo.id IN (:...tiposMovimineto)",
+          { proyectoId: idSeguro(proyectoId, "proyectoId"), tiposMovimineto: idsSeguros(tiposMovimineto, "movimientoTipoId") }
         );
         if (usuariosIds?.length > 0) {
+          const ids = idsSeguros(usuariosIds, "usuariosIds");
           result.andWhere(
             new Brackets((qb) =>
-              qb
-                .where("operacionUsuarios.id in (:usuariosIds)", {
-                  usuariosIds,
-                })
-                .orWhere("usuario.id in (:usuariosIds)", { usuariosIds })
+              qb.where("operacionUsuarios.id in (:...usuariosIds)", { usuariosIds: ids }).orWhere("usuario.id in (:...usuariosIds)")
             )
           );
         }
-        if (areasIds?.length > 0) {
-          result.andWhere("area.id in (:areasIds)", { areasIds });
-        }
-        if (bodegasIds?.length > 0) {
-          result.andWhere("bodega.id in (:bodegasIds)", { bodegasIds });
-        }
-        console.log(">>>>>>>>>>>>>>>>>>>listaTablaMovimientosPorProyecto>>>>\n", result.getSql());
-        // result.getSql()
+        if (areasIds?.length > 0) andWhereIn(result, "area.id", idsSeguros(areasIds, "areasIds"), "areasIds");
+        if (bodegasIds?.length > 0) andWhereIn(result, "bodega.id", idsSeguros(bodegasIds, "bodegasIds"), "bodegasIds");
         return result;
       },
       condicionesWhereAnd
@@ -961,8 +862,6 @@ class GrupoController {
 
     body["filters"]["area.id"] = usuarioAreas;
     body["filters"]["bodega.id"] = usuarioBodegas;
-
-    console.log("listaTablaMovimientosPorGrupo", body);
 
     CommonController.listaTablaQryAnd(
       body,
@@ -996,16 +895,13 @@ class GrupoController {
       filters,
     } = req.body;
 
-    const campoOrden: string = sortField ? sortField : "id";
-    let direccion: string = "ASC";
-    const page = pagination.current ? pagination.current : 1;
-    const { pageSize } = pagination;
+    const page = pagination?.current ? pagination.current : 1;
+    const pageSize = pagination?.pageSize ?? 10;
     const starts = pageSize * page - pageSize;
 
     try {
-      if (sortOrder !== undefined) {
-        direccion = sortOrder == "descend" ? "DESC" : "ASC";
-      }
+      const campoOrden = columnaSegura(sortField, "movimiento.id");
+      const direccion = direccionSegura(sortOrder);
 
       const qryC = funcionQueryListadoPrestamosPendientes(
         proyectoId,
@@ -1027,23 +923,13 @@ class GrupoController {
         bodegasIds
       );
 
-      console.log("listaTablaPendientesActivos params", {
-        campoOrden,
-        starts,
-        direccion,
-        pageSize,
-      });
-
-      console.log("listaTablaPendientesActivos cuantos", conteoTotal);
-
       const condicionesWhere = condicionesWhereAndPrestamosActivos(filters);
-      if (condicionesWhere.length > 0) {
-        console.log("condicionesWherecondicionesWhere", condicionesWhere);
-        qry.andWhere(condicionesWhere);
+      if (condicionesWhere.sql.length > 0) {
+        qry.andWhere(condicionesWhere.sql, condicionesWhere.parametros);
       }
       const filtered = await qry.getCount();
       const qryResult = await qry
-        .orderBy(campoOrden, direccion as "ASC" | "DESC")
+        .orderBy(campoOrden, direccion)
         .skip(starts)
         .take(pageSize)
         .getMany();
@@ -1078,11 +964,7 @@ class GrupoController {
 
     try {
       const qry = funcionQueryListadoMovimientos();
-
-      const condicionesWhere = condicionesWhereAndPrestamosActivos(filters);
-      if (condicionesWhere.length > 0) {
-        qry.where(condicionesWhere);
-      }
+      aplicarFiltros(qry, condicionesWhereAndPrestamosActivos(filters));
       const qryResult = await qry.getMany();
 
       res.json(
@@ -1243,10 +1125,7 @@ class GrupoController {
         bodegasIds
       );
 
-      const condicionesWhere = condicionesWhereAndPrestamosActivos(filters);
-      if (condicionesWhere.length > 0) {
-        qry.andWhere(condicionesWhere);
-      }
+      aplicarFiltros(qry, condicionesWhereAndPrestamosActivos(filters));
       const qryResult = await qry.getMany();
 
       res.json(
@@ -1396,24 +1275,28 @@ class GrupoController {
         jwtPayload.si
       );
 
+      // TODO (revisar con el propietario, plan 02 §7): hoy toma los inventarios de TODAS las bodegas aunque el grupo tenga bodegaId.
       const inventarioActualCompleto = await getRepository(
         InventarioActual
       ).find({
-        select: ["id", "estatus", "disponible"],
+        select: ["id", "estatus", "disponible", "cantidad"],
         where: {
           disponible: Not(InventarioDisponible.BAJA),
           estatus: EstatusEstado.ACTIVO,
         },
       });
       // const sesion=await getRepository(Sesion).findOneOrFail(jwtPayload.si);
-      grupo.movimientos = inventarioActualCompleto.map((iac) => {
-        const mov = new Movimiento();
-        mov.cantidad;
-        mov.inventarioActual = iac;
-        mov.sesion = sesion;
-        mov.sesionId = jwtPayload.si;
-        return mov;
-      });
+      // La relación grupo↔movimiento no tiene cascade: los movimientos se guardan primero (antes nunca se creaban).
+      grupo.movimientos = await getRepository(Movimiento).save(
+        inventarioActualCompleto.map((iac) => {
+          const mov = new Movimiento();
+          mov.cantidad = iac.cantidad; // antes `mov.cantidad;` no asignaba nada (hallazgo H15)
+          mov.inventarioActual = iac;
+          mov.sesion = sesion;
+          mov.sesionId = jwtPayload.si;
+          return mov;
+        })
+      );
 
       await CommonController.nuevo(
         getRepository(Grupo),
@@ -1526,9 +1409,6 @@ class GrupoController {
         { nombre: numero, id: grupoId },
         jwtPayload.si
       );
-      console.log("********************************* editarConCompra", {
-        resp,
-      });
 
       await GrupoDetalleController.editarFactura(
         grupo.grupoDetalle,
@@ -1544,20 +1424,9 @@ class GrupoController {
         jwtPayload.si
       );
 
-      (await obtenerMovimientosConOperacionDeGrupo(grupoId)).forEach(
-        async (mov) => {
-          console.log("***************************** editarConCompraMOV", {
-            mov,
-          });
-          await MovimientoController.editarOperacion(
-            mov,
-            15,
-            proyectoId,
-            usuariosIds,
-            jwtPayload.si
-          );
-        }
-      );
+      for (const mov of await obtenerMovimientosConOperacionDeGrupo(grupoId)) {
+        await MovimientoController.editarOperacion(mov, 15, proyectoId, usuariosIds, jwtPayload.si);
+      }
 
       res.json();
     } catch (error) {
@@ -1611,16 +1480,9 @@ class GrupoController {
         jwtPayload.si
       );
 
-      (await obtenerMovimientosConOperacionDeGrupo(grupoId)).forEach(
-        async (mov) =>
-          await MovimientoController.editarOperacion(
-            mov,
-            movimientoTipoId,
-            proyectoId,
-            usuariosIds,
-            jwtPayload.si
-          )
-      );
+      for (const mov of await obtenerMovimientosConOperacionDeGrupo(grupoId)) {
+        await MovimientoController.editarOperacion(mov, movimientoTipoId, proyectoId, usuariosIds, jwtPayload.si);
+      }
 
       res.json();
     } catch (error) {
@@ -1760,14 +1622,6 @@ class GrupoController {
     } = req.body;
     const { jwtPayload } = res.locals;
     try {
-      console.log("*************** agregarMovimiento", {
-        codigo,
-        cantidad,
-        movimientoTipoId,
-        proyectoId,
-        usuariosIds,
-        grupoId,
-      });
       const inventarioActual =
         await InventarioActualController.obtenerInventarioActualDeCodigo(
           codigo
@@ -1805,7 +1659,7 @@ class GrupoController {
       }
       if (movimiento !== undefined) {
         // agregar movimiento creado al grupo (listado)
-        const grupo = await getRepository(Grupo).findOneOrFail(grupoId, {
+        const grupo = await getRepository(Grupo).findOneOrFail(idSeguro(grupoId, "grupoId"), {
           relations: ["movimientos"],
           loadEagerRelations: false,
         });
@@ -1846,8 +1700,9 @@ class GrupoController {
     try {
       // const  inventarioActual = await InventarioActualController.obtenerInventarioActualDeCodigo(codigo);
       //crear inventarioActual
+      // El inventario nace en 0/0: `actualizarInventarioActual` (compra/alta) suma la cantidad una sola vez (hallazgo H21).
       const inventarioActual = await crearBaseInventarioActual(
-        cantidad,
+        0,
         bodegaId,
         jwtPayload.si
       );
@@ -1900,7 +1755,7 @@ class GrupoController {
       }
       if (movimiento !== undefined) {
         // agregar movimiento creado al grupo (listado)
-        const grupo = await getRepository(Grupo).findOneOrFail(grupoId, {
+        const grupo = await getRepository(Grupo).findOneOrFail(idSeguro(grupoId, "grupoId"), {
           relations: ["movimientos"],
           loadEagerRelations: false,
         });
@@ -1927,7 +1782,7 @@ class GrupoController {
       // El grupo se queda con la sesion de quien lo creó. cada Movimiento
       res.json(
         await MovimientoController.agregarOperacion(
-          await getRepository(Movimiento).findOneOrFail(movimientoId),
+          await getRepository(Movimiento).findOneOrFail(idSeguro(movimientoId, "movimientoId")),
           movimientoTipoId,
           proyectoId,
           usuariosIds,
@@ -1948,18 +1803,16 @@ class GrupoController {
     const { movimientoId } = req.body;
     const { jwtPayload } = res.locals;
     try {
-      MovimientoController.quitar(
+      await MovimientoController.quitar(
         await getRepository(Movimiento)
           .createQueryBuilder("movimiento")
           .leftJoinAndSelect("movimiento.operacion", "operacion")
           .leftJoinAndSelect("operacion.operacionDetalle", "operacionDetalle")
           .leftJoinAndSelect("movimiento.inventarioActual", "inventarioActual")
-          .where("movimiento.id=:movimientoId", { movimientoId })
+          .where("movimiento.id=:movimientoId", { movimientoId: idSeguro(movimientoId, "movimientoId") })
           .getOne(),
         jwtPayload.si
       );
-      //reactivar el movimiento previo
-
       res.json();
     } catch (error) {
       next(error);

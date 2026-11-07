@@ -1,25 +1,24 @@
-### Teleset Almacen ###
- Based on https://react.cleanuitemplate.com
+# Almacén · Front
 
+SPA React + Ant Design del sistema de almacén. Construida originalmente sobre la plantilla
+[Clean UI Admin Template](https://docs.cleanuitemplate.com); el plan
+[`../docs/planes/01-front-actualizacion-antd.md`](../docs/planes/01-front-actualizacion-antd.md)
+describe la migración a Vite + React 19 + antd 6 y la eliminación de la plantilla.
 
-### Uses
-Node v10.24.1
-Yarn v1.22.22
+Documentación: [`../docs/front/arquitectura.md`](../docs/front/arquitectura.md), guía para agentes en
+[`CLAUDE.md`](CLAUDE.md), fallos conocidos en [`../docs/hallazgos-codigo.md`](../docs/hallazgos-codigo.md).
 
+### Stack actual
+- Node v10.24.1 (`.nvmrc`), Yarn v1.22
+- React 16.13, antd 4.2, redux + redux-saga, react-router-dom 5 (hash), Create React App 3.4 + react-app-rewired
 
-### Env Variables
-REACT_APP_API_URL
+### Variables de entorno
+Ver `.env.example`: `REACT_APP_API_URL` (por defecto `/api/`), `REACT_APP_MAGICBELL_API_KEY`, `REACT_APP_MAGICBELL_USER_KEY`.
 
-
-### Documentation ###
-Please read documentation here https://docs.cleanuitemplate.com
-
-### Quick Start ###
-* Install node.js: https://nodejs.org​
-* Install yarn package manager: https://yarnpkg.com/​
-* Install node modules by running terminal command `yarn install`
-* Run the app `yarn start`
-* Or build production app `yarn build`
-
-### Support ###
-Use GitHub Issues for tracking bugs and creating new feature requests or write to [support@sellpixels.com](mailto:support@sellpixels.com).
+### Inicio rápido
+```bash
+nvm use
+yarn install
+yarn start      # desarrollo
+yarn build      # producción (carpeta build/, la despliegan deploy*.sh)
+```

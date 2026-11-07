@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from "express";
-import { register } from "ts-node";
 import LogGeneralController from "../controllers/LogGeneral.Controller";
 import { LogTipo } from "../entity/LogGeneral";
 // import { getRepository } from "typeorm";
@@ -44,7 +43,7 @@ const errorCodes= (code:string):string=>{
 }
 
 const errorMiddlewere = (err:any, req: Request, res: any, next: NextFunction) => {    
-    console.log("******* ERROR MIDDLEWERE --- : ", err.message)
+    if (process.env.NODE_ENV !== "test") console.log("******* ERROR MIDDLEWERE --- : ", err.message)
     // console.log("DETALLE ERROR :", err)
     const {path,body,params,headers,ip}=req;
     // console.log("DETALLE REQ :", { path,body,params,headers,ip })
@@ -59,11 +58,16 @@ const errorMiddlewere = (err:any, req: Request, res: any, next: NextFunction) =>
     
     switch(err.name){
       case 'JsonWebTokenError':
-        err.status = "499";
+      case 'TokenExpiredError':
+        err.statusCode = 401;
+        err.status = "Sin autorización";
         break;
       case 'EntityNotFound':
-        err.message="REGISTRO NO ENCONTRADO"
-
+      case 'EntityNotFoundError':
+        err.statusCode = 404;
+        err.status = "Recurso no encontrado";
+        err.message="REGISTRO NO ENCONTRADO";
+        break;
     }
 
     if(err.code!==undefined){

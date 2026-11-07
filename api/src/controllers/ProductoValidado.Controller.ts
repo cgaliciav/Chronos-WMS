@@ -3,6 +3,7 @@ import { getRepository } from "typeorm";
 import { EstatusEstado } from "../entity/common/NombreEstatus";
 import { Producto } from "../entity/Producto";
 import { ProductoValidado, ValidacionEstado } from "../entity/ProductoValidado";
+import { idSeguro } from "../helpers/ids";
 
 export default class ProductoValidadoController {
   static guardar = async (
@@ -20,7 +21,7 @@ export default class ProductoValidadoController {
     if (productoValidado === undefined) {
       productoValidado = new ProductoValidado();
       productoValidado.estatus = EstatusEstado.ACTIVO;
-      productoValidado.producto = await getRepository(Producto).findOne(productoId);
+      productoValidado.producto = await getRepository(Producto).findOneOrFail(idSeguro(productoId, "productoId"));
     }
     productoValidado.validacion = validacion;
     productoValidado.sesionId = sesionId;

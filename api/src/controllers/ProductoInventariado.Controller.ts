@@ -4,6 +4,7 @@ import { EstatusEstado } from "../entity/common/NombreEstatus";
 import { Producto } from "../entity/Producto";
 import { ProductoInventariado, InventarioEstado } from "../entity/ProductoInventariado";
 import { Sesion } from "../entity/Sesion";
+import { idSeguro } from "../helpers/ids";
 // import { ProductoInventariado, ValidacionEstado } from "../entity/ProductoInventariado";
 
 export default class ProductoInventariadoController {
@@ -23,14 +24,12 @@ export default class ProductoInventariadoController {
     // }
     const productoInventariado = new ProductoInventariado();
     productoInventariado.estatus = EstatusEstado.ACTIVO;
-    productoInventariado.producto = await getRepository(Producto).findOne(productoId);
+    productoInventariado.producto = await getRepository(Producto).findOneOrFail(idSeguro(productoId, "productoId"));
     productoInventariado.validacion = validacion;
     productoInventariado.sesionId = sesionId;
-    productoInventariado.sesion = await getRepository(Sesion).findOne(sesionId);
+    productoInventariado.sesion = await getRepository(Sesion).findOneOrFail(idSeguro(sesionId, "sesionId"));
     
     productoInventariado.nombre = `${nombre_comentario}>>>${Math.trunc(Math.random()*10000000000000)}`;
-
-    console.log({ productoInventariado });
 
     return await getRepository(ProductoInventariado).save(productoInventariado);
   };

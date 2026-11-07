@@ -3,12 +3,15 @@ import multer from 'multer'
 import GrupoController from "../controllers/Grupo.Controller";
 import { checkJwt } from "../middlewares/verificarJwt";
 import { checkRole } from "../middlewares/verificarRol";
+import { validarBody } from "../middlewares/validar";
+import { actividadCompraSchema, actividadSchema, agregarOperacionSchema, quitarMovimientoSchema } from "../esquemas";
+import { TAMANO_MAXIMO_ARCHIVO } from "../controllers/Archivo.Controller";
 // import { conManejoDeErrores } from "../middlewares/manejoErrores";
 
 const router = Router();
 
 
-const upload = multer({ dest: process.env.UPLOADS })
+const upload = multer({ dest: process.env.UPLOADS, limits: { fileSize: TAMANO_MAXIMO_ARCHIVO, files: 1 } })
 
 //Get all users
 
@@ -51,10 +54,10 @@ router.post("/inventory-done-list",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-
 // router.put("/comment",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-COMENTARIONUEVO"])],GrupoController.agregarComentario)
 // router.delete("/comment",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-COMENTARIOBORRAR"])],GrupoController.quitarComentario)
 
-router.put("/activity",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-MOVIMIENTONUEVO"])],GrupoController.agregarMovimiento)
-router.put("/activity-purchase",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-MOVIMIENTONUEVOCOMPRA"])],GrupoController.agregarMovimientoCompra)
-router.put("/activity-add-transaction",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-MOVIMIENTOAGREGAROPERACION"])],GrupoController.agregarOperacionAMovimiento)
-router.delete("/activity",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-QUITARMOVIMIENTO"])],GrupoController.quitarMovimiento)
+router.put("/activity",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-MOVIMIENTONUEVO"]),validarBody(actividadSchema)],GrupoController.agregarMovimiento)
+router.put("/activity-purchase",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-MOVIMIENTONUEVOCOMPRA"]),validarBody(actividadCompraSchema)],GrupoController.agregarMovimientoCompra)
+router.put("/activity-add-transaction",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-MOVIMIENTOAGREGAROPERACION"]),validarBody(agregarOperacionSchema)],GrupoController.agregarOperacionAMovimiento)
+router.delete("/activity",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-QUITARMOVIMIENTO"]),validarBody(quitarMovimientoSchema)],GrupoController.quitarMovimiento)
 
 router.post("/create-list-from-group",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-CREARLISTADEGRUPO"])],GrupoController.nuevoListadoDeGrupo)
 router.post("/create-list-from-catalog",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-CREARLISTADECATALOGOGENERAL"])],GrupoController.nuevoListadoDeCatalogoGeneral)

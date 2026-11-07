@@ -10,7 +10,7 @@ class InventarioDetalleController{
         sesionId:number)=>{
             const inventarioDetalle=new InventarioDetalle();
             inventarioDetalle.fechaInicio=new Date(fechaInicio);
-            if(fechaFin===undefined){
+            if(fechaFin!==undefined && fechaFin!==null && fechaFin!==""){ // antes la condición estaba invertida (hallazgo M6)
                 inventarioDetalle.fechaFin=new Date(fechaFin);
             }
             inventarioDetalle.bodega=await getRepository(Bodega).findOneOrFail(bodegaId);
