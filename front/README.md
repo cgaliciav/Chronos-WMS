@@ -9,11 +9,11 @@ Documentación: [`../docs/front/arquitectura.md`](../docs/front/arquitectura.md)
 [`CLAUDE.md`](CLAUDE.md), fallos conocidos en [`../docs/hallazgos-codigo.md`](../docs/hallazgos-codigo.md).
 
 ### Stack actual
-- Node v10.24.1 (`.nvmrc`), Yarn v1.22
+- Node 14 (`.nvmrc`; el build legado está verificado con 14.21.3), Yarn v1.22
 - React 16.13, antd 4.2, redux + redux-saga, react-router-dom 5 (hash), Create React App 3.4 + react-app-rewired
 
 ### Variables de entorno
-Ver `.env.example`: `REACT_APP_API_URL` (por defecto `/api/`), `REACT_APP_MAGICBELL_API_KEY`, `REACT_APP_MAGICBELL_USER_KEY`.
+Ver `.env.example`: `REACT_APP_API_URL` (por defecto `/api/`).
 
 ### Inicio rápido
 ```bash

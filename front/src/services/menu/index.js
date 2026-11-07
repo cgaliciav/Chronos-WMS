@@ -489,26 +489,5 @@ export default async function getMenuData() {
         },
       ],
     },
-    // {
-    //   title: 'Parámetros',
-    //   key: 'parametros',
-    //   icon: 'icmn icmn-cog',
-    //   role: 'V-ADMINISTRACION-PARAMETROS',
-    //   url: '/parametros',
-    //   // children: [
-    //   //   {
-    //   //     key: 'precios',
-    //   //     title: 'precios',
-    //   //     url: '/parametros/precios',
-    //   //     role: 'ADMINISTRACION-PROVEEDORESNUEVO',
-    //   //   },
-    //   //   {
-    //   //     key: 'proveedoreslistado',
-    //   //     title: 'Listado',
-    //   //     url: '/proveedores/listado',
-    //   //     role: 'ADMINISTRACION-PROVEEDORESLISTADO',
-    //   //   },
-    //   // ],
-    // },
   ]
 }

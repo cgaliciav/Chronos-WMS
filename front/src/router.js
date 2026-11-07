@@ -156,12 +156,6 @@ const routes = [
   },
 
 
-  // {
-  //   path: '/articulos/editar/inventarioActual',
-  //   Component: lazy(() => import('pages/catalogos/articulos/editarInventarioActual')),
-  //   exact: true,
-  // },
-
   // *******************************************
   // OPERACIONES
   // *******************************************
@@ -364,14 +358,6 @@ const routes = [
     exact: true,
   },
 
-
-  // *******************************************
-  // Dashboards
-  {
-    path: '/dashboard/alpha',
-    Component: lazy(() => import('pages/dashboard/alpha')),
-    exact: true,
-  },
 
   // *******************************************
   // Auth Pages

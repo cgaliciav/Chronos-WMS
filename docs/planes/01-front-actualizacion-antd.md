@@ -89,6 +89,12 @@ customize-cra, react-app-rewired, react-scripts, node-sass, less, less-loader, b
 
 **Aceptación:** existen los tres documentos; commit.
 
+> **Ejecutada (2026-11-07).** El legado compila con Node 14 + Yarn 1 (`docs/front/baseline/README.md`); hay
+> capturas de las 10 rutas críticas con API simulado. Desviación en el paso 5: `engines.node >=24` hace que
+> Yarn rechace `yarn build` en Node 14 (y rompería `deploy-production.sh` hasta la fase 2), así que
+> `.nvmrc` queda en `14` (versión verificada para el legado), `.npmrc` sí se crea y **`.nvmrc = 24` +
+> `engines` se mueven al paso 1 de la fase 2**. El inventario encontró 67 rutas activas (no 58).
+
 ### Fase 1 · Eliminar código muerto del template
 
 1. Confirmar con `npx knip` / `npx madge --orphans src` y con grep que nada de negocio importa lo que se
@@ -116,11 +122,27 @@ customize-cra, react-app-rewired, react-scripts, node-sass, less, less-loader, b
 `npx eslint src` sin errores de import.
 **Aceptación:** LOC de `src` ≈ 20 k; ningún import roto; commit.
 
+> **Ejecutada (2026-11-07).** `src`: 961 → 263 archivos; 21,7 k LOC de JS (27,2 k con SCSS/LESS). `yarn build`
+> (Node 14) compila y las capturas de las 10 rutas críticas coinciden con la línea base salvo la campana de
+> MagicBell. Desviaciones respecto al paso 2, porque el build se rompía:
+> - **No se borran** `kit-core`, `kit-vendors/{antd,bootstrap,nprogress,perfect-scrollbar}` ni `cui-styles`
+>   (los importa `global.scss`: utilidades `kit__utils__*`, ajustes de antd/Bootstrap), ni
+>   `kit/core/mixins.scss` y `kit/vendors/antd/themes` (los usan `components/mixins.scss` y `index.js`).
+>   Sí se borró todo lo demás de `kit*`/`cui-*` y los estilos que nadie importaba. Lo restante desaparece con
+>   `global.scss` en las fases 4-6.
+> - **`public/resources/fonts` se conserva** (iconos `icmn`/`fe` del menú y fuentes de `index.html`; se retira
+>   en la fase 6, paso 4). De `public/resources/images` solo queda `logo.svg`.
+> - También se retiró `reactstrap` (sin consumidores) y la plantilla `services/HOW-TO-AUTH-APP.md`.
+> - Quedan 4 archivos de negocio no importados por ninguna ruta (`operaciones/7.inventario/nuevo`,
+>   `reportes/5.inventario`, `catalogos/7.inventarioVisual/componentes/resultadosValidaciones.js`,
+>   `operaciones/componentes/accionesTablasGrupos.js`): no se borran sin confirmar con el propietario.
+
 ### Fase 2 · Tooling: CRA → Vite 8 + TypeScript, Node 24, npm
 
 **Objetivo:** compilar con herramientas actuales **sin cambiar aún React/antd** (React 16.14, antd 4.24).
 
-1. `nvm use 24`. Borrar `yarn.lock`, `config-overrides.js`, `jsconfig.json`, `.eslintrc.js`,
+1. `.nvmrc` = `24` y `"engines": { "node": ">=24" }` en `package.json` (aplazados desde la fase 0).
+   `nvm use 24`. Borrar `yarn.lock`, `config-overrides.js`, `jsconfig.json`, `.eslintrc.js`,
    `.prettierrc`, `.stylelintrc.json`, `.prettierignore`, `.stylelintignore`.
 2. **TypeScript**: `tsconfig.json`:
    ```json

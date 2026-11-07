@@ -8,21 +8,21 @@ JWT en la cabecera `auth`.
 
 | Área | Tecnología | Versión |
 |---|---|---|
-| Build | Create React App 3.4.1 + `react-app-rewired` + `customize-cra` (`config-overrides.js`: decorators legacy, less-loader, eslintrc, webpackbar) | Node 10.24.1, Yarn 1.22 |
-| UI | React 16.13, antd 4.2, `@ant-design/icons` 4, Bootstrap 4 CSS, `reactstrap` (solo demo) | |
+| Build | Create React App 3.4.1 + `react-app-rewired` + `customize-cra` (`config-overrides.js`: decorators legacy, less-loader, eslintrc, webpackbar) | Node 14 (verificado 14.21.3), Yarn 1.22 |
+| UI | React 16.13, antd 4.2, `@ant-design/icons` 4, Bootstrap 4 CSS | |
 | Estado | redux 4, redux-saga 1.1, `connected-react-router` 6, `react-router-dom` 5 (hash history) | |
 | HTTP | axios 1.x (`src/services/axios/index.js`) | |
 | Fechas | moment 2.24 (fijado en `resolutions`) | |
 | Estilos | SCSS (node-sass 4) + LESS (temas antd) + CSS Modules | |
-| i18n | react-intl (solo lo usa la plantilla); locale `es-MX` | |
+| i18n | react-intl (solo lo usa la plantilla); locale `es-MX` (único) | |
 
 ## Estructura de `front/src`
 
 ```
 index.js            crea hash history, store (redux + saga + router middleware), ReactDOM.render
-router.js           array estático de 64 rutas (React.lazy) + transición CSS; guarda localStorage.ultimaVisitada
+router.js           array estático de 67 rutas (React.lazy) + transición CSS; guarda localStorage.ultimaVisitada
 localization.js     ConfigProvider(antd es_ES) + IntlProvider
-global.scss         importa bootstrap, estilos de la plantilla (kit-vendors, kit-core, cui-styles)
+global.scss         importa bootstrap, perfect-scrollbar y estilos de la plantilla (kit-vendors/{antd,bootstrap,nprogress,perfect-scrollbar}, kit-core, cui-styles)
 layouts/            index.js (elige Public/Auth/Main según ruta y auth), Main (Layout antd + cleanui), Auth, Public
 redux/              reducers.js, sagas.js, user/ (login, currentAccount, logout), menu/ (menuData), settings/ (tema y layout de la plantilla)
 services/
@@ -31,22 +31,23 @@ services/
   jwt/              login/currentAccount/logout
   menu/index.js     menú estático con roles por entrada
 pages/
-  administracion/   usuarios, proyectos, proveedores, areas, bodegas, parametros
+  administracion/   usuarios, proyectos, proveedores, areas, bodegas
   catalogos/        1.general … 7.inventarioVisual, articulos (detalle/editar/validado)
   operaciones/      1.prestamos, 2.devoluciones, 3.bajas, 4.compras, 5.altas, 6.rentaExterna, 7.inventario, 8.previo, movimiento, componentes
   reportes/         por-usuario, de-cierre (+ carpetas vacías)
   componentes/      formularios y modales compartidos (precios, claves, características, archivos, comentarios, imágenes)
-  auth/             login, 401, 404, 500, 503 (+ no enrutadas)
-  <demo>/           advanced, apps, cards, charts, dashboard, ecommerce, icons, tables, ui-kits, widgets  ← plantilla, no se usa
+  auth/             login, 401, 404, 500, 503
 components/
-  cleanui/          layout (TopBar, Menu, Breadcrumbs, Footer, Sidebar), system (ACL, Auth/Login, Errors), styles  ← EN USO
-  cui-layout, cui-styles, cui-system   ← copia alternativa de la plantilla, NO se usa
-  kit, kit-core, kit-vendors, kit-widgets ← widgets/demos de la plantilla, solo los usa /dashboard/alpha
+  cleanui/          layout (TopBar, Menu/MenuLeft, Breadcrumbs, Footer, Sidebar), system (ACL, Auth/Login, Errors), styles/mixins.scss
+  kit/              core/mixins.scss (mixins SCSS de cleanui) y vendors/antd/themes (temas LESS que importa index.js)
+  kit-core, kit-vendors, cui-styles   estilos globales vía global.scss (utilidades kit__utils__*, ajustes antd/Bootstrap)
+  mixins.scss       punto de entrada de mixins para los .module.scss de cleanui
 helpers/funcionesExtras.js
-locales/            es-MX (en uso), en-US, fr-FR, ru-RU, zh-CN
+locales/es-MX.js
 ```
 
-Tamaño: 961 archivos / ≈ 76 k LOC; el negocio real son ≈ 130 archivos / ≈ 17 k LOC.
+Tamaño tras la fase 1 del plan 01: 263 archivos / ≈ 21,7 k LOC de JS (antes 961 / ≈ 76 k); el negocio real son ≈ 130 archivos / ≈ 17 k LOC.
+Demos, `kit/widgets`, `kit-widgets`, `cui-layout`, `cui-system`, MagicBell e idiomas distintos de `es-MX` se borraron en la fase 1.
 
 ## Flujo de autenticación
 

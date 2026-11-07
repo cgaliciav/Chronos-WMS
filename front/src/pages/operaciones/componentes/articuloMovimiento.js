@@ -1,6 +1,6 @@
 import React,{useState} from 'react'
 import { Row, Col,Space, Tag, Typography,Spin } from 'antd'
-import ImagenesEnCarrusel from 'pages/componentes/imaganesEnCarrusel'
+import ImagenesEnCarrusel from 'pages/componentes/imagenesEnCarrusel'
 import ModalImagenes from 'pages/componentes/modalImagenes'
 import { formatoMonedaMexico } from 'helpers/funcionesExtras'
 

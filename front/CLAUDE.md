@@ -1,18 +1,21 @@
 # front/ · guía para agentes
 
 SPA del almacén. **React 16.13 · antd 4.2 · redux + redux-saga · react-router-dom 5 (hash) ·
-Create React App 3.4 + react-app-rewired · Node 10.24 · Yarn 1 · JavaScript (sin TypeScript)**.
+Create React App 3.4 + react-app-rewired · Node 14 · Yarn 1 · JavaScript (sin TypeScript)**.
 Construida sobre la plantilla comercial **Clean UI Admin Template**; el plan
 `docs/planes/01-front-actualizacion-antd.md` describe cómo retirarla y actualizar todo el stack.
 Arquitectura detallada: `docs/front/arquitectura.md`. Fallos conocidos: `docs/hallazgos-codigo.md` (sección B).
+**Estado del plan 01:** fases 0 y 1 hechas (línea base y borrado del código muerto de la plantilla).
+Rutas, roles y endpoints: `docs/front/inventario-rutas.md`; verificación manual: `docs/front/checklist-humo.md`.
 
 Scripts: `yarn start` (dev, proxy `/api` **no** configurado: usa `REACT_APP_API_URL`), `yarn build`,
-`yarn eslint`, `yarn prettier`. **No hay pruebas automatizadas.**
+`yarn eslint`, `yarn prettier`. **No hay pruebas automatizadas**; tras cada cambio visible pasa el
+checklist de humo y, si tocas estilos o layout, regenera las capturas con `docs/front/baseline/capturar.js`.
 
 ## Dónde está el código de negocio (≈ 17 k LOC)
 
 ```
-src/pages/administracion/   usuarios, proyectos, proveedores, areas, bodegas, parametros
+src/pages/administracion/   usuarios, proyectos, proveedores, areas, bodegas
 src/pages/catalogos/        búsquedas (general, por códigos, bajas, por proyecto, por facturas, validaciones, inventario visual), articulos/
 src/pages/operaciones/      1.prestamos 2.devoluciones 3.bajas 4.compras 5.altas 6.rentaExterna 7.inventario 8.previo movimiento/ componentes/
 src/pages/reportes/         por-usuario, de-cierre
@@ -22,12 +25,13 @@ src/layouts/                Public / Auth / Main (Main usa componentes de cleanu
 src/redux/                  user (login/currentAccount/logout), menu (menuData), settings (tema/layout de la plantilla)
 src/services/axios/         apiClient + PeticionBase + 20 clases por recurso (grupos, usuarios, inventarioActual, movimientos…)
 src/services/menu/index.js  menú estático con `role` por entrada
-src/router.js               64 rutas (React.lazy); guarda localStorage.ultimaVisitada
+src/router.js               67 rutas (React.lazy); guarda localStorage.ultimaVisitada
 ```
 
-**Todo lo demás es plantilla**: `src/components/{kit,kit-*,cui-*}` y `src/pages/{advanced,apps,cards,charts,dashboard,ecommerce,icons,tables,ui-kits,widgets}`
-no se usan en negocio (solo la demo `/dashboard/alpha`). `src/components/cleanui/{layout,system}` sí está en
-uso (layout, `ACL`, `Login`, páginas de error). No añadas código nuevo dentro de `components/cleanui` ni `kit*`.
+**Lo que queda de la plantilla está en uso** (las demos se borraron en la fase 1 del plan 01):
+`src/components/cleanui/{layout,system}` (layout, `ACL`, `Login`, páginas de error) y los estilos globales que
+importan `global.scss`/`index.js`: `components/{kit-core,kit-vendors,cui-styles}`, `components/kit/core/mixins.scss`
+y los temas `components/kit/vendors/antd/themes`. No añadas código nuevo ahí; se retiran en las fases 4-6.
 
 ## Convenciones
 
@@ -47,7 +51,7 @@ uso (layout, `ACL`, `Login`, páginas de error). No añadas código nuevo dentro
 
 ## Variables de entorno
 
-`REACT_APP_API_URL` (por defecto `/api/`), `REACT_APP_MAGICBELL_API_KEY`, `REACT_APP_MAGICBELL_USER_KEY`.
+`REACT_APP_API_URL` (por defecto `/api/`). MagicBell se eliminó (notificaciones propias: plan 01 D14).
 
 ## Qué no hacer
 

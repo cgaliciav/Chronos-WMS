@@ -75,26 +75,3 @@ const MainLayout = ({
 }
 
 export default withRouter(connect(mapStateToProps)(MainLayout))
-
-
-// import React from "react";
-// import ReactDOM from "react-dom";
-// import MagicBell, { FloatingNotificationInbox } from "@magicbell/magicbell-react";
-
-// const theme = {"icon":{"borderColor":"#ccc","width":"24px"},"unseenBadge":{"backgroundColor":"#DF4759"},"header":{"backgroundColor":"#4b7cf3","textColor":"#ffffff","borderRadius":"16px","fontFamily":"Verdana"},"footer":{"backgroundColor":"#4b7cf3","textColor":"#ffffff","borderRadius":"16px","fontFamily":"Verdana"},"notification":{"default":{"textColor":"#595c97","borderRadius":"8px","backgroundColor":"#4b7cf3","fontFamily":"Verdana"},"unseen":{"backgroundColor":"#4b7cf3","textColor":"#595c97","borderRadius":"8px","fontFamily":"Verdana"},"unread":{"backgroundColor":"#4b7cf3","textColor":"#595c97","borderRadius":"8px","fontFamily":"Verdana"}}};
-
-// /**
-//  * You can use userExternalId instead of the userEmail - https://bit.ly/3oiDSAe
-//  */
-
-// ReactDOM.render(
-  // <MagicBell
-  //   apiKey={process.env.REACT_APP_MAGICBELL_API_KEY}
-  //   userEmail="cesar.gv@exogrid.io"
-  //   userKey={process.env.REACT_APP_MAGICBELL_USER_KEY}
-  //   theme={theme}
-  // >
-  //   {(props) => <FloatingNotificationInbox width={400} height={500} {...props} />}
-  // </MagicBell>,
-//   document.body,
-// );

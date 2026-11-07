@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {Col, Collapse, Empty, Row} from 'antd'
-import ImagenesEnCarrusel from 'pages/componentes/imaganesEnCarrusel';
+import ImagenesEnCarrusel from 'pages/componentes/imagenesEnCarrusel';
 import ArticuloDatos from 'pages/componentes/articulo';
 import ModalImagenes from 'pages/componentes/modalImagenes';
 

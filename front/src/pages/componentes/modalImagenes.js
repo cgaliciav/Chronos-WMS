@@ -1,6 +1,6 @@
 import React from 'react'
 import { Modal } from 'antd'
-import ImagenesEnCarrusel from './imaganesEnCarrusel'
+import ImagenesEnCarrusel from './imagenesEnCarrusel'
 
 const ModalImagenes = ({ archivos, mostrarModal, cerrarModal }) => {
   return (

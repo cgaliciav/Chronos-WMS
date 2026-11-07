@@ -12,27 +12,10 @@ import { logger } from 'redux-logger'
 import createSagaMiddleware from 'redux-saga'
 import { routerMiddleware } from 'connected-react-router'
 
-// import * as Sentry from "@sentry/react";
-// import { Integrations } from "@sentry/tracing";
-
-
 import reducers from './redux/reducers'
 import sagas from './redux/sagas'
 import Localization from './localization'
 import Router from './router'
-// import * as serviceWorker from './serviceWorker'
-
-// mocking api
-// import 'services/axios/fakeApi'
-
-// Sentry.init({
-//   dsn: "https://bc33adabcccc44aba5a5ace39eb3cc9c@o517503.ingest.sentry.io/5625404",
-//   integrations: [new Integrations.BrowserTracing()],
-
-//   // We recommend adjusting this value in production, or using tracesSampler
-//   // for finer control
-//   tracesSampleRate: 1.0,
-// });
 
 // middlewared
 const history = createHashHistory()
@@ -54,8 +37,4 @@ ReactDOM.render(
   document.getElementById('root'),
 )
 
-// If you want your app to work offline and load faster, you can change
-// unregister() to register() below. Note this comes with some pitfalls.
-// Learn more about service workers: https://bit.ly/CRA-PWA
-// serviceWorker.unregister()
 export { store, history }

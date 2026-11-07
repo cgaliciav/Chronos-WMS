@@ -2,7 +2,7 @@ import React from 'react'
 import { useHistory } from 'react-router-dom'
 import { Col, Row, Card, Typography, Divider } from 'antd'
 import { EyeOutlined } from '@ant-design/icons'
-import ImagenesEnCarrusel from 'pages/componentes/imaganesEnCarrusel'
+import ImagenesEnCarrusel from 'pages/componentes/imagenesEnCarrusel'
 // import Validacion from './validacion'
 import Inventariado from 'pages/catalogos/6.validaciones/componentes/inventariado'
 
