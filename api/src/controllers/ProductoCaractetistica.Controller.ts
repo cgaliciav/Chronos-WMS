@@ -1,7 +1,7 @@
 
 
 import { Request, Response, NextFunction } from "express";
-import { getRepository } from "typeorm";
+import { getRepository, EntityManager, getManager } from "typeorm";
 import { AppError } from "../helpers/errorClases";
 import { idSeguro } from "../helpers/ids";
 import { Producto } from "../entity/Producto";
@@ -11,7 +11,7 @@ import { ProductoCaracteristica } from "../entity/ProductoCaracteristica";
 
 class ProductoCaracteristicaController{
     
-    static guardar=async(productoCaracteristicas:{llave:string,valor:string}[],sesionId:number)=>{
+    static guardar=async(productoCaracteristicas:{llave:string,valor:string}[],sesionId:number,manager:EntityManager=getManager())=>{
         const pc=productoCaracteristicas.map(ppcc => {
             const ppccNuevo=new ProductoCaracteristica();
             ppccNuevo.llave=ppcc.llave;
@@ -21,7 +21,7 @@ class ProductoCaracteristicaController{
         })
 
         return(
-            await getRepository(ProductoCaracteristica).save(pc)
+            await manager.save(pc)
         )
     }
 

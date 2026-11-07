@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { getRepository } from "typeorm";
+import { getRepository, EntityManager, getManager } from "typeorm";
 import { LogTipo } from "../entity/LogGeneral";
 import { Parametros } from "../entity/Parametros";
 import { PrecioTipo } from "../entity/PrecioTipo";
@@ -181,7 +181,8 @@ class ProductoPrecioController {
   static guardar = async (
     productoPrecioOriginal: number | string,
     sesionId: number,
-    moneda: string = "MXP"
+    moneda: string = "MXP",
+    manager: EntityManager = getManager()
   ) => {
     const precioDepreciado = await obtenerPrecioDepreciacion(
       productoPrecioOriginal,
@@ -209,7 +210,7 @@ class ProductoPrecioController {
       ),
     ];
 
-    return await getRepository(ProductoPrecio).save(precios);
+    return await manager.save(precios);
   };
 
   //  actualizar Precio

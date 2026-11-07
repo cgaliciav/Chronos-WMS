@@ -27,6 +27,7 @@ import InventarioActualController, {
   queryBusquedaProyecto,
 } from "./InventarioActual.Controller";
 import MovimientoController from "./Movimiento.Controller";
+import MovimientoService from "../services/MovimientoService";
 import ProductoController from "./Producto.Controller";
 import { autogenerarCodigo } from "./ProductoClave.Controller";
 // import { supabase } from "../helpers/_SupabaseConfig";
@@ -1619,6 +1620,8 @@ class GrupoController {
       proyectoId,
       usuariosIds,
       grupoId,
+      relaciones,
+      strict,
     } = req.body;
     const { jwtPayload } = res.locals;
     try {
@@ -1627,44 +1630,33 @@ class GrupoController {
           codigo
         );
       let movimiento: Movimiento;
-      if (movimientoTipoId === undefined) {
+      if (movimientoTipoId === undefined || movimientoTipoId === null) {
+        // Línea de listado sin operación: no afecta al inventario.
         movimiento = await MovimientoController.guardar(
           cantidad,
           inventarioActual,
           jwtPayload.si
         );
+        await getRepository(Grupo).findOneOrFail(idSeguro(grupoId, "grupoId"), { select: ["id"], loadEagerRelations: false });
+        await getConnection().createQueryBuilder().relation(Grupo, "movimientos").of(grupoId).add(movimiento.id);
+      } else if (MovimientoService.esTipoDeEntrada(movimientoTipoId)) {
+        throw new AppError(
+          "No se pueden realizar operaciones de creacion de artículos en este listado",
+          400
+        );
       } else {
-        if (
-          movimientoTipoId == 15 ||
-          movimientoTipoId == 14 ||
-          movimientoTipoId == 1 ||
-          movimientoTipoId == 2
-        ) {
-          // compra nueva
-          throw new AppError(
-            "No se pueden realizar operaciones de creacion de artículos en este listado",
-            400
-          );
-        } else {
-          //
-          movimiento = await MovimientoController.guardarConOperacion(
-            cantidad,
-            inventarioActual,
-            movimientoTipoId,
-            proyectoId,
-            usuariosIds,
-            jwtPayload.si
-          );
-        }
-      }
-      if (movimiento !== undefined) {
-        // agregar movimiento creado al grupo (listado)
-        const grupo = await getRepository(Grupo).findOneOrFail(idSeguro(grupoId, "grupoId"), {
-          relations: ["movimientos"],
-          loadEagerRelations: false,
+        // Transaccional: inventario, histórico, operación, movimiento, relaciones y grupo (plan 02 fase 3).
+        movimiento = await MovimientoService.registrarOperacion({
+          tipo: movimientoTipoId,
+          cantidad,
+          inventarioActualId: inventarioActual.id,
+          proyectoId,
+          usuariosIds,
+          sesionId: jwtPayload.si,
+          grupoId,
+          relaciones,
+          strict,
         });
-        grupo.movimientos.push(movimiento);
-        await getRepository(Grupo).save(grupo);
       }
       res.json(movimiento);
     } catch (error) {
@@ -1698,70 +1690,42 @@ class GrupoController {
     } = req.body;
     const { jwtPayload } = res.locals;
     try {
-      // const  inventarioActual = await InventarioActualController.obtenerInventarioActualDeCodigo(codigo);
-      //crear inventarioActual
-      // El inventario nace en 0/0: `actualizarInventarioActual` (compra/alta) suma la cantidad una sola vez (hallazgo H21).
-      const inventarioActual = await crearBaseInventarioActual(
-        0,
-        bodegaId,
-        jwtPayload.si
-      );
-      inventarioActual.producto = await ProductoController.guardar(
-        titulo,
-        descripcion,
-        areaId,
-        productoTipoId,
-        productoCaracteristicas,
-        productoPrecioOriginal,
-        productoCodigos ?? [await autogenerarCodigo()],
-        jwtPayload.si,
-        moneda
-      );
-      const inventarioActualGuardado = await InventarioActualController.guardar(
-        inventarioActual,
-        jwtPayload.si
-      );
-
-      let movimiento: Movimiento;
-      if (movimientoTipoId == 15) {
-        movimiento = await MovimientoController.guardarConOperacionCompra(
-          cantidad,
-          inventarioActualGuardado,
-          movimientoTipoId,
-          proyectoId,
-          usuariosIds,
-          precioUnitario,
-          precioTotal,
-          jwtPayload.si,
-          moneda,
-        );
-      } else if (
-        movimientoTipoId == 14 ||
-        movimientoTipoId == 1 ||
-        movimientoTipoId == 2
-      ) {
-        //altas
-        movimiento = await MovimientoController.guardarConOperacion(
-          cantidad,
-          inventarioActualGuardado,
-          movimientoTipoId,
-          proyectoId,
-          usuariosIds,
-          jwtPayload.si
-        );
-        // res.json(mov);
-      } else {
+      // Se valida el tipo ANTES de crear nada (antes quedaban productos huérfanos con un tipo inválido).
+      if (!MovimientoService.esTipoDeEntrada(movimientoTipoId)) {
         throw new AppError("Tipo de movimiento inválido", 400);
       }
-      if (movimiento !== undefined) {
-        // agregar movimiento creado al grupo (listado)
-        const grupo = await getRepository(Grupo).findOneOrFail(idSeguro(grupoId, "grupoId"), {
-          relations: ["movimientos"],
-          loadEagerRelations: false,
-        });
-        grupo.movimientos.push(movimiento);
-        await getRepository(Grupo).save(grupo);
-      }
+      const codigos = productoCodigos ?? [await autogenerarCodigo()];
+      // Producto, inventario y primera operación en UNA transacción (hallazgos C7 y M10).
+      const movimiento = await MovimientoService.enTransaccion(async (manager) => {
+        // El inventario nace en 0/0: el efecto de la compra/alta suma la cantidad una sola vez (hallazgo H21).
+        const inventarioActual = await crearBaseInventarioActual(0, bodegaId, jwtPayload.si);
+        inventarioActual.producto = await ProductoController.guardar(
+          titulo,
+          descripcion,
+          areaId,
+          productoTipoId,
+          productoCaracteristicas,
+          productoPrecioOriginal,
+          codigos,
+          jwtPayload.si,
+          moneda,
+          manager
+        );
+        const inventarioActualGuardado = await manager.save(inventarioActual);
+        return MovimientoService.registrarOperacion(
+          {
+            tipo: movimientoTipoId,
+            cantidad,
+            inventarioActualId: inventarioActualGuardado.id,
+            proyectoId,
+            usuariosIds,
+            sesionId: jwtPayload.si,
+            grupoId,
+            compra: movimientoTipoId == 15 ? { precioUnitario, precioTotal, moneda } : undefined,
+          },
+          manager
+        );
+      });
       res.json(movimiento);
     } catch (error) {
       next(error);
@@ -1774,20 +1738,28 @@ class GrupoController {
     res: Response,
     next: NextFunction
   ) => {
-    const { movimientoId, movimientoTipoId, proyectoId, usuariosIds } =
+    const { movimientoId, movimientoTipoId, proyectoId, usuariosIds, relaciones, strict } =
       req.body;
     const { jwtPayload } = res.locals;
     try {
       // LA SESION DEL MOVIMIENTO DEBE SER LA DEL ULTIMO QUE LA MODIFICA.
       // El grupo se queda con la sesion de quien lo creó. cada Movimiento
+      if (MovimientoService.esTipoDeEntrada(movimientoTipoId)) {
+        throw new AppError("No se pueden realizar operaciones de creacion de artículos en este listado", 400);
+      }
+      const movimiento = await getRepository(Movimiento).findOneOrFail(idSeguro(movimientoId, "movimientoId"), { loadEagerRelations: false, relations: ["inventarioActual"] });
       res.json(
-        await MovimientoController.agregarOperacion(
-          await getRepository(Movimiento).findOneOrFail(idSeguro(movimientoId, "movimientoId")),
-          movimientoTipoId,
+        await MovimientoService.registrarOperacion({
+          tipo: movimientoTipoId,
+          cantidad: movimiento.cantidad,
+          inventarioActualId: movimiento.inventarioActual.id,
+          movimientoId: movimiento.id,
           proyectoId,
           usuariosIds,
-          jwtPayload.si
-        )
+          sesionId: jwtPayload.si,
+          relaciones,
+          strict,
+        })
       );
     } catch (error) {
       next(error);
@@ -1803,16 +1775,8 @@ class GrupoController {
     const { movimientoId } = req.body;
     const { jwtPayload } = res.locals;
     try {
-      await MovimientoController.quitar(
-        await getRepository(Movimiento)
-          .createQueryBuilder("movimiento")
-          .leftJoinAndSelect("movimiento.operacion", "operacion")
-          .leftJoinAndSelect("operacion.operacionDetalle", "operacionDetalle")
-          .leftJoinAndSelect("movimiento.inventarioActual", "inventarioActual")
-          .where("movimiento.id=:movimientoId", { movimientoId: idSeguro(movimientoId, "movimientoId") })
-          .getOne(),
-        jwtPayload.si
-      );
+      // Transaccional; 409 si el movimiento es origen de otros (plan 02 fase 3).
+      await MovimientoService.deshacer(movimientoId, jwtPayload.si);
       res.json();
     } catch (error) {
       next(error);

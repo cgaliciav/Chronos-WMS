@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { getRepository } from "typeorm";
+import { EntityManager, getManager, getRepository } from "typeorm";
 import { Area } from "../entity/Area";
 import { Producto } from "../entity/Producto";
 import { ProductoTipo } from "../entity/ProductoTipo";
@@ -18,6 +18,7 @@ const crearBaseProducto = async (
   productoCodigos: { barras: string; barrasTipo: string }[],
   sesionId: number,
   moneda: string = "MXP",
+  manager: EntityManager = getManager(),
 ) => {
   const producto = new Producto();
   producto.descripcion = descripcion;
@@ -25,19 +26,22 @@ const crearBaseProducto = async (
     producto.productoCaracteristicas =
       await ProductoCaracteristicaController.guardar(
         productoCaracteristicas,
-        sesionId
+        sesionId,
+        manager
       );
   }
   if (productoCodigos.length > 0) {
     producto.productoClaves = await ProductoClaveController.guardar(
       productoCodigos,
-      sesionId
+      sesionId,
+      manager
     );
   }
   producto.productoPrecios = await ProductoPrecioController.guardar(
     productoPrecioOriginal,
     sesionId,
     moneda,
+    manager,
   );
   producto.productoTipo = await getRepository(ProductoTipo).findOneOrFail(
     productoTipoId
@@ -62,8 +66,9 @@ class ProductoController {
     productoCodigos: { barras: string; barrasTipo: string }[],
     sesionId: number,
     moneda: string = "MXP",
+    manager: EntityManager = getManager(),
   ) => {
-    return await getRepository(Producto).save(
+    return await manager.save(
       await crearBaseProducto(
         titulo,
         descripcion,
@@ -74,6 +79,7 @@ class ProductoController {
         productoCodigos,
         sesionId,
         moneda,
+        manager,
       )
     );
   };

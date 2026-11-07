@@ -2,12 +2,9 @@ import { Column, CreateDateColumn, Entity, Index, ManyToOne, PrimaryGeneratedCol
 import { numericTransformer } from "../helpers/numericTransformer";
 import { Movimiento } from "./Movimiento";
 
-export enum RelacionTipo {
-  DEVOLUCION = "devolucion",
-  BAJA = "baja",
-  TRANSFERENCIA = "transferencia",
-  CIERRE_INVENTARIO = "cierre-inventario",
-}
+import { RelacionTipo } from "./common/RelacionTipo";
+
+export { RelacionTipo };
 
 /**
  * Relación N:M entre un movimiento ORIGEN (salida: 3, 11, 12, 15; o 7 para su 12) y un movimiento DERIVADO

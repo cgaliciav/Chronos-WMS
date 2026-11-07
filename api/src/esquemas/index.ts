@@ -16,6 +16,17 @@ export const loginSchema = z
   })
   .strip(); // `ip` y cualquier otro campo se descartan (decisión 3c)
 
+/**
+ * Orígenes elegidos por el cliente para un regreso/baja/transferencia (plan 02 fase 3). Opcional: sin ellos el API
+ * reparte por FIFO. `strict: true` pide un 409 con las candidatas si hay más de una salida abierta.
+ */
+const relaciones = z
+  .array(z.object({ origenId: id, cantidad }).strip())
+  .max(100)
+  .optional()
+  .nullable();
+const strict = z.boolean().optional(); // sin coerce: "false" no debe convertirse en true
+
 /** PUT /groups/activity */
 export const actividadSchema = z
   .object({
@@ -25,6 +36,8 @@ export const actividadSchema = z
     proyectoId: idOpcional,
     usuariosIds: ids.optional().nullable(),
     grupoId: id,
+    relaciones,
+    strict,
   })
   .strip();
 
@@ -57,6 +70,8 @@ export const agregarOperacionSchema = z
     movimientoTipoId: id,
     proyectoId: idOpcional,
     usuariosIds: ids.optional().nullable(),
+    relaciones,
+    strict,
   })
   .strip();
 
