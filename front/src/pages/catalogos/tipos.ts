@@ -2,13 +2,9 @@
  * Tipos locales de los catálogos (`pages/catalogos`). Amplían los de `types/api.ts` con los campos que leen estas
  * páginas y que aún no recoge ese archivo (`fechaDisponibilidad`, `productoValidado`, `productoInventarios`).
  */
-import type { Dayjs } from 'dayjs'
+import type { InventarioArticulo, ProductoArticulo } from 'pages/componentes/tipos'
 import type {
-  Area,
-  Bodega,
-  Disponibilidad,
   InventarioActual,
-  Numerico,
   PaginacionAntd,
   ParametrosTabla,
   Producto,
@@ -96,39 +92,9 @@ export interface InventarioCatalogo extends Omit<InventarioActual, 'producto'> {
   producto?: ProductoCatalogo
 }
 
-/** Producto de las páginas de detalle: el marcador inicial («------») o la respuesta del API. */
-export interface ProductoDetalle extends Omit<ProductoCatalogo, 'area'> {
-  area?: Pick<Area, 'id' | 'nombre'>
-}
-
 /**
- * Estado de las páginas de detalle y edición de artículo: el marcador inicial o la respuesta de
- * `GET /current-inventory/:id`, que puede llegar sin relaciones (hallazgo F36).
+ * Estado de las páginas de detalle y edición de artículo: `null` mientras no hay respuesta de
+ * `GET /current-inventory/:id`. Es el tipo que espera `pages/componentes/articulo` (`ArticuloDatos`); su
+ * `producto` puede faltar si el API responde incompleto (hallazgo F36) y entonces se muestra el esqueleto.
  */
-export interface InventarioDetalle {
-  id?: number
-  cantidad: Numerico
-  cantidadAlmacen?: Numerico
-  disponible: Disponibilidad | 'no definido'
-  fechaDisponibilidad?: string | Dayjs
-  bodega?: Pick<Bodega, 'id' | 'nombre'>
-  producto?: ProductoDetalle
-}
-
-/** Marcador que muestran las páginas de detalle mientras carga el artículo. */
-export const inventarioDetalleInicial = (): InventarioDetalle => ({
-  cantidad: 0,
-  disponible: 'no definido',
-  bodega: { id: 0, nombre: '------' },
-  producto: {
-    archivos: [],
-    productoPrecios: [],
-    productoCaracteristicas: [],
-    productoClaves: [],
-    productoInventarios: [],
-    area: { id: 0, nombre: '-----' },
-    id: 0,
-    descripcion: '----------------',
-    titulo: '------',
-  },
-})
+export type InventarioDetalle = InventarioArticulo & { producto?: ProductoArticulo }
