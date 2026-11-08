@@ -40,7 +40,6 @@ const mandarArchivo = (
     //   apiSecret: process.env.MAGICBELL_API_SECRET,
     // })
 
-
     if (err) {
       console.log(`No se puede leer el archivo: ${detalleArchivo.path}`, err);
       // await Notification.create({
@@ -195,7 +194,6 @@ const funcionGenerarReportePorGrupo = async (body: any, correo: string) => {
   }
 };
 
-
 const funcionQueryMovimientosGeneral = () => { };
 
 const funcionQueryAntiguedadMovimientos = () => { };
@@ -271,33 +269,6 @@ class ReporteController {
     } catch (error) {
       next(error);
     }
-    // const {proyectoId,movimientoTipoId,usuariosIds,areasIds,bodegasIds,...body}=req.body
-    // CommonController.listaTablaQryAnd(
-    //     body,
-    //     ()=>{
-    //         const tiposMovimineto=Array.isArray(movimientoTipoId)?movimientoTipoId:[movimientoTipoId];
-    //         const result= funcionQueryListadoMovimientos().where("proyecto.id=:proyectoId and movimientoTipo.id IN (:tiposMovimineto)",{proyectoId,tiposMovimineto});
-    //         if(usuariosIds?.length>0){
-    //             result.andWhere(new Brackets(qb=>
-    //                 qb.where("operacionUsuarios.id in (:usuariosIds)",{ usuariosIds })
-    //                 .orWhere("usuario.id in (:usuariosIds)",{ usuariosIds })
-    //                 ))
-    //         }
-    //         if(areasIds?.length>0){
-    //             result.andWhere("area.id in (:areasIds)",{ areasIds })
-    //         }
-    //         if(bodegasIds?.length>0){
-    //             result.andWhere("bodega.id in (:bodegasIds)",{ bodegasIds })
-    //         }
-    //         return result;
-    //     } ,
-    //     grupoCondicionesWhereAnd,
-    // )
-    // .then(respuesta=>{
-    //    //listado de registros... aqui viene la magia
-    //    res.json({message:"El reporte se está generando. En breve recibirás un correo con el reporte solicitado"});
-    // })
-    // .catch(error => next(error))
   };
   //TODO GENERAR REPORTE DE CIERRRE (COMPRAS, RENTAS, DEVOLUCIONES, BAJAS JUSTIFICADAS E INJUSTIFICADAS, HOJA RESUMEN,TODO EN UN ARCHIVO...)
   static reporteCierre = async (

@@ -7,7 +7,6 @@ import { AppError } from "../helpers/errorClases";
 // import { LogTipo, LogGeneral } from "../entity/LogGeneral";
 // import { isString, isObject } from "util";
 // import { conexion } from "../conexionORM";
-// import { isError } from "lodash";
 
 declare function fnGeneralManejoErrores(req: Request, res: Response, next: NextFunction): any;
 

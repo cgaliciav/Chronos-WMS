@@ -11,7 +11,6 @@ import CommonController, { ResultadoTabla } from "./common/Common.Controller";
 import InventarioActualHistoricoController from "./InventarioActualHistorico.Controller";
 import ProductoController from "./Producto.Controller";
 
-
 const queryBusqueda = () => {
     return (
         getRepository(InventarioActual)
@@ -112,59 +111,6 @@ const queryBusquedaCatalogo = ({
 
     return query;
 
-    // if(esBajas){ // BUSQUEDA DE BAJAS
-    //     if(textoBusqueda==="")
-    //         query.where("area.id in (:...ids)",{ids:areasIds});
-    //     else
-    //         query.where( new Brackets (qb =>
-    //             qb.where(`MATCH(producto.titulo) AGAINST ('${textoBusqueda}' IN BOOLEAN MODE)`)
-    //             .orWhere(`MATCH(producto.descripcion) AGAINST ('${textoBusqueda}' IN BOOLEAN MODE)`)
-    //             .orWhere(`productoClaves.barras LIKE '%${textoBusqueda}%'`)
-    //             ) )
-    //     query.andWhere("inventarioActual.disponible='baja'");
-    // } else if(esCodigo) { // BUSQUEDA POR CODIGO
-    //     let codigosBusqueda:string[]=[];
-    //     if(!Array.isArray(codigoProducto)){
-    //         codigosBusqueda=[codigoProducto];
-    //     }else{
-    //         codigosBusqueda=[...codigoProducto]
-    //     }
-    //     query.where( new Brackets (qb => {
-    //         codigosBusqueda.forEach((cod,idx)=>{
-    //             if(idx===0)
-    //                 qb.where(`productoClaves.barras LIKE '%${cod}%'`);
-    //             else
-    //                 qb.orWhere(`productoClaves.barras LIKE '%${cod}%'`);
-    //         })
-    //         return qb
-    //     }));
-    //     // query.where("productoClaves.barras in (:codigosBusqueda)",{codigosBusqueda});
-    //     // query=query.where( new Brackets (qb =>
-    //     //     qb.where(`productoClaves.barras LIKE '%${codigoProducto}%'`)
-
-    //     //     ) )
-    //     // query.where(`productoClaves.barras LIKE '%${codigoProducto}%'`);
-    // } else { // BUSQUEDA GENERAL
-    //     if(textoBusqueda==="")
-    //         query=query.where("area.id in (:...ids)",{ids:areasIds});
-    //     else
-    //         query=query.where( new Brackets (qb =>
-    //             qb.where(`MATCH(producto.titulo) AGAINST ('${textoBusqueda}' IN BOOLEAN MODE)`)
-    //             .orWhere(`MATCH(producto.descripcion) AGAINST ('${textoBusqueda}' IN BOOLEAN MODE)`)
-    //             // .orWhere(`productoClaves.barras LIKE '%${textoBusqueda}%'`)
-    //             ) )
-    //             .andWhere("area.id in (:...ids)",{ids:[...areasIds]});
-    //     if(estado!=="todos"){
-    //         query=query.andWhere("inventarioActual.disponible=:edo",{edo:estado});
-    //         query=query.andWhere("inventarioActual.disponible<>'baja'");
-    //     }
-    //     else{
-    //         query=query.andWhere("inventarioActual.disponible<>'baja'");
-    //     }
-    // }
-
-    // query.andWhere("precioTipo.id=2");
-    // return query;
 };
 
 const queryBusquedaCodigos = (codigosBusqueda: (number | string)[]) => {
@@ -221,7 +167,6 @@ const queryBusquedaProyecto = ({
 
 const queryBusquedaFacturas = ({ }) => {
 
-
 }
 
 const crearBaseInventarioActual = async (cantidad: number | string, bodegaId: number | string, sesionId: number) => {
@@ -234,7 +179,6 @@ const crearBaseInventarioActual = async (cantidad: number | string, bodegaId: nu
 
     return inventarioActual;
 }
-
 
 const fnQueryId = (id: number | string) => {
     return getRepository(InventarioActual)
@@ -278,10 +222,6 @@ const fnQueryId = (id: number | string) => {
         .where("inventarioActual.id=:id", { id });
 }
 
-
-
-
-
 class InventarioActualController {
     // static guardarConHistorico= async(inventarioActual:InventarioActual,sesionId:number)=>{
     //     inventarioActual.sesionId=sesionId;
@@ -297,7 +237,6 @@ class InventarioActualController {
         inventarioActual.sesionId = sesionId;
         return (await getRepository(InventarioActual).save(inventarioActual));
     }
-
 
     static obtenerInventarioActualDeId = async (id: number | string) => {
 
@@ -561,8 +500,6 @@ class InventarioActualController {
         }
     }
 
-
-
     // TODO busqueda Catalogo por factura sistema viejo... y actual?
     static busquedaCatalogoFacturas = async (req: Request, res: Response, next: NextFunction) => {
         // Pendiente de implementar (búsqueda por factura/proveedor). Antes la petición se quedaba colgada (hallazgo H9).
@@ -570,7 +507,6 @@ class InventarioActualController {
     }
 
     // TODO SE PODRÍA HACER QUE TODAS LAS LISTAS SE MUESTREN EN FORMA DE CATALOGO???
-
 
     // #Factura Original
 

@@ -1,4 +1,3 @@
-import { indexOf } from "lodash";
 import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, Index} from "typeorm";
 import { Producto } from "./Producto";
 

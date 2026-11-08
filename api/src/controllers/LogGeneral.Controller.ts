@@ -1,4 +1,3 @@
-import { isError } from "lodash";
 import { getRepository } from "typeorm";
 import { LogGeneral, LogTipo } from "../entity/LogGeneral";
 
@@ -13,7 +12,7 @@ export default class LogGeneralController{
             log.data="-";
         else if(typeof data === 'string')
             log.data=data;
-        else if(isError(data))
+        else if(data instanceof Error)
             log.data=data.message;
         else 
             log.data=JSON.stringify(data);

@@ -9,7 +9,6 @@ const router = Router();
 
 //Get all users
 
-
 router.get("/list-names",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-LISTASIMPLE"])], UsuarioController.listaSimple);
 router.get("/list-names-full",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-LISTASIMPLECOMPLETA"])], UsuarioController.listaSimpleCompleto);
 router.post("/list-names-dynamic",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-LISTADINAMICA"])], UsuarioController.listaSimpleCompletaDinamica);
@@ -30,33 +29,5 @@ router.put("/password",[checkJwt],UsuarioController.cambiarPassword)
 router.get("/get-areas",[checkJwt],UsuarioController.obtenerAreas)
 router.get("/get-warehouses",[checkJwt],UsuarioController.obtenerBodegas)
 router.get("/get-projects",[checkJwt],UsuarioController.obtenerProyectos)
-
-// router.put("/projects",[checkJwt,checkRole(["ADMINISTRADOR"])],UsuarioController.proyectos)
-// router.put("/warehouses",[checkJwt,checkRole(["ADMINISTRADOR"])],UsuarioController.bodegas)
-// router.put("/areas",[checkJwt,checkRole(["ADMINISTRADOR"])],UsuarioController.areas)
-
-// // Get one user
-// router.get(
-//   "/:id([0-9]+)",
-//   [checkJwt, checkRole(["ADMINISTRADOR"])],
-//   UsuarioController.getOneById
-// );
-
-// //Create a new user
-// router.post("/", [checkJwt, checkRole(["ADMINISTRADOR"])], UsuarioController.newUsuario);
-
-// //Edit one user
-// router.patch(
-//   "/:id([0-9]+)",
-//   [checkJwt, checkRole(["ADMINISTRADOR"])],
-//   UsuarioController.editUsuario
-// );
-
-// //Delete one user
-// router.delete(
-//   "/:id([0-9]+)",
-//   [checkJwt, checkRole(["ADMINISTRADOR"])],
-//   UsuarioController.deleteUsuario
-// );
 
 export default router;

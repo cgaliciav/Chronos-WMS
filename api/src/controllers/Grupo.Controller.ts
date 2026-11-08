@@ -1,4 +1,3 @@
-import { json } from "body-parser";
 import { NextFunction, Request, Response } from "express";
 import {
   Brackets,

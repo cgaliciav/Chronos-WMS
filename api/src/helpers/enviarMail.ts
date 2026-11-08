@@ -1,4 +1,3 @@
-import { method } from "lodash";
 import * as nodemailer from "nodemailer";
 import LogGeneralController from "../controllers/LogGeneral.Controller";
 import { LogTipo } from "../entity/LogGeneral";
