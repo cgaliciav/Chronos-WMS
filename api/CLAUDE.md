@@ -80,7 +80,7 @@ Documentación detallada: `docs/api/modelo-de-datos.md`, `docs/api/tipos-de-movi
   `numeric` añade el transformer.
 - Rutas que sirve el navegador sin cabeceras (`<img>`, descargas) usan `checkJwtArchivos` (acepta `?auth=`).
 - Usa `MovimientoTipoId` y las clases `TIPOS_*` (`src/entity/common/MovimientoTipoId.ts`) en vez de números
-  (`docs/api/tipos-de-movimiento.md`). Quedan números sueltos en controladores antiguos (fase 4).
+  (`docs/api/tipos-de-movimiento.md`). Desde la fase 4 no quedan números de tipo en `src` (salvo pruebas).
 - Al cambiar una entidad: `npm run migration:generate -- NombreDelCambio`, revisa el archivo, añádelo a
   `src/migration/index.ts`. `npm run test:int` falla si las migraciones no reproducen las entidades.
 - Archivos de código con finales de línea CRLF (casi todos los controladores y entidades): consérvalos al editar.
