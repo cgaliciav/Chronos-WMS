@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { getRepository } from "typeorm";
 import { GrupoDetalle } from "../entity/GrupoDetalle";
-import { InventarioDetalle } from "../entity/InventarioDetalle";
 import { MovimientoTipo } from "../entity/MovimientoTipo";
 import { Proyecto } from "../entity/Proyecto";
 import { Usuario } from "../entity/Usuario";
@@ -84,30 +83,6 @@ class GrupoDetalleController {
     return await getRepository(GrupoDetalle).save(grupoDetalle);
   };
 
-  // guardarInventario  -- basico con proyecto, tipoMovimiento, y usuarios
-  static guardarInventario = async (
-    movimientoTipoId: number | string,
-    fechaInicio: string | Date,
-    fechaFin: string | Date | undefined,
-    bodegaId: number | string,
-    sesionId: number
-  ) => {
-    const grupoDetalle = await crearBaseGrupoDetalle(
-      undefined,
-      movimientoTipoId,
-      undefined,
-      sesionId
-    );
-    grupoDetalle.inventarioDetalle = await InventarioDetalleController.guardar(
-      fechaInicio,
-      fechaFin,
-      bodegaId,
-      sesionId
-    );
-    return await getRepository(GrupoDetalle).save(grupoDetalle);
-  };
-
-  // editar
   static editar = async (
     grupoDetalle: GrupoDetalle,
     proyectoId: number | string,
@@ -162,27 +137,6 @@ class GrupoDetalleController {
     return await getRepository(GrupoDetalle).save(grupoDetalle);
   };
 
-  // editarInventario
-  static editarInventario = async (
-    grupoDetalle: GrupoDetalle,
-    fechaInicio: string | Date,
-    fechaFin: string | Date,
-    bodegaId: number | string,
-    sesionId: number
-  ) => {
-    //al editar movimiento o proyecto, hay que editar todos los movimientos asociados.--->> se hace en GrupoController
-    await InventarioDetalleController.editar(
-      grupoDetalle.inventarioDetalle,
-      fechaInicio,
-      fechaFin,
-      bodegaId,
-      sesionId
-    );
-
-    return grupoDetalle;
-  };
-
-  // quitar
   static quitar = async (grupoDetalle: GrupoDetalle, sesionId: number) => {
     //borrar
     grupoDetalle.sesionId = sesionId;

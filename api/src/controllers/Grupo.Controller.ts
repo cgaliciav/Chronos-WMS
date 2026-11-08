@@ -4,10 +4,8 @@ import {
   Brackets,
   getConnection,
   getRepository,
-  Not,
   SelectQueryBuilder,
 } from "typeorm";
-import { EstatusEstado } from "../entity/common/NombreEstatus";
 import { Grupo } from "../entity/Grupo";
 import {
   InventarioActual,
@@ -16,7 +14,7 @@ import {
 import { Movimiento } from "../entity/Movimiento";
 import { Sesion } from "../entity/Sesion";
 import { AppError } from "../helpers/errorClases";
-import { andWhereIn, aplicarFiltros, columnaSegura, combinarFiltros, construirFiltros, direccionSegura } from "../helpers/filtrosTabla";
+import { andWhereIn, aplicarFiltros, columnaSegura, construirFiltros, direccionSegura } from "../helpers/filtrosTabla";
 import { idSeguro, idsSeguros } from "../helpers/ids";
 import CommonController from "./common/Common.Controller";
 import GrupoDetalleController from "./GrupoDetalle.Controller";
@@ -81,41 +79,9 @@ const funcionQueryListadoPorTipoMovimiento = (
   // .addSelect("usuario.nombre")
 };
 
-const funcionQueryInventario = () =>
-  getRepository(Movimiento)
-    .createQueryBuilder("movimiento")
-    .leftJoin("movimiento.sesion", "sesionMovimiento")
-    .leftJoin("sesionMovimiento.usuario", "usuario")
-    .addSelect("usuario.nombre")
-    .leftJoinAndSelect("movimiento.inventarioActual", "inventarioActual")
-    .leftJoin("inventarioActual.bodega", "bodega")
-    .addSelect("bodega.nombre")
-    .leftJoinAndSelect("inventarioActual.producto", "producto")
-    .leftJoin("producto.area", "area")
-    .addSelect("area.nombre")
-    .leftJoin("producto.productoClaves", "productoClaves")
-    .addSelect("productoClaves.barras")
-    .leftJoin("producto.productoPrecios", "productoPrecios")
-    .addSelect("productoPrecios.precio")
-    .leftJoin("productoPrecios.precioTipo", "precioTipo")
-    .addSelect("precioTipo.nombre")
-    .innerJoin("movimiento.grupos", "grupo")
-    .addSelect(["grupo.nombre", "grupo.id"])
-    .leftJoin("movimiento.operacion", "operacion")
-    .addSelect(["operacion.id"])
-    .leftJoin("operacion.movimientoTipo", "movimientoTipo")
-    .addSelect(["movimientoTipo.nombre"]);
-
-const condicionesWhereAndInventarioPendiente = (filters: any) =>
-  combinarFiltros(construirFiltros(filters, { textuales: /nombre|correo|barras|titulo/, fechas: /fecha/ }), "operacion.id is NULL");
-
 // Antes: `if (key.indexOf("nombre") || key.indexOf("correo"))` trataba CUALQUIER llave como LIKE (hallazgo M23).
 const condicionesWhereAndPrestamosActivos = (filters: any) =>
   construirFiltros(filters, { textuales: /nombre|correo|barras|titulo/, fechas: /fecha/ });
-
-
-const condicionesWhereAndInventarioHecho = (filters: any) =>
-  combinarFiltros(construirFiltros(filters, { textuales: /nombre|correo|barras|titulo/, fechas: /fecha/ }), "operacion.id is NOT NULL");
 
 const funcionQueryId = (id: number | string) => {
   return (
@@ -906,105 +872,6 @@ class GrupoController {
     }
   };
 
-  // nuevoInventario... no puede haber dos inventarios del mismo almacen (bodega) activos al mismo tiempo.
-  // al crear un inventario, se crea su listado de pendientes.
-  // **
-  static nuevoConInventario = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
-    const { movimientoTipoId, fechaInicio, fechaFin, bodegaId, ...body } =
-      req.body;
-    const { jwtPayload } = res.locals;
-
-    try {
-      const grupo = new Grupo();
-      // grupo.sesion=await getRepository(Sesion).findOneOrFail(jwtPayload.si);
-      const sesion = await getRepository(Sesion).findOneOrFail(jwtPayload.si);
-      grupo.sesion = sesion;
-
-      grupo.grupoDetalle = await GrupoDetalleController.guardarInventario(
-        movimientoTipoId,
-        fechaInicio,
-        fechaFin,
-        bodegaId,
-        jwtPayload.si
-      );
-
-      // TODO (revisar con el propietario, plan 02 §7): hoy toma los inventarios de TODAS las bodegas aunque el grupo tenga bodegaId.
-      const inventarioActualCompleto = await getRepository(
-        InventarioActual
-      ).find({
-        select: ["id", "estatus", "disponible", "cantidad"],
-        where: {
-          disponible: Not(InventarioDisponible.BAJA),
-          estatus: EstatusEstado.ACTIVO,
-        },
-      });
-      // const sesion=await getRepository(Sesion).findOneOrFail(jwtPayload.si);
-      // La relación grupo↔movimiento no tiene cascade: los movimientos se guardan primero (antes nunca se creaban).
-      grupo.movimientos = await getRepository(Movimiento).save(
-        inventarioActualCompleto.map((iac) => {
-          const mov = new Movimiento();
-          mov.cantidad = iac.cantidad; // antes `mov.cantidad;` no asignaba nada (hallazgo H15)
-          mov.inventarioActual = iac;
-          mov.sesion = sesion;
-          mov.sesionId = jwtPayload.si;
-          return mov;
-        })
-      );
-
-      await CommonController.nuevo(
-        getRepository(Grupo),
-        grupo,
-        body,
-        jwtPayload.si
-      );
-      res.json();
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // **
-  static obtenerListadoInventarioPendiente = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
-    //el id del grupo debe ir en filters
-
-    CommonController.listaTablaQry(
-      req.body,
-      funcionQueryInventario,
-      condicionesWhereAndInventarioPendiente
-    )
-      .then((respuesta) => {
-        res.json(respuesta);
-      })
-      .catch((error) => next(error));
-  };
-
-  // **
-  static obtenerInventariosHechos = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
-    //el id del grupo debe ir en filters
-
-    CommonController.listaTablaQry(
-      req.body,
-      funcionQueryInventario,
-      condicionesWhereAndInventarioHecho
-    )
-      .then((respuesta) => {
-        res.json(respuesta);
-      })
-      .catch((error) => next(error));
-  };
-
   // ** eliminar  --> solo si no tiene nada
   static borrar = async (req: Request, res: Response, next: NextFunction) => {
     const { grupoId } = req.body;
@@ -1085,32 +952,6 @@ class GrupoController {
       for (const mov of await obtenerMovimientosConOperacionDeGrupo(grupoId)) {
         await MovimientoController.editarOperacion(mov, 15, proyectoId, usuariosIds, jwtPayload.si);
       }
-
-      res.json();
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // **
-  static editarConInventario = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
-    const { grupoId, fechaInicio, fechaFin, bodegaId } = req.body;
-    const { jwtPayload } = res.locals;
-    try {
-      const grupo = await funcionQueryId(grupoId).getOne();
-      if (grupo === undefined) throw new AppError("Grupo ID no encontrado");
-
-      await GrupoDetalleController.editarInventario(
-        grupo.grupoDetalle,
-        fechaInicio,
-        fechaFin,
-        bodegaId,
-        jwtPayload.si
-      );
 
       res.json();
     } catch (error) {

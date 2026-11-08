@@ -33,7 +33,7 @@ services/
 pages/
   administracion/   usuarios, proyectos, proveedores, areas, bodegas, parametros
   catalogos/        1.general … 7.inventarioVisual, articulos (detalle/editar/validado)
-  operaciones/      1.prestamos, 2.devoluciones, 3.bajas, 4.compras, 5.altas, 6.rentaExterna, 7.inventario, 8.previo, movimiento, componentes
+  operaciones/      1.prestamos, 2.devoluciones, 3.bajas, 4.compras, 5.altas, 6.rentaExterna, 8.previo, movimiento, componentes
   reportes/         por-usuario, de-cierre (+ carpetas vacías)
   componentes/      formularios y modales compartidos (precios, claves, características, archivos, comentarios, imágenes)
   auth/             login, 401, 404, 500, 503 (+ no enrutadas)

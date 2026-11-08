@@ -17,3 +17,4 @@ Respuestas de César Galicia a las dudas planteadas tras la auditoría. Son vinc
 | 7b | Supabase | **Se quita** (código y dependencia). | Plan 02 fases 3 y 4 |
 | 8 | Comportamientos dudosos (`nuevoConInventario` sin filtro de bodega; tipos 15/5 que envía el front) | **Revisar sobre la marcha.** | Plan 02 §7 |
 | 9 | API de pruebas para e2e | **No existe.** Los e2e del front usan MSW; el `docker-compose.test.yml` del plan 02 fase 0 será la primera API de pruebas. | Plan 01 D18; plan 02 fase 0 |
+| 10 | Inventario físico por grupos (`POST /groups/new-inventory` y afines) | **Se elimina** (2026-11-08): nunca se terminó ni se usó. Se conserva la tabla `inventario_detalle` por los datos existentes. | Plan 02 §7; `api/endpoints.md` |

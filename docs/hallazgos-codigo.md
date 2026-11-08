@@ -45,7 +45,7 @@ fase se corrige cada uno.
 | H12 **[verificado]** | `src/controllers/Movimiento.Controller.ts:903-914` | Lógica | **✅ Corregido (fase 2):** `await` y parámetro `movimientoId`. `obtenerGrupo`: `res.json(getRepository(...).getOne())` **sin `await`** (responde `{}`) y el parámetro se llama `:movimientoId` pero se pasa `{ id }` (error de TypeORM). | `.where("movimiento.id=:movimientoId", { id })` |
 | H13 **[verificado]** | `src/controllers/Grupo.Controller.ts:1950-1963` | Errores | **✅ Corregido (fase 2):** `await` + validación del id. `quitarMovimiento` llama `MovimientoController.quitar(...)` **sin `await`** y responde vacío; los errores de la reversión no llegan al cliente ni a `next`. | `MovimientoController.quitar(await …getOne(), jwtPayload.si); res.json();` |
 | H14 **[verificado]** | `src/controllers/Grupo.Controller.ts:1546-1559,1612-1621` | Errores · carrera | **✅ Corregido (fase 2):** `for…of` con `await`. `editarConCompra` y `editarConDetalle` usan `forEach(async …)` → las ediciones de operaciones no se esperan ni se capturan. | `(await obtenerMovimientosConOperacionDeGrupo(grupoId)).forEach(async (mov) => …)` |
-| H15 **[verificado]** | `src/controllers/Grupo.Controller.ts:1403-1409` | Lógica | **✅ Corregido (fase 2):** `mov.cantidad = iac.cantidad` y los movimientos se guardan antes de asociarlos (antes nunca se creaban). `nuevoConInventario`: `mov.cantidad;` es una expresión sin efecto (la cantidad queda `undefined`); además toma los inventarios de **todas** las bodegas aunque el grupo tiene `bodegaId`. | `mov.cantidad;` |
+| H15 **[verificado]** | `src/controllers/Grupo.Controller.ts:1403-1409` | Lógica | **Retirado (decisión 10):** `POST /groups/new-inventory` se eliminó. **✅ Corregido (fase 2):** `mov.cantidad = iac.cantidad` y los movimientos se guardan antes de asociarlos (antes nunca se creaban). `nuevoConInventario`: `mov.cantidad;` es una expresión sin efecto (la cantidad queda `undefined`); además toma los inventarios de **todas** las bodegas aunque el grupo tiene `bodegaId`. | `mov.cantidad;` |
 | H16 | `src/controllers/Auth.Controller.ts:11-19,59-61` + `middlewares/verificarJwt.ts:21-31` | Seguridad | **✅ Corregido (fase 2):** se envía el token **nuevo** (12 h) en `t`; `algorithms: ["HS256"]`; `JWTSECRET` ≥ 32 caracteres validado al arrancar; rate limit en login. **Fase 3:** `checkJwt` consulta `Sesion.fechaFin` (caché de 15 s; el logout la invalida) y el token de una sesión cerrada responde 401. Logout solo marca `Sesion.fechaFin`; `checkJwt` nunca consulta la sesión → el token de 12 h sigue siendo válido. `checkJwt` firma un token de **90 días** y luego envía el **viejo** en la cabecera `t`. No se valida que `JWTSECRET` exista al arrancar. | `res.setHeader("t", token);` |
 | H17 | `src/controllers/Movimiento.Controller.ts:785-813` + `InventarioActualHistorico.Controller.ts:20-22` | Integridad | **✅ Corregido (fase 3):** cada instantánea queda ligada a su movimiento (`inventario_actual_historico.movimientoId`) y se guarda también en compras y altas; salidas, regresos y altas se deshacen con su efecto inverso (aunque no sean el último) y compras/bajas restauran SU instantánea solo si son el último movimiento. Al deshacer un movimiento se restaura la **última** instantánea del inventario (`order id DESC` por `idOriginal`), no la del movimiento que se borra: deshacer un movimiento que no es el último corrompe `cantidad`/`cantidadAlmacen`. Las compras/altas (tipos 2, 14, 15) no guardan histórico (`guardarHistorico` comentado), así que deshacerlas deja el inventario alterado. | `obtenerHistorico(inventarioActual.id)` → `findOne({where:{idOriginal}, order:{id:"DESC"}})` |
 | H18 | `src/controllers/Movimiento.Controller.ts:103-114,129-142,154,286` | Lógica · numéricos | **✅ Corregido (fase 2):** `numericTransformer` en todas las columnas `numeric`. Las columnas `numeric` llegan como **string** del driver `mysql`. `cantidadAlmacen += +cantidad` concatena (`"10" + 5 = "105"`) y `cantidad === 0` nunca es verdadero (`"0" !== 0`). El propio código lo evidencia con `Number.parseFloat(inventarioActual.cantidad + " ")` en la devolución. | `inventarioActual.cantidadAlmacen += +cantidad;` |
@@ -112,7 +112,7 @@ fase se corrige cada uno.
 | L15 | `InventarioActual.Controller.ts:777-790` | `in (6,8,9)` hardcodeado bajo un comentario que lista `-8,-9,-6`. Magic numbers de `MovimientoTipo` en todo el código. |
 | L16 | `Grupo.Controller.test.ts`; `Archivo.Controller.test.ts` | **✅ Corregido (fase 2):** sustituidos por pruebas reales (fase 0). El primero mockea `typeorm` completo (rompe los decoradores al importar entidades) y `./InventarioActual.Controller` como objeto plano cuando el módulo exporta una clase por defecto; `res.json` no está mockeado → la prueba no puede pasar. El segundo es `expect(1+1).toBe(2)`. |
 | L17 | `README.md` | Dice Node 12.16 / MariaDB 10.4 / TypeORM 0.2.24; `.nvmrc` dice 14.17; `Dockerfile` usa 14.21; `package.json` 0.2.41. MariaDB 10.4 está fuera de soporte. |
-| L18 | Front `pages/operaciones/7.inventario/nuevo/index.js:35` y `3.bajas/nuevo/index.js:33` | El front envía `movimientoTipoId: 15` (COMPRA) para un inventario y el tipo legado `5` para bajas. |
+| L18 | Front `pages/operaciones/7.inventario/nuevo/index.js:35` y `3.bajas/nuevo/index.js:33` | **Inventario retirado (decisión 10):** la página `7.inventario/nuevo` se eliminó; queda el tipo 5 de `3.bajas/nuevo`. El front envía `movimientoTipoId: 15` (COMPRA) para un inventario y el tipo legado `5` para bajas. |
 
 ---
 
@@ -127,7 +127,7 @@ fase se corrige cada uno.
 | F3 | `src/services/axios/grupos/index.js:27` | `finalizar` hace `PUT groups/list-by-group-antd` (ruta del listado) en vez de `groups/closure/:id`. | `super.generalPut(portionEndPoint,"list-by-group-antd",parametros)` |
 | F4 | `src/redux/user/sagas.js:126-136` | `LOGOUT` reinicia `name/role/email` (llaves de la plantilla) en vez de `nombre/correo/permisos`: los permisos siguen en memoria tras cerrar sesión. | |
 | F5 | `src/redux/settings/sagas.js` (`SETUP`) | Cualquier parámetro de la query string se convierte en un ajuste del store en cada navegación (`qs.parse` + `changeSetting`). | |
-| F6 | `src/pages/operaciones/7.inventario/nuevo/index.js:35`; `3.bajas/nuevo/index.js:33` | Tipos de movimiento incorrectos/legados enviados al API (15 para inventario, 5 para baja). | |
+| F6 | `src/pages/operaciones/7.inventario/nuevo/index.js:35`; `3.bajas/nuevo/index.js:33` | **Inventario retirado (decisión 10);** queda el tipo 5 de bajas. Tipos de movimiento incorrectos/legados enviados al API (15 para inventario, 5 para baja). | |
 
 ### B.2 Medios
 
@@ -174,8 +174,8 @@ verde estricto), `seguridad.int.test.ts` y las unitarias de `src/services/`.
 
 Siguen abiertos: M5 (depreciación; revisar con el propietario), M14, M18, M21, M22, los L restantes (fase 4:
 números mágicos que quedan en controladores, L15, código muerto) y toda la sección B (plan 01). Puntos a revisar con
-el propietario (plan 02 §7): `nuevoConInventario` sin filtro de bodega, tipos 15/5 que envía el front, tipos 6/9/10
-sin efecto.
+el propietario (plan 02 §7): tipo 5 que envía el front en bajas, tipos 6/9/10 sin efecto. (`nuevoConInventario` se
+eliminó el 2026-11-08, decisión 10.)
 
 ## D. Resumen por prioridad de corrección (original)
 

@@ -257,17 +257,6 @@ describe("fase 2 · seguridad", () => {
       expect(res.body.grupos.map((g: any) => g.id)).toContain(grupo.id);
     });
 
-    it("POST /groups/new-inventory crea movimientos con la cantidad del inventario", async () => {
-      const grupoAlta = await crearGrupoDetalle(api, 14);
-      const { inventarioActualId } = await crearArticulo(api, { grupoId: grupoAlta.id, cantidad: 4, movimientoTipoId: 14 });
-      const res = await api.post("/groups/new-inventory").send({ nombre: nombreUnico("INV"), movimientoTipoId: 9, fechaInicio: "2026-03-01", bodegaId: SEMILLA.bodegaId });
-      expect(res.status).toBe(200);
-      const movs = await movimientosDe(inventarioActualId);
-      const delInventario = movs.filter((m) => !m.operacion);
-      expect(delInventario.length).toBeGreaterThanOrEqual(1);
-      expect(Number(delInventario[delInventario.length - 1].cantidad)).toBe(4);
-    });
-
     it("los handlers de reportes no implementados responden 501 en vez de colgarse", async () => {
       const res = await api.post("/reports/by-use").send({});
       expect(res.status).toBe(501);

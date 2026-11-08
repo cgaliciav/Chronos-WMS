@@ -54,6 +54,11 @@ los marcados con ⚠.
 - ⚠ Retirados `GET /groups/export-to-supabase/:id` y `GET /current-inventory/export-to-supabase/:id` (el front no los usaba).
 - ⚠ `POST /auth/logout` revoca el token: después, ese token responde 401 ("Sesión terminada").
 
+**Retirado el 2026-11-08 (decisión 10):** el inventario físico por grupos nunca se terminó ni se usó. Se eliminan
+`POST /groups/new-inventory`, `PUT /groups/edit-inventory`, `POST /groups/inventory-todo-list` y
+`POST /groups/inventory-done-list` (ahora 404), y en el front la página huérfana `7.inventario/nuevo` y sus métodos de
+servicio. La tabla `inventario_detalle` se conserva para los grupos antiguos que la referencien.
+
 Contrato de listados `*/list-antd` y `*/list-by-*`: body `{ sortField, sortOrder, pagination:{current,pageSize}, filters }`
 → `{ results, filtered, pagination:{ current, pageSize, total, totalItems } }`
 (`CommonController.listaTabla*`).
@@ -88,11 +93,9 @@ Contrato de listados `*/list-antd` y `*/list-by-*`: body `{ sortField, sortOrder
 | DELETE | `/groups/remove` | GRUPOS-BORRAR | `Grupo.borrar` body `{grupoId}` (solo vacío) |
 | POST | `/groups/new-details` | GRUPOS-NUEVODETALLE | grupo con `GrupoDetalle` (`proyectoId, movimientoTipoId, usuariosIds, nombre`) |
 | POST | `/groups/new-purchase` | GRUPOS-NUEVOCOMPRA | grupo de compra con `FacturaDetalle` |
-| POST | `/groups/new-inventory` | GRUPOS-NUEVOINVENTARIO | grupo de inventario (`fechaInicio, fechaFin, bodegaId`) con un movimiento por inventario activo |
-| PUT | `/groups/edit-details` · `/edit-purchase` · `/edit-inventory` | GRUPOS-EDITARDETALLE · -EDITARCOMPRA · -EDITARINVENTARIO | edita cabecera y propaga proyecto/usuarios a las operaciones |
+| PUT | `/groups/edit-details` · `/edit-purchase` | GRUPOS-EDITARDETALLE · -EDITARCOMPRA | edita cabecera y propaga proyecto/usuarios a las operaciones |
 | POST | `/groups/activity-list-by-group` | GRUPOS-LISTAMOVIMIENTOS | movimientos de un grupo (`filters.grupos_id`) |
 | POST | `/groups/active-activity-list` | GRUPOS-LISTAMOVIMIENTOSACTIVOS | salidas con saldo pendiente según `v_movimiento_saldo` (+ heurística anterior para inventarios legados); cada fila trae `saldoPendiente` (`proyectoId, usuariosIds, areasIds`) |
-| POST | `/groups/inventory-todo-list` · `/inventory-done-list` | GRUPOS-LISTAINVENTARIOPENDIENTE · -LISTAINVENTARIOHECHO | pendientes/hechos de un inventario |
 | PUT | `/groups/activity` | GRUPOS-MOVIMIENTONUEVO | **registra operación** sobre un artículo existente: `{codigo, cantidad, movimientoTipoId?, proyectoId, usuariosIds, grupoId, relaciones?, strict?}` → `MovimientoService.registrarOperacion` (sin tipo: línea de listado, `Movimiento.guardar`) |
 | PUT | `/groups/activity-purchase` | GRUPOS-MOVIMIENTONUEVOCOMPRA | crea producto + inventario + movimiento en una transacción (tipos 15 compra, 14/1/2 alta) |
 | PUT | `/groups/activity-add-transaction` | GRUPOS-MOVIMIENTOAGREGAROPERACION | añade operación a un movimiento sin operación `{movimientoId, movimientoTipoId, proyectoId, usuariosIds, relaciones?, strict?}` |

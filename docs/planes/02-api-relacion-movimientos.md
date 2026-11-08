@@ -277,7 +277,8 @@ no incluye `c` en la respuesta. Las de caracterización siguen verdes (10 cambia
    `request`, `request-promise`, `request-stats`, `@types/request*`, `randomstring`, `file-type`, `moment`,
    `lodash`, `password-generator`; declarar `dotenv` (M19); `body-parser` → `express.json()`. Script `test`.
 3. Magic numbers → `MovimientoTipoId` en todo `src`. Front: coordinar la corrección de los tipos que envía
-   (`7.inventario/nuevo` envía 15, `3.bajas/nuevo` envía 5; hallazgo L18/F6) **revisándolo con el propietario**.
+   (`3.bajas/nuevo` envía 5; hallazgo L18/F6) **revisándolo con el propietario**. (`7.inventario/nuevo`, que enviaba 15,
+   se eliminó con el inventario físico: decisión 10.)
 4. Unificar controladores en `async/await` + `asyncHandler` (o Express 5 en fase 5).
 5. Quitar `eager: true` de relaciones pesadas y cargar explícitamente; medir con `maxQueryExecutionTime`
    (objetivo: `GET /activity/:id` < 10 consultas).
@@ -374,7 +375,8 @@ F7 puede adelantarse tras F3 si el front la necesita antes.
 
 ## 7. Puntos a revisar sobre la marcha con el propietario
 
-- `nuevoConInventario` toma inventarios de **todas** las bodegas aunque el grupo tiene `bodegaId` (fase 2, paso 9).
+- ~~`nuevoConInventario` toma inventarios de **todas** las bodegas~~ → resuelto: el inventario físico por grupos se
+  eliminó el 2026-11-08 (decisión 10).
 - El front envía tipo 15 (COMPRA) al crear un inventario y el tipo legado 5 en bajas (fase 4, paso 3).
 - Tipos 6, 9 y 10 no tienen efecto en inventario hoy.
 - Duración del JWT (hoy 12 h sin renovación efectiva; se unifica a 12 h en fase 2).
