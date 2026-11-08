@@ -73,7 +73,7 @@ const Comentarios = ({
       })
 
       if (resp !== undefined) {
-        notification.success({ message: 'Comentario eliminado correctamente' })
+        notification.success({ title: 'Comentario eliminado correctamente' })
         fnActualizar()
       }
     } catch {
@@ -98,7 +98,7 @@ const Comentarios = ({
 
     if (resp !== undefined) {
       form.resetFields()
-      notification.success({ message: 'Comentario agregado correctamente' })
+      notification.success({ title: 'Comentario agregado correctamente' })
       fnActualizar()
     }
     setHabilitadoInterno(true)
@@ -149,7 +149,7 @@ const Comentarios = ({
           </Form>
         </ACL>
       ) : null}
-      <Divider orientation="left"> Cometarios </Divider>
+      <Divider titlePlacement="start"> Comentarios </Divider>
       <Row justify="center" style={{ margin: 'auto' }}>
         {comentarios?.length === 0 ? (
           <Empty description="Sin comentarios" />

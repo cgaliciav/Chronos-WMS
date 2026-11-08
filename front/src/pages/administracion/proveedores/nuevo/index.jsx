@@ -23,7 +23,7 @@ const ProveedorNuevo = () => {
         // console.log('*******************************Proveedor GUARDADO', respuesta)
         navigate('/proveedores/listado')
         notification.success({
-          message: 'Creado correctamente',
+          title: 'Creado correctamente',
           description: 'El Proveedor fue creado correctamente',
         })
       }

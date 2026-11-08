@@ -53,7 +53,7 @@ const ReporteDeCierre = () => {
       areasId,
       usuariosIds: usuariosIds?.map(usr => usr.value) }).then(resp => {
       if (resp !== undefined) {
-        notification.success({ message: resp.message })
+        notification.success({ title: resp.message })
       }
     })
       // El interceptor de axios ya mostró el error.

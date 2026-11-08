@@ -1,12 +1,12 @@
 # front/ · guía para agentes
 
-SPA del almacén. **React 19.3 · antd 5.29 · dayjs · Zustand 5 · react-router 8 (hash, data router) ·
+SPA del almacén. **React 19.3 · antd 6.7 · dayjs · Zustand 5 · react-router 8 (hash, data router) ·
 Vite 8 · TypeScript 5.9 (`allowJs`, código heredado en `.js/.jsx`) · Node 24 · npm**.
 Construida sobre la plantilla comercial **Clean UI Admin Template**; el plan
 `docs/planes/01-front-actualizacion-antd.md` describe cómo retirarla y actualizar todo el stack.
 Arquitectura detallada: `docs/front/arquitectura.md`. Fallos conocidos: `docs/hallazgos-codigo.md` (sección B).
-**Estado del plan 01:** fases 0-4 hechas (línea base, borrado de la plantilla muerta, CRA → Vite + TypeScript,
-React + Router + Zustand + servicios en TS, antd 5 + dayjs + React 19). Siguiente: fase 5 (antd 6).
+**Estado del plan 01:** fases 0-5 hechas (línea base, borrado de la plantilla muerta, CRA → Vite + TypeScript,
+React + Router + Zustand + servicios en TS, antd 5 → 6 + dayjs + React 19). Siguiente: fase 6 (layout de antd puro, adiós a Clean UI, páginas a TS).
 Rutas, roles y endpoints: `docs/front/inventario-rutas.md`; verificación manual: `docs/front/checklist-humo.md`.
 
 Scripts (Node 24, `nvm use`): `npm run dev` (puerto 3000, proxy `/api` → `http://localhost:4100`),
@@ -32,14 +32,14 @@ src/services/menu/index.js  menú estático con `role` por entrada
 src/types/api.ts            tipos de las respuestas del API
 src/router.tsx              67 rutas (createHashRouter + React.lazy); layouts/index.jsx es el elemento raíz
 src/index.tsx               createRoot, ConfigProvider (es_ES + tema.ts), <App>, Sentry (solo con VITE_SENTRY_DSN)
-src/tema.ts                 tokens del tema claro de antd 5 (colores, fuente Mukta, radios)
+src/tema.ts                 tokens del tema claro de antd 6 (colores, fuente Mukta, radios) y configuracionTag
 ```
 
 **Lo que queda de la plantilla está en uso** (las demos se borraron en la fase 1 del plan 01):
 `src/components/cleanui/{layout,system}` (layout, `ACL`, `Login`, páginas de error) y los estilos globales que
 importa `global.scss`: `components/{kit-core,kit-vendors/{bootstrap,perfect-scrollbar},cui-styles}` y
 `components/kit/core/mixins.scss`, más `src/styles/layout-plantilla.css` (reglas del layout sobre antd). El tema de
-antd 5 se define con tokens en `src/tema.ts` (no hay LESS). No añadas código nuevo en la plantilla; todo esto se
+antd 6 se define con tokens en `src/tema.ts` (no hay LESS). No añadas código nuevo en la plantilla; todo esto se
 retira en la fase 6.
 
 ## Convenciones
@@ -58,8 +58,8 @@ retira en la fase 6.
 - Fechas con **dayjs** (`import dayjs from 'dayjs'`; plugins y locale `es-mx` en `helpers/fechas.ts`). Los
   `DatePicker` reciben y devuelven objetos dayjs.
 - `notification`/`message` se importan de `helpers/feedback` (no de `'antd'`): usan el contexto de `<App>`.
-- API de antd 5 sin lo obsoleto: `items` en `Menu`/`Dropdown menu`/`Tabs`/`Collapse`/`Steps`, `open` en
-  `Modal`/`Drawer`, `components/ui/Comentario` en vez de `Comment`. El objetivo es 0 avisos en la consola de `dev`.
+- API de antd 6 sin lo obsoleto: `items` en `Menu`/`Dropdown menu`/`Tabs`/`Collapse`/`Steps`/`Descriptions`, `open` en
+  `Modal`/`Drawer`, `title` (no `message`) en `notification`, `orientation` en `Space`/`Divider`, `components/ui/Comentario` en vez de `Comment`. El objetivo es 0 avisos en la consola de `dev`.
 - Cada página = `index.jsx` + carpeta `componentes/` (`forma*.jsx`, `tabla*.jsx`, `columnas*.jsx`).
 - Permisos: envuelve páginas y acciones con `<ACL roles={['CODIGO-ROL']} redirect>`; los códigos son los
   `codigoRol` del API (`services/menu/index.js` tiene la lista por entrada de menú).
@@ -80,7 +80,7 @@ retira en la fase 6.
 ## Qué no hacer
 
 - No actualices `antd`, `react` o `react-router` de forma aislada: sigue el orden de fases del plan 01
-  (CRA→Vite+TypeScript ✅, React/Router/Zustand ✅, antd 5 + React 19/Router 8 ✅, luego antd 6, retirar Clean UI).
+  (CRA→Vite+TypeScript ✅, React/Router/Zustand ✅, antd 5 + React 19/Router 8 ✅, antd 6 ✅, luego retirar Clean UI).
 - Decisiones ya tomadas (`docs/decisiones.md`): Vite + npm, Zustand (no redux ni RTK), TypeScript a la par,
   solo tema claro, sin MagicBell (notificaciones propias), sin `api.ipify.org` (la IP la toma el API).
 - No borres `components/cleanui/system/ACL` sin su reemplazo (`app/auth/ACL`, plan 01 fase 6): lo importan 76 archivos.

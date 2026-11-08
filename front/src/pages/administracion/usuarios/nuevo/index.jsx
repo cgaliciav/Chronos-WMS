@@ -36,7 +36,7 @@ const UsuarioNuevo = () => {
         // console.log('*******************************USUARIO GUARDADO', respuesta)
         navigate('/usuarios/listado')
         notification.success({
-          message: 'Creado correctamente',
+          title: 'Creado correctamente',
           description: 'El usuario fue creado correctamente',
         })
       }

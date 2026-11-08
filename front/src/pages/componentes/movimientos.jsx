@@ -89,22 +89,28 @@ const Movimientos = ({
             // } = proyecto??{nombre:''};
             return (
               // <p>Hola mundo</p>
-              <Descriptions 
+              <Descriptions
                 size="small"
                 bordered
                 column={{ lg: 1, md: 1, sm: 1, xs: 1 }}
-              >
-                <Descriptions.Item label="Operacion:">{`${movimientoTipoNombre} (#${operacionId})`}</Descriptions.Item>
-                <Descriptions.Item label="Fecha:">{dayjs(operacionFecha).format('D-MMM-YY HH:mm') }</Descriptions.Item>
-                {proyecto ? (
-                  <Descriptions.Item label="Proyecto:"><strong>{proyectoNombre}</strong></Descriptions.Item>
-                ):( null )}
-                {grupos.length>0?(
-                  <Descriptions.Item label="Grupos:">{grupos.map(grp=>(<Tag key={`${Math.random()}`}>{`${grp.nombre} (${grp.id})`}</Tag>))}</Descriptions.Item>
-                ):( null )}
-                <Descriptions.Item label="Almacenista:">{sesionUsuarioNombre}</Descriptions.Item>
-                <Descriptions.Item label="Responsables:">{usuariosResponsables.map(usr=>usr.nombre).join(',  ')}</Descriptions.Item>
-              </Descriptions>
+                // antd 6: `items` en lugar de `Descriptions.Item` como hijos.
+                items={[
+                  { key: 'operacion', label: 'Operacion:', children: `${movimientoTipoNombre} (#${operacionId})` },
+                  { key: 'fecha', label: 'Fecha:', children: dayjs(operacionFecha).format('D-MMM-YY HH:mm') },
+                  proyecto && { key: 'proyecto', label: 'Proyecto:', children: <strong>{proyectoNombre}</strong> },
+                  grupos.length > 0 && {
+                    key: 'grupos',
+                    label: 'Grupos:',
+                    children: grupos.map(grp => <Tag key={grp.id}>{`${grp.nombre} (${grp.id})`}</Tag>),
+                  },
+                  { key: 'almacenista', label: 'Almacenista:', children: sesionUsuarioNombre },
+                  {
+                    key: 'responsables',
+                    label: 'Responsables:',
+                    children: usuariosResponsables.map(usr => usr.nombre).join(',  '),
+                  },
+                ].filter(Boolean)}
+              />
             )
           },
         }}

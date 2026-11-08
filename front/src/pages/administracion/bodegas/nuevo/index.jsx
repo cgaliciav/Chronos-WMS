@@ -22,7 +22,7 @@ const BodegaNuevo = () => {
       if (respuesta !== undefined) {
         navigate('/bodegas/listado')
         notification.success({
-          message: 'Creado correctamente',
+          title: 'Creado correctamente',
           description: 'El almacén fue creado correctamente',
         })
       }

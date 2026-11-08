@@ -30,7 +30,7 @@ const UsuarioCambiarPassword = () => {
       if(respuesta!==undefined){
         navigate(-1)
         notification.success({
-          message: 'Password actualizado',
+          title: 'Password actualizado',
           description: 'Tu acceso será con el nuevo password.',
         })
       }

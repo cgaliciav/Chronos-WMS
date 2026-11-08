@@ -1,8 +1,8 @@
 /**
  * `notification` y `message` de antd conectados al contexto de `<App>` (tema, locale), usables también desde
- * stores y servicios (patrón oficial de antd 5: instancia de `App.useApp()`).
+ * stores y servicios (patrón oficial de antd 5+: instancia de `App.useApp()`).
  *
- * Los métodos estáticos de antd 5 no leen el `ConfigProvider`; mientras `<RegistrarFeedback />` no se haya
+ * Los métodos estáticos de antd (5 y 6) no leen el `ConfigProvider`; mientras `<RegistrarFeedback />` no se haya
  * montado (p. ej. en pruebas) se usan esos estáticos como respaldo. Mismas firmas que en antd: basta con importar
  * desde aquí en vez de desde 'antd'.
  */

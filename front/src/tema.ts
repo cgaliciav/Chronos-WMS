@@ -1,7 +1,7 @@
 import type { ThemeConfig } from 'antd'
 
 /**
- * Tema claro de la app para antd 5 (plan 01 D9/D10). Traslada a tokens las variables LESS que usaba el tema de
+ * Tema claro de la app para antd 6 (plan 01 D9/D10). Traslada a tokens las variables LESS que usaba el tema de
  * antd 4 (`styles/antd.less`, antes `kit/vendors/antd/themes/default.less`).
  */
 const gris1 = '#f0f2f4'
@@ -43,3 +43,9 @@ export const tema: ThemeConfig = {
     Form: { labelColor: gris6, labelRequiredMarkColor: '#f5222e' },
   },
 }
+
+/**
+ * antd 6 quitó el `margin-inline-end: 8px` de `Tag`; se restaura para conservar la separación entre etiquetas
+ * contiguas (grupos, claves, estados). Se pasa como prop `tag` de `ConfigProvider`.
+ */
+export const configuracionTag = { styles: { root: { marginInlineEnd: 8 } } }

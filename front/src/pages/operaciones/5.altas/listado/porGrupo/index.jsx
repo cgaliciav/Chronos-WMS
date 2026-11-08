@@ -87,7 +87,7 @@ const AltasListado = () => {
       .then((resp) => {
         if(resp!==undefined){
           notification.success({
-            message: 'grupo eliminado correctamente',
+            title: 'grupo eliminado correctamente',
           })
           setConteoRefresh(conteoRefresh+1)
           // const navigate = useNavigate();

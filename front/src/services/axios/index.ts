@@ -43,7 +43,7 @@ apiClient.interceptors.response.use(
   },
   (error: AxiosError<CuerpoError>) => {
     if (import.meta.env.DEV) console.log('error ApiClient', { error })
-    notification.error({ message: error.response?.data?.message ?? error.message })
+    notification.error({ title: error.response?.data?.message ?? error.message })
     // Antes devolvía el error y la promesa se resolvía con él (hallazgo F1): ahora se rechaza y quien llama
     // decide con try/catch (la notificación ya se mostró aquí).
     return Promise.reject(error)

@@ -67,7 +67,7 @@ const Validacion = ({
     else {
       notification.error({
         description: 'No se puede cambiar el estado',
-        message: 'Intente más tarde, si el problema persiste verifique con su administrador',
+        title: 'Intente más tarde, si el problema persiste verifique con su administrador',
       })
 
     }

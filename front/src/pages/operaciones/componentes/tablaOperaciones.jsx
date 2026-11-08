@@ -89,7 +89,7 @@ const TablaOperaciones = ({
     })
     .then(resp=>{
       if(resp!==undefined){
-        notification.success({message:resp.message})
+        notification.success({title:resp.message})
       }
     })
     .catch(() => {})

@@ -11,7 +11,7 @@ Documentación: [`../docs/front/arquitectura.md`](../docs/front/arquitectura.md)
 ### Stack actual
 - Node 24 (`.nvmrc`, `engines` con `engine-strict`), npm
 - Vite 8 + TypeScript 5.9 (`allowJs`: el código heredado sigue en `.js/.jsx` y se convierte por fases)
-- React 19.3, antd 5.29 (tokens en `src/tema.ts`), dayjs, Zustand 5, react-router 8 (hash), Sentry opcional
+- React 19.3, antd 6.7 (tokens en `src/tema.ts`), dayjs, Zustand 5, react-router 8 (hash), Sentry opcional
 - Pruebas: Vitest + Testing Library + MSW
 
 ### Variables de entorno

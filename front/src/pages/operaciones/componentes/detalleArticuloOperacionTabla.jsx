@@ -34,41 +34,41 @@ const DetalleArticuloOperacioTabla = ({
   // console.log('precioObj', precioObj)
 
   return (
-    <Descriptions size="small" bordered column={{ lg: 1, md: 1, sm: 1, xs: 1 }}>
-      <Descriptions.Item label="Operacion:">{`${movimientoTipoNombre} ${estatus==='finalizado'?'*':''} (#${operacionId})`}</Descriptions.Item>
-      <Descriptions.Item label="Fecha:">
-        {dayjs(operacionFecha).format('D-MMM-YY HH:mm')}
-      </Descriptions.Item>
-      {proyecto ? (
-        <Descriptions.Item label="Proyecto:">
-          <strong>{proyectoNombre}</strong>
-        </Descriptions.Item>
-      ) : null}
-      {grupos.length > 0 ? (
-        <Descriptions.Item label="Grupos:">
-          {grupos.map(grp => (
-            <Tag key={`${Math.random()}`}>{`${grp.nombre} (${grp.id})`}</Tag>
-          ))}
-        </Descriptions.Item>
-      ) : null}
-      <Descriptions.Item label="Clave:">
-        {productoClaves[productoClaves.length - 1].barras}
-      </Descriptions.Item>
-      <Descriptions.Item label="Producto:">{productoTitulo} </Descriptions.Item>
-      <Descriptions.Item label="Precio:">
-        <strong>{`${formatoMonedaMexico(precioObj?.precio)} ${precioObj?.moneda }`}</strong>{' '}
-      </Descriptions.Item>
-      <Descriptions.Item label="Area / Almacén: ">
-        {areaNombre} / {bodegaNombre}{' '}
-      </Descriptions.Item>
-      <Descriptions.Item label="Almacenista:">{sesionUsuarioNombre}</Descriptions.Item>
-      <Descriptions.Item label="Responsables:">
-        {usuariosResponsables.map(usr => usr.nombre).join(',  ')}
-      </Descriptions.Item>
-      <Descriptions.Item label="Descripcion:">
-        <p>{productoDescripcion}</p>
-      </Descriptions.Item>
-    </Descriptions>
+    <Descriptions
+      size="small"
+      bordered
+      column={{ lg: 1, md: 1, sm: 1, xs: 1 }}
+      // antd 6: `items` en lugar de `Descriptions.Item` como hijos.
+      items={[
+        {
+          key: 'operacion',
+          label: 'Operacion:',
+          children: `${movimientoTipoNombre} ${estatus === 'finalizado' ? '*' : ''} (#${operacionId})`,
+        },
+        { key: 'fecha', label: 'Fecha:', children: dayjs(operacionFecha).format('D-MMM-YY HH:mm') },
+        proyecto && { key: 'proyecto', label: 'Proyecto:', children: <strong>{proyectoNombre}</strong> },
+        grupos.length > 0 && {
+          key: 'grupos',
+          label: 'Grupos:',
+          children: grupos.map(grp => <Tag key={grp.id}>{`${grp.nombre} (${grp.id})`}</Tag>),
+        },
+        { key: 'clave', label: 'Clave:', children: productoClaves[productoClaves.length - 1].barras },
+        { key: 'producto', label: 'Producto:', children: productoTitulo },
+        {
+          key: 'precio',
+          label: 'Precio:',
+          children: <strong>{`${formatoMonedaMexico(precioObj?.precio)} ${precioObj?.moneda}`}</strong>,
+        },
+        { key: 'area', label: 'Area / Almacén: ', children: `${areaNombre} / ${bodegaNombre}` },
+        { key: 'almacenista', label: 'Almacenista:', children: sesionUsuarioNombre },
+        {
+          key: 'responsables',
+          label: 'Responsables:',
+          children: usuariosResponsables.map(usr => usr.nombre).join(',  '),
+        },
+        { key: 'descripcion', label: 'Descripcion:', children: <p>{productoDescripcion}</p> },
+      ].filter(Boolean)}
+    />
   )
 }
 

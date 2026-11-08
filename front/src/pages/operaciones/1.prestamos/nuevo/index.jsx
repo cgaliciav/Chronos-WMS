@@ -39,7 +39,7 @@ const PrestamosNuevo = () => {
         // mandar a la edicion del grupo
         navigate(`/prestamos/operacion?uid=${resp.id}`);
         notification.success({
-          message: 'Actualizado correctamente',
+          title: 'Actualizado correctamente',
           description: 'El usuario fue actualizado correctamente',
         })
       

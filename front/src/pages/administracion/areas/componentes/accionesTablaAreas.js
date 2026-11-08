@@ -6,7 +6,7 @@ export default class AccionesTablaProveedores {
     AreaPeticiones.inhabilitar(id)
       .then(() => {
         notification.success({
-          message: 'Area inhabilitada correctamente',
+          title: 'Area inhabilitada correctamente',
         })
         document.location.reload()
       })

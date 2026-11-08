@@ -37,7 +37,7 @@ const AltaNuevo = () => {
         // mandar a la edicion del grupo
         navigate(`/altas/operacion?uid=${resp.id}`);
         notification.success({
-          message: 'Listado creado correctamente',
+          title: 'Listado creado correctamente',
         })
       }
     } catch {

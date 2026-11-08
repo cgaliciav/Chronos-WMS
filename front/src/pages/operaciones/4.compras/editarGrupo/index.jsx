@@ -107,7 +107,7 @@ const CompraEditarGrupo = () => {
         // mandar a la edicion del grupo
         navigate(`/compras/operacion?uid=${grupoId}`)
         notification.success({
-          message: 'Listado editado correctamente',
+          title: 'Listado editado correctamente',
         })
       }
     } catch {

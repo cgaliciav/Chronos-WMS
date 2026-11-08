@@ -40,7 +40,7 @@ const BajasSinProyectoNuevo = () => {
         // mandar a la edicion del grupo
         navigate(`/bajas/sin-proyecto/operacion?uid=${resp.id}`);
         notification.success({
-          message: 'Listado creado correctamente',
+          title: 'Listado creado correctamente',
         })
       }
     } catch {

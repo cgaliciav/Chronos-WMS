@@ -29,7 +29,7 @@ const CaracteristicasProducto = ({
     })
       .then(resp => {
         if (resp !== undefined) {
-          notification.success({ message: 'Caractetistica borrada correctamente' })
+          notification.success({ title: 'Caractetistica borrada correctamente' })
           // TODO ACTUALIZAR LISTA DE CARACTERISTICAS DEL PRODUCTO.
           fnActualizar()
           // productoCaracteristicas = productoCaracteristicas.filter(pc=>pc.id!==id);
@@ -139,7 +139,7 @@ const CaracteristicasProducto = ({
   return (
     <Row style={{ width: '90%', margin: 'auto' }}>
       {/* TODO AGREGAR FORMA PARA NUEVAS CARACTERISTICAS Y BORRAR EXISTENTES */}
-      <Space direction="vertical" align="end">
+      <Space orientation="vertical" align="end">
         {editar ? (
           <Tooltip title="Agregar característica">
             <Button type="primary" icon={<PlusOutlined />} onClick={handleNuevaCaracteristica} />

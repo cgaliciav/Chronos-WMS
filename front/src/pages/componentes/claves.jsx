@@ -18,7 +18,7 @@ const ClavesProducto = ({ productoClaves, loading, productoId, editar, fnActuali
     })
       .then(resp => {
         if (resp !== undefined) {
-          notification.success({ message: 'Clave borrada correctamente' })
+          notification.success({ title: 'Clave borrada correctamente' })
 
           // ACTUALIZAR LISTA DE CARACTERISTICAS DEL PRODUCTO.
           fnActualizar()
@@ -118,7 +118,7 @@ const ClavesProducto = ({ productoClaves, loading, productoId, editar, fnActuali
     <Row style={{ width: '90%', margin: 'auto' }}>
       {/* TODO MANDAR A IMPRIMIR CLAVES
        */}
-      <Space direction="vertical" align="end">
+      <Space orientation="vertical" align="end">
         {editar ? (
           <Tooltip title="Agregar característica">
             <Button type="primary" icon={<PlusOutlined />} onClick={handleNuevaClave} />

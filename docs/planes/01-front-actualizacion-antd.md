@@ -360,6 +360,19 @@ bloqueantes; pruebas de componente para los formularios con fecha; checklist.
 **Pruebas:** build; `npx antd lint ./src` limpio; comparación con `docs/front/baseline` o checklist; suite Vitest verde.
 **Aceptación:** antd 6.x sin `@ant-design/compatible` ni patch. Commit.
 
+> **Ejecutada (2026-11-08).** antd 6.7.0 + `@ant-design/icons` 6.3.4, sin `@ant-design/v5-patch-for-react-19` ni
+> `@ant-design/compatible`. `npm run typecheck`, `npm run lint` (0 errores), `npm test` (28) y `npm run build` en
+> verde; recorrido de las 67 rutas en `dev` sin avisos de antd ni de React (solo F36, datos simulados); humo de
+> sesión 10/10; capturas de las rutas críticas prácticamente idénticas a las de la fase 4 (< 0,25 %).
+> Renombres aplicados: `Space direction` → `orientation` (9), `Divider type` → `orientation`, `Divider
+> orientation="left"` → `titlePlacement="start"`, `notification … message` → `title` (87 llamadas, más el
+> interceptor y el store), `Descriptions.Item` → `items` (2), `Button size="default"` → `"medium"`. No había usos de
+> `bodyStyle`, `destroyOnClose`, `tabPosition`, `onSelectAll`, `Alert message`, `Button.Group`, `Breadcrumb.Item` ni
+> `Statistic.Countdown`; `bordered` solo aparece en `Table`/`Descriptions`, donde sigue siendo válido.
+> El margen de `Tag` se restaura con `ConfigProvider tag` (`configuracionTag` en `src/tema.ts`). Como en la fase 4,
+> `npx antd lint`/`migrate` no se pudieron ejecutar en el entorno; la verificación fue con los tipos de antd 6
+> (`tsc`) y la consola de desarrollo en todas las rutas.
+
 ### Fase 6 · Reemplazar Clean UI por Ant Design puro y convertir páginas a TypeScript
 
 **Objetivo:** borrar `src/components/cleanui`, `global.scss`, `components/mixins.scss`, Bootstrap, y dejar

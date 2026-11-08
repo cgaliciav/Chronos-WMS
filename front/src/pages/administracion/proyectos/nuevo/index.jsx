@@ -29,7 +29,7 @@ const ProyectoNuevo = () =>{
         // console.log("*******************************PROYECTO GUARDADO",respuesta);
         navigate('/proyectos/listado')
         notification.success({
-          message: 'Creado correctamente',
+          title: 'Creado correctamente',
           description: 'El proyecto fue creado correctamente',
         })
       }

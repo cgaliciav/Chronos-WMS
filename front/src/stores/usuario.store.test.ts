@@ -49,7 +49,7 @@ describe('usuario.store', () => {
     expect(correcto).toBe(false)
     expect(localStorage.getItem('t')).toBeNull()
     expect(useUsuarioStore.getState()).toMatchObject({ autorizado: false, cargando: false, permisos: [] })
-    expect(notification.error).toHaveBeenCalledWith({ message: 'Credenciales inválidas' })
+    expect(notification.error).toHaveBeenCalledWith({ title: 'Credenciales inválidas' })
   })
 
   it('cargarCuentaActual sin token no llama al API y deja de cargar', async () => {

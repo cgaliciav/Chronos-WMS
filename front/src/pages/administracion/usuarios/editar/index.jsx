@@ -77,7 +77,7 @@ const UsuarioEditar = () => {
         // console.log("*******************************USUARIO GUARDADO",respuesta);
         navigate('/usuarios/listado')
         notification.success({
-          message: 'Actualizado correctamente',
+          title: 'Actualizado correctamente',
           description: 'El usuario fue actualizado correctamente',
         })
       }
@@ -100,7 +100,7 @@ const UsuarioEditar = () => {
             estatus: 'activo',
           })
           notification.success({
-            message: 'Usuario habilitado correctamente',
+            title: 'Usuario habilitado correctamente',
           })
         }
       })
@@ -122,7 +122,7 @@ const UsuarioEditar = () => {
             estatus: 'inactivo',
           })
           notification.warning({
-            message: 'Usuario deshabilitado correctamente',
+            title: 'Usuario deshabilitado correctamente',
           })
         }
       })

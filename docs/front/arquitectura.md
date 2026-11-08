@@ -10,12 +10,12 @@ JWT en la cabecera `auth`.
 |---|---|---|
 | Build | Vite 8 + `@vitejs/plugin-react` + `vite-tsconfig-paths`; TypeScript 5.9 (`tsc -b`, `allowJs`, `checkJs: false`) | Node 24, npm |
 | Calidad | ESLint 10 (flat: typescript-eslint, @eslint-react, react-hooks, prettier), Prettier 3, Vitest 5 (jsdom) + Testing Library 16 + MSW 3 | |
-| UI | React 19.3, antd 5.29 (+ `@ant-design/v5-patch-for-react-19`), `@ant-design/icons` 5, Bootstrap 4 CSS | |
+| UI | React 19.3, antd 6.7, `@ant-design/icons` 6, Bootstrap 4 CSS | |
 | Estado y rutas | Zustand 5 (`stores/`), `react-router` 8 (`createHashRouter`) | |
 | Observabilidad | `@sentry/react` 11 (solo con `VITE_SENTRY_DSN`) + `@sentry/vite-plugin` (source maps si hay credenciales) | |
 | HTTP | axios 1.21 (`src/services/axios/index.ts`) | |
 | Fechas | dayjs 1.11 (`helpers/fechas.ts`: plugins y locale `es-mx`) | |
-| Estilos | antd 5 CSS-in-JS con tokens (`tema.ts`) + SCSS heredado de la plantilla (Dart Sass) + CSS Modules | |
+| Estilos | antd 6 CSS-in-JS con tokens y variables CSS (`tema.ts`) + SCSS heredado de la plantilla (Dart Sass) + CSS Modules | |
 | i18n | Ninguna librería: textos en español; antd con `locale` `es_ES` | |
 
 ## Estructura de `front/src`
@@ -27,7 +27,7 @@ router.tsx          createHashRouter: layout raíz + 67 rutas lazy + "/" según 
 sentry.ts           Sentry.init solo con VITE_SENTRY_DSN
 stores/             usuario.store.ts (sesión, permisos, login, cargarCuentaActual, logout), ui.store.ts (menú, móvil; persiste menuColapsado)
 types/api.ts        tipos de las respuestas del API (Grupo, Movimiento, InventarioActual, ResultadoTabla<T>…)
-tema.ts             tokens del tema claro de antd 5 (traducidos de las antiguas variables LESS)
+tema.ts             tokens del tema claro de antd 6 (traducidos de las antiguas variables LESS)
 styles/layout-plantilla.css  reglas estructurales del layout de la plantilla sobre antd (temporal, fase 6)
 global.scss         estilos de la plantilla (kit-vendors/{bootstrap,perfect-scrollbar}, kit-core, cui-styles)
 layouts/            index.jsx (raíz: elige Public/Auth/Main, protege rutas, guarda ultimaVisitada, <Outlet/>), Main, Auth, Public
@@ -77,7 +77,7 @@ Demos, `kit/widgets`, `kit-widgets`, `cui-layout`, `cui-system`, MagicBell e idi
 - Tablas server-side con antd `Table` y el contrato `list-antd` del API
   (`{ results, pagination: { current, pageSize, total, totalItems }, filtered }`); filtros y orden se
   envían como `{ sortField, sortOrder, pagination, filters }`.
-- Formularios con `Form.useForm` (antd 5); fechas con `dayjs`; códigos de barras leídos con
+- Formularios con `Form.useForm` (antd 6); fechas con `dayjs`; códigos de barras leídos con
   escáner en `operaciones/componentes/formaAC.jsx`.
 - Importaciones absolutas desde `src` (`tsconfig.json` `baseUrl` + `vite-tsconfig-paths`): `components/…`,
   `services/…`, `pages/…`, `stores/…`. Variables de entorno con `import.meta.env.VITE_*`.
@@ -87,7 +87,8 @@ Demos, `kit/widgets`, `kit-widgets`, `cui-layout`, `cui-system`, MagicBell e idi
 ### Estilos (transitorio hasta la fase 6)
 
 `index.tsx` carga `antd/dist/reset.css` → Bootstrap → perfect-scrollbar → `global.scss` → `styles/layout-plantilla.css`;
-antd 5 inyecta sus estilos en tiempo de ejecución con el tema de `tema.ts` (`ConfigProvider theme`). Ya no hay
+antd 6 inyecta sus estilos en tiempo de ejecución con el tema de `tema.ts` (`ConfigProvider theme`) y
+la separación de `Tag` (`ConfigProvider tag`). Ya no hay
 LESS, ni `data-kit-theme`, ni ajustes de antd 4 de la plantilla (`kit-vendors/antd`).
 
 ## Despliegue

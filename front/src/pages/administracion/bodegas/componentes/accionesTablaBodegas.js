@@ -6,7 +6,7 @@ export default class AccionesTablaProveedores {
     BodegaPeticiones.inhabilitar(id)
       .then(() => {
         notification.success({
-          message: 'Bodega inhabilitada correctamente',
+          title: 'Bodega inhabilitada correctamente',
         })
         document.location.reload()
       })

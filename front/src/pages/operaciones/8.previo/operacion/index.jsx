@@ -55,7 +55,7 @@ const PrevioOperacion = () => {
         if (resp !== undefined) {
           setConteoRefresh(conteoRefresh + 1) // esto actualiza la lista en su vista actual
           notification.success({
-            message: 'Artículo removido de la lista correctamente',
+            title: 'Artículo removido de la lista correctamente',
           })
         }
       })
@@ -119,7 +119,7 @@ const PrevioOperacion = () => {
       .then(resp => {
         if (resp !== undefined) {
           notification.success({
-            message: 'Listado inhabilidato correctamente',
+            title: 'Listado inhabilidato correctamente',
             description: 'Ya no se podrán agregar articulos a la lista',
           })
           actualizar()
@@ -138,7 +138,7 @@ const PrevioOperacion = () => {
       .then(resp => {
         if (resp !== undefined) {
           notification.success({
-            message: 'Listado habilitado correctamente',
+            title: 'Listado habilitado correctamente',
           })
           actualizar()
         }

@@ -39,7 +39,7 @@ const DevolucionesNuevo = () => {
         // mandar a la edicion del grupo
         navigate(`/devoluciones/operacion?uid=${resp.id}`);
         notification.success({
-          message: 'Listado creado correctamente',
+          title: 'Listado creado correctamente',
         })
       
       }

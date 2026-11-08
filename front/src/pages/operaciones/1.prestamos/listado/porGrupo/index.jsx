@@ -87,7 +87,7 @@ const PrestamosListado = () => {
       .then((resp) => {
         if(resp!==undefined){
           notification.success({
-            message: 'Grupo eliminado correctamente',
+            title: 'Grupo eliminado correctamente',
           })
           setConteoRefresh(conteoRefresh+1)
           // const navigate = useNavigate();

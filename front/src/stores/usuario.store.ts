@@ -50,7 +50,7 @@ export const useUsuarioStore = create<EstadoUsuario>()((set, get) => ({
       await get().cargarCuentaActual()
       if (!get().autorizado) return false
       notification.success({
-        message: '¡Bienvenido!',
+        title: '¡Bienvenido!',
         description: 'Has entrado correctamente al Almacén de Sony México',
       })
       return true

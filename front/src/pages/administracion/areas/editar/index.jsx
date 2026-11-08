@@ -50,7 +50,7 @@ const AreaEditar = () => {
       if (respuesta !== undefined) {
         navigate('/areas/listado')
         notification.success({
-          message: 'Actualizado correctamente',
+          title: 'Actualizado correctamente',
           description: 'El area fue actualizada correctamente',
         })
       }
@@ -73,7 +73,7 @@ const AreaEditar = () => {
             estatus: 'activo',
           })
           notification.success({
-            message: 'Area habilitada correctamente',
+            title: 'Area habilitada correctamente',
           })
         }
       })
@@ -95,7 +95,7 @@ const AreaEditar = () => {
             estatus: 'inactivo',
           })
           notification.warning({
-            message: 'Area deshabilitada correctamente',
+            title: 'Area deshabilitada correctamente',
           })
         }
       })

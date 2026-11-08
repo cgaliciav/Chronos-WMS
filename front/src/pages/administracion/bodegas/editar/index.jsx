@@ -50,7 +50,7 @@ const BodegaEditar = () => {
       if (respuesta !== undefined) {
         navigate('/bodegas/listado')
         notification.success({
-          message: 'Actualizado correctamente',
+          title: 'Actualizado correctamente',
           description: 'El almacén fue actualizado correctamente',
         })
       }
@@ -73,7 +73,7 @@ const BodegaEditar = () => {
             estatus: 'activo',
           })
           notification.success({
-            message: 'Almacén habilitado correctamente',
+            title: 'Almacén habilitado correctamente',
           })
         }
       })
@@ -95,7 +95,7 @@ const BodegaEditar = () => {
             estatus: 'inactivo',
           })
           notification.warning({
-            message: 'Almacén deshabilitado correctamente',
+            title: 'Almacén deshabilitado correctamente',
           })
         }
       })

@@ -8,7 +8,7 @@ export default class AccionesTablaProveedores{
     ProveedorPeticiones.inhabilitar(id)
       .then(() => {
         notification.success({
-          message: 'Proveedor inhabilitado correctamente',
+          title: 'Proveedor inhabilitado correctamente',
         })
         document.location.reload();
       })

@@ -39,7 +39,7 @@ const RentasNuevo = () => {
         // mandar a la edicion del grupo
         navigate(`/renta-externa/operacion?uid=${resp.id}`);
         notification.success({
-          message: 'Listado creado correctamente',
+          title: 'Listado creado correctamente',
         })
       }
     } catch {

@@ -20,7 +20,7 @@ const AreaNuevo = () => {
       if (respuesta !== undefined) {
         navigate('/areas/listado')
         notification.success({
-          message: 'Creado correctamente',
+          title: 'Creado correctamente',
           description: 'El area fue creada correctamente',
         })
       }

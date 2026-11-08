@@ -9,7 +9,7 @@ export default class AccionesTablaUsuario{
       .then((respuesta) => {
         // Desde la fase 2 del plan 02 el API ya no devuelve la contraseña: responde { correo, enviado }.
         notification.success({
-          message: 'Contraseña regenerada',
+          title: 'Contraseña regenerada',
           description: `La nueva contraseña fue enviada por correo a ${respuesta?.correo ?? correo}.`,
           duration:0, // mantiene la notificacion abierta
         })
@@ -23,7 +23,7 @@ export default class AccionesTablaUsuario{
     UsuarioPeticiones.inhabilitar(id)
       .then(() => {
         notification.success({
-          message: 'Usuario inhabilidato correctamente',
+          title: 'Usuario inhabilidato correctamente',
           description: 'El usuario ya no tendrá acceso al sistema',
         })
         document.location.reload();

@@ -8,7 +8,7 @@ export default class AccionesTablasGrupos {
       .then((resp) => {
         if(resp!==undefined){
           notification.success({
-            message: 'Grupo eliminado correctamente',
+            title: 'Grupo eliminado correctamente',
           })
           // const navigate = useNavigate();
           // history.go(0)

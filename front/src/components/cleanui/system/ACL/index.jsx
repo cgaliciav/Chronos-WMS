@@ -21,7 +21,7 @@ const ACL = ({
     if (!authorized && redirect) {
       const url = typeof redirect === 'boolean' ? defaultRedirect : redirect
       notification.error({
-        message: 'Sin autorización',
+        title: 'Sin autorización',
         description: 'No tienes los permisos para acceder a esta página.',
       })
       navigate(url)

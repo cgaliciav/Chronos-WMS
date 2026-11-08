@@ -20,7 +20,7 @@ const ImagenesEnCarrusel = ({ archivos, rutaEnApi, hacerGrande, onClickImagen })
                     type="primary"
                     icon={<i className="icmn icmn-enlarge" />}
                     className={styles.masGrande}
-                    size="default"
+                    size="medium"
                     ghost
                     onClick={onClickImagen}
                   />

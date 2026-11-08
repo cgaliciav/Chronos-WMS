@@ -36,7 +36,7 @@ const PrevioNuevo = () => {
         // mandar a la edicion del grupo
         navigate(`/previo/operacion?uid=${resp.id}`);
         notification.success({
-          message: 'Listado creado correctamente',
+          title: 'Listado creado correctamente',
         })
       }
     } catch {

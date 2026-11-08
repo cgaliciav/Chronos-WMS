@@ -9,7 +9,7 @@ export default class AccionesTablaProyectos{
     ProyectoPeticiones.inhabilitar(id)
       .then(() => {
         notification.success({
-          message: 'Proyecto inhabilitado correctamente',
+          title: 'Proyecto inhabilitado correctamente',
         })
         document.location.reload();
         // const { pagination } = this.state

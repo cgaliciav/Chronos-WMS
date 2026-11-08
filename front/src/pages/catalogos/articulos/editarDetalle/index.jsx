@@ -117,7 +117,7 @@ const EditarArticuloDetalle = () => {
 
         if (respInv !== undefined && respProd !== undefined) {
           notification.success({
-            message: 'Artículo actualizado correctamente.',
+            title: 'Artículo actualizado correctamente.',
           })
         }
       })
@@ -143,7 +143,7 @@ const EditarArticuloDetalle = () => {
       .then(resp => {
         if (resp !== undefined) {
           notification.success({
-            message: 'Artículo actualizado correctamente.',
+            title: 'Artículo actualizado correctamente.',
           })
         }
       })

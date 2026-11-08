@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event'
 import dayjs from 'dayjs'
 import FormaEdicionDisponibilidad from './formaEdicionDisponibilidad'
 
-describe('FormaEdicionDisponibilidad (DatePicker con dayjs, antd 5)', () => {
+describe('FormaEdicionDisponibilidad (DatePicker con dayjs)', () => {
   const fecha = dayjs('2026-03-15T00:00:00')
   const valores = {
     id: 1,

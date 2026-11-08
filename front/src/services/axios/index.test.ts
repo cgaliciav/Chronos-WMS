@@ -39,7 +39,7 @@ describe('apiClient y PeticionBase', () => {
       ),
     )
     await expect(PeticionBase.listado('groups', {})).rejects.toMatchObject({ response: { status: 403 } })
-    expect(notification.error).toHaveBeenCalledWith({ message: 'Sin permiso' })
+    expect(notification.error).toHaveBeenCalledWith({ title: 'Sin permiso' })
   })
 
   it('rechaza también ante errores de red', async () => {

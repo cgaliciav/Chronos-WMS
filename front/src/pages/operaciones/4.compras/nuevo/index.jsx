@@ -48,7 +48,7 @@ const CompraNuevo = () => {
         // mandar a la edicion del grupo
         navigate(`/compras/operacion?uid=${resp.id}`);
         notification.success({
-          message: 'Listado creado correctamente',
+          title: 'Listado creado correctamente',
         })
       }
     } catch {

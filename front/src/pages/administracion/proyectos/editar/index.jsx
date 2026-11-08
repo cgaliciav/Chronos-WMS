@@ -62,7 +62,7 @@ const ProyectoEditar = () =>{
         // console.log("*******************************PROYECTO GUARDADO",respuesta);
         navigate('/proyectos/listado')
         notification.success({
-          message: 'Actualizado correctamente',
+          title: 'Actualizado correctamente',
           description: 'El proyecto fue actualizado correctamente',
         })
       }
@@ -86,7 +86,7 @@ const ProyectoEditar = () =>{
           estatus:'activo'
         });
         notification.success({
-          message:"Proyecto habilitado correctamente"
+          title:"Proyecto habilitado correctamente"
         })
       }
     })
@@ -108,7 +108,7 @@ const ProyectoEditar = () =>{
           estatus:'inactivo'
         });
         notification.warning({
-          message:"Proyecto deshabilitado correctamente"
+          title:"Proyecto deshabilitado correctamente"
         });
       }
     })

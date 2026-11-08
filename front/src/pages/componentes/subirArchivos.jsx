@@ -56,7 +56,7 @@ const SubirArchivos = ({
       })
 
       if (resp !== undefined) {
-        notification.success({ message: 'Archivo eliminado correctamente' })
+        notification.success({ title: 'Archivo eliminado correctamente' })
         // fnActualizar();
         return true
       }
@@ -75,7 +75,7 @@ const SubirArchivos = ({
       setPreviewVisible(true)
       setPreviewImage(fileUploaded.url)
     } else {
-      notification.info({ message: `No hay vista previa para: ${name} ` })
+      notification.info({ title: `No hay vista previa para: ${name} ` })
     }
   }
 

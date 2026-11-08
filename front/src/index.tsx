@@ -1,6 +1,4 @@
-// antd 5 + React 19: restaura el render de Modal.confirm/message/notification estáticos (se retira con antd 6).
-import '@ant-design/v5-patch-for-react-19'
-// antd 5 inyecta sus estilos (CSS-in-JS) con el tema de `tema.ts`; aquí van el reset y los estilos heredados.
+// antd 6 inyecta sus estilos (CSS-in-JS) con el tema de `tema.ts`; aquí van el reset y los estilos heredados.
 import 'antd/dist/reset.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'react-perfect-scrollbar/dist/css/styles.css'
@@ -15,7 +13,7 @@ import * as Sentry from '@sentry/react'
 import './helpers/fechas'
 import { RegistrarFeedback } from './helpers/feedback'
 import { router } from './router'
-import { tema } from './tema'
+import { configuracionTag, tema } from './tema'
 import { iniciarSentry } from './sentry'
 import { useUsuarioStore } from './stores/usuario.store'
 import { iniciarDeteccionViewport } from './stores/ui.store'
@@ -45,7 +43,7 @@ if (!raiz) throw new Error('No existe el elemento #root en index.html')
 
 createRoot(raiz).render(
   <Sentry.ErrorBoundary fallback={<ErrorGeneral />}>
-    <ConfigProvider locale={esES} theme={tema}>
+    <ConfigProvider locale={esES} theme={tema} tag={configuracionTag}>
       <App>
         <RegistrarFeedback />
         <RouterProvider router={router} />

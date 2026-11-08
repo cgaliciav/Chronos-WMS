@@ -51,7 +51,7 @@ const ProveedorEditar = () => {
       if (respuesta !== undefined) {
         navigate('/proveedores/listado')
         notification.success({
-          message: 'Actualizado correctamente',
+          title: 'Actualizado correctamente',
           description: 'El proveedor fue actualizado correctamente',
         })
       }
@@ -74,7 +74,7 @@ const ProveedorEditar = () => {
             estatus: 'activo',
           })
           notification.success({
-            message: 'proveedor habilitado correctamente',
+            title: 'proveedor habilitado correctamente',
           })
         }
       })
@@ -96,7 +96,7 @@ const ProveedorEditar = () => {
             estatus: 'inactivo',
           })
           notification.warning({
-            message: 'proveedor deshabilitado correctamente',
+            title: 'proveedor deshabilitado correctamente',
           })
         }
       })

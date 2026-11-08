@@ -158,7 +158,7 @@ const FormaUsuario = ({ valoresIniciales, valores, guardando, habilitado, handle
               disabled={!habilitadoInterno || guardando || !habilitado}
             />
           </Form.Item>
-          <Divider type="vertical" />
+          <Divider orientation="vertical" />
           <Tag color={vencimientoAviso.color}> {vencimientoAviso.texto} </Tag>
         </Form.Item>
         <Form.Item
