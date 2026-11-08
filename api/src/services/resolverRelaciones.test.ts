@@ -120,8 +120,9 @@ describe("resolverRelaciones", () => {
     const p2 = origen({ saldo: 1 });
     const e = await fallo(resolver(consultas([p2, p1]), { tipo: T.DEVOLUCION, cantidad: 1, strict: true }));
     expect(e.statusCode).toBe(409);
-    expect((e.detalle.candidatas as any[]).map((c) => c.movimientoId)).toEqual([p1.movimientoId, p2.movimientoId]);
-    expect(e.detalle.candidatas[0]).toEqual(expect.objectContaining({ fecha: p1.fecha, cantidad: 1, saldo: 1 }));
+    const candidatas = e.detalle?.candidatas as any[];
+    expect(candidatas.map((c) => c.movimientoId)).toEqual([p1.movimientoId, p2.movimientoId]);
+    expect(candidatas[0]).toEqual(expect.objectContaining({ fecha: p1.fecha, cantidad: 1, saldo: 1 }));
   });
 
   it("strict con una sola candidata no pregunta", async () => {

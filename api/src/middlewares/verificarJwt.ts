@@ -13,7 +13,10 @@ interface jwtPaylodType{
 /** Duración de los tokens (login y renovación). Antes: 12 h en login y 90 d en la renovación que nunca se enviaba. */
 export const DURACION_TOKEN = "12h";
 
-export const firmarToken = (payload: jwtPaylodType) => jwt.sign(payload, process.env.JWTSECRET, { expiresIn: DURACION_TOKEN });
+/** Validado al arrancar (index.ts exige ≥ 32 caracteres). */
+const secreto = () => process.env.JWTSECRET as string;
+
+export const firmarToken = (payload: jwtPaylodType) => jwt.sign(payload, secreto(), { expiresIn: DURACION_TOKEN });
 
 /**
  * Revocación de sesiones (pendiente de la fase 2, hallazgo H16): un token cuya sesión terminó (logout,
@@ -39,11 +42,14 @@ const exigirSesionVigente = async (sesionId: number) => {
   sesionesVigentes.set(sesionId, Date.now());
 };
 
+const esErrorDeToken = (error: unknown) =>
+  error instanceof Error && (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError");
+
 const verificarYRenovar = async (token: string | undefined, res: Response) => {
   if (!token) {
     throw new AppError("Token requerido", 401);
   }
-  const jwtPayload = jwt.verify(token, process.env.JWTSECRET, { algorithms: ["HS256"] }) as jwtPaylodType;
+  const jwtPayload = jwt.verify(token, secreto(), { algorithms: ["HS256"] }) as unknown as jwtPaylodType;
   if (!Number.isInteger(jwtPayload.si)) {
     throw new AppError("Token inválido", 401);
   }
@@ -61,7 +67,7 @@ export const checkJwt = async (req: Request, res: Response, next: NextFunction) 
     await verificarYRenovar(req.headers["auth"] as string | undefined, res);
     next();
   } catch (error) {
-    next(error.name === "JsonWebTokenError" || error.name === "TokenExpiredError" ? new AppError("Token inválido", 401) : error);
+    next(esErrorDeToken(error) ? new AppError("Token inválido", 401) : error);
   }
 };
 
@@ -79,6 +85,6 @@ export const checkJwtArchivos = async (req: Request, res: Response, next: NextFu
     await verificarYRenovar(token, res);
     next();
   } catch (error) {
-    next(error.name === "JsonWebTokenError" || error.name === "TokenExpiredError" ? new AppError("Token inválido", 401) : error);
+    next(esErrorDeToken(error) ? new AppError("Token inválido", 401) : error);
   }
 };

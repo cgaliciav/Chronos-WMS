@@ -72,7 +72,7 @@ const queryBusquedaCatalogo = ({
     bodegaIds,
     estados,
     con_foto,
-}) => {
+}: { textoBusqueda?: string; areasIds?: (number | string)[]; bodegaIds?: (number | string)[]; estados?: string[]; con_foto?: boolean }) => {
     const query = queryBusqueda().where("precioTipo.id=2");
     andWhereIn(query, "area.id", idsSeguros(areasIds ?? [], "areasIds"), "areasIds");
     andWhereIn(query, "inventarioActual.disponible", estados ?? [], "estados");
@@ -146,7 +146,7 @@ const queryBusquedaProyecto = ({
     // estados,
     proyectoId,
     movimientosTipoIds
-}) => {
+}: { textoBusqueda?: string; areasIds?: (number | string)[]; bodegaIds?: (number | string)[]; proyectoId?: number | string; movimientosTipoIds?: (number | string)[] }) => {
 
     // queryBusquedaOperacion
     const query = queryBusquedaOperacion()

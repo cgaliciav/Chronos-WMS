@@ -68,7 +68,7 @@ export class Usuario {
     sesiones:Sesion[];
 
     hashPassword() {
-        let salt=+process.env.SALT_ROUNDS;
+        let salt=Number(process.env.SALT_ROUNDS ?? 10);
         //Si se pasaba directamente el 'process.env.SALT_ROUNDS' mandaba mensaje de error.
         this.password = bcrypt.hashSync(this.password,salt);
     }

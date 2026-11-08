@@ -51,7 +51,7 @@
     "migration:run": "ts-node ./node_modules/typeorm/cli.js migration:run",
     "migration:revert": "ts-node ./node_modules/typeorm/cli.js migration:revert",
     "migration:generate": "ts-node src/test/generarMigracion.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.estricto.json",
     "test": "npm run test:unit && npm run test:int",
     "test:unit": "jest --selectProjects unit",
     "test:int": "ts-node src/test/resetDb.ts && jest --selectProjects integration --runInBand",

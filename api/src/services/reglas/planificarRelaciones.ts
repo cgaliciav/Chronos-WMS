@@ -85,7 +85,7 @@ const candidatas = (origenes: OrigenAbierto[]) =>
 const validarExplicitas = (e: EntradaPlan, elegibles: OrigenAbierto[], relTipo: RelacionTipo): RelacionPlaneada[] => {
   const vistos = new Set<number>();
   let suma = 0;
-  const filas = e.relaciones.map((r) => {
+  const filas = (e.relaciones ?? []).map((r) => {
     const origenId = Number(r.origenId);
     const cantidad = Number(r.cantidad);
     if (vistos.has(origenId)) throw new AppError(`El origen ${origenId} está repetido en las relaciones`, 400);

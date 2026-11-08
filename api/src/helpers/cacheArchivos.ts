@@ -23,8 +23,9 @@ export const escribirAtomico = async (ruta: string, datos: Buffer | string) => {
 export const rutaTemporal = (ruta: string) => `${ruta}.${process.pid}.${randomBytes(4).toString("hex")}.tmp`;
 
 /** Borra los archivos (no carpetas) de `directorio` modificados hace más de `maxEdadMs`. Devuelve cuántos borró. */
-export const limpiarDirectorio = async (directorio: string, maxEdadMs: number, ahora = Date.now()) => {
+export const limpiarDirectorio = async (directorio: string | undefined, maxEdadMs: number, ahora = Date.now()) => {
   let borrados = 0;
+  if (!directorio) return 0;
   let nombres: string[];
   try {
     nombres = await readdir(directorio);

@@ -3,38 +3,6 @@ import LogGeneralController from "../controllers/LogGeneral.Controller";
 import { LogTipo } from "../entity/LogGeneral";
 import { AppError } from "../helpers/errorClases";
 import { logger } from "../helpers/logger";
-// import { getRepository } from "typeorm";
-
-// import { LogTipo, LogGeneral } from "../entity/LogGeneral";
-// import { isString, isObject } from "util";
-// import { conexion } from "../conexionORM";
-
-declare function fnGeneralManejoErrores(req: Request, res: Response, next: NextFunction): any;
-
-declare function fnGeneralManejoErroresPromise(req: Request, res: Response, next: NextFunction): Promise<any>;
-
-const conManejoDeErroresPromise = fnGeneralManejoErroresPromise =>( 
-  (req: Request, res: Response, next: NextFunction) => 
-    fnGeneralManejoErroresPromise(req,res,next)
-    .then((val)=>{
-      if(val!==undefined){
-        logger.debug("conManejoDeErroresPromise->",val)
-      }
-    })
-    .catch(error=>next(error))
-)
-
-
-const conManejoDeErrores = fnGeneralManejoErrores => {
-    return (req: Request, res: Response, next: NextFunction) => {
-      try{
-        fnGeneralManejoErrores(req, res, next);
-      }
-      catch(error){
-        next(error)
-      }
-    };
-  };
 
 const errorCodes= (code:string):string=>{
   switch(code){

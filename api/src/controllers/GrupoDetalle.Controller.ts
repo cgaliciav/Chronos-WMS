@@ -121,7 +121,7 @@ class GrupoDetalleController {
     grupoDetalle.proyecto = await getRepository(Proyecto).findOneOrFail(
       proyectoId
     );
-    grupoDetalle.usuarios = await getRepository(Usuario).findByIds(usuariosIds);
+    grupoDetalle.usuarios = await getRepository(Usuario).findByIds(usuariosIds ?? []);
     await FacturaDetalleController.editar(
       grupoDetalle.facturaDetalle,
       numero,
