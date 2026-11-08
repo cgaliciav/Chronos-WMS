@@ -24,13 +24,14 @@ const BajasNuevo = () => {
       // tipoFactura,
       // fechaInicio,
       // fechaFin,
+      tipoBaja,
       usuariosResponsables:usuariosIds } = values;
     setGuardando(true);
 
     const resp = await GrupoPeticiones.nuevoConDetalles({
       nombre,
       proyectoId,
-      movimientoTipoId:5, // baja
+      movimientoTipoId: tipoBaja, // 13 BAJA JUSTIFICADA o 16 BAJA INJUSTIFICADA (el tipo 5 ya no se acepta)
       usuariosIds:usuariosIds.map(usr=>usr.key)
       
     })
@@ -63,6 +64,7 @@ const BajasNuevo = () => {
             mostrarProyectosInternos
             // proyectosExternos
             mostrarUsuarios
+            mostrarTipoBaja
             // proveedores
             // tipoFactura
             // fechaInicial
