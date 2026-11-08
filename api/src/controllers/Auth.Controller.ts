@@ -5,7 +5,7 @@ import { getRepository } from "typeorm";
 import { Sesion } from "../entity/Sesion";
 import { Usuario } from "../entity/Usuario";
 import { AppError } from "../helpers/errorClases";
-import {version, name} from "../../package.json" 
+import { nombrePaquete as name, versionPaquete as version } from "../helpers/paquete";
 // import config from "../config/config";
 
 const terminarSesion = async(sesionId:number) =>{

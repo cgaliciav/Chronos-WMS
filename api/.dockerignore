@@ -1,8 +1,11 @@
 node_modules
+build
+tmp
 .env
 .env.*
 !.env.example
 deploy*.sh
+desplegar.sh
 deploy_history
 .git
 .vscode

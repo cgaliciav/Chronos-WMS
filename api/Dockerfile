@@ -1,38 +1,45 @@
-FROM node:22-alpine
+# API del almacén · imagen multietapa (plan 02 fase 4)
+#   etapa build: instala todo, compila TypeScript (tsconfig.build.json) y quita las dependencias de desarrollo
+#   etapa final: solo build/, node_modules de producción y package.json; corre como el usuario node (uid 1000)
+# Secretos (JWTSECRET, DB_PASSWORD, SMTP_*) se inyectan con --env-file en docker run.
+# Migraciones: node build/migrar.js show|run|revert (docs/api/procedimiento-migracion-produccion.md).
 
-# Set work directory
-WORKDIR /code_test
+FROM node:24-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY tsconfig.json tsconfig.build.json ./
+COPY src ./src
+RUN npm run build && npm prune --omit=dev
 
-# Set enviroment variables
-# Secretos (JWTSECRET, DB_PASSWORD, SMTP_*) se inyectan con --env-file en docker run
-ENV SALT_ROUNDS=10
-ENV API_ALMACEN=/api
-ENV RUTA_ARCHIVOS=/code/exogrid/archivos/
-ENV RUTA_REPORTES=/code/exogrid/reportes/
-ENV UPLOADS=/code/exogrid/uploads/
-ENV ARCHIVOS_AUXILIARES=/code/exogrid/auxiliares/
-ENV DIAS_CUARENTENA=120
-ENV LOG_CONSOLE_VERBOSE=error
-ENV IMAGENES_IMPORTACION=/code/exogrid/imgproductos/
-ENV PORT_ALMACEN_API=4200
-ENV DB_HOST=mariadb
-ENV DB_USER=almacen_usr
-ENV DB_PORT=3306
-ENV DB_DATABASE_NAME=almacen_sony_migracion
-# El esquema lo cambian las migraciones (docs/api/procedimiento-migracion-produccion.md)
-ENV DB_SYNCRO=false
-ENV DB_CACHE=true
-ENV DB_LOGGING=error
+FROM node:24-alpine
+ENV NODE_ENV=production \
+    SALT_ROUNDS=10 \
+    API_ALMACEN=/api \
+    RUTA_ARCHIVOS=/code/exogrid/archivos/ \
+    RUTA_REPORTES=/code/exogrid/reportes/ \
+    UPLOADS=/code/exogrid/uploads/ \
+    ARCHIVOS_AUXILIARES=/code/exogrid/auxiliares/ \
+    IMAGENES_IMPORTACION=/code/exogrid/imgproductos/ \
+    DIAS_CUARENTENA=120 \
+    LOG_CONSOLE_VERBOSE=error \
+    LOG_NIVEL=info \
+    PORT_ALMACEN_API=4200 \
+    DB_HOST=mariadb \
+    DB_USER=almacen_usr \
+    DB_PORT=3306 \
+    DB_DATABASE_NAME=almacen_sony_migracion \
+    DB_SYNCRO=false \
+    DB_LOGGING=error
 
-EXPOSE $PORT_ALMACEN_API
+WORKDIR /app
+COPY --from=build --chown=node:node /app/package.json ./
+COPY --from=build --chown=node:node /app/node_modules ./node_modules
+COPY --from=build --chown=node:node /app/build ./build
+RUN mkdir -p /code/exogrid/archivos /code/exogrid/reportes /code/exogrid/uploads /code/exogrid/auxiliares /code/exogrid/imgproductos \
+    && chown -R node:node /code/exogrid
+
+USER node
 VOLUME ["/code/exogrid"]
-
-RUN npm i -g typescript@5.9.3 ts-node@10.9.2
-# Install dependencies
-COPY package*.json ./
-RUN npm install
-
-# Copy project
-COPY . .
-
-CMD ["npm", "start"]
+EXPOSE 4200
+CMD ["node", "build/index.js"]

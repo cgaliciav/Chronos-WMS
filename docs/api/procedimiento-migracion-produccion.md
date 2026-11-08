@@ -29,6 +29,10 @@ comprobar que las migraciones, aplicadas sobre una base vacía, reproducen exact
 
 ## Pasos
 
+Desde la fase 4 la imagen solo contiene el código compilado (sin ts-node): las migraciones se ejecutan con
+`node build/migrar.js show|run|revert`. `./desplegar.sh pruebas|produccion` (o `deploy*.sh`) ya **se detiene si hay
+migraciones pendientes**; sigue estos pasos a mano para aplicarlas y vuelve a desplegar.
+
 ```bash
 # 0. Variables (ajústalas)
 VERSION=2.64.0                          # etiqueta de la imagen nueva
@@ -45,8 +49,8 @@ ls -lh respaldo-*.sql.gz                # comprueba que no esté vacío
 # 2. Construir la imagen nueva (como hace deploy-production.sh) SIN detener todavía el API actual
 docker build -t almacen-backend:$VERSION .
 
-# 3. Ver qué migraciones faltan
-docker run --rm --env-file "$SECRETOS" -e DB_SYNCRO=false --network "$RED" almacen-backend:$VERSION npm run migration:show
+# 3. Ver qué migraciones faltan (sale con código 1 si hay pendientes)
+docker run --rm --env-file "$SECRETOS" -e DB_SYNCRO=false --network "$RED" almacen-backend:$VERSION node build/migrar.js show
 #    [ ] Baseline1794083852310
 #    [ ] MovimientoRelacion1794084035404
 
@@ -54,14 +58,15 @@ docker run --rm --env-file "$SECRETOS" -e DB_SYNCRO=false --network "$RED" almac
 docker stop almacen-backend-1
 
 # 5. Aplicar las migraciones
-docker run --rm --env-file "$SECRETOS" -e DB_SYNCRO=false --network "$RED" almacen-backend:$VERSION npm run migration:run
+docker run --rm --env-file "$SECRETOS" -e DB_SYNCRO=false --network "$RED" almacen-backend:$VERSION node build/migrar.js run
 
 # 6. Consultas de control (ver abajo). Si algo no cuadra: rollback.
 
 # 7. Arrancar el API nuevo
 docker rm almacen-backend-1
-docker run -d --env-file "$SECRETOS" -e DB_SYNCRO=false --name almacen-backend-1 -p 34400:4200 \
-  -v ./exogrid:/code/exogrid --network "$RED" almacen-backend:$VERSION
+sudo chown -R 1000:1000 ~/teleset-almacen/exogrid   # la imagen corre como el usuario node (uid 1000)
+docker run -d --restart unless-stopped --env-file "$SECRETOS" -e DB_SYNCRO=false --name almacen-backend-1 -p 34400:4200 \
+  -v ~/teleset-almacen/exogrid:/code/exogrid --network "$RED" almacen-backend:$VERSION
 docker logs -f almacen-backend-1        # no debe aparecer "hay migraciones pendientes" ni "DB_SYNCRO=true"
 ```
 
@@ -94,7 +99,7 @@ Tras arrancar, registra un préstamo y su devolución de prueba y comprueba que 
 ## Rollback
 
 - **Antes de arrancar el API nuevo** (o si nadie ha operado todavía): con la imagen nueva,
-  `npm run migration:revert` deshace `MovimientoRelacion` (la baseline no se revierte; no hace falta). Después
+  `node build/migrar.js revert` deshace `MovimientoRelacion` (la baseline no se revierte; no hace falta). Después
   vuelve a arrancar la imagen anterior **con `DB_SYNCRO=false`**: con `synchronize` la imagen anterior intentaría
   ajustar el esquema por su cuenta.
 - **Si la migración falló a medias**: MariaDB confirma cada sentencia DDL por separado, así que una migración
