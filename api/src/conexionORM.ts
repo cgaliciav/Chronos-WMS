@@ -1,5 +1,6 @@
 import { Connection, createConnection } from "typeorm";
 import { logger } from "./helpers/logger";
+import { aplicarParcheTypeorm } from "./helpers/parcheTypeorm";
 
 export let conexion: Connection;
 
@@ -9,6 +10,7 @@ export let conexion: Connection;
  * la consola, porque el código nuevo puede depender de tablas o columnas que aún no existen.
  */
 export const conectarORM = async () => {
+  aplicarParcheTypeorm(); // caché de replacePropertyNames (fase 4, docs/api/rendimiento.md)
   conexion = await createConnection();
   logger.info("conectado a la base de datos");
   if (conexion.options.synchronize) {

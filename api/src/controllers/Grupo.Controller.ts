@@ -553,7 +553,7 @@ class GrupoController {
       if (condicionesWhere.sql.length > 0) {
         qry.andWhere(condicionesWhere.sql, condicionesWhere.parametros);
       }
-      const filtered = await qry.getCount();
+      const filtered = condicionesWhere.sql.length > 0 ? await qry.getCount() : conteoTotal; // sin filtros sería el mismo COUNT
       const qryResult = await conSaldoPendiente(
         await qry.orderBy(campoOrden, direccion).skip(starts).take(pageSize).getMany()
       );

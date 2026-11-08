@@ -121,8 +121,11 @@ export default class {
     const qry = fnQuery();
     const conteoTotal = await qry.getCount();
 
-    aplicarFiltros(qry, fnFiltrado(filters ?? {}));
-    const conteoFiltrado = await qry.getCount();
+    const filtrado = fnFiltrado(filters ?? {});
+    aplicarFiltros(qry, filtrado);
+    // Sin condiciones el segundo COUNT sería idéntico al primero (fase 4: una consulta menos por listado).
+    const hayFiltro = typeof filtrado === "string" ? filtrado.length > 0 : filtrado.sql.length > 0;
+    const conteoFiltrado = hayFiltro ? await qry.getCount() : conteoTotal;
 
     qry.orderBy(campoOrden, direccion);
     qry.skip(starts).take(pageSize);
