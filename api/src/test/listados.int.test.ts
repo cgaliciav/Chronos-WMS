@@ -138,4 +138,13 @@ describe("listados tipados y tipos que no son movimientos", () => {
       expect((await editarListado(otro, 5)).status).toBe(400);
     });
   });
+
+  it("un artículo nuevo solo guarda el precio original (decisión 13: sin depreciación ni rentas)", async () => {
+    const { inventarioActualId } = await crearArticulo(api, { grupoId: grupoAlta, cantidad: 1, movimientoTipoId: 14, precio: 1234.5 });
+    const precios = await getConnection().query(
+      "SELECT pp.precioTipoId AS tipo, pp.precio FROM producto_precio pp JOIN inventario_actual ia ON ia.productoId = pp.productoId WHERE ia.id = ?",
+      [inventarioActualId]
+    );
+    expect(precios.map((p: any) => [Number(p.tipo), Number(p.precio)])).toEqual([[2, 1234.5]]);
+  });
 });
