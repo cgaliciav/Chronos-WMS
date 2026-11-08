@@ -10,6 +10,7 @@ import { idSeguro, idsSeguros } from "../helpers/ids";
 import CommonController, { ResultadoTabla } from "./common/Common.Controller";
 import InventarioActualHistoricoController from "./InventarioActualHistorico.Controller";
 import ProductoController from "./Producto.Controller";
+import { MovimientoTipoId as T } from "../entity/common/MovimientoTipoId";
 
 const queryBusqueda = () => {
     return (
@@ -513,9 +514,7 @@ class InventarioActualController {
     // obtener ultimo Movimiento --> esta en Movimientos
 
     // obtener ultima vez Inventariado
-    // -8	BAJA EN INVENTARIO	activo
-    // -9	INVENTARIO	activo
-    // -6	AJUSTE INVENTARIO	activo
+    // Tipos de inventario: AJUSTE_INVENTARIO (6), BAJA_EN_INVENTARIO (8), INVENTARIO (9)
     static obtenerMovimientosInventario = async (req: Request, res: Response, next: NextFunction) => {
         // La ruta es POST sin :id; el id viene en el body (hallazgo H10). Se acepta también en params por compatibilidad.
         const id = idSeguro(req.body?.inventarioActualId ?? req.params?.id, "inventarioActualId");
@@ -527,7 +526,7 @@ class InventarioActualController {
                     .innerJoin("operacion.movimientoTipo", "movimientoTipo")
                     .innerJoin("operacion.movimiento", "movimiento")
                     .innerJoin("movimiento.inventarioActual", "inventarioActual")
-                    .where("movimientoTipo.id in (6,8,9)")
+                    .where("movimientoTipo.id IN (:...tiposInventario)", { tiposInventario: [T.AJUSTE_INVENTARIO, T.BAJA_EN_INVENTARIO, T.INVENTARIO] })
                     .andWhere("inventarioActual.id = :id", { id })
                     .orderBy("operacion.id", "DESC")
                     .getMany()

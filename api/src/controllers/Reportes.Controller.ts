@@ -8,6 +8,7 @@ import { getRepository } from "typeorm";
 import { Usuario } from "../entity/Usuario";
 import EnviarMail from "../helpers/enviarMail";
 import { AppError } from "../helpers/errorClases";
+import { MovimientoTipoId as T } from "../entity/common/MovimientoTipoId";
 import {
   reportePorGrupo,
   reportePorProyecto,
@@ -143,7 +144,7 @@ const funcionQueryMovimientosReporteProyecto = async (
   correo: string
 ) => {
   try {
-    const condicion = (Array.isArray(body.movimientoTipoId) && body.movimientoTipoId.includes(15));
+    const condicion = (Array.isArray(body.movimientoTipoId) && body.movimientoTipoId.map(Number).includes(T.COMPRA));
     const path = condicion ? await reportePorProyectoCompras(body) : await reportePorProyecto(body);
     console.log(`************************funcionQueryMovimientosReporteProyecto${condicion ? "COMPRAS" : ""}`, {
       path,

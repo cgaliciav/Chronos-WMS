@@ -26,7 +26,7 @@ import InventarioActualController, {
 import MovimientoController from "./Movimiento.Controller";
 import MovimientoService from "../services/MovimientoService";
 import { exigirProyectoEditable } from "../services/guardasRelacion";
-import { TIPOS_ORIGEN } from "../entity/common/MovimientoTipoId";
+import { MovimientoTipoId as T, TIPOS_ORIGEN } from "../entity/common/MovimientoTipoId";
 import ProductoController from "./Producto.Controller";
 import { autogenerarCodigo } from "./ProductoClave.Controller";
 
@@ -949,7 +949,7 @@ class GrupoController {
       );
 
       for (const mov of await obtenerMovimientosConOperacionDeGrupo(grupoId)) {
-        await MovimientoController.editarOperacion(mov, 15, proyectoId, usuariosIds, jwtPayload.si);
+        await MovimientoController.editarOperacion(mov, T.COMPRA, proyectoId, usuariosIds, jwtPayload.si);
       }
 
       res.json();
@@ -1219,7 +1219,7 @@ class GrupoController {
             usuariosIds,
             sesionId: jwtPayload.si,
             grupoId,
-            compra: movimientoTipoId == 15 ? { precioUnitario, precioTotal, moneda } : undefined,
+            compra: Number(movimientoTipoId) === T.COMPRA ? { precioUnitario, precioTotal, moneda } : undefined,
           },
           manager
         );

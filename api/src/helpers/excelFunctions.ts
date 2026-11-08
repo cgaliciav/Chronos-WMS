@@ -2,6 +2,7 @@ import { stream, Table, Workbook, Worksheet } from "exceljs";
 import { performance } from "perf_hooks";
 import { Brackets, getConnection, getRepository, SelectQueryBuilder } from "typeorm";
 import { aplicarFiltros, columnaSegura, direccionSegura } from "./filtrosTabla";
+import { MovimientoTipoId as T } from "../entity/common/MovimientoTipoId";
 import {
   condicionesWhereAnd as condicionesWhereAndGrupo,
   condicionesWhereAndPrestamosActivos,
@@ -1378,7 +1379,7 @@ const reporteGeneral = async (body: {
     conFoto,
     {
       proyectosId: [proyectoId],
-      tiposMovimientosId: [1, 15],
+      tiposMovimientosId: [T.COMPRA_LEGADO, T.COMPRA],
       usuariosIds, fechaInicio, fechaFin, areasId, bodegasId, filters, campoOrden, direccion
     },
     t0
@@ -1392,7 +1393,7 @@ const reporteGeneral = async (body: {
     conFoto,
     {
       proyectosId: [proyectoId],
-      tiposMovimientosId: [3],
+      tiposMovimientosId: [T.PRESTAMO],
       usuariosIds, fechaInicio, fechaFin, areasId, bodegasId, filters, campoOrden, direccion
     },
     t0
@@ -1406,7 +1407,7 @@ const reporteGeneral = async (body: {
     conFoto,
     {
       proyectosId: [proyectoId],
-      tiposMovimientosId: [4],
+      tiposMovimientosId: [T.DEVOLUCION],
       usuariosIds, fechaInicio, fechaFin, areasId, bodegasId, filters, campoOrden, direccion
     },
     t0
@@ -1420,7 +1421,7 @@ const reporteGeneral = async (body: {
     conFoto,
     {
       proyectosId: [proyectoId],
-      tiposMovimientosId: [13],
+      tiposMovimientosId: [T.BAJA_JUSTIFICADA],
       usuariosIds, fechaInicio, fechaFin, areasId, bodegasId, filters, campoOrden, direccion
     },
     t0
@@ -1434,7 +1435,7 @@ const reporteGeneral = async (body: {
     conFoto,
     {
       proyectosId: [proyectoId],
-      tiposMovimientosId: [16],
+      tiposMovimientosId: [T.BAJA_INJUSTIFICADA],
       usuariosIds, fechaInicio, fechaFin, areasId, bodegasId, filters, campoOrden, direccion
     },
     t0
