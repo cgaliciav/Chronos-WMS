@@ -24,7 +24,10 @@ comprobar que las migraciones, aplicadas sobre una base vacía, reproducen exact
    `false`. La imagen ya trae `DB_SYNCRO=false`, pero `--env-file` lo sobrescribe. Si el API nuevo arrancara
    con `synchronize`, crearía las tablas nuevas **sin** marcar los movimientos legados ni la vista, y la
    migración fallaría después.
-3. Ten a mano una ventana de mantenimiento corta: la migración `MovimientoRelacion` recorre la tabla
+3. **Añade `ARCHIVOS_PUBLICOS=true` al archivo de secretos.** Desde la fase 2 los `GET /file/*` exigen token, pero el
+   front actual pide las imágenes y miniaturas con `<img src>` sin `?auth=` (columnasTablaOperaciones y otras): sin
+   esta variable las fotos dejan de verse. Se quitará cuando el front añada el token a esas URLs (plan 01, fase 3).
+4. Ten a mano una ventana de mantenimiento corta: la migración `MovimientoRelacion` recorre la tabla
    `movimiento` (dos `UPDATE`) y añade columnas; en tablas grandes puede tardar minutos.
 
 ## Pasos
