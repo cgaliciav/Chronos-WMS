@@ -6,6 +6,22 @@ import { Proyecto } from "../entity/Proyecto";
 import { Usuario } from "../entity/Usuario";
 import FacturaDetalleController from "./FacturaDetalle.Controller";
 import InventarioDetalleController from "./InventarioDetalle.Controller";
+import { AppError } from "../helpers/errorClases";
+import { esTipo, MovimientoTipoId as T, TIPOS_LISTADO_NO_PERMITIDOS } from "../entity/common/MovimientoTipoId";
+
+/** Listados nuevos (decisiones 11 y 12): ni BAJA* (5), que se sustituye por 13/16, ni tipos que no son movimientos. */
+export const exigirTipoDeListadoValido = (movimientoTipoId: number | string, tipoActual?: number) => {
+  const tipo = Number(movimientoTipoId);
+  if (tipo === T.BAJA_LEGADO && tipoActual === T.BAJA_LEGADO) return; // listado antiguo que conserva su tipo
+  if (esTipo(TIPOS_LISTADO_NO_PERMITIDOS, tipo)) {
+    throw new AppError(
+      tipo === T.BAJA_LEGADO
+        ? "Los listados de bajas son de BAJA JUSTIFICADA (13) o BAJA INJUSTIFICADA (16)"
+        : `El tipo ${tipo} (inventario o ajuste) no es un movimiento de almacén`,
+      400
+    );
+  }
+};
 
 const crearBaseGrupoDetalle = async (
   proyectoId: number | string | undefined,
@@ -13,6 +29,7 @@ const crearBaseGrupoDetalle = async (
   usuariosIds: (number | string)[] | undefined,
   sesionId: number
 ) => {
+  exigirTipoDeListadoValido(movimientoTipoId);
   const grupoDetalle = new GrupoDetalle();
 
   if (proyectoId !== undefined) {
@@ -91,6 +108,7 @@ class GrupoDetalleController {
     sesionId: number
   ) => {
     //al editar tipoMovimiento o proyecto, hay que editar todos los movimientos asociados. --->> se hace en GrupoController
+    exigirTipoDeListadoValido(movimientoTipoId, grupoDetalle.movimientoTipo?.id);
     grupoDetalle.sesionId = sesionId;
     grupoDetalle.movimientoTipo = await getRepository(
       MovimientoTipo

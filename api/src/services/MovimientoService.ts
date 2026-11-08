@@ -16,6 +16,7 @@ import {
   TIPOS_ENTRADA,
   TIPOS_ORIGEN,
   TIPOS_REGRESO,
+  tiposAdmitidosEnListado,
 } from "../entity/common/MovimientoTipoId";
 import { Grupo } from "../entity/Grupo";
 import { InventarioActual } from "../entity/InventarioActual";
@@ -198,6 +199,32 @@ const ultimaInstantaneaLegada = (manager: EntityManager, inventarioActualId: num
     .orderBy("h.id", "DESC")
     .getOne();
 
+/**
+ * Todas las líneas de un listado son del tipo del listado (decisión 11). Se comprueba el listado al que se añade el
+ * movimiento y, para PUT /groups/activity-add-transaction, los listados que ya lo contienen. Los listados sin detalle
+ * (listas libres) no restringen el tipo.
+ */
+const exigirTipoDelListado = async (manager: EntityManager, tipo: number, grupoId?: number, movimientoId?: number) => {
+  const listados: { grupo: string; tipo: number; nombre: string }[] = [];
+  const columnas = "g.nombre AS grupo, gd.movimientoTipoId AS tipo, mt.nombre AS nombre";
+  const unir = "INNER JOIN grupo_detalle gd ON gd.id = g.grupoDetalleId INNER JOIN movimiento_tipo mt ON mt.id = gd.movimientoTipoId";
+  if (grupoId !== undefined) {
+    listados.push(...(await manager.query(`SELECT ${columnas} FROM grupo g ${unir} WHERE g.id = ?`, [grupoId])));
+  }
+  if (movimientoId !== undefined) {
+    listados.push(
+      ...(await manager.query(
+        `SELECT ${columnas} FROM grupo_movimientos_movimiento gm INNER JOIN grupo g ON g.id = gm.grupoId ${unir} WHERE gm.movimientoId = ?`,
+        [movimientoId]
+      ))
+    );
+  }
+  const distinto = listados.find((l) => !tiposAdmitidosEnListado(Number(l.tipo)).includes(tipo));
+  if (distinto) {
+    throw new AppError(`El listado ${distinto.grupo} es de ${distinto.nombre}: solo admite movimientos de ese tipo`, 400);
+  }
+};
+
 /** Ejecuta `fn` en una transacción READ COMMITTED (cada lectura ve lo confirmado tras obtener el bloqueo). */
 const enTransaccion = <R>(fn: (manager: EntityManager) => Promise<R>, manager?: EntityManager): Promise<R> =>
   manager ? fn(manager) : getConnection().transaction("READ COMMITTED", fn);
@@ -253,6 +280,7 @@ export default class MovimientoService {
 
     const movimientoId = await enTransaccion(async (manager) => {
       const { inventario, productoId } = await bloquearInventario(manager, inventarioActualId);
+      await exigirTipoDelListado(manager, tipo, idOpcional(datos.grupoId, "grupoId"), movimientoExistenteId);
 
       let movimiento: Movimiento;
       if (movimientoExistenteId !== undefined) {

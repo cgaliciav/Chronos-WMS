@@ -26,7 +26,7 @@ import InventarioActualController, {
 import MovimientoController from "./Movimiento.Controller";
 import MovimientoService from "../services/MovimientoService";
 import { exigirProyectoEditable } from "../services/guardasRelacion";
-import { MovimientoTipoId as T, TIPOS_ORIGEN } from "../entity/common/MovimientoTipoId";
+import { MovimientoTipoId as T, TIPOS_ORIGEN, tiposAdmitidosEnListado } from "../entity/common/MovimientoTipoId";
 import ProductoController from "./Producto.Controller";
 import { autogenerarCodigo } from "./ProductoClave.Controller";
 
@@ -948,7 +948,7 @@ class GrupoController {
         jwtPayload.si
       );
 
-      for (const mov of await obtenerMovimientosConOperacionDeGrupo(grupoId)) {
+      for (const mov of (await obtenerMovimientosConOperacionDeGrupo(grupoId)).filter((m) => m.operacion)) {
         await MovimientoController.editarOperacion(mov, T.COMPRA, proyectoId, usuariosIds, jwtPayload.si);
       }
 
@@ -971,6 +971,19 @@ class GrupoController {
       if (grupo === undefined) throw new AppError("Grupo ID no encontrado");
       await exigirProyectoEditable({ grupoId }, proyectoId); // antes de modificar nada (plan 02 fase 3)
 
+      // Todas las líneas son del tipo del listado (decisión 11). Se valida ANTES de modificar nada: el tipo solo
+      // puede cambiar entre BAJA JUSTIFICADA (13) e INJUSTIFICADA (16), o seguir igual.
+      const nuevoTipo = Number(movimientoTipoId);
+      const movimientos = (await obtenerMovimientosConOperacionDeGrupo(grupoId)).filter((m) => m.operacion); // las líneas sin operación no tienen tipo
+      const intercambiables = [T.BAJA_JUSTIFICADA, T.BAJA_INJUSTIFICADA];
+      for (const mov of movimientos) {
+        const actual = Number(mov.operacion.movimientoTipo.id);
+        const admitido = tiposAdmitidosEnListado(nuevoTipo).includes(actual) || (intercambiables.includes(actual) && intercambiables.includes(nuevoTipo));
+        if (!admitido) {
+          throw new AppError("No se puede cambiar el tipo de un listado que ya tiene movimientos (solo entre baja justificada e injustificada)", 400);
+        }
+      }
+
       await GrupoDetalleController.editar(
         grupo.grupoDetalle,
         proyectoId,
@@ -979,8 +992,10 @@ class GrupoController {
         jwtPayload.si
       );
 
-      for (const mov of await obtenerMovimientosConOperacionDeGrupo(grupoId)) {
-        await MovimientoController.editarOperacion(mov, movimientoTipoId, proyectoId, usuariosIds, jwtPayload.si);
+      for (const mov of movimientos) {
+        // Listado antiguo de BAJA* (5): cada línea conserva su tipo (13 o 16); solo cambian proyecto y responsables.
+        const tipoLinea = nuevoTipo === T.BAJA_LEGADO ? mov.operacion.movimientoTipo.id : nuevoTipo;
+        await MovimientoController.editarOperacion(mov, tipoLinea, proyectoId, usuariosIds, jwtPayload.si);
       }
 
       res.json();

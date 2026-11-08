@@ -34,7 +34,7 @@ describe("aplicarEfecto: validaciones comunes a los 17 tipos", () => {
     }
   });
 
-  it.each(todos)("tipo %i: un artículo dado de baja no admite operaciones → 400", (tipo) => {
+  it.each(todos.filter((t) => ![6, 9, 10].includes(t)))("tipo %i: un artículo dado de baja no admite operaciones → 400", (tipo) => {
     const e = error(() => aplicarEfecto(tipo, ESTADOS.baja, 1));
     expect(e.statusCode).toBe(400);
     expect(e.message).toMatch(/DADO DE BAJA/);
@@ -107,10 +107,12 @@ describe("aplicarEfecto: bajas (5, 8, 13, 16, 17)", () => {
   );
 });
 
-describe("aplicarEfecto: administrativos (6, 9, 10)", () => {
-  it.each([T.AJUSTE_INVENTARIO, T.INVENTARIO, T.AJUSTE_ADMINISTRADOR])("tipo %i no modifica el inventario", (tipo) => {
-    for (const inicial of [ESTADOS.disponible, ESTADOS.completo, ESTADOS.sinExistencia]) {
-      expect(aplicarEfecto(tipo, inicial, 7)).toEqual(inicial);
+describe("aplicarEfecto: inventarios y ajustes (6, 9, 10) no son movimientos (decisión 12)", () => {
+  it.each([T.AJUSTE_INVENTARIO, T.INVENTARIO, T.AJUSTE_ADMINISTRADOR])("tipo %i se rechaza con 400", (tipo) => {
+    for (const inicial of [ESTADOS.disponible, ESTADOS.completo, ESTADOS.sinExistencia, ESTADOS.baja]) {
+      const e = error(() => aplicarEfecto(tipo, inicial, 1));
+      expect(e.statusCode).toBe(400);
+      expect(e.message).toMatch(/no es un movimiento de almacén/);
     }
   });
 });
@@ -138,7 +140,7 @@ describe("revertirEfecto (deshacer por efecto inverso)", () => {
     expect(error(() => revertirEfecto(tipo, estado(1, 3), 3)).statusCode).toBe(409);
   });
 
-  it("los administrativos no cambian nada", () => {
+  it("los inventarios y ajustes antiguos se deshacen sin cambiar nada", () => {
     expect(revertirEfecto(T.INVENTARIO, ESTADOS.disponible, 9)).toEqual(ESTADOS.disponible);
     expect(revertirEfecto(T.AJUSTE_INVENTARIO, ESTADOS.disponible, 9)).toEqual(ESTADOS.disponible);
     expect(revertirEfecto(T.AJUSTE_ADMINISTRADOR, ESTADOS.disponible, 9)).toEqual(ESTADOS.disponible);

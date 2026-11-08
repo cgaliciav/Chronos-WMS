@@ -5,7 +5,7 @@
  * `MovimientoService.resolverRelaciones`.
  */
 import { InventarioDisponible } from "../../entity/common/InventarioDisponible";
-import { MovimientoTipoId as T } from "../../entity/common/MovimientoTipoId";
+import { esTipo, MovimientoTipoId as T, TIPOS_NO_MOVIMIENTO } from "../../entity/common/MovimientoTipoId";
 import { AppError } from "../../helpers/errorClases";
 
 export interface EstadoInventario {
@@ -66,10 +66,7 @@ const EFECTOS: Record<number, (e: EstadoInventario, n: number) => EstadoInventar
   [T.BAJA_INJUSTIFICADA]: baja,
   [T.BAJA_EN_INVENTARIO]: baja,
   [T.BAJA_ADMINISTRADOR]: baja,
-  // Administrativos: hoy no modifican el inventario (plan 02 §7, revisar con el propietario).
-  [T.AJUSTE_INVENTARIO]: (e) => ({ ...e }),
-  [T.INVENTARIO]: (e) => ({ ...e }),
-  [T.AJUSTE_ADMINISTRADOR]: (e) => ({ ...e }),
+  // 6, 9 y 10 no son movimientos (decisión 12): aplicarEfecto los rechaza.
 };
 
 /** Valida y calcula el estado del inventario tras aplicar `cantidad` de un movimiento de tipo `tipo`. */
@@ -77,6 +74,9 @@ export const aplicarEfecto = (tipo: number | string, estado: EstadoInventario, c
   const n = Number(cantidad);
   if (!Number.isFinite(n) || n <= 0) {
     throw new AppError("La cantidad de operación debe ser mayor de 0", 400);
+  }
+  if (esTipo(TIPOS_NO_MOVIMIENTO, tipo)) {
+    throw new AppError(`El tipo ${tipo} (inventario o ajuste) no es un movimiento de almacén y no se registra como operación`, 400);
   }
   if (estado.disponible === InventarioDisponible.BAJA) {
     throw new AppError("ARTÍCULO DADO DE BAJA. NO SE PERMITEN OPERACIONES", 400);
@@ -98,6 +98,7 @@ const INVERSOS: Record<number, (e: EstadoInventario, n: number) => EstadoInventa
   [T.TRANSFERENCIA_ORIGEN]: (e, n) => deshacerRegreso(e, n),
   [T.ALTA]: (e, n) => deshacerAlta(e, n),
   [T.ALTA_LEGADO]: (e, n) => deshacerAlta(e, n),
+  // Movimientos antiguos de inventario/ajuste (ya no se registran): se pueden deshacer sin tocar el inventario.
   [T.AJUSTE_INVENTARIO]: (e) => ({ ...e }),
   [T.INVENTARIO]: (e) => ({ ...e }),
   [T.AJUSTE_ADMINISTRADOR]: (e) => ({ ...e }),

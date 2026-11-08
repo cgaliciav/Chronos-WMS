@@ -38,8 +38,20 @@ export const TIPOS_ORIGEN: number[] = [...TIPOS_SALIDA, T.COMPRA];
 export const TIPOS_REGRESO: number[] = [T.DEVOLUCION, T.TRANSFERENCIA_ORIGEN, T.BAJA_JUSTIFICADA, T.BAJA_INJUSTIFICADA, T.BAJA_LEGADO];
 /** Bajas que cierran el inventario completo sin proyecto. */
 export const TIPOS_BAJA_LIBRE: number[] = [T.BAJA_EN_INVENTARIO, T.BAJA_ADMINISTRADOR];
-/** Sin efecto en el inventario. */
-export const TIPOS_ADMINISTRATIVOS: number[] = [T.AJUSTE_INVENTARIO, T.INVENTARIO, T.AJUSTE_ADMINISTRADOR];
+/**
+ * No son movimientos de almacén (decisión 12): un inventario o un ajuste no mueve artículos. El API ya no registra
+ * operaciones ni crea listados con estos tipos; solo existen en datos antiguos (y se pueden deshacer).
+ */
+export const TIPOS_NO_MOVIMIENTO: number[] = [T.AJUSTE_INVENTARIO, T.INVENTARIO, T.AJUSTE_ADMINISTRADOR];
+/** Tipos con los que ya no se crean listados: BAJA* (5, sustituido por 13 y 16; decisión 11) y los que no son movimientos. */
+export const TIPOS_LISTADO_NO_PERMITIDOS: number[] = [T.BAJA_LEGADO, ...TIPOS_NO_MOVIMIENTO];
+
+/**
+ * Tipos de movimiento que admite un listado (decisión 11): todas sus líneas son del tipo del listado. Los listados
+ * antiguos de BAJA* (5) contienen bajas justificadas e injustificadas, así que admiten 13 y 16.
+ */
+export const tiposAdmitidosEnListado = (tipoListado: number): number[] =>
+  Number(tipoListado) === T.BAJA_LEGADO ? [T.BAJA_JUSTIFICADA, T.BAJA_INJUSTIFICADA] : [Number(tipoListado)];
 /** Tipos cuyo saldo pendiente se calcula (vista `v_movimiento_saldo`): orígenes + transferencia origen (para su 12). */
 export const TIPOS_CON_SALDO: number[] = [...TIPOS_ORIGEN, T.TRANSFERENCIA_ORIGEN];
 
