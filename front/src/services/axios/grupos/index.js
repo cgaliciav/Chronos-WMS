@@ -39,22 +39,16 @@ export default class GrupoPeticiones extends PeticionBase {
   
   static nuevoConDetalles = (parametros = {}) => super.generalPost(portionEndPoint,"new-details",parametros)
   
-  static nuevoConInventario = (parametros = {}) => super.generalPost(portionEndPoint,"new-inventory",parametros)
-  
   static editarConDetalle = (parametros = {}) => super.generalPut(portionEndPoint,"edit-details",parametros)
 
   static editarConCompra = (parametros = {}) => super.generalPut(portionEndPoint,"edit-purchase",parametros)
 
-  static editarconInventario = (parametros = {}) => super.generalPut(portionEndPoint,"edit-inventory",parametros)
 
 
   static movimientosPorGrupo = (parametros = {}) => super.generalPost(portionEndPoint,"activity-list-by-group",parametros)
 
   static movimientosActivosProyecto = (parametros = {}) => super.generalPost(portionEndPoint,"active-activity-list",parametros)
 
-  static inventarioPendiente = (parametros = {}) => super.generalPost(portionEndPoint,"inventory-todo-list",parametros)
-  
-  static inventarioHecho = (parametros = {}) => super.generalPost(portionEndPoint,"inventory-done-list",parametros)
 
 
   static agregarMovimiento =  (parametros = {}) => super.generalPut(portionEndPoint,"activity",parametros)
