@@ -9,7 +9,7 @@ import { FacturaTipo } from "./FacturaTipo";
 import { Grupo } from "./Grupo";
 import { GrupoDetalle } from "./GrupoDetalle";
 import { InventarioActual } from "./InventarioActual";
-import { InventarioActualHistorico } from "./InventarioAcutalHistorico";
+import { InventarioActualHistorico } from "./InventarioActualHistorico";
 import { InventarioDetalle } from "./InventarioDetalle";
 import { LogFuncionamiento } from "./LogFuncionamiento";
 import { LogGeneral } from "./LogGeneral";

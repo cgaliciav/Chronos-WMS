@@ -1,6 +1,6 @@
 import { getRepository } from "typeorm";
 import { InventarioActual } from "../entity/InventarioActual";
-import { InventarioActualHistorico } from "../entity/InventarioAcutalHistorico";
+import { InventarioActualHistorico } from "../entity/InventarioActualHistorico";
 
 
 class InventarioActualHistoricoController{

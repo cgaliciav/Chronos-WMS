@@ -4,7 +4,7 @@ import { Area } from "../entity/Area";
 import { Producto } from "../entity/Producto";
 import { ProductoTipo } from "../entity/ProductoTipo";
 import CommonController from "./common/Common.Controller";
-import ProductoCaracteristicaController from "./ProductoCaractetistica.Controller";
+import ProductoCaracteristicaController from "./ProductoCaracteristica.Controller";
 import ProductoClaveController from "./ProductoClave.Controller";
 import ProductoPrecioController from "./ProductoPrecio.Controller";
 

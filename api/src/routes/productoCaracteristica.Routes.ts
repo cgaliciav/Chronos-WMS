@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import ProductoCaracteristicaController from "../controllers/ProductoCaractetistica.Controller";
+import ProductoCaracteristicaController from "../controllers/ProductoCaracteristica.Controller";
 import { checkJwt } from "../middlewares/verificarJwt";
 import { checkRole } from "../middlewares/verificarRol";
 

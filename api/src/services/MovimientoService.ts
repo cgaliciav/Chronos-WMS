@@ -19,7 +19,7 @@ import {
 } from "../entity/common/MovimientoTipoId";
 import { Grupo } from "../entity/Grupo";
 import { InventarioActual } from "../entity/InventarioActual";
-import { InventarioActualHistorico } from "../entity/InventarioAcutalHistorico";
+import { InventarioActualHistorico } from "../entity/InventarioActualHistorico";
 import { LogTipo } from "../entity/LogGeneral";
 import { Movimiento } from "../entity/Movimiento";
 import { MovimientoRelacion } from "../entity/MovimientoRelacion";
