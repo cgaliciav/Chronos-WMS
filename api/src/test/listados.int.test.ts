@@ -147,4 +147,23 @@ describe("listados tipados y tipos que no son movimientos", () => {
     );
     expect(precios.map((p: any) => [Number(p.tipo), Number(p.precio)])).toEqual([[2, 1234.5]]);
   });
+
+  it("POST /groups/list-by-group-antd acepta uno o varios tipos de listado", async () => {
+    const justificadas = (await nuevoListado(13)).body.id;
+    const injustificadas = (await nuevoListado(16)).body.id;
+    const listar = async (movimientoTipoId: unknown) => {
+      const res = await api.post("/groups/list-by-group-antd").send({
+        movimientoTipoId, sortField: "grupo.id", sortOrder: "descend", pagination: { current: 1, pageSize: 500 }, filters: {},
+      });
+      expect(res.status).toBe(200);
+      return res.body.results.map((g: any) => g.id);
+    };
+    const ambos = await listar([13, 16, 5]);
+    expect(ambos).toEqual(expect.arrayContaining([justificadas, injustificadas]));
+    const solo13 = await listar(13);
+    expect(solo13).toContain(justificadas);
+    expect(solo13).not.toContain(injustificadas);
+    const invalido = await api.post("/groups/list-by-group-antd").send({ movimientoTipoId: ["13 OR 1=1"], pagination: { current: 1, pageSize: 10 } });
+    expect(invalido.status).toBe(400);
+  });
 });

@@ -385,10 +385,9 @@ class GrupoController {
     let fnQuery: () => SelectQueryBuilder<any>;
 
     if (movimientoTipoId !== undefined) {
-      fnQuery = () =>
-        funcionQueryListado().where("movimientoTipo.id=:movimientoTipoId", {
-          movimientoTipoId,
-        });
+      // Uno o varios tipos: los listados de bajas piden [13, 16, 5] (justificadas, injustificadas y BAJA* antiguos).
+      const tipos = idsSeguros(Array.isArray(movimientoTipoId) ? movimientoTipoId : [movimientoTipoId], "movimientoTipoId");
+      fnQuery = () => funcionQueryListado().where("movimientoTipo.id IN (:...tiposListado)", { tiposListado: tipos });
     } else {
       fnQuery = () => funcionQueryListado().where("grupoDetalle.id is NULL");
     }
