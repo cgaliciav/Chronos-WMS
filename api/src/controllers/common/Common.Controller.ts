@@ -1,4 +1,5 @@
 import { validate } from "class-validator";
+import { OPCIONES_VALIDACION } from "../../helpers/validacion";
 import { FindManyOptions, getRepository, Like, Repository, SelectQueryBuilder } from "typeorm";
 import { Archivo } from "../../entity/Archivo";
 import { Area } from "../../entity/Area";
@@ -151,7 +152,7 @@ export default class {
   static nuevo = async (repo: Repository<any>, registro: any, body: any, sesionId: number, camposPermitidos?: string[]) => {
     registro.sesionId = sesionId;
     copiarCampos(registro, body, camposPermitidos);
-    const error = await validate(registro);
+    const error = await validate(registro, OPCIONES_VALIDACION);
     if (error.length > 0) {
       const errorMap = error.map((obj) => obj.property);
       throw new AppError(`Error de validación en: ${errorMap.join(", ")}`, 400);
@@ -168,7 +169,7 @@ export default class {
   static editarConRegistro = async (repo: Repository<any>, registro: any, body: any, sesionId: number, camposPermitidos?: string[]) => {
     registro.sesionId = sesionId;
     copiarCampos(registro, body, camposPermitidos);
-    const error = await validate(registro);
+    const error = await validate(registro, OPCIONES_VALIDACION);
     if (error.length > 0) {
       const errorMap = error.map((obj) => obj.property);
       throw new AppError(`Error de validación en: ${errorMap.join(", ")}`, 400);

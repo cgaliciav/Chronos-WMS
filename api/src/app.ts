@@ -4,6 +4,7 @@ import cors from "cors";
 import routes from "./routes";
 import { errorMiddlewere } from "./middlewares/manejoErrores";
 import { pasadas } from "./middlewares/pasada";
+import { registrarPeticiones } from "./middlewares/registrarPeticiones";
 import rateLimit from "express-rate-limit";
 import { Sentry, sentryActivo } from "./sentry";
 
@@ -11,8 +12,9 @@ import { Sentry, sentryActivo } from "./sentry";
  * Construye la aplicación Express sin arrancar el servidor ni conectar la base de datos.
  * `src/index.ts` la usa para producción; las pruebas de integración la usan con supertest.
  */
-export const crearApp = () => {
+export const crearApp = (opciones: { registrarPeticiones?: boolean } = {}) => {
   const app = express();
+  if (opciones.registrarPeticiones) app.use(registrarPeticiones); // LogPeticiones (solo en index.ts)
 
   // IP real del cliente detrás del proxy inverso (nginx/docker). TRUST_PROXY admite los valores de Express:
   // "loopback" (por defecto), "loopback, 172.18.0.0/16", un número de saltos, "true"...

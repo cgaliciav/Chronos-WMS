@@ -1,4 +1,5 @@
 import { validate } from "class-validator";
+import { OPCIONES_VALIDACION } from "../helpers/validacion";
 import { NextFunction, Request, Response } from "express";
 import { getRepository } from "typeorm";
 import { Area } from "../entity/Area";
@@ -276,7 +277,7 @@ class UsuarioController{
       usuario.areas = await getRepository(Area).findByIds(areasIds);
       usuario.sesionId = si;
 
-      const error = await validate(usuario);
+      const error = await validate(usuario, OPCIONES_VALIDACION);
       if (error.length > 0) {
         const errorMap = error.map(obj=>obj.property);
         throw new AppError(`Error de validación en: ${errorMap.join(", ")}`,400);
