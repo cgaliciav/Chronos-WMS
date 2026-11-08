@@ -89,14 +89,14 @@ erDiagram
 | `OperacionDetalle` | `operacion_detalle` | Precio unitario/total y moneda. Solo para operaciones de COMPRA (tipo 15). |
 | `OperacionPrecio` | `operacion_precio` | Precios por tipo asociados a una operación (renta, préstamo). Declarado pero prácticamente sin uso en controladores. |
 | `MovimientoTipo` | `movimiento_tipo` | Catálogo de los 17 tipos (ver `tipos-de-movimiento.md`). Los ids están **hardcodeados** en el código. |
-| `Grupo` | `grupo` | Listado de movimientos (una compra/factura, un préstamo a un proyecto, un inventario, una lista libre). Nombre único. |
+| `Grupo` | `grupo` | Listado de movimientos (una compra/factura, un préstamo a un proyecto, una lista libre). Nombre único. Con `GrupoDetalle`, todas sus líneas son del tipo del listado (decisión 11). |
 | `GrupoDetalle` | `grupo_detalle` | Cabecera del grupo: tipo de movimiento, proyecto, usuarios; opcionalmente `FacturaDetalle` (compra) o `InventarioDetalle` (inventario físico). |
 | `FacturaDetalle` | `factura_detalle` | Datos de la factura de una compra: número, fecha, total, impuestos, monto ingresado, proveedor, tipo de factura. |
 | `InventarioDetalle` | `inventario_detalle` | Fechas inicio/fin y bodega de un inventario físico. **Sin uso:** los endpoints que lo creaban se retiraron (decisión 10); se conserva por los grupos antiguos. |
 | `ProductoInventariado` | `producto_inventariado` | Resultado de revisar un producto en un inventario (`inventarioPositivo`, `inventarioNegativo`, `no-revisado`). También lo escribe `MovimientoService.registrarOperacion` en cada operación. |
 | `ProductoValidado` | `producto_validado` | Validación de calidad del producto (`valido`, `invalido`, `no-revisado`). |
 | `ProductoClave` | `producto_clave` | Código de barras (`barras`, único) y su tipo. Es la llave con la que el front identifica artículos (`obtenerInventarioActualDeCodigo`). |
-| `ProductoPrecio` / `PrecioTipo` | `producto_precio`, `precio_tipo` | Precios por tipo (compra, renta, etc.) y moneda. |
+| `ProductoPrecio` / `PrecioTipo` | `producto_precio`, `precio_tipo` | Precios por tipo y moneda. Solo se usa el tipo 2 (COMPRA ORIGEN); los artículos nuevos solo guardan ese (decisión 13). |
 | `ProductoCaracteristica` | `producto_caracteristica` | Pares llave/valor libres. |
 | `Bodega` | `bodega` | Almacén físico. `cobacha: boolean` marca bodegas secundarias. |
 | `Area` | `area` | Departamento/área dueña de productos. Limita lo que ve cada usuario. |

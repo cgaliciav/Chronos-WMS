@@ -402,6 +402,8 @@ F7 puede adelantarse tras F3 si el front la necesita antes.
 
 - ~~`nuevoConInventario` toma inventarios de **todas** las bodegas~~ → resuelto: el inventario físico por grupos se
   eliminó el 2026-11-08 (decisión 10).
-- El front envía tipo 15 (COMPRA) al crear un inventario y el tipo legado 5 en bajas (fase 4, paso 3).
-- Tipos 6, 9 y 10 no tienen efecto en inventario hoy.
-- Duración del JWT (hoy 12 h sin renovación efectiva; se unifica a 12 h en fase 2).
+- ~~El front envía tipo 15 al crear un inventario y el tipo legado 5 en bajas~~ → resuelto: listados del tipo que
+  contienen, bajas 13/16 (decisiones 10 y 11).
+- ~~Tipos 6, 9 y 10 sin efecto~~ → no son movimientos; el API los rechaza (decisión 12).
+- ~~Depreciación (M5)~~ → no se implementa; solo precio original (decisión 13).
+- ~~Duración del JWT~~ → se mantiene 12 h renovable en cada petición (decisión 14).

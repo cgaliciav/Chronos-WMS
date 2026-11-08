@@ -54,6 +54,17 @@ los marcados con ⚠.
 - ⚠ Retirados `GET /groups/export-to-supabase/:id` y `GET /current-inventory/export-to-supabase/:id` (el front no los usaba).
 - ⚠ `POST /auth/logout` revoca el token: después, ese token responde 401 ("Sesión terminada").
 
+**Cambios del 2026-11-08 (decisiones 11-13):**
+- ⚠ `PUT /groups/activity`, `/activity-purchase` y `/activity-add-transaction` responden 400 si el tipo de la operación
+  no es el del listado ("El listado X es de … : solo admite movimientos de ese tipo"). Los listados antiguos de tipo 5
+  admiten 13 y 16; las listas libres (sin detalle) no restringen.
+- ⚠ `POST /groups/new-details` y `PUT /groups/edit-details` rechazan los tipos 5 (usar 13 o 16), 6, 9 y 10. Un listado
+  antiguo de tipo 5 puede editarse conservando el 5 (sus líneas mantienen su tipo). `edit-details` solo cambia el tipo
+  si las líneas lo admiten (13 ↔ 16 cambia todas las líneas); si no, 400 sin modificar nada.
+- ⚠ Las operaciones de tipo 6, 9 y 10 se rechazan con 400.
+- `POST /groups/list-by-group-antd`: `movimientoTipoId` admite un número o un arreglo (el front de bajas envía `[13, 16, 5]`).
+- Los artículos nuevos (`PUT /groups/activity-purchase`) solo guardan el precio original (tipo 2) en `productoPrecios`.
+
 **Retirado el 2026-11-08 (decisión 10):** el inventario físico por grupos nunca se terminó ni se usó. Se eliminan
 `POST /groups/new-inventory`, `PUT /groups/edit-inventory`, `POST /groups/inventory-todo-list` y
 `POST /groups/inventory-done-list` (ahora 404), y en el front la página huérfana `7.inventario/nuevo` y sus métodos de

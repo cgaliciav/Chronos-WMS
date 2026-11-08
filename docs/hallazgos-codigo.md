@@ -61,7 +61,7 @@ fase se corrige cada uno.
 | M2 | `Common.editar:254`, `Archivo:211`, `InventarioActual:378`, `ProductoClave:53,73,95`, `ProductoCaractetistica:65,87`, `ProductoPrecio:234` … | Seguridad | **✅ Corregido (fase 2):** `idSeguro`/`idsSeguros` antes de cada `findOne`. Ids del body sin tipar hacia `findOneOrFail(id)` en TypeORM 0.2.41 + `mysql`: un objeto como id se serializa en pares `clave='valor'` (inyección por objeto, clase CVE-2022-33171). Además `findOne(undefined)` devuelve la **primera fila** en 0.2 (`ProductoInventariado.guardar`, `crearBaseOperacion`, suscriptor). |
 | M3 | `Auth.Controller.ts:27-53` | Seguridad | **✅ Corregido (fase 2):** `express-rate-limit` en `/auth/login`; la IP viene de `req.ip` con `trust proxy`. Sin límite de intentos; correo inexistente → `EntityNotFound` vs contraseña incorrecta → 401 (enumeración de usuarios); la `IP` de sesión la envía el cliente (`req.body.ip`). |
 | M4 | `ProductoPrecio.Controller.ts:237-242` | Integridad | **✅ Corregido (fase 2):** `jwtPayload.si`. `editar` pasa el objeto `jwtPayload` completo como `sesionId` (debe ser `jwtPayload.si`). |
-| M5 | `ProductoPrecio.Controller.ts:29,80-89,187` | Lógica | Depreciación: `edad` siempre 0; `porcentajeEdad.concat(array5)` se descarta; el `reduce` aplica las 5 tasas al crear; si falta un `Parametro`, las tasas quedan en 0. |
+| M5 | `ProductoPrecio.Controller.ts:29,80-89,187` | Lógica | **✅ Resuelto (decisión 13):** la depreciación no se implementa; los artículos nuevos solo guardan el precio original y se borró el cálculo. Depreciación: `edad` siempre 0; `porcentajeEdad.concat(array5)` se descarta; el `reduce` aplica las 5 tasas al crear; si falta un `Parametro`, las tasas quedan en 0. |
 | M6 **[verificado]** | `InventarioDetalle.Controller.ts:13-15` | Lógica | **✅ Corregido (fase 2):** condición corregida. Condición invertida: `if(fechaFin===undefined) fechaFin = new Date(fechaFin)` → `Invalid Date` cuando falta, y nunca se asigna cuando viene. |
 | M7 | `ProductoClave.Controller.ts:35,339-347` | Lógica · concurrencia | **✅ Corregido (fase 2):** `sesionId` asignado; `padStart`; tabla vacía → 5000. `ppccNuevo.sesionId` expresión sin efecto; `autogenerarCodigo` falla con tabla vacía (`lastreg` undefined), produce `"undefined…"` si el código ≥ 10 caracteres y dos llamadas concurrentes generan el mismo código. |
 | M8 | `ProductoClave.Controller.ts:98-105`; `ProductoCaractetistica.Controller.ts:88-93`; `common/Common.Controller.ts:450` (`quitarArchivo`); `Comentario.Controller.ts:57,61` | Seguridad · lógica | **✅ Corregido (fase 2):** se verifica pertenencia al padre antes de borrar (404 si no). Al borrar hijos no se verifica que pertenezcan al padre (IDOR). `arch.id!==fileId` / `comentario.id!==comentarioId` comparan número con string → la relación nunca se filtra pero el hijo sí se borra. |
@@ -112,7 +112,7 @@ fase se corrige cada uno.
 | L15 | `InventarioActual.Controller.ts:777-790` | **✅ Corregido (fase 4):** `MovimientoTipoId` en todo `src` (consulta parametrizada). `in (6,8,9)` hardcodeado bajo un comentario que lista `-8,-9,-6`. Magic numbers de `MovimientoTipo` en todo el código. |
 | L16 | `Grupo.Controller.test.ts`; `Archivo.Controller.test.ts` | **✅ Corregido (fase 2):** sustituidos por pruebas reales (fase 0). El primero mockea `typeorm` completo (rompe los decoradores al importar entidades) y `./InventarioActual.Controller` como objeto plano cuando el módulo exporta una clase por defecto; `res.json` no está mockeado → la prueba no puede pasar. El segundo es `expect(1+1).toBe(2)`. |
 | L17 | `README.md` | **✅ Corregido (fase 4):** README actualizado (Node 24, MariaDB ≥ 10.11). Dice Node 12.16 / MariaDB 10.4 / TypeORM 0.2.24; `.nvmrc` dice 14.17; `Dockerfile` usa 14.21; `package.json` 0.2.41. MariaDB 10.4 está fuera de soporte. |
-| L18 | Front `pages/operaciones/7.inventario/nuevo/index.js:35` y `3.bajas/nuevo/index.js:33` | **Inventario retirado (decisión 10):** la página `7.inventario/nuevo` se eliminó; queda el tipo 5 de `3.bajas/nuevo`. El front envía `movimientoTipoId: 15` (COMPRA) para un inventario y el tipo legado `5` para bajas. |
+| L18 | Front `pages/operaciones/7.inventario/nuevo/index.js:35` y `3.bajas/nuevo/index.js:33` | **✅ Resuelto (decisiones 10 y 11):** el front crea los listados de bajas como 13 o 16 y el API rechaza el 5. **Inventario retirado (decisión 10):** la página `7.inventario/nuevo` se eliminó; queda el tipo 5 de `3.bajas/nuevo`. El front envía `movimientoTipoId: 15` (COMPRA) para un inventario y el tipo legado `5` para bajas. |
 
 ---
 
@@ -127,7 +127,7 @@ fase se corrige cada uno.
 | F3 | `src/services/axios/grupos/index.js:27` | `finalizar` hace `PUT groups/list-by-group-antd` (ruta del listado) en vez de `groups/closure/:id`. | `super.generalPut(portionEndPoint,"list-by-group-antd",parametros)` |
 | F4 | `src/redux/user/sagas.js:126-136` | `LOGOUT` reinicia `name/role/email` (llaves de la plantilla) en vez de `nombre/correo/permisos`: los permisos siguen en memoria tras cerrar sesión. | |
 | F5 | `src/redux/settings/sagas.js` (`SETUP`) | Cualquier parámetro de la query string se convierte en un ajuste del store en cada navegación (`qs.parse` + `changeSetting`). | |
-| F6 | `src/pages/operaciones/7.inventario/nuevo/index.js:35`; `3.bajas/nuevo/index.js:33` | **Inventario retirado (decisión 10);** queda el tipo 5 de bajas. Tipos de movimiento incorrectos/legados enviados al API (15 para inventario, 5 para baja). | |
+| F6 | `src/pages/operaciones/7.inventario/nuevo/index.js:35`; `3.bajas/nuevo/index.js:33` | **✅ Resuelto (decisiones 10 y 11):** el front crea los listados de bajas como 13 o 16 y el API rechaza el 5. **Inventario retirado (decisión 10);** queda el tipo 5 de bajas. Tipos de movimiento incorrectos/legados enviados al API (15 para inventario, 5 para baja). | |
 
 ### B.2 Medios
 
@@ -184,7 +184,7 @@ físico: H15/L18/F6, decisión 10). `npm audit --omit=dev`: queda **1 crítico**
 TypeORM 1.x en la fase 6) y altos en `multer`, `jsonwebtoken`, `nodemailer` y `sharp` (actualizaciones mayores de la
 fase 5). Rendimiento medido en `docs/api/rendimiento.md`.
 
-Siguen abiertos: M5 (depreciación; revisar con el propietario), M14, M22, L11 (`excelFunctions.ts`, fuera del
+Siguen abiertos: M14, M22, L11 (`excelFunctions.ts`, fuera del
 `strict` progresivo) y toda la sección B (plan 01).
 
 ## D. Resumen por prioridad de corrección (original)

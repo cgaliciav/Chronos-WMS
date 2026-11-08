@@ -15,6 +15,10 @@ Respuestas de César Galicia a las dudas planteadas tras la auditoría. Son vinc
 | 6 | Backfill | **Solo movimientos nuevos**; no se relacionan los históricos. Respaldo de BD disponible más adelante. | Plan 02 regla 8 (modo de compatibilidad) |
 | 7a | Sentry | **Dejar preparado** (API y front), activo solo si hay DSN. | Plan 02 fase 2 paso 11; plan 01 D16 |
 | 7b | Supabase | **Se quita** (código y dependencia). | Plan 02 fases 3 y 4 |
-| 8 | Comportamientos dudosos (`nuevoConInventario` sin filtro de bodega; tipos 15/5 que envía el front) | **Revisar sobre la marcha.** | Plan 02 §7 |
+| 8 | Comportamientos dudosos (`nuevoConInventario` sin filtro de bodega; tipos 15/5 que envía el front) | **Revisar sobre la marcha.** Resuelto con las decisiones 10 y 11. | Plan 02 §7 |
 | 9 | API de pruebas para e2e | **No existe.** Los e2e del front usan MSW; el `docker-compose.test.yml` del plan 02 fase 0 será la primera API de pruebas. | Plan 01 D18; plan 02 fase 0 |
 | 10 | Inventario físico por grupos (`POST /groups/new-inventory` y afines) | **Se elimina** (2026-11-08): nunca se terminó ni se usó. Se conserva la tabla `inventario_detalle` por los datos existentes. | Plan 02 §7; `api/endpoints.md` |
+| 11 | Tipo de los listados | Un listado es **del tipo de movimiento que contiene** y todas sus líneas son de ese tipo. Los listados de bajas son de BAJA JUSTIFICADA (13) o INJUSTIFICADA (16); el tipo legado 5 ya no se usa (los listados antiguos de tipo 5 siguen admitiendo 13 y 16). | `api/endpoints.md`; front `3.bajas` |
+| 12 | Tipos 6, 9 y 10 | Un inventario o un ajuste **no es un movimiento**: el API los rechaza como operación y como tipo de listado. | `api/tipos-de-movimiento.md` |
+| 13 | Depreciación de precios | **No se implementa**: solo se usa el precio original (tipo 2). Los artículos nuevos solo guardan ese precio. | Hallazgo M5 |
+| 14 | Duración de la sesión | **Se mantiene** el token de 12 h que se renueva en cada petición (caduca tras 12 h sin uso o al cerrar sesión). | Plan 02 §7 |

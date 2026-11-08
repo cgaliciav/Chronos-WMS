@@ -45,7 +45,9 @@ Documentación detallada: `docs/api/modelo-de-datos.md`, `docs/api/tipos-de-movi
 
 ## Conceptos clave
 
-- **Grupo** = listado (una compra/factura, un préstamo a un proyecto, un inventario físico o una lista libre).
+- **Grupo** = listado (una compra/factura, un préstamo a un proyecto, una baja… o una lista libre). Un listado con
+  `GrupoDetalle` es del tipo de movimiento que contiene: todas sus líneas son de ese tipo (decisión 11; las bajas son
+  13 o 16). Los tipos 6, 9 y 10 no son movimientos (decisión 12).
   **Movimiento** = una línea del listado: `cantidad` de un **InventarioActual** (existencia de un
   producto en una bodega). **Operacion** = la acción aplicada al movimiento (tipo, proyecto, usuarios, fecha).
 - Registrar una operación (`PUT /groups/activity`) pasa por `GrupoController.agregarMovimiento` →
