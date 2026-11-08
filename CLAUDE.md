@@ -34,7 +34,7 @@ No hay `node_modules` ni base de datos en este repositorio; cada app se instala 
 - `docs/hallazgos-codigo.md`: fallos conocidos con archivo:línea y severidad. Si corriges uno, márcalo ahí.
 - `docs/planes/01-front-actualizacion-antd.md`: plan por fases para Vite + React 19 + antd 6 y retirar Clean UI.
 - `docs/planes/02-api-relacion-movimientos.md`: plan por fases para la relación origen→derivado entre
-  movimientos, transacciones, migraciones y limpieza. Fases 0-3 hechas; la siguiente es la 4 (limpieza).
+  movimientos, transacciones, migraciones y limpieza. Fases 0-4 hechas; la siguiente es la 5 (dependencias de runtime: Express 5, jsonwebtoken 9, multer 2, sharp…).
 
 ## Flujo de trabajo esperado
 

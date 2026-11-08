@@ -265,7 +265,32 @@ no incluye `c` en la respuesta. Las de caracterización siguen verdes (10 cambia
 **Aceptación:** suite verde; `DB_SYNCRO=false` en todos los entornos; `docs/api/procedimiento-migracion-produccion.md`
 (respaldo `mariadb-dump`, `migration:run`, verificación con consultas de control, rollback con `migration:revert`).
 
-### Fase 4 · Limpieza y optimización del código
+### Fase 4 · Limpieza y optimización del código ✅ (hecha el 2026-11-08)
+
+> **Resultado:** suite completa en verde con Node 22 y Node 24, `npm run typecheck` (normal + estricto) y
+> `npm run build` sin errores; rendimiento antes/después en `docs/api/rendimiento.md` (los listados triplican las
+> peticiones por segundo). Commits `api: fase 4 del plan 02, paso N`.
+>
+> **Desviaciones y pendientes:**
+> - **Paso 4 (asyncHandler):** no se hizo; el propio plan admite resolverlo con Express 5 en la fase 5, que pasa las
+>   promesas rechazadas a `next` por sí solo. Hacerlo dos veces no aporta.
+> - **Paso 5 (eager):** no se quitaron las relaciones `eager`: los listados y `GET /activity/:id` usan QueryBuilder
+>   (que no las carga) y el detalle hace 4 consultas (objetivo < 10). Quitarlas cambiaría el JSON que usa el front.
+>   La mejora real vino de un **parche de caché** sobre `QueryBuilder.replacePropertyNames` de TypeORM 0.2
+>   (`helpers/parcheTypeorm.ts`, con prueba de equivalencia del SQL; se retira en la fase 6) y de no repetir el COUNT.
+> - **`pino-http`** escribe el log por petición; `LogPeticiones` lo alimenta un middleware propio
+>   (`middlewares/registrarPeticiones.ts`), no pino-http.
+> - **Paso 2:** además se pasó a `mysql2` 3 (el driver real ya no es el abandonado `mysql`) y a `class-validator` 0.15,
+>   ambos críticos en `npm audit`. `package.json` usa `overrides` para que `typeorm` 0.2 acepte `mysql2` 3.
+>   **`npm audit --omit=dev` no queda sin críticos:** queda `typeorm` 0.2 (solo se corrige con TypeORM 1.x, fase 6).
+> - **Paso 3 (front):** el tipo legado 5 que envía `3.bajas/nuevo` sigue pendiente de revisar con el propietario.
+> - **Paso 7:** `strict` progresivo con `tsconfig.estricto.json` (services, helpers salvo `excelFunctions`, esquemas,
+>   middlewares, migration). `useDefineForClassFields: false` es obligatorio con ES2022 y TypeORM.
+> - **Paso 8:** `desplegar.sh pruebas|produccion` unifica los dos scripts y se detiene si hay migraciones pendientes;
+>   en la imagen las migraciones se aplican con `node build/migrar.js` (no hay ts-node). La imagen no se pudo
+>   construir en el entorno de desarrollo (sin Docker); se simularon sus dos etapas. **Primer despliegue:** el
+>   volumen `exogrid` debe pertenecer al uid 1000 (el script lo ajusta con `sudo chown`).
+> - Fuera del plan, a petición del propietario: se retiró el inventario físico por grupos (decisión 10).
 
 1. Borrar `src/entity-old/`, `src/excel.ts`, código Supabase (`obtenerGenerarArchivo*Supabase`,
    `export2Supabase`, `convert*`), imports muertos (`setSourceMapRange`, `isJSDocReadonlyTag`, `register`,

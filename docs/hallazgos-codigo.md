@@ -74,10 +74,10 @@ fase se corrige cada uno.
 | M15 | `ProductoValidado.Controller.ts:23`; `ProductoInventariado.Controller.ts:26,29,34` | Integridad | **✅ Corregido (fase 2):** `findOneOrFail`. `findOne(productoId)` puede ser `undefined` → fila con `producto = null`; `nombre` lleva sufijo `Math.random()`. |
 | M16 | `Archivo.Controller.ts:187,352` | Lógica | **✅ Corregido (fase 2):** `esImagen(tipoMIME)`. `thumbUrl` se decide por `archivo.tipo` (etiqueta libre) en vez de `tipoMIME` → casi siempre `""`. |
 | M17 | `Archivo.Controller.ts:125-145,245-252` | Rendimiento · concurrencia | **✅ Corregido (fase 2):** miniaturas solo para imágenes (400 en otro caso); **Fase 3:** escritura atómica (temporal + rename) del BLOB y las miniaturas, limpieza periódica (`CACHE_ARCHIVOS_DIAS`, `REPORTES_DIAS`) y borrado de las copias al eliminar un archivo (`helpers/cacheArchivos.ts`). Cada lectura materializa el BLOB a disco bajo `RUTA_ARCHIVOS` sin limpieza (el cron es un TODO en `Reportes.Controller.ts:24-26`); `existsSync` + `writeFile` compiten en peticiones concurrentes; blobs no imagen pasan por `sharp()` en `/thumbnail` → 500. |
-| M18 | `src/excel.ts` | Código muerto · lógica | Worker nunca lanzado (`fork` comentado). Si se usara: `conectarORM()` no se espera; `reporteGeneral(body.proyectoId, body.conFoto)` pasa 2 argumentos a una función de 1 objeto. |
+| M18 | `src/excel.ts` | Código muerto · lógica | **✅ Corregido (fase 4):** `src/excel.ts` borrado. Worker nunca lanzado (`fork` comentado). Si se usara: `conectarORM()` no se espera; `reporteGeneral(body.proyectoId, body.conFoto)` pasa 2 argumentos a una función de 1 objeto. |
 | M19 | `package.json` + `src/index.ts:1` | Configuración | **✅ Corregido (fase 2):** `dotenv` declarado. `dotenv` se importa pero **no está declarado**: se resuelve porque `typeorm@0.2` depende de él. TypeORM ≥ 0.3 lo elimina → la app no arranca. |
 | M20 **[verificado]** | `deploy.sh:52` | Configuración | **✅ Corregido (fase 2):** espacio añadido. Falta un espacio: `--exclude ".git/"--rsync-path="sudo rsync"` → `.git/` se copia al servidor y no se usa `sudo rsync`. Ambos scripts hacen `git commit`+`git tag` antes de desplegar y nunca `push`; `docker kill` con `set -e` aborta si el contenedor no existe. |
-| M21 | `Dockerfile:3,8-11,30-33`; `deploy.sh:69` | Configuración | `WORKDIR /code_test` pero rutas/`VOLUME` en `/code/exogrid`; el deploy de pruebas monta `-v ./exogrid:/code_test/exogrid` → archivos/reportes en el FS efímero. Producción corre `ts-node ./src/index.ts` (compila en cada arranque), `npm install` con devDeps, `node:14.21` (EOL). |
+| M21 | `Dockerfile:3,8-11,30-33`; `deploy.sh:69` | Configuración | **✅ Corregido (fase 4):** imagen multietapa (`WORKDIR /app`, datos en `/code/exogrid`, usuario no root) y `desplegar.sh` monta el volumen en `/code/exogrid` en ambos entornos. `WORKDIR /code_test` pero rutas/`VOLUME` en `/code/exogrid`; el deploy de pruebas monta `-v ./exogrid:/code_test/exogrid` → archivos/reportes en el FS efímero. Producción corre `ts-node ./src/index.ts` (compila en cada arranque), `npm install` con devDeps, `node:14.21` (EOL). |
 | M22 | `helpers/enviarMail.ts:6-17,29-46,152-154` | Lógica | `headers` no es opción de transporte (se ignora); `transporter.verify()` hace red al importar; `enviarCorreoHTML` envía `text` (HTML crudo como texto). |
 | M23 **[verificado]** | `Grupo.Controller.ts:159,162`; `Reportes.Controller.ts:146` | Lógica | **✅ Corregido (fase 2):** `construirFiltros` con expresiones regulares correctas. `condicionesWhereAndPrestamosActivos`: `if (key.indexOf("nombre") || key.indexOf("correo"))` es verdadero para cualquier llave que no empiece por la palabra (−1 es truthy) → todo filtro se trata como LIKE y se le hace `.pop()`. Selección de tipo de reporte por magic id (`includes(15)`). |
 | M24 | `src/index.ts:116-128` | Lógica | **✅ Corregido (fase 2):** solo SIGTERM/SIGINT. Handler `process.on("exit", async …)` llama a `process.exit(0)` dentro del propio `exit` (recursivo) y los `await` no se ejecutan en `exit`. |
@@ -102,16 +102,16 @@ fase se corrige cada uno.
 | L5 | `Archivo.Controller.ts:35-117`; `InventarioActual.Controller.ts:389-576,806-842`; `Grupo.Controller.ts:513-880` | Código Supabase muerto/comentado (≈ 600 líneas): `obtenerGenerarArchivo*Supabase`, `export2Supabase`, `convertAviability/…`, `convertMovementType/InvoiceType`. |
 | L6 | `InventarioActual.Controller.ts:123-176,196-198,228-231,762-767` | ≈ 55 líneas de consulta heredada comentada; `queryBusquedaFacturas` vacío. |
 | L7 | `Reportes.Controller.ts:6,19,39-62,97-108,…` | Import `Movimiento` sin uso, 5 bloques MagicBell comentados, funciones vacías, `jwtPayload.ui` sin efecto (211). |
-| L8 | `LogPeticiones.Controllers.ts` (0 bytes), `LogOperacion.Controller.ts` | Archivos vacíos/sin referencia; nombre en plural. |
+| L8 | `LogPeticiones.Controllers.ts` (0 bytes), `LogOperacion.Controller.ts` | **✅ Corregido (fase 4):** archivos borrados. Archivos vacíos/sin referencia; nombre en plural. |
 | L9 | `src/entity-old/*` (20 archivos) + `Grupo.Controller.ts:32` | Esquema heredado `teleset_almacen_200414`; único uso: import sin usar `Movimientos`. |
 | L10 | `Movimiento.Controller.ts:3`; `Grupo.Controller.ts:10`; `manejoErrores.ts:2`; `entity/ProductoCaracteristica.ts:2`; `Usuario.Controller.ts:3`; `enviarMail.ts:1` | **✅ Corregido (fase 2):** imports muertos eliminados en Movimiento, Grupo, manejoErrores, Usuario. Imports sin uso: `setSourceMapRange`, `isJSDocReadonlyTag` (de `typescript`), `register` (ts-node), `indexOf`/`filter`/`method` (lodash). |
 | L11 | `helpers/excelFunctions.ts` (2 810 líneas) | `reporteGeneral2`, `reporteMaquillajeGeneral` sin uso (hardcode `area.id=1`); pares casi duplicados `reportePorGrupo`/`…FotoGrande`, `reportePorProyecto`/`…Compras`; 5 variantes de `obtenerRenglonesMovimiento*`; nombres de archivo con `Math.random()`. |
 | L12 | `Proyecto.Controller.ts:35-49` | `listaSimpleExterna/Interna` cargan todos los proyectos y filtran en JS. |
-| L13 | `tsconfig.json:20-22`; `.hintrc` | `exclude` apunta a un archivo inexistente; `lib` mezcla es5/es6/ESNext; `strict: false`. |
-| L14 | `package.json` | Sin script `test`; `ngrok`/`dev2` con rutas Windows; `packageManager: yarn@3.2.3` pero solo hay `package-lock.json`; `@types/*`, `typescript`, `ts-node(-dev)` en `dependencies`; sin uso: `@supabase/supabase-js`, `@magicbell/core`, `@sentry/*`, `prom-client`, `express-prom-bundle`, `request`, `request-promise`, `@types/request*`, `randomstring`, `file-type`, `moment`; `lodash` marginal. |
-| L15 | `InventarioActual.Controller.ts:777-790` | `in (6,8,9)` hardcodeado bajo un comentario que lista `-8,-9,-6`. Magic numbers de `MovimientoTipo` en todo el código. |
+| L13 | `tsconfig.json:20-22`; `.hintrc` | **✅ Corregido (fase 4):** ES2022, sin `exclude` obsoleto y `tsconfig.estricto.json` (strict progresivo). `exclude` apunta a un archivo inexistente; `lib` mezcla es5/es6/ESNext; `strict: false`. |
+| L14 | `package.json` | **✅ Corregido (fase 4):** dependencias sin uso retiradas, tipos y herramientas en devDependencies, sin scripts de Windows ni `packageManager` de Yarn. Sin script `test`; `ngrok`/`dev2` con rutas Windows; `packageManager: yarn@3.2.3` pero solo hay `package-lock.json`; `@types/*`, `typescript`, `ts-node(-dev)` en `dependencies`; sin uso: `@supabase/supabase-js`, `@magicbell/core`, `@sentry/*`, `prom-client`, `express-prom-bundle`, `request`, `request-promise`, `@types/request*`, `randomstring`, `file-type`, `moment`; `lodash` marginal. |
+| L15 | `InventarioActual.Controller.ts:777-790` | **✅ Corregido (fase 4):** `MovimientoTipoId` en todo `src` (consulta parametrizada). `in (6,8,9)` hardcodeado bajo un comentario que lista `-8,-9,-6`. Magic numbers de `MovimientoTipo` en todo el código. |
 | L16 | `Grupo.Controller.test.ts`; `Archivo.Controller.test.ts` | **✅ Corregido (fase 2):** sustituidos por pruebas reales (fase 0). El primero mockea `typeorm` completo (rompe los decoradores al importar entidades) y `./InventarioActual.Controller` como objeto plano cuando el módulo exporta una clase por defecto; `res.json` no está mockeado → la prueba no puede pasar. El segundo es `expect(1+1).toBe(2)`. |
-| L17 | `README.md` | Dice Node 12.16 / MariaDB 10.4 / TypeORM 0.2.24; `.nvmrc` dice 14.17; `Dockerfile` usa 14.21; `package.json` 0.2.41. MariaDB 10.4 está fuera de soporte. |
+| L17 | `README.md` | **✅ Corregido (fase 4):** README actualizado (Node 24, MariaDB ≥ 10.11). Dice Node 12.16 / MariaDB 10.4 / TypeORM 0.2.24; `.nvmrc` dice 14.17; `Dockerfile` usa 14.21; `package.json` 0.2.41. MariaDB 10.4 está fuera de soporte. |
 | L18 | Front `pages/operaciones/7.inventario/nuevo/index.js:35` y `3.bajas/nuevo/index.js:33` | **Inventario retirado (decisión 10):** la página `7.inventario/nuevo` se eliminó; queda el tipo 5 de `3.bajas/nuevo`. El front envía `movimientoTipoId: 15` (COMPRA) para un inventario y el tipo legado `5` para bajas. |
 
 ---
@@ -176,6 +176,16 @@ Siguen abiertos: M5 (depreciación; revisar con el propietario), M14, M18, M21, 
 números mágicos que quedan en controladores, L15, código muerto) y toda la sección B (plan 01). Puntos a revisar con
 el propietario (plan 02 §7): tipo 5 que envía el front en bajas, tipos 6/9/10 sin efecto. (`nuevoConInventario` se
 eliminó el 2026-11-08, decisión 10.)
+
+## C ter. Estado tras la fase 4 del plan 02 (2026-11-08)
+
+Corregidos en la fase 4: **M18**, **M21**, **L8**, **L13**, **L14**, **L15**, **L17** (y retirado el inventario
+físico: H15/L18/F6, decisión 10). `npm audit --omit=dev`: queda **1 crítico** (`typeorm` 0.2, se resuelve con
+TypeORM 1.x en la fase 6) y altos en `multer`, `jsonwebtoken`, `nodemailer` y `sharp` (actualizaciones mayores de la
+fase 5). Rendimiento medido en `docs/api/rendimiento.md`.
+
+Siguen abiertos: M5 (depreciación; revisar con el propietario), M14, M22, L11 (`excelFunctions.ts`, fuera del
+`strict` progresivo) y toda la sección B (plan 01).
 
 ## D. Resumen por prioridad de corrección (original)
 
