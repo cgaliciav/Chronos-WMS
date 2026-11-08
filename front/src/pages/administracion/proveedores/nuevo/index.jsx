@@ -3,7 +3,7 @@ import Titulo from 'components/Titulo'
 import { useNavigate } from 'react-router'
 import { Divider } from 'antd'
 import { notification } from 'helpers/feedback'
-import ACL from 'components/cleanui/system/ACL'
+import ACL from 'app/auth/ACL'
 import ProveedorPeticiones from 'services/axios/proveedores'
 import FormaProveedor from '../componentes/forma'
 

@@ -5,7 +5,7 @@ import { formatoMonedaMexico } from 'helpers/funcionesExtras'
 import Validacion from 'pages/catalogos/6.validaciones/componentes/validacion'
 import Inventariado from 'pages/catalogos/6.validaciones/componentes/inventariado'
 
-// import ACL from 'components/cleanui/system/ACL';
+// import ACL from 'app/auth/ACL';
 
 const ArticuloDatos = ({
   producto: {

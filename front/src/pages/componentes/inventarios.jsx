@@ -4,7 +4,7 @@ import dayjs from 'dayjs'
 import ProductoInventariadoPeticiones from 'services/axios/productoInventariado'
 import { AlertTwoTone, FrownTwoTone, MehTwoTone, SmileTwoTone } from '@ant-design/icons'
 
-// import ACL from 'components/cleanui/system/ACL';
+// import ACL from 'app/auth/ACL';
 
 const Inventarios = ({ productoId = 0, loading }) => {
   const [habilitadoInterno, setHabilitadoInterno] = useState(true)

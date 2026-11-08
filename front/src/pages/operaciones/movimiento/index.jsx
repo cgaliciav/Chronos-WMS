@@ -3,7 +3,7 @@ import Titulo from 'components/Titulo'
 import { useLocation } from 'react-router'
 import QueryString from 'query-string'
 import { Row, Divider, Col, Typography, Tabs } from 'antd'
-import ACL from 'components/cleanui/system/ACL'
+import ACL from 'app/auth/ACL'
 import MovimientoPeticiones from 'services/axios/movimientos'
 import SubirArchivos from 'pages/componentes/subirArchivos';
 import Comentarios from 'pages/componentes/comentarios';

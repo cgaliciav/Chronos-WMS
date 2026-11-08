@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Button, Popconfirm, Row, Table, Tag, Tooltip, Typography, Space } from 'antd'
 import { notification } from 'helpers/feedback'
 import { PlusOutlined } from '@ant-design/icons'
-// import ACL from 'components/cleanui/system/ACL';
+// import ACL from 'app/auth/ACL';
 import ProductoCaracteristicaPeticiones from 'services/axios/productoCaracteristicas'
 import ModalFormaCaracteristica from './formaCaracteristica'
 

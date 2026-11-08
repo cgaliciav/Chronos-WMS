@@ -3,7 +3,7 @@ import { Table, Row, Tag, Descriptions } from 'antd'
 import dayjs from 'dayjs'
 import MovimientoPeticiones from 'services/axios/movimientos'
 
-// import ACL from 'components/cleanui/system/ACL';
+// import ACL from 'app/auth/ACL';
 
 const Movimientos = ({ 
   inventarioActualId,

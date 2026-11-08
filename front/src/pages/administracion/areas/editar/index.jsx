@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router'
 import { Button, Divider, Row } from 'antd'
 import { notification } from 'helpers/feedback'
 import QueryString from 'query-string'
-import ACL from 'components/cleanui/system/ACL'
+import ACL from 'app/auth/ACL'
 import AreaPeticiones from 'services/axios/areas'
 import FormaArea from '../componentes/forma'
 

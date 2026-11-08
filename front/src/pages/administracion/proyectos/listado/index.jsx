@@ -2,7 +2,7 @@ import React from 'react'
 import Titulo from 'components/Titulo'
 import { Popconfirm, Tag, Tooltip } from 'antd'
 import dayjs from 'dayjs'
-import ACL from 'components/cleanui/system/ACL'
+import ACL from 'app/auth/ACL'
 import ProyectosPeticiones from 'services/axios/proyectos'
 import {
   obtenerPropsBusquedaCheck,

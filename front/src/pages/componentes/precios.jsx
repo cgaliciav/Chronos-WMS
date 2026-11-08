@@ -3,7 +3,7 @@ import { Row, Table, Typography, Tooltip, Tag } from 'antd'
 import { formatoMonedaMexico } from 'helpers/funcionesExtras'
 import ProductoPrecioPeticiones from 'services/axios/productoPrecios'
 import ModalFormaPrecios from './formaPrecios'
-// import ACL from 'components/cleanui/system/ACL';
+// import ACL from 'app/auth/ACL';
 
 const PreciosProducto = ({ productoPrecios, loading, editar, fnActualizar }) => {
   const [habilitadoInterno, setHabilitadoInterno] = useState(true)

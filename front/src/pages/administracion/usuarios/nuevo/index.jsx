@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router'
 import { Divider } from 'antd'
 import { notification } from 'helpers/feedback'
 import dayjs from 'dayjs'
-import ACL from 'components/cleanui/system/ACL'
+import ACL from 'app/auth/ACL'
 import UsuarioPeticiones from 'services/axios/usuarios'
 import FormaUsuario from '../componentes/forma'
 

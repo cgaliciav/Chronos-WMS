@@ -3,7 +3,7 @@ import Titulo from 'components/Titulo'
 import { Popconfirm, Tag, Tooltip } from 'antd'
 import { notification } from 'helpers/feedback'
 import dayjs from 'dayjs'
-import ACL from 'components/cleanui/system/ACL'
+import ACL from 'app/auth/ACL'
 import GrupoPeticiones from 'services/axios/grupos'
 import {
   obtenerPropsBusquedaInput,

@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import Titulo from 'components/Titulo'
 // import { Tag, Tooltip } from 'antd'
 // import moment from 'moment'
-import ACL from 'components/cleanui/system/ACL'
+import ACL from 'app/auth/ACL'
 import GrupoPeticiones from 'services/axios/grupos'
 // import {
 //   obtenerPropsBusquedaInput,

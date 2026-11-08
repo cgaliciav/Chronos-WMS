@@ -1,9 +1,7 @@
-// antd 6 inyecta sus estilos (CSS-in-JS) con el tema de `tema.ts`; aquí van el reset y los estilos heredados.
+// antd 6 inyecta sus estilos (CSS-in-JS) con el tema de `tema.ts`; aquí solo van el reset y las utilidades
+// temporales que usan las páginas aún no convertidas.
 import 'antd/dist/reset.css'
-import 'bootstrap/dist/css/bootstrap.min.css'
-import 'react-perfect-scrollbar/dist/css/styles.css'
-import './global.scss' // estilos de la plantilla aún en uso (se retiran en la fase 6)
-import './styles/layout-plantilla.css'
+import './styles/utilities.css'
 
 import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router'

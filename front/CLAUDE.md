@@ -24,23 +24,20 @@ src/pages/catalogos/        búsquedas (general, por códigos, bajas, por proyec
 src/pages/operaciones/      1.prestamos 2.devoluciones 3.bajas 4.compras 5.altas 6.rentaExterna 7.inventario 8.previo movimiento/ componentes/
 src/pages/reportes/         por-usuario, de-cierre
 src/pages/componentes/      modales/formularios compartidos (precios, claves, características, archivos, comentarios, imágenes)
-src/pages/auth/             login, 401, 404, 500, 503
-src/layouts/                Public / Auth / Main (Main usa componentes de cleanui)
+src/app/                    armazón en TS: layouts (Raiz/Main/Auth), menu (menuItems + useMenuItems),
+                            auth (ACL, LoginPage), errors (ErrorPage, ErrorBoundary), notificaciones (campana)
 src/stores/                 usuario.store.ts (sesión, permisos, login/logout), ui.store.ts (menú colapsado, móvil)
 src/services/axios/         TypeScript: apiClient + PeticionBase genérica + 20 clases por recurso; conToken(url)
-src/services/menu/index.js  menú estático con `role` por entrada
 src/types/api.ts            tipos de las respuestas del API
-src/router.tsx              67 rutas (createHashRouter + React.lazy); layouts/index.jsx es el elemento raíz
+src/router.tsx              67 rutas (createHashRouter + React.lazy); app/layouts/RaizLayout es el elemento raíz
 src/index.tsx               createRoot, ConfigProvider (es_ES + tema.ts), <App>, Sentry (solo con VITE_SENTRY_DSN)
 src/tema.ts                 tokens del tema claro de antd 6 (colores, fuente Mukta, radios) y configuracionTag
 ```
 
-**Lo que queda de la plantilla está en uso** (las demos se borraron en la fase 1 del plan 01):
-`src/components/cleanui/{layout,system}` (layout, `ACL`, `Login`, páginas de error) y los estilos globales que
-importa `global.scss`: `components/{kit-core,kit-vendors/{bootstrap,perfect-scrollbar},cui-styles}` y
-`components/kit/core/mixins.scss`, más `src/styles/layout-plantilla.css` (reglas del layout sobre antd). El tema de
-antd 6 se define con tokens en `src/tema.ts` (no hay LESS). No añadas código nuevo en la plantilla; todo esto se
-retira en la fase 6.
+**La plantilla Clean UI ya no existe** (plan 01 fase 6): el layout, el menú, el `ACL`, el login y las páginas de
+error son antd puro en `src/app/`. Mientras dura el barrido de páginas a TypeScript quedan dos apoyos temporales:
+`src/styles/utilities.css` (clases `card`, `card-body`, `kit__utils__heading`, `mr-*`…) y la fuente de iconos
+icomoon de `public/resources/fonts` (clases `icmn-*`). No los uses en código nuevo.
 
 ## Convenciones
 
@@ -61,8 +58,8 @@ retira en la fase 6.
 - API de antd 6 sin lo obsoleto: `items` en `Menu`/`Dropdown menu`/`Tabs`/`Collapse`/`Steps`/`Descriptions`, `open` en
   `Modal`/`Drawer`, `title` (no `message`) en `notification`, `orientation` en `Space`/`Divider`, `components/ui/Comentario` en vez de `Comment`. El objetivo es 0 avisos en la consola de `dev`.
 - Cada página = `index.jsx` + carpeta `componentes/` (`forma*.jsx`, `tabla*.jsx`, `columnas*.jsx`).
-- Permisos: envuelve páginas y acciones con `<ACL roles={['CODIGO-ROL']} redirect>`; los códigos son los
-  `codigoRol` del API (`services/menu/index.js` tiene la lista por entrada de menú).
+- Permisos: envuelve páginas y acciones con `<ACL roles={['CODIGO-ROL']} redirect>` (`app/auth/ACL`); los códigos son
+  los `codigoRol` del API (`app/menu/menuItems.ts` tiene la lista por entrada de menú).
 - Llamadas al API **solo** vía `services/axios/<recurso>` (que extienden `PeticionBase`); no uses `axios`/`fetch` directo.
   Si el API falla, el interceptor muestra la notificación y **rechaza** la promesa (F1 corregido): maneja el
   error con `.catch(() => {})` o `try/catch/finally` (apaga spinners en `finally`; éxito solo dentro del `try`).
@@ -83,4 +80,3 @@ retira en la fase 6.
   (CRA→Vite+TypeScript ✅, React/Router/Zustand ✅, antd 5 + React 19/Router 8 ✅, antd 6 ✅, luego retirar Clean UI).
 - Decisiones ya tomadas (`docs/decisiones.md`): Vite + npm, Zustand (no redux ni RTK), TypeScript a la par,
   solo tema claro, sin MagicBell (notificaciones propias), sin `api.ipify.org` (la IP la toma el API).
-- No borres `components/cleanui/system/ACL` sin su reemplazo (`app/auth/ACL`, plan 01 fase 6): lo importan 76 archivos.

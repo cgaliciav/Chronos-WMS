@@ -1,5 +1,5 @@
 import { Divider } from 'antd'
-import ACL from 'components/cleanui/system/ACL'
+import ACL from 'app/auth/ACL'
 import React, { useEffect, useState } from 'react'
 import Titulo from 'components/Titulo'
 import InventarioAcualPeticiones from 'services/axios/inventarioActual'

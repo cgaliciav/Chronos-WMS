@@ -1,8 +1,8 @@
 import { lazy, Suspense, type ComponentType } from 'react'
 import { createHashRouter, Navigate, type RouteObject } from 'react-router'
 import { Spin } from 'antd'
-import Layout from 'layouts'
-import System500 from 'pages/auth/500'
+import RaizLayout from 'app/layouts/RaizLayout'
+import ErrorPage from 'app/errors/ErrorPage'
 import { useUsuarioStore } from 'stores/usuario.store'
 
 type Cargador = () => Promise<{ default: ComponentType }>
@@ -74,11 +74,11 @@ export const RUTAS: Array<[ruta: string, cargar: Cargador]> = [
   ['/movimientos/detalle', () => import('pages/operaciones/movimiento')],
   ['/reportes/por-usuario', () => import('pages/reportes/6.porUsuario')],
   ['/reportes/de-cierre', () => import('pages/reportes/3.cierreProyecto')],
-  ['/auth/login', () => import('pages/auth/login')],
-  ['/auth/401', () => import('pages/auth/401')],
-  ['/auth/404', () => import('pages/auth/404')],
-  ['/auth/500', () => import('pages/auth/500')],
-  ['/auth/503', () => import('pages/auth/503')],
+  ['/auth/login', () => import('app/auth/LoginPage')],
+  ['/auth/401', () => Promise.resolve({ default: () => <ErrorPage code={401} /> })],
+  ['/auth/404', () => Promise.resolve({ default: () => <ErrorPage code={404} /> })],
+  ['/auth/500', () => Promise.resolve({ default: () => <ErrorPage code={500} /> })],
+  ['/auth/503', () => Promise.resolve({ default: () => <ErrorPage code={503} /> })],
 ]
 
 /** `/` lleva al catálogo de validaciones o al general según los permisos (como antes). */
@@ -98,8 +98,8 @@ function Cargando() {
 
 export const rutas: RouteObject[] = [
   {
-    element: <Layout />,
-    errorElement: <System500 />,
+    element: <RaizLayout />,
+    errorElement: <ErrorPage code={500} />,
     children: [
       { index: true, element: <RedireccionInicial /> },
       ...RUTAS.map(([path, cargar]) => {

@@ -8,7 +8,7 @@ import {
 import { notification } from 'helpers/feedback'
 import QueryString from 'query-string'
 import dayjs from 'dayjs'
-import ACL from 'components/cleanui/system/ACL'
+import ACL from 'app/auth/ACL'
 import CaracteristicasProducto from 'pages/componentes/caracteristicas'
 import ClavesProducto from 'pages/componentes/claves'
 import PreciosProducto from 'pages/componentes/precios'

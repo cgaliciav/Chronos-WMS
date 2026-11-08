@@ -198,3 +198,14 @@ export interface RespuestaMensaje {
   message?: string
   [otro: string]: unknown
 }
+
+/** Notificación del sistema propio (plan 02, fase 7: `GET /notifications`, `PUT /notifications/:id/read`). */
+export interface Notificacion {
+  id: number
+  titulo: string
+  mensaje?: string
+  fecha: string
+  leida: boolean
+  /** Ruta del front a la que lleva la notificación (p. ej. `/prestamos/operacion?uid=3`). */
+  url?: string
+}

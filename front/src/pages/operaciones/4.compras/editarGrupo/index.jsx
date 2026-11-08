@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router'
 import { notification } from 'helpers/feedback'
 import QueryString from 'query-string'
 import dayjs from 'dayjs'
-import ACL from 'components/cleanui/system/ACL'
+import ACL from 'app/auth/ACL'
 import GrupoPeticiones from 'services/axios/grupos'
 import FormaConfiguracionGrupo from 'pages/operaciones/componentes/formaConfiguracionGrupo'
 

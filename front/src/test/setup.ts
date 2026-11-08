@@ -19,6 +19,14 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 })
 
+// antd (Menu, Table…) usa ResizeObserver; jsdom no lo implementa.
+class ResizeObserverFalso {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+globalThis.ResizeObserver ??= ResizeObserverFalso as unknown as typeof ResizeObserver
+
 beforeAll(() => servidor.listen({ onUnhandledFrame: 'error' }))
 afterEach(() => {
   servidor.resetHandlers()

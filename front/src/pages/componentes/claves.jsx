@@ -4,7 +4,7 @@ import { notification } from 'helpers/feedback'
 import { PlusOutlined } from '@ant-design/icons'
 import ProductoClavePeticiones from 'services/axios/productoClaves'
 import ModalFormaClave from './formaClaves'
-// import ACL from 'components/cleanui/system/ACL';
+// import ACL from 'app/auth/ACL';
 
 const ClavesProducto = ({ productoClaves, loading, productoId, editar, fnActualizar }) => {
   const [habilitadoInterno, setHabilitadoInterno] = useState(true)

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { Button, Checkbox, Col, Form, Row, Select, Space, Spin, Tag, Typography } from 'antd'
 import { notification } from 'helpers/feedback'
 import Titulo from 'components/Titulo'
-import ACL from 'components/cleanui/system/ACL'
+import ACL from 'app/auth/ACL'
 import ReportePeticiones from 'services/axios/reportes'
 import UsuarioPeticiones from 'services/axios/usuarios'
 

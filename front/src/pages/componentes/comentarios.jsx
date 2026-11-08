@@ -3,7 +3,7 @@ import { Button, Divider, Empty, Row, Tooltip, Form, Input, List } from 'antd'
 import Comentario from 'components/ui/Comentario'
 import { notification } from 'helpers/feedback'
 import dayjs from 'dayjs'
-import ACL from 'components/cleanui/system/ACL'
+import ACL from 'app/auth/ACL'
 import ComentarioPeticiones from 'services/axios/comentarios'
 
 const { TextArea } = Input

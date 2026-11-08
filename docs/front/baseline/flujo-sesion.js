@@ -17,7 +17,7 @@ const base=`http://localhost:${srv.address().port}`
   const paso=(n,ok,x='')=>console.log(`${ok?'✅':'❌'} ${n} ${x}`)
   await p.goto(`${base}/#/catalogo/general`); await p.waitForTimeout(1500)
   paso('sin sesión redirige a login', p.url().endsWith('#/auth/login'), p.url())
-  await p.fill('input[placeholder=Email]','ana@x.mx'); await p.fill('input[type=password]','x'); await p.click('button[type=submit]'); await p.waitForTimeout(2500)
+  await p.fill('input[autocomplete=username], input[placeholder=Email]','ana@x.mx'); await p.fill('input[type=password]','x'); await p.click('button[type=submit]'); await p.waitForTimeout(2500)
   paso('login envía {c,p} sin ip', JSON.stringify(cuerpos[0])==='{"c":"ana@x.mx","p":"x"}', JSON.stringify(cuerpos[0]))
   paso('tras login va a la última ruta visitada', p.url().endsWith('#/catalogo/general'), p.url())
   paso('título de la página', (await p.title())==='Sony Almacén | Catálogo General', await p.title())

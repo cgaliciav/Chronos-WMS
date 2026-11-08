@@ -4,7 +4,7 @@ import Validacion from 'pages/catalogos/6.validaciones/componentes/validacion'
 // import moment from 'moment'
 // import { formatoMonedaMexico } from 'helpers/funcionesExtras'
 
-// import ACL from 'components/cleanui/system/ACL';
+// import ACL from 'app/auth/ACL';
 
 const ArticuloDatos = ({
   producto: { /* productoPrecios, */ productoClaves, area, descripcion, titulo, id:productoId, productoValidado=null },
