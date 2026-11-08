@@ -2,7 +2,7 @@ import { Form, Button, Select, Skeleton, InputNumber, Row, DatePicker } from 'an
 import type { Dayjs } from 'dayjs'
 import { mapeoOpciones } from 'helpers/funcionesExtras'
 import type { Numerico } from 'types/api'
-import { filtrarOpcion } from '../../../componentes/filtrarOpcion'
+import { filtrarOpcion } from 'helpers/funcionesExtras'
 
 /** Valores del formulario de disponibilidad (`fechaDisponibilidad` es un objeto dayjs del `DatePicker`). */
 export interface ValoresDisponibilidad {

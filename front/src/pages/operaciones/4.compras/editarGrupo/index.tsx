@@ -1,3 +1,4 @@
+import { idDeEtiquetado } from 'helpers/funcionesExtras'
 import { useState, useEffect } from 'react'
 import Titulo from 'components/Titulo'
 import { useNavigate, useLocation } from 'react-router'
@@ -45,8 +46,9 @@ function valoresDelGrupo(grupo: GrupoCompra): Partial<ValoresConfiguracionGrupo>
       : undefined,
     tipoFactura: factura?.facturaTipo?.id,
     fechaInicio: factura?.fechaEmision ? dayjs(factura.fechaEmision) : undefined,
+    // antd 5+: los valores de `labelInValue` son `{ value, label }` (antes `{ key, label }`).
     usuariosResponsables: (detalle?.usuarios ?? []).map(usr => ({
-      key: usr.id,
+      value: usr.id,
       label: usr.nombre,
     })),
   }
@@ -105,12 +107,12 @@ const CompraEditarGrupo = () => {
       grupoId,
       numero: nombre,
       proyectoId,
-      usuariosIds: usuariosIds.map(usr => usr.key),
+      usuariosIds: usuariosIds.map(idDeEtiquetado),
       fechaEmision,
       total: 0.0,
       impuestos: 0.0,
       montoIngresado: 0.0,
-      proveedorId: proveedorId?.key,
+      proveedorId: idDeEtiquetado(proveedorId),
       facturaTipoId,
     }
 

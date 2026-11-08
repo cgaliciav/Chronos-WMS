@@ -4,7 +4,7 @@ import { mapeoOpciones } from 'helpers/funcionesExtras'
 import { leerJSON } from 'helpers/storage'
 import UsuarioPeticiones from 'services/axios/usuarios'
 import type { ElementoListado } from 'services/axios'
-import { filtrarOpcion } from '../../componentes/filtrarOpcion'
+import { filtrarOpcion } from 'helpers/funcionesExtras'
 import type { BusquedaPorProyecto, FormaBusquedaProps } from '../../tipos'
 
 const colLayoutA = {

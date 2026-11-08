@@ -1,3 +1,4 @@
+import { idDeEtiquetado } from 'helpers/funcionesExtras'
 import { useState } from 'react'
 import Titulo from 'components/Titulo'
 import { useNavigate } from 'react-router'
@@ -32,12 +33,12 @@ const CompraNuevo = () => {
         numero: nombre,
         movimientoTipoId: 15, // compra
         proyectoId,
-        usuariosIds: usuariosIds.map(usr => usr.key),
+        usuariosIds: usuariosIds.map(idDeEtiquetado),
         fechaEmision,
         total: 0.0,
         impuestos: 0.0,
         montoIngresado: 0.0,
-        proveedorId: proveedorId?.key,
+        proveedorId: idDeEtiquetado(proveedorId),
         facturaTipoId,
       })
 

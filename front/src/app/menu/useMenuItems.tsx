@@ -16,16 +16,24 @@ export function filtrarMenu(entradas: EntradaMenu[], permisos: string[]): Entrad
   return entradas
     .filter(entrada => entradaPermitida(entrada, permisos))
     .map(entrada =>
-      entrada.children ? { ...entrada, children: filtrarMenu(entrada.children, permisos) } : entrada,
+      entrada.children
+        ? { ...entrada, children: filtrarMenu(entrada.children, permisos) }
+        : entrada,
     )
     .filter(entrada => !entrada.children || entrada.children.length > 0)
 }
 
 function aElementoMenu(entrada: EntradaMenu): ElementoMenu {
   const icon = entrada.icon ? createElement(entrada.icon) : undefined
-  if (entrada.category) return { type: 'group', key: `grupo-${entrada.title}`, label: entrada.title }
+  if (entrada.category)
+    return { type: 'group', key: `grupo-${entrada.title}`, label: entrada.title }
   if (entrada.children) {
-    return { key: entrada.key ?? entrada.title, icon, label: entrada.title, children: entrada.children.map(aElementoMenu) }
+    return {
+      key: entrada.key ?? entrada.title,
+      icon,
+      label: entrada.title,
+      children: entrada.children.map(aElementoMenu),
+    }
   }
   return {
     key: entrada.key ?? entrada.url ?? entrada.title,

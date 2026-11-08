@@ -1,53 +1,71 @@
-import React, { useEffect, useState } from 'react'
-import Titulo from 'components/Titulo'
+import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router'
-import {
-  // Divider,
-  Tabs,
-} from 'antd'
-import { notification } from 'helpers/feedback'
+import { Skeleton, Tabs } from 'antd'
 import QueryString from 'query-string'
 import dayjs from 'dayjs'
 import ACL from 'app/auth/ACL'
+import Titulo from 'components/Titulo'
+import Encabezado from 'components/ui/Encabezado'
+import Tarjeta from 'components/ui/Tarjeta'
+import { notification } from 'helpers/feedback'
 import CaracteristicasProducto from 'pages/componentes/caracteristicas'
 import ClavesProducto from 'pages/componentes/claves'
 import PreciosProducto from 'pages/componentes/precios'
 import Comentarios from 'pages/componentes/comentarios'
 import SubirArchivos from 'pages/componentes/subirArchivos'
-// import ImagenesEnCarrusel from 'pages/componentes/imagenesEnCarrusel'
 import InventarioAcualPeticiones from 'services/axios/inventarioActual'
 import ProductoPeticiones from 'services/axios/productos'
-import FormaEdicionArticulo from './componentes/formaEdicionArticulo'
-import FormaEdicionDisponibilidad from './componentes/formaEdicionDisponibilidad'
+import type { ProductoArticulo } from 'pages/componentes/tipos'
+import type { InventarioDetalle } from '../../tipos'
+import FormaEdicionArticulo, { type ValoresArticulo } from './componentes/formaEdicionArticulo'
+import FormaEdicionDisponibilidad, {
+  type ValoresDisponibilidad,
+} from './componentes/formaEdicionDisponibilidad'
+
+const obtenerValoresInicialesDisponibilidad = (
+  inventario: InventarioDetalle,
+): ValoresDisponibilidad => ({
+  cantidad: inventario.cantidad,
+  cantidadAlmacen: inventario.cantidadAlmacen,
+  fechaDisponibilidad: dayjs(inventario.fechaDisponibilidad),
+  disponible: inventario.disponible,
+})
+
+const obtenerValoresIniciales = (
+  inventario: InventarioDetalle,
+  producto: ProductoArticulo,
+): Partial<ValoresArticulo> => {
+  const { bodega } = inventario
+  const { area, productoPrecios } = producto
+  return {
+    titulo: producto.titulo,
+    descripcion: producto.descripcion,
+    cantidad: parseInt(String(inventario.cantidadAlmacen), 10),
+    precio: productoPrecios?.[0]?.precio,
+    area: area?.id,
+    bodega: bodega?.id,
+    id: inventario.id ? inventario.id : 0,
+  }
+}
 
 const EditarArticuloDetalle = () => {
-  const [id, setId] = useState(0)
+  const [id, setId] = useState<number | string>(0)
   const [cargando, setCargando] = useState(true)
-  const [inventarioActual, setInventarioActual] = useState({
-    cantidad: 0,
-    disponible: 'no definido',
-    fechaDisponibilidad: dayjs(),
-    bodega: { id: 0, nombre: '------' },
-    producto: {
-      archivos: [],
-      productoPrecios: [],
-      productoCaracteristicas: [],
-      productoClaves: [],
-      area: { id: 0, nombre: '-----' },
-      id: 0,
-      descripcion: '----------------',
-      titulo: '------',
-    },
-  });
-  const [currentKey, setCurrentKey] = useState('detalles');
+  // `null` hasta que responde el API; si la respuesta llega sin producto se sigue mostrando el esqueleto (F36).
+  const [inventarioActual, setInventarioActual] = useState<InventarioDetalle | null>(null)
+  const [currentKey, setCurrentKey] = useState('detalles')
 
   const location = useLocation()
 
   useEffect(() => {
-    const value = QueryString.parse(location.search.replace('?', ''));
-    console.log('*******************PARAMS', value);
-    setId(value.uid);
-    setCurrentKey(value.p??'detalles');
+    const { uid, p } = QueryString.parse(location.search.replace('?', ''))
+    if (typeof uid === 'string') {
+      setId(uid)
+    } else {
+      // Sin `?uid` no hay nada que pedir (antes se pedía `/current-inventory/undefined`).
+      setCargando(false)
+    }
+    setCurrentKey(typeof p === 'string' ? p : 'detalles')
   }, [location])
 
   useEffect(() => {
@@ -65,7 +83,6 @@ const EditarArticuloDetalle = () => {
       .then(resp => {
         if (resp !== undefined) {
           setInventarioActual(resp)
-          // console.log('****** INVENTARIO ACTUAL', resp)
         }
       })
       // El interceptor de axios ya mostró el error.
@@ -74,38 +91,18 @@ const EditarArticuloDetalle = () => {
         setCargando(false)
       })
   }
-  const obtenerValoresInicialesDisponibilidad = inventario => ({
-    cantidad: inventario.cantidad,
-    cantidadAlmacen: inventario.cantidadAlmacen,
-    fechaDisponibilidad: dayjs(inventario.fechaDisponibilidad),
-    disponible: inventario.disponible,
-  })
 
-  const obtenerValoresIniciales = inventario => {
-    const { producto, bodega } = inventario
-    const { area, productoPrecios } = producto
-    return {
-      titulo: producto.titulo,
-      descripcion: producto.descripcion,
-      cantidad: parseInt(inventario.cantidadAlmacen, 10),
-      precio: productoPrecios[0]?.precio,
-      area: area?.id,
-      bodega: bodega?.id,
-      id: inventario.id ? inventario.id : 0,
-    }
-  }
+  const producto = inventarioActual?.producto
 
-  const guardarArticuloDetalles = valores => {
+  const guardarArticuloDetalles = (valores: ValoresArticulo) => {
     setCargando(true)
-    // inven
-    const { producto } = inventarioActual
     Promise.all([
       InventarioAcualPeticiones.editar({
         inventarioActualId: id,
         bodega: valores.bodega,
       }),
       ProductoPeticiones.editar({
-        productoId: producto.id,
+        productoId: producto?.id,
         titulo: valores.titulo,
         descripcion: valores.descripcion,
         areaId: valores.area,
@@ -125,13 +122,10 @@ const EditarArticuloDetalle = () => {
       .finally(() => {
         setCargando(false)
       })
-
-    // console.log('guardarArticuloDetalles', valores)
   }
 
-  const guardarDisponibilidad = valores => {
+  const guardarDisponibilidad = (valores: ValoresDisponibilidad) => {
     setCargando(true)
-    // inven
     const { fechaDisponibilidad } = valores
     InventarioAcualPeticiones.editar({
       inventarioActualId: id,
@@ -153,141 +147,119 @@ const EditarArticuloDetalle = () => {
       })
   }
 
-  const {
-    archivos,
-    productoClaves,
-    productoCaracteristicas,
-    comentarios,
-    productoPrecios,
-    id: productoId,
-  } = inventarioActual.producto
-
-  const { disponible } = inventarioActual
+  const disponible = inventarioActual?.disponible
 
   return (
     <ACL roles={['V-EDITAR-ARTICULOS-DETALLE', 'ADMINISTRADOR']} redirect>
       <Titulo texto="Editar artículo" />
-      <div className="kit__utils__heading">
-        <h5>
-          <span className="mr-3">Editar artículo</span>
-        </h5>
-      </div>
-      <div className="card">
-        <Tabs defaultActiveKey="detalles" activeKey={currentKey} onChange={setCurrentKey} style={{ margin: '8px' }}
-          items={[
-            {
-              key: 'detalles',
-              label: 'Detalles',
-              children: (
-                <>
-            <FormaEdicionArticulo
-              guardando={cargando}
-              valoresIniciales={obtenerValoresIniciales(inventarioActual)}
-              habilitado={disponible !== 'baja'}
-              handleFinish={guardarArticuloDetalles}
-              esNuevo={false}
-            />
-                </>
-              ),
-            },
-            {
-              key: 'disponibilidad',
-              label: 'Disponibilidad',
-              children: (
-                <>
-            {/* <PreciosProducto productoPrecios={productoPrecios} loading={cargando} /> */}
-            <FormaEdicionDisponibilidad
-              guardando={cargando}
-              valoresIniciales={obtenerValoresInicialesDisponibilidad(inventarioActual)}
-              habilitado
-              handleFinish={guardarDisponibilidad}
-            />
-                </>
-              ),
-            },
-            /* 
-            // TODO EDITAR (REIMPRIMIR) CODIGOS
-            // TODO EDITAR COMENTARIOS
-          */
-            {
-              key: 'fotos',
-              label: 'Fotos',
-              children: (
-                <>
-            <SubirArchivos
-              habilitado={disponible !== 'baja'}
-              archivosIdsIniciales={archivos}
-              cargando={cargando}
-              relacion="Producto"
-              relacionId={productoId}
-            />
-                </>
-              ),
-            },
-            {
-              key: 'caracteristicas',
-              label: 'Características',
-              children: (
-                <>
-            <CaracteristicasProducto
-              productoCaracteristicas={productoCaracteristicas}
-              loading={cargando}
-              productoId={productoId}
-              editar
-              fnActualizar={actualizar}
-            />
-                </>
-              ),
-            },
-            {
-              key: 'codigos',
-              label: 'Códigos',
-              children: (
-                <>
-            <ClavesProducto
-              productoClaves={productoClaves}
-              loading={cargando}
-              productoId={productoId}
-              editar
-              fnActualizar={actualizar}
-            />
-                </>
-              ),
-            },
-            {
-              key: 'precios',
-              label: 'Precios',
-              children: (
-                <>
-            <PreciosProducto
-              productoPrecios={productoPrecios}
-              loading={cargando}
-              editar
-              fnActualizar={actualizar}
-            />
-                </>
-              ),
-            },
-            {
-              key: 'comentarios',
-              label: 'Comentarios',
-              children: (
-                <>
-            <Comentarios
-              comentarios={comentarios}
-              loading={cargando}
-              disabled={disponible === 'baja'}
-              editar
-              relacion="Producto"
-              relacionId={productoId}
-              fnActualizar={actualizar}
-            />
-                </>
-              ),
-            },
-          ]}
-        />
-      </div>
+      <Encabezado>Editar artículo</Encabezado>
+      <Tarjeta>
+        {inventarioActual && producto ? (
+          <Tabs
+            defaultActiveKey="detalles"
+            activeKey={currentKey}
+            onChange={setCurrentKey}
+            style={{ margin: '8px' }}
+            items={[
+              {
+                key: 'detalles',
+                label: 'Detalles',
+                children: (
+                  <FormaEdicionArticulo
+                    guardando={cargando}
+                    valoresIniciales={obtenerValoresIniciales(inventarioActual, producto)}
+                    habilitado={disponible !== 'baja'}
+                    handleFinish={guardarArticuloDetalles}
+                    esNuevo={false}
+                  />
+                ),
+              },
+              {
+                key: 'disponibilidad',
+                label: 'Disponibilidad',
+                children: (
+                  <FormaEdicionDisponibilidad
+                    guardando={cargando}
+                    valoresIniciales={obtenerValoresInicialesDisponibilidad(inventarioActual)}
+                    habilitado
+                    handleFinish={guardarDisponibilidad}
+                  />
+                ),
+              },
+              // TODO EDITAR (REIMPRIMIR) CODIGOS
+              // TODO EDITAR COMENTARIOS
+              {
+                key: 'fotos',
+                label: 'Fotos',
+                children: (
+                  <SubirArchivos
+                    habilitado={disponible !== 'baja'}
+                    archivosIdsIniciales={producto.archivos}
+                    cargando={cargando}
+                    relacion="Producto"
+                    relacionId={producto.id}
+                  />
+                ),
+              },
+              {
+                key: 'caracteristicas',
+                label: 'Características',
+                children: (
+                  <CaracteristicasProducto
+                    productoCaracteristicas={producto.productoCaracteristicas}
+                    loading={cargando}
+                    productoId={producto.id}
+                    editar
+                    fnActualizar={actualizar}
+                  />
+                ),
+              },
+              {
+                key: 'codigos',
+                label: 'Códigos',
+                children: (
+                  <ClavesProducto
+                    productoClaves={producto.productoClaves}
+                    loading={cargando}
+                    productoId={producto.id}
+                    editar
+                    fnActualizar={actualizar}
+                  />
+                ),
+              },
+              {
+                key: 'precios',
+                label: 'Precios',
+                children: (
+                  <PreciosProducto
+                    productoPrecios={producto.productoPrecios}
+                    loading={cargando}
+                    editar
+                    fnActualizar={actualizar}
+                  />
+                ),
+              },
+              {
+                key: 'comentarios',
+                label: 'Comentarios',
+                children: (
+                  <Comentarios
+                    comentarios={producto.comentarios}
+                    loading={cargando}
+                    disabled={disponible === 'baja'}
+                    editar
+                    relacion="Producto"
+                    relacionId={producto.id}
+                    fnActualizar={actualizar}
+                  />
+                ),
+              },
+            ]}
+          />
+        ) : (
+          <Skeleton active />
+        )}
+      </Tarjeta>
     </ACL>
   )
 }

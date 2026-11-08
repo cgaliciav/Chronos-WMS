@@ -79,7 +79,7 @@ const CatalogoInventario = () => {
     }
 
     setPagination({ ...tempPaginacion })
-    fetch({
+    buscar({
       pagination: tempPaginacion,
       textoBusqueda: busquedaPalabras.textoBusqueda === null ? '' : busquedaPalabras.textoBusqueda,
       areasIds: busquedaPalabras.areas,
@@ -94,7 +94,7 @@ const CatalogoInventario = () => {
       pageSize: paginaTamanio,
     }
     setPagination({ ...tempPaginacion })
-    fetch({
+    buscar({
       pagination: tempPaginacion,
       textoBusqueda: busquedaPalabras.textoBusqueda === null ? '' : busquedaPalabras.textoBusqueda,
       areasIds: busquedaPalabras.areas,
@@ -103,7 +103,7 @@ const CatalogoInventario = () => {
     })
   }
 
-  const fetch = (params: ParametrosCatalogo = {}) => {
+  const buscar = (params: ParametrosCatalogo = {}) => {
     setCargando(true)
 
     InventarioActualPeticiones.listadoCatalogoGeneral({
@@ -152,7 +152,7 @@ const CatalogoInventario = () => {
       guardarJSON('catalogoInventarios.busquedaPalabras', busquedaPalabras)
     }
 
-    fetch({
+    buscar({
       pagination,
       textoBusqueda: busquedaPalabras.textoBusqueda === null ? '' : busquedaPalabras.textoBusqueda,
       areasIds: busquedaPalabras.areas,

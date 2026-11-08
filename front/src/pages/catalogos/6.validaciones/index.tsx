@@ -57,7 +57,7 @@ const CatalogoValidaciones = () => {
     }
 
     setPagination({ ...tempPaginacion })
-    fetch({
+    buscar({
       pagination: tempPaginacion,
       textoBusqueda: busqueda.textoBusqueda === null ? '' : busqueda.textoBusqueda,
       areasIds: busqueda.areas,
@@ -72,7 +72,7 @@ const CatalogoValidaciones = () => {
       pageSize: paginaTamanio,
     }
     setPagination({ ...tempPaginacion })
-    fetch({
+    buscar({
       pagination: tempPaginacion,
       textoBusqueda: busqueda.textoBusqueda === null ? '' : busqueda.textoBusqueda,
       areasIds: busqueda.areas,
@@ -96,7 +96,7 @@ const CatalogoValidaciones = () => {
       guardarJSON('catalogoValidaciones.busqueda', busqueda)
     }
 
-    fetch({
+    buscar({
       pagination,
       textoBusqueda: busqueda.textoBusqueda === null ? '' : busqueda.textoBusqueda,
       areasIds: busqueda.areas,
@@ -107,7 +107,7 @@ const CatalogoValidaciones = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [busqueda])
 
-  const fetch = (params: ParametrosCatalogo = {}) => {
+  const buscar = (params: ParametrosCatalogo = {}) => {
     setCargando(true)
 
     InventarioAcualPeticiones.listadoCatalogoGeneral({

@@ -17,7 +17,12 @@ describe('FormaEdicionDisponibilidad (DatePicker con dayjs)', () => {
 
   it('muestra la fecha inicial con el formato DD/MMM/YY', () => {
     renderizar(
-      <FormaEdicionDisponibilidad valoresIniciales={valores} guardando={false} habilitado handleFinish={vi.fn()} />,
+      <FormaEdicionDisponibilidad
+        valoresIniciales={valores}
+        guardando={false}
+        habilitado
+        handleFinish={vi.fn()}
+      />,
     )
     expect(screen.getByDisplayValue(fecha.format('DD/MMM/YY'))).toBeInTheDocument()
   })
@@ -25,7 +30,12 @@ describe('FormaEdicionDisponibilidad (DatePicker con dayjs)', () => {
   it('envía la fecha como objeto dayjs', async () => {
     const handleFinish = vi.fn()
     renderizar(
-      <FormaEdicionDisponibilidad valoresIniciales={valores} guardando={false} habilitado handleFinish={handleFinish} />,
+      <FormaEdicionDisponibilidad
+        valoresIniciales={valores}
+        guardando={false}
+        habilitado
+        handleFinish={handleFinish}
+      />,
     )
     await userEvent.click(screen.getByRole('button', { name: /guardar/i }))
 
@@ -38,7 +48,12 @@ describe('FormaEdicionDisponibilidad (DatePicker con dayjs)', () => {
 
   it('muestra el esqueleto mientras no hay datos', () => {
     const { container } = renderizar(
-      <FormaEdicionDisponibilidad valoresIniciales={{ ...valores, id: 0 }} guardando={false} habilitado handleFinish={vi.fn()} />,
+      <FormaEdicionDisponibilidad
+        valoresIniciales={{ ...valores, id: 0 }}
+        guardando={false}
+        habilitado
+        handleFinish={vi.fn()}
+      />,
     )
     expect(container.querySelector('.ant-skeleton')).not.toBeNull()
   })

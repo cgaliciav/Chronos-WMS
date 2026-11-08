@@ -37,7 +37,13 @@ export default function MenuUsuario() {
         ],
       }}
     >
-      <Avatar shape="square" size="large" icon={<UserOutlined />} style={{ cursor: 'pointer' }} aria-label="Usuario" />
+      <Avatar
+        shape="square"
+        size="large"
+        icon={<UserOutlined />}
+        style={{ cursor: 'pointer' }}
+        aria-label="Usuario"
+      />
     </Dropdown>
   )
 }

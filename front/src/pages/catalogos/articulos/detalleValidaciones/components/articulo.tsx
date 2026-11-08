@@ -27,13 +27,17 @@ const ArticuloDatos = ({
         </Space>
       </Row>
       <Typography.Title level={3}> {titulo} </Typography.Title>
-      <Typography.Title level={3}> {`${piezas} ${piezas !== 1 ? 'piezas' : 'pieza'}`} </Typography.Title>
+      <Typography.Title level={3}>
+        {' '}
+        {`${piezas} ${piezas !== 1 ? 'piezas' : 'pieza'}`}{' '}
+      </Typography.Title>
       <Typography.Paragraph>{descripcion}</Typography.Paragraph>
       <br />
       <Typography.Text strong>Almacén:</Typography.Text>{' '}
       <Typography.Text>{bodega?.nombre}</Typography.Text>
       <br />
-      <Typography.Text strong>Área:</Typography.Text> <Typography.Text>{area?.nombre}</Typography.Text>
+      <Typography.Text strong>Área:</Typography.Text>{' '}
+      <Typography.Text>{area?.nombre}</Typography.Text>
       <br />
     </>
   )

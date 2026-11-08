@@ -25,7 +25,9 @@ describe('apiClient y PeticionBase', () => {
   it('guarda el token renovado que llega en la cabecera t', async () => {
     servidor.use(
       http.get(`${API}/area/list-names`, () =>
-        HttpResponse.json([], { headers: { t: 'token-renovado', 'Access-Control-Expose-Headers': 't' } }),
+        HttpResponse.json([], {
+          headers: { t: 'token-renovado', 'Access-Control-Expose-Headers': 't' },
+        }),
       ),
     )
     await PeticionBase.listadoSimple('area')
@@ -38,7 +40,9 @@ describe('apiClient y PeticionBase', () => {
         HttpResponse.json({ message: 'Sin permiso' }, { status: 403 }),
       ),
     )
-    await expect(PeticionBase.listado('groups', {})).rejects.toMatchObject({ response: { status: 403 } })
+    await expect(PeticionBase.listado('groups', {})).rejects.toMatchObject({
+      response: { status: 403 },
+    })
     expect(notification.error).toHaveBeenCalledWith({ title: 'Sin permiso' })
   })
 
@@ -51,7 +55,11 @@ describe('apiClient y PeticionBase', () => {
   it('devuelve el cuerpo de la respuesta', async () => {
     servidor.use(
       http.post(`${API}/groups/list-antd`, async ({ request }) =>
-        HttpResponse.json({ results: [{ id: 1 }], pagination: { current: 1, pageSize: 10, total: 1 }, eco: await request.json() }),
+        HttpResponse.json({
+          results: [{ id: 1 }],
+          pagination: { current: 1, pageSize: 10, total: 1 },
+          eco: await request.json(),
+        }),
       ),
     )
     const resultado = await PeticionBase.listado<{ id: number }>('groups', { sortField: 'id' })

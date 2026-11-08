@@ -55,7 +55,7 @@ const CatalogoBajas = () => {
     }
 
     setPagination({ ...tempPaginacion })
-    fetch({
+    buscar({
       pagination: tempPaginacion,
       textoBusqueda: busqueda.textoBusqueda === null ? '' : busqueda.textoBusqueda,
       areasIds: busqueda.areas,
@@ -74,7 +74,7 @@ const CatalogoBajas = () => {
       ...restPagination,
     }
     setPagination({ ...tempPaginacion })
-    fetch({
+    buscar({
       pagination: tempPaginacion,
       textoBusqueda: busqueda.textoBusqueda === null ? '' : busqueda.textoBusqueda,
       areasIds: busqueda.areas,
@@ -97,7 +97,7 @@ const CatalogoBajas = () => {
       return
     }
 
-    fetch({
+    buscar({
       pagination,
       textoBusqueda: busqueda.textoBusqueda === null ? '' : busqueda.textoBusqueda,
       areasIds: busqueda.areas,
@@ -108,7 +108,7 @@ const CatalogoBajas = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [busqueda])
 
-  const fetch = (params: ParametrosCatalogo = {}) => {
+  const buscar = (params: ParametrosCatalogo = {}) => {
     setCargando(true)
 
     guardarJSON('catalogoBajas.pagination', params.pagination)

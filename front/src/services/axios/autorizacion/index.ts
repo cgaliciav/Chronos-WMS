@@ -9,7 +9,10 @@ export default class AutorizacionPeticiones {
    * toma la IP de la conexión (plan 01 D15, plan 02 fase 2; hallazgo F2).
    */
   static login = async (correo: string, contrasena: string): Promise<RespuestaLogin> => {
-    const { data } = await apiClient.post<RespuestaLogin>('/auth/login', { c: correo, p: contrasena })
+    const { data } = await apiClient.post<RespuestaLogin>('/auth/login', {
+      c: correo,
+      p: contrasena,
+    })
     guardarToken(data.t)
     return data
   }

@@ -4,7 +4,7 @@ import { Button, Form, Select, Row, Col, Spin } from 'antd'
 import { mapeoOpciones } from 'helpers/funcionesExtras'
 import type { ElementoListado } from 'services/axios'
 import UsuarioPeticiones from 'services/axios/usuarios'
-import { filtrarOpcion } from './filtrarOpcion'
+import { filtrarOpcion } from 'helpers/funcionesExtras'
 import type {
   FormaBusquedaPorProyectoProps,
   ValorEtiquetado,

@@ -45,8 +45,9 @@ const validacionConFecha = (pi: InventarioProducto | null | undefined): Inventar
 }
 
 /** La respuesta de `/item-balance/*` es el registro de inventario guardado. */
-const esInventarioProducto = (valor: RespuestaMensaje): valor is InventarioProducto & RespuestaMensaje =>
-  typeof valor.validacion === 'string'
+const esInventarioProducto = (
+  valor: RespuestaMensaje,
+): valor is InventarioProducto & RespuestaMensaje => typeof valor.validacion === 'string'
 
 const iconosJsx: Record<string, ReactNode> = {
   inventarioPositivo: <SmileTwoTone style={{ fontSize: '150%' }} twoToneColor="#1B58C1" />,
@@ -128,7 +129,9 @@ const Inventariado = ({
   }
 
   const icono =
-    inventarioProducto.validacion !== undefined ? iconosJsx[inventarioProducto.validacion] : undefined
+    inventarioProducto.validacion !== undefined
+      ? iconosJsx[inventarioProducto.validacion]
+      : undefined
 
   return disabled ? (
     <Tooltip title={textoFecha}>

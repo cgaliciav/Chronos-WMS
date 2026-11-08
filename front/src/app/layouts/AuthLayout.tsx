@@ -9,7 +9,11 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <Layout style={{ minHeight: '100vh', background: token.colorBgLayout }}>
       <Layout.Header
-        style={{ background: token.colorBgContainer, borderBottom: `1px solid ${token.colorBorderSecondary}`, padding: 0 }}
+        style={{
+          background: token.colorBgContainer,
+          borderBottom: `1px solid ${token.colorBorderSecondary}`,
+          padding: 0,
+        }}
       >
         <Logo />
       </Layout.Header>

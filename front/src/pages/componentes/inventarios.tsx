@@ -25,12 +25,11 @@ const Inventarios = ({ productoId = 0, loading = false }: InventariosProps) => {
   useEffect(() => {
     if (productoId !== 0) {
       setHabilitadoInterno(false)
-      ProductoInventariadoPeticiones.obtenerId(productoId)
+      ProductoInventariadoPeticiones.obtenerId<ProductoInventariadoRegistro[]>(productoId)
         .then(resp => {
           if (resp !== undefined) {
-            // `GET /item-balance/:id` devuelve la lista de inventarios del producto, aunque el servicio la
-            // tipa como un solo `NombreEstatus`.
-            setListadoInventarios(resp as unknown as ProductoInventariadoRegistro[])
+            // `GET /item-balance/:id` devuelve la lista de inventarios del producto.
+            setListadoInventarios(resp)
           }
         })
         .catch(() => {}) // El interceptor de axios ya mostró el error.

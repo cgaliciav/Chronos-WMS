@@ -1,3 +1,4 @@
+import { idDeEtiquetado } from 'helpers/funcionesExtras'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import dayjs from 'dayjs'
@@ -24,7 +25,7 @@ const BajasNuevo = () => {
         nombre,
         proyectoId,
         movimientoTipoId: 5, // baja
-        usuariosIds: usuariosIds.map(usr => usr.key),
+        usuariosIds: usuariosIds.map(idDeEtiquetado),
       })
       if (resp !== undefined) {
         // mandar a la edicion del grupo

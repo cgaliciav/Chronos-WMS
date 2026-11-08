@@ -3,12 +3,7 @@
  * páginas y que aún no recoge ese archivo (`fechaDisponibilidad`, `productoValidado`, `productoInventarios`).
  */
 import type { InventarioArticulo, ProductoArticulo } from 'pages/componentes/tipos'
-import type {
-  InventarioActual,
-  PaginacionAntd,
-  ParametrosTabla,
-  Producto,
-} from 'types/api'
+import type { InventarioActual, PaginacionAntd, ParametrosTabla, Producto } from 'types/api'
 
 /** Identificador de un elemento de catálogo en un `Select`. */
 export type Id = number | string

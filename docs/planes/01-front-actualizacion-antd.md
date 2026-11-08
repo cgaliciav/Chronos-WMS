@@ -433,6 +433,25 @@ Pasos:
 **Aceptación:** `grep -rn "cleanui\|cui__\|kit__\|bootstrap\|reactstrap\|magicbell" src` = 0 (salvo
 `utilities.css` si quedó); `find src -name "*.js" -o -name "*.jsx"` = 0; `tsc --noEmit` con `strict` verde. Commit.
 
+> **Ejecutada (2026-11-08).** `src` 100 % TypeScript (`allowJs: false`), sin Clean UI, Bootstrap, Sass, LESS,
+> `utilities.css` ni fuentes de iconos (solo `@ant-design/icons`). `npm run typecheck`, `npm run lint` (0 errores),
+> `npm test` (50 pruebas) y `npm run build` en verde; las 67 rutas cargan en `dev` sin errores ni avisos (con datos
+> simulados, incluidas las de detalle/edición: F36 resuelto); humo de sesión 10/10; capturas en `docs/front/after/`.
+> - Armazón en `src/app/` según la estructura propuesta: `layouts/{RaizLayout,MainLayout,AuthLayout}`, `menu/{menuItems.ts,useMenuItems.tsx}`,
+>   `auth/{ACL,LoginPage}`, `errors/{ErrorPage,ErrorBoundary}`, `notificaciones/NotificacionesCampana` (+ `stores/notificaciones.store.ts`
+>   y `services/axios/notificaciones`). `App.tsx` no se separó de `index.tsx` (lo hace todo en pocas líneas).
+> - La campana solo se muestra con `VITE_NOTIFICACIONES=on` (no con "distinto de off"), para no llamar a endpoints que el API aún no tiene.
+> - El barrido de páginas se hizo en paralelo por carpetas con `components/ui/{Tarjeta,Encabezado}` como reemplazo
+>   común de `card`/`kit__utils__heading`; tipos locales en `pages/{administracion,catalogos,componentes,operaciones}/tipos.ts`
+>   (consolidarlos en `types/api.ts` queda para cuando el API publique sus tipos). Los `.js` sin JSX pasaron a `.ts`.
+> - Hubo commits intermedios marcados `WIP` (puntos de control mientras se convertían las carpetas); el commit de
+>   integración es el primero de esta fase en el que `npm run build` vuelve a estar en verde.
+> - Tipar destapó y corrigió fallos reales (F37-F41), entre ellos una **regresión de la fase 4** (F37: `labelInValue`
+>   sin `key` en antd 5 → `usuariosIds` vacíos al crear préstamos, devoluciones, bajas, compras y rentas). Quedan
+>   anotados los pendientes en F42.
+> - e2e con Playwright + MSW en el navegador: pasan a la fase 7 (donde está su configuración); mientras, el humo de
+>   sesión automatizado (`docs/front/baseline/flujo-sesion.js`) y las capturas cubren el recorrido.
+
 ### Fase 7 · Pruebas, calidad y CI
 
 1. **Vitest**: `vitest.config.ts` (`environment: 'jsdom'`, `setupFiles: src/test/setup.ts` con jest-dom y

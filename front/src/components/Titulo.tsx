@@ -8,7 +8,9 @@ export const PREFIJO_TITULO = 'Sony Almacén'
  */
 export default function Titulo({ texto }: { texto?: string }) {
   useEffect(() => {
-    document.title = texto ? `${PREFIJO_TITULO} | ${texto}` : `${PREFIJO_TITULO} México Almacén General`
+    document.title = texto
+      ? `${PREFIJO_TITULO} | ${texto}`
+      : `${PREFIJO_TITULO} México Almacén General`
   }, [texto])
   return null
 }

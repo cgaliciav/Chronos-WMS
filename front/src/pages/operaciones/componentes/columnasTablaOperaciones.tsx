@@ -35,7 +35,7 @@ const ColumnasOperaciones: ColumnasOperacionesComunes = {
       let ruta
       if (archivos && archivos.length > 0)
         ruta = conToken(`${apiURLBase}/file/thumbnail/${archivos[0].id}`)
-      else ruta = 'resources/images/no-photo-available.png'
+      else ruta = 'resources/images/no-photo-available.svg'
       return (
         <a
           style={{

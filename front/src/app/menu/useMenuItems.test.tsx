@@ -8,7 +8,11 @@ describe('menú por permisos', () => {
   })
 
   it('un usuario solo ve las entradas de sus roles y sin submenús vacíos', () => {
-    const visibles = filtrarMenu(menuItems, ['V-CATALOGOS-TITULO', 'V-CATALOGO-MENU', 'V-CATALOGO-GENERAL'])
+    const visibles = filtrarMenu(menuItems, [
+      'V-CATALOGOS-TITULO',
+      'V-CATALOGO-MENU',
+      'V-CATALOGO-GENERAL',
+    ])
     expect(visibles.map(e => e.title)).toEqual(['Catálogos', 'Catálogos'])
     expect(visibles[1].children?.map(e => e.url)).toEqual(['/catalogo/general'])
   })
@@ -19,7 +23,10 @@ describe('menú por permisos', () => {
   })
 
   it('caminoEnMenu devuelve los títulos hasta la página (migas de pan)', () => {
-    expect(caminoEnMenu('/catalogo/general').map(e => e.title)).toEqual(['Catálogos', 'Búsqueda General'])
+    expect(caminoEnMenu('/catalogo/general').map(e => e.title)).toEqual([
+      'Catálogos',
+      'Búsqueda General',
+    ])
     expect(caminoEnMenu('/no-existe')).toEqual([])
   })
 })

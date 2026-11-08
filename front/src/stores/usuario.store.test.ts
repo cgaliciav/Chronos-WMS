@@ -48,7 +48,11 @@ describe('usuario.store', () => {
 
     expect(correcto).toBe(false)
     expect(localStorage.getItem('t')).toBeNull()
-    expect(useUsuarioStore.getState()).toMatchObject({ autorizado: false, cargando: false, permisos: [] })
+    expect(useUsuarioStore.getState()).toMatchObject({
+      autorizado: false,
+      cargando: false,
+      permisos: [],
+    })
     expect(notification.error).toHaveBeenCalledWith({ title: 'Credenciales inválidas' })
   })
 
@@ -62,7 +66,9 @@ describe('usuario.store', () => {
   it('cargarCuentaActual con token caducado deja la sesión sin autorizar', async () => {
     localStorage.setItem('t', 'caducado')
     servidor.use(
-      http.get(`${API}/user/current`, () => HttpResponse.json({ message: 'Token caducado' }, { status: 401 })),
+      http.get(`${API}/user/current`, () =>
+        HttpResponse.json({ message: 'Token caducado' }, { status: 401 }),
+      ),
     )
     await useUsuarioStore.getState().cargarCuentaActual()
     expect(useUsuarioStore.getState()).toMatchObject({ autorizado: false, cargando: false })
@@ -74,7 +80,11 @@ describe('usuario.store', () => {
 
     await useUsuarioStore.getState().logout()
 
-    expect(useUsuarioStore.getState()).toMatchObject({ autorizado: false, permisos: [], nombre: '' })
+    expect(useUsuarioStore.getState()).toMatchObject({
+      autorizado: false,
+      permisos: [],
+      nombre: '',
+    })
     expect(localStorage.getItem('t')).toBeNull()
     expect(localStorage.getItem('ultimaVisitada')).toBeNull()
   })

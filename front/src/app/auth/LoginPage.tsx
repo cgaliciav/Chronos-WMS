@@ -40,7 +40,10 @@ export default function LoginPage() {
           >
             <Input size="large" placeholder="Correo electrónico" autoComplete="username" />
           </Form.Item>
-          <Form.Item name="password" rules={[{ required: true, message: 'Por favor introduce tu contraseña' }]}>
+          <Form.Item
+            name="password"
+            rules={[{ required: true, message: 'Por favor introduce tu contraseña' }]}
+          >
             <Input.Password size="large" placeholder="Contraseña" autoComplete="current-password" />
           </Form.Item>
           <Button type="primary" size="large" htmlType="submit" block loading={cargando}>

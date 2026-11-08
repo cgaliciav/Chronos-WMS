@@ -1,5 +1,11 @@
 import { PeticionBase } from '..'
-import type { Grupo, InventarioActual, Movimiento, ParametrosTabla, ResultadoTabla } from 'types/api'
+import type {
+  Grupo,
+  InventarioActual,
+  Movimiento,
+  ParametrosTabla,
+  ResultadoTabla,
+} from 'types/api'
 
 const recurso = 'groups'
 
@@ -7,9 +13,15 @@ type Parametros = object
 
 /** Grupos / listados de movimientos (`/groups`). */
 export default class GrupoPeticiones {
-  static listado = (parametros: ParametrosTabla = {}) => PeticionBase.listado<Grupo>(recurso, parametros)
+  static listado = (parametros: ParametrosTabla = {}) =>
+    PeticionBase.listado<Grupo>(recurso, parametros)
   static listadoPorProyecto = (parametros: ParametrosTabla = {}) =>
-    PeticionBase.generalPost<ResultadoTabla<Grupo>>(recurso, 'list-by-project-antd', parametros)
+    // El API devuelve movimientos (no grupos) en `list-by-project-antd`.
+    PeticionBase.generalPost<ResultadoTabla<Movimiento>>(
+      recurso,
+      'list-by-project-antd',
+      parametros,
+    )
   static listadoPorGrupo = (parametros: ParametrosTabla = {}) =>
     PeticionBase.generalPost<ResultadoTabla<Grupo>>(recurso, 'list-by-group-antd', parametros)
   static habilitar = (id: number | string) => PeticionBase.habilitar(recurso, id)
@@ -19,7 +31,8 @@ export default class GrupoPeticiones {
   static obtenerId = (id: number | string) => PeticionBase.obtenerId<Grupo>(recurso, id)
   static nuevo = (parametros: Parametros = {}) => PeticionBase.nuevo<Grupo>(recurso, parametros)
   static editar = (parametros: Parametros = {}) => PeticionBase.editar(recurso, parametros)
-  static quitar = (parametros: Parametros = {}) => PeticionBase.generalDelete(recurso, 'remove', parametros)
+  static quitar = (parametros: Parametros = {}) =>
+    PeticionBase.generalDelete(recurso, 'remove', parametros)
   static nuevoConCompra = (parametros: Parametros = {}) =>
     PeticionBase.generalPost<Grupo>(recurso, 'new-purchase', parametros)
   static nuevoConDetalles = (parametros: Parametros = {}) =>
@@ -33,13 +46,29 @@ export default class GrupoPeticiones {
   static editarconInventario = (parametros: Parametros = {}) =>
     PeticionBase.generalPut(recurso, 'edit-inventory', parametros)
   static movimientosPorGrupo = (parametros: ParametrosTabla = {}) =>
-    PeticionBase.generalPost<ResultadoTabla<Movimiento>>(recurso, 'activity-list-by-group', parametros)
+    PeticionBase.generalPost<ResultadoTabla<Movimiento>>(
+      recurso,
+      'activity-list-by-group',
+      parametros,
+    )
   static movimientosActivosProyecto = (parametros: ParametrosTabla = {}) =>
-    PeticionBase.generalPost<ResultadoTabla<Movimiento>>(recurso, 'active-activity-list', parametros)
+    PeticionBase.generalPost<ResultadoTabla<Movimiento>>(
+      recurso,
+      'active-activity-list',
+      parametros,
+    )
   static inventarioPendiente = (parametros: ParametrosTabla = {}) =>
-    PeticionBase.generalPost<ResultadoTabla<InventarioActual>>(recurso, 'inventory-todo-list', parametros)
+    PeticionBase.generalPost<ResultadoTabla<InventarioActual>>(
+      recurso,
+      'inventory-todo-list',
+      parametros,
+    )
   static inventarioHecho = (parametros: ParametrosTabla = {}) =>
-    PeticionBase.generalPost<ResultadoTabla<InventarioActual>>(recurso, 'inventory-done-list', parametros)
+    PeticionBase.generalPost<ResultadoTabla<InventarioActual>>(
+      recurso,
+      'inventory-done-list',
+      parametros,
+    )
   static agregarMovimiento = (parametros: Parametros = {}) =>
     PeticionBase.generalPut<Movimiento>(recurso, 'activity', parametros)
   static agregarMovimientoCompra = (parametros: Parametros = {}) =>

@@ -3,7 +3,9 @@
 import { useState } from 'react'
 import { Button, Tabs, Steps, Spin } from 'antd'
 import dayjs, { type Dayjs } from 'dayjs'
-import FormaEdicionArticulo from 'pages/catalogos/articulos/editarDetalle/componentes/formaEdicionArticulo'
+import FormaEdicionArticulo, {
+  type ValoresArticulo,
+} from 'pages/catalogos/articulos/editarDetalle/componentes/formaEdicionArticulo'
 import CaracteristicasProducto from 'pages/componentes/caracteristicas'
 import Comentarios from 'pages/componentes/comentarios'
 import SubirArchivos from 'pages/componentes/subirArchivos'
@@ -25,15 +27,6 @@ interface InventarioFormaAC {
 }
 
 /** Valores de `FormaEdicionArticulo` con `esNuevo`. */
-interface ValoresArticuloNuevo {
-  titulo: string
-  cantidad: number
-  precio: number
-  area: number
-  bodega: number
-  descripcion?: string
-  moneda?: string
-}
 
 const inventarioVacio = (): InventarioFormaAC => ({
   cantidad: 0,
@@ -87,19 +80,22 @@ const FormaNuevoItemAC = ({
       })
   }
 
-  const crearArticulo = (valores: ValoresArticuloNuevo) => {
+  const crearArticulo = (valores: ValoresArticulo) => {
     // Crea el producto y su inventario actual; al no mandar `productoCodigos`, el API autogenera un código.
     setGuardando(true)
 
     const {
       titulo,
-      cantidad,
-      precio: productoPrecioOriginal,
+      cantidad: cantidadTexto,
+      precio: precioTexto,
       area: areaId,
       bodega: bodegaId,
       descripcion,
       moneda,
     } = valores
+    // El formulario puede entregar cantidad y precio como texto (p. ej. tras vaciarlo para el siguiente artículo).
+    const cantidad = Number(cantidadTexto)
+    const productoPrecioOriginal = Number(precioTexto)
 
     GrupoPeticiones.agregarMovimientoCompra({
       grupoId,

@@ -16,7 +16,12 @@ export interface ACLProps {
  * Muestra `children` solo si el usuario tiene alguno de `roles`; con `redirect`, además avisa y navega.
  * Misma API que el antiguo `components/cleanui/system/ACL` (plan 01 fase 6).
  */
-export default function ACL({ roles = [], redirect = false, defaultRedirect = '/auth/401', children }: ACLProps) {
+export default function ACL({
+  roles = [],
+  redirect = false,
+  defaultRedirect = '/auth/401',
+  children,
+}: ACLProps) {
   const permisos = useUsuarioStore(estado => estado.permisos)
   const navigate = useNavigate()
   const autorizado = tieneAlgunRol(permisos, roles)

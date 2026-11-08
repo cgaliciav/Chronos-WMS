@@ -8,7 +8,9 @@ describe('ArchivoPeticiones', () => {
     localStorage.setItem('t', 'tk')
     servidor.use(
       http.post(`${API}/file/get-response-interface`, () =>
-        HttpResponse.json([{ uid: -1, name: 'a.png', url: '/api/file/1', thumbUrl: '/api/file/thumbnail/1' }]),
+        HttpResponse.json([
+          { uid: -1, name: 'a.png', url: '/api/file/1', thumbUrl: '/api/file/thumbnail/1' },
+        ]),
       ),
     )
     const [ficha] = await ArchivoPeticiones.obtenerResponseFileDeId({ ids: [1] })

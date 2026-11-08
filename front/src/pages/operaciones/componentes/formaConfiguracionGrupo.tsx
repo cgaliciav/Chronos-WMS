@@ -6,7 +6,7 @@ import UsuarioPeticiones from 'services/axios/usuarios'
 import ProveedorPeticiones from 'services/axios/proveedores'
 import FacturaTipoPeticiones from 'services/axios/facturaTipos'
 import GrupoPeticiones from 'services/axios/grupos'
-import { filtrarOpcion } from './filtrarOpcion'
+import { filtrarOpcion } from 'helpers/funcionesExtras'
 import type {
   FormaConfiguracionGrupoProps,
   ValorEtiquetado,

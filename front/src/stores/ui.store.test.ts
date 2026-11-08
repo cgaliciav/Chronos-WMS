@@ -20,7 +20,10 @@ describe('ui.store', () => {
   })
 
   it('recupera menuColapsado al rehidratar', async () => {
-    localStorage.setItem('chronos.ui', JSON.stringify({ state: { menuColapsado: true }, version: 0 }))
+    localStorage.setItem(
+      'chronos.ui',
+      JSON.stringify({ state: { menuColapsado: true }, version: 0 }),
+    )
     await useUiStore.persist.rehydrate()
     expect(useUiStore.getState().menuColapsado).toBe(true)
   })

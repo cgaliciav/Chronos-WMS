@@ -6,16 +6,16 @@
 > (68 declarados − `/dashboard/alpha`) + la redirección `/`. De ellas, **62 rutas de negocio** (Administración 16,
 > Catálogos 10, Operaciones 34, Reportes 2) y 6 de Auth/raíz. El plan 01 habla de 58 y `front/CLAUDE.md` de
 > 64 rutas totales: 58 = 64 − 5 auth − 1 demo, así que la cifra parece venir de un recuento antiguo o
-> erróneo de `router.jsx` (hoy hay 68 `path` activos y 1 comentado, `/articulos/editar/inventarioActual`).
+> erróneo de `router.tsx` (hoy hay 68 `path` activos y 1 comentado, `/articulos/editar/inventarioActual`).
 
 Plan 01, fase 0, paso 2. Sirve de checklist para las fases 1–6 (no perder rutas, roles ni llamadas al migrar).
 
 **Cómo leer la tabla**
 
-- **Componente**: archivo cargado con `React.lazy` (todas las páginas son `index.jsx`).
+- **Componente**: archivo cargado con `React.lazy` (todas las páginas son `index.tsx`).
 - **Rol(es)**: código de la entrada de menú (`role`) y, si difiere, el del `<ACL roles={[…]} redirect>` raíz
   de la página (⚠️). `ADMINISTRADOR` está en todos los ACL y ve todo el menú, por eso no se repite. El menú
-  (`components/cleanui/layout/Menu/MenuLeft`) exige además el `role` de cada nodo padre (p. ej. `V-OPERACION-PRESTAMO`
+  (`app/menu/useMenuItems`) exige además el `role` de cada nodo padre (p. ej. `V-OPERACION-PRESTAMO`
   para las hojas de Préstamos). Una diferencia menú≠ACL significa que el usuario necesita **ambos** códigos:
   con solo el del menú ve la entrada y el ACL lo manda a `/auth/401`.
 - **Endpoints**: rutas relativas a `REACT_APP_API_URL` (por defecto `/api/`). Es un cierre estático: incluye
@@ -37,94 +37,94 @@ Plan 01, fase 0, paso 2. Sirve de checklist para las fases 1–6 (no perder ruta
 
 | Ruta | Componente | Rol(es) | Endpoints del API consumidos | Crítica |
 |---|---|---|---|:-:|
-| `/usuarios/listado` | `src/pages/administracion/usuarios/listado/index.jsx` | `V-ADMINISTRACION-USUARIOSLISTADO` ≠ ACL `ADMINISTRACION-USUARIOSLISTADO` ⚠️ | `PUT /user/disable/:id`, `POST /user/list-antd`, `PUT /user/renewpassword/` |  |
-| `/usuarios/cambiar-password` | `src/pages/administracion/usuarios/cambiarPassword/index.jsx` | `V-ADMINISTRACION-USUARIOSCAMBIARPASSWORD` · **sin ACL** ⚠️ | `PUT /user/password` |  |
-| `/usuarios/nuevo` | `src/pages/administracion/usuarios/nuevo/index.jsx` | `V-ADMINISTRACION-USUARIOSNUEVO` ≠ ACL `USUARIO-NUEVO` ⚠️ | `GET /area/list-names`, `GET /project/list-names`, `GET /role/list-names`, `POST /user/new`, `GET /warehouse/list-names` |  |
-| `/usuarios/editar` | `src/pages/administracion/usuarios/editar/index.jsx` | fuera del menú · ACL `USUARIO-EDITAR` | `GET /area/list-names`, `GET /project/list-names`, `GET /role/list-names`, `GET /user/:id`, `PUT /user/disable/:id`, `PUT /user/edit`, `PUT /user/enable/:id`, `GET /warehouse/list-names` |  |
-| `/proyectos/listado` | `src/pages/administracion/proyectos/listado/index.jsx` | `V-ADMINISTRACION-PROYECTOSLISTADO` ≠ ACL `PROYECTO-LISTADO` ⚠️ | `PUT /project/disable/:id`, `POST /project/list-antd` |  |
-| `/proyectos/nuevo` | `src/pages/administracion/proyectos/nuevo/index.jsx` | `V-ADMINISTRACION-PROYECTOSNUEVO` ≠ ACL `PROYECTO-NUEVO` ⚠️ | `POST /project/new` |  |
-| `/proyectos/editar` | `src/pages/administracion/proyectos/editar/index.jsx` | fuera del menú · ACL `PROYECTO-EDITAR` | `GET /project/:id`, `PUT /project/disable/:id`, `PUT /project/edit`, `PUT /project/enable/:id` |  |
-| `/proveedores/listado` | `src/pages/administracion/proveedores/listado/index.jsx` | `V-ADMINISTRACION-PROVEEDORESLISTADO` ≠ ACL `PROVEEDOR-LISTADO` ⚠️ | `PUT /supplier/disable/:id`, `POST /supplier/list-antd` |  |
-| `/proveedores/nuevo` | `src/pages/administracion/proveedores/nuevo/index.jsx` | `V-ADMINISTRACION-PROVEEDORESNUEVO` ≠ ACL `PROVEEDOR-NUEVO` ⚠️ | `POST /supplier/new` |  |
-| `/proveedores/editar` | `src/pages/administracion/proveedores/editar/index.jsx` | fuera del menú · ACL `PROVEEDOR-EDITAR` | `GET /supplier/:id`, `PUT /supplier/disable/:id`, `PUT /supplier/edit`, `PUT /supplier/enable/:id` |  |
-| `/areas/listado` | `src/pages/administracion/areas/listado/index.jsx` | `V-ADMINISTRACION-AREASLISTADO` ≠ ACL `AREA-LISTADO` ⚠️ | `PUT /area/disable/:id`, `POST /area/list-antd` |  |
-| `/areas/nuevo` | `src/pages/administracion/areas/nuevo/index.jsx` | `V-ADMINISTRACION-AREASNUEVO` ≠ ACL `AREA-NUEVO` ⚠️ | `POST /area/new` |  |
-| `/areas/editar` | `src/pages/administracion/areas/editar/index.jsx` | fuera del menú · ACL `AREA-EDITAR` | `GET /area/:id`, `PUT /area/disable/:id`, `PUT /area/edit`, `PUT /area/enable/:id` |  |
-| `/bodegas/listado` | `src/pages/administracion/bodegas/listado/index.jsx` | `V-ADMINISTRACION-BODEGASLISTADO` ≠ ACL `BODEGA-LISTADO` ⚠️ | `PUT /warehouse/disable/:id`, `POST /warehouse/list-antd` |  |
-| `/bodegas/nuevo` | `src/pages/administracion/bodegas/nuevo/index.jsx` | `V-ADMINISTRACION-BODEGASNUEVO` ≠ ACL `BODEGA-NUEVO` ⚠️ | `POST /warehouse/new` |  |
-| `/bodegas/editar` | `src/pages/administracion/bodegas/editar/index.jsx` | fuera del menú · ACL `BODEGA-EDITAR` | `GET /warehouse/:id`, `PUT /warehouse/disable/:id`, `PUT /warehouse/edit`, `PUT /warehouse/enable/:id` |  |
+| `/usuarios/listado` | `src/pages/administracion/usuarios/listado/index.tsx` | `V-ADMINISTRACION-USUARIOSLISTADO` ≠ ACL `ADMINISTRACION-USUARIOSLISTADO` ⚠️ | `PUT /user/disable/:id`, `POST /user/list-antd`, `PUT /user/renewpassword/` |  |
+| `/usuarios/cambiar-password` | `src/pages/administracion/usuarios/cambiarPassword/index.tsx` | `V-ADMINISTRACION-USUARIOSCAMBIARPASSWORD` · **sin ACL** ⚠️ | `PUT /user/password` |  |
+| `/usuarios/nuevo` | `src/pages/administracion/usuarios/nuevo/index.tsx` | `V-ADMINISTRACION-USUARIOSNUEVO` ≠ ACL `USUARIO-NUEVO` ⚠️ | `GET /area/list-names`, `GET /project/list-names`, `GET /role/list-names`, `POST /user/new`, `GET /warehouse/list-names` |  |
+| `/usuarios/editar` | `src/pages/administracion/usuarios/editar/index.tsx` | fuera del menú · ACL `USUARIO-EDITAR` | `GET /area/list-names`, `GET /project/list-names`, `GET /role/list-names`, `GET /user/:id`, `PUT /user/disable/:id`, `PUT /user/edit`, `PUT /user/enable/:id`, `GET /warehouse/list-names` |  |
+| `/proyectos/listado` | `src/pages/administracion/proyectos/listado/index.tsx` | `V-ADMINISTRACION-PROYECTOSLISTADO` ≠ ACL `PROYECTO-LISTADO` ⚠️ | `PUT /project/disable/:id`, `POST /project/list-antd` |  |
+| `/proyectos/nuevo` | `src/pages/administracion/proyectos/nuevo/index.tsx` | `V-ADMINISTRACION-PROYECTOSNUEVO` ≠ ACL `PROYECTO-NUEVO` ⚠️ | `POST /project/new` |  |
+| `/proyectos/editar` | `src/pages/administracion/proyectos/editar/index.tsx` | fuera del menú · ACL `PROYECTO-EDITAR` | `GET /project/:id`, `PUT /project/disable/:id`, `PUT /project/edit`, `PUT /project/enable/:id` |  |
+| `/proveedores/listado` | `src/pages/administracion/proveedores/listado/index.tsx` | `V-ADMINISTRACION-PROVEEDORESLISTADO` ≠ ACL `PROVEEDOR-LISTADO` ⚠️ | `PUT /supplier/disable/:id`, `POST /supplier/list-antd` |  |
+| `/proveedores/nuevo` | `src/pages/administracion/proveedores/nuevo/index.tsx` | `V-ADMINISTRACION-PROVEEDORESNUEVO` ≠ ACL `PROVEEDOR-NUEVO` ⚠️ | `POST /supplier/new` |  |
+| `/proveedores/editar` | `src/pages/administracion/proveedores/editar/index.tsx` | fuera del menú · ACL `PROVEEDOR-EDITAR` | `GET /supplier/:id`, `PUT /supplier/disable/:id`, `PUT /supplier/edit`, `PUT /supplier/enable/:id` |  |
+| `/areas/listado` | `src/pages/administracion/areas/listado/index.tsx` | `V-ADMINISTRACION-AREASLISTADO` ≠ ACL `AREA-LISTADO` ⚠️ | `PUT /area/disable/:id`, `POST /area/list-antd` |  |
+| `/areas/nuevo` | `src/pages/administracion/areas/nuevo/index.tsx` | `V-ADMINISTRACION-AREASNUEVO` ≠ ACL `AREA-NUEVO` ⚠️ | `POST /area/new` |  |
+| `/areas/editar` | `src/pages/administracion/areas/editar/index.tsx` | fuera del menú · ACL `AREA-EDITAR` | `GET /area/:id`, `PUT /area/disable/:id`, `PUT /area/edit`, `PUT /area/enable/:id` |  |
+| `/bodegas/listado` | `src/pages/administracion/bodegas/listado/index.tsx` | `V-ADMINISTRACION-BODEGASLISTADO` ≠ ACL `BODEGA-LISTADO` ⚠️ | `PUT /warehouse/disable/:id`, `POST /warehouse/list-antd` |  |
+| `/bodegas/nuevo` | `src/pages/administracion/bodegas/nuevo/index.tsx` | `V-ADMINISTRACION-BODEGASNUEVO` ≠ ACL `BODEGA-NUEVO` ⚠️ | `POST /warehouse/new` |  |
+| `/bodegas/editar` | `src/pages/administracion/bodegas/editar/index.tsx` | fuera del menú · ACL `BODEGA-EDITAR` | `GET /warehouse/:id`, `PUT /warehouse/disable/:id`, `PUT /warehouse/edit`, `PUT /warehouse/enable/:id` |  |
 
 ## Catálogos
 
 | Ruta | Componente | Rol(es) | Endpoints del API consumidos | Crítica |
 |---|---|---|---|:-:|
-| `/catalogo/general` | `src/pages/catalogos/1.general/index.jsx` | `V-CATALOGO-GENERAL` (= ACL) | [REV], [BAL], `GET /activity/prior-activity/:id`, `POST /current-inventory/list-catalog-general`, `GET /file/catalog/:id`, `GET /user/get-areas`, `GET /user/get-warehouses` | ✅ |
-| `/catalogo/por-codigos` | `src/pages/catalogos/2.porCodigos/index.jsx` | `V-CATALOGO-CODIGOS` (= ACL) | [REV], [BAL], `GET /activity/prior-activity/:id`, `POST /current-inventory/list-catalog-codes`, `GET /file/catalog/:id` | ✅ |
-| `/catalogo/bajas` | `src/pages/catalogos/3.bajas/index.jsx` | `V-CATALOGO-BAJAS` (= ACL) | [REV], [BAL], `GET /activity/prior-activity/:id`, `POST /current-inventory/list-catalog-deregister`, `GET /file/catalog/:id`, `GET /user/get-areas`, `GET /user/get-warehouses` |  |
-| `/catalogo/por-proyecto` | `src/pages/catalogos/4.porProyecto/index.jsx` | `V-CATALOGO-PROYECTO` (= ACL) | [REV], [BAL], `GET /activity/prior-activity/:id`, `POST /current-inventory/list-catalog-project`, `GET /file/catalog/:id`, `GET /user/get-areas`, `GET /user/get-projects`, `GET /user/get-warehouses` |  |
-| `/catalogo/por-facturas` | `src/pages/catalogos/5.porFacturas/index.jsx` | fuera del menú · ACL `V-CATALOGO-FACTURAS` | [REV], [BAL], `GET /activity/prior-activity/:id`, `POST /current-inventory/list-catalog-project`, `GET /file/catalog/:id`, `GET /user/get-areas`, `GET /user/get-projects`, `GET /user/get-warehouses` |  |
-| `/catalogo/validaciones` | `src/pages/catalogos/6.validaciones/index.jsx` | `V-CATALOGO-VALIDACIONES` (= ACL) | [REV], `POST /current-inventory/list-catalog-general`, `GET /file/review/:id`, `GET /user/get-areas`, `GET /user/get-warehouses` |  |
-| `/articulos/detalle` | `src/pages/catalogos/articulos/detalle/index.jsx` | fuera del menú · ACL `V-ARTICULOS-DETALLE`; acción: `ARTICULOS-EDITAR` | [REV], [BAL], `GET /activity/history-by-current-inventory/:id`, `GET /current-inventory/:id`, `GET /file/:id`, `GET /file/catalog/:id`, `GET /item-balance/:id`, `POST /item-code/new`, `POST /item-code/new-self-generated`, `DELETE /item-code/remove`, `PUT /item-price/edit`, `PUT /item-spec/edit`, `POST /item-spec/new`, `DELETE /item-spec/remove` |  |
-| `/articulos/editar/detalle` | `src/pages/catalogos/articulos/editarDetalle/index.jsx` | fuera del menú · ACL `V-EDITAR-ARTICULOS-DETALLE` | [COM], [ARCH], `GET /area/list-names`, `GET /current-inventory/:id`, `PUT /current-inventory/edit`, `POST /item-code/new`, `POST /item-code/new-self-generated`, `DELETE /item-code/remove`, `PUT /item-price/edit`, `PUT /item-spec/edit`, `POST /item-spec/new`, `DELETE /item-spec/remove`, `PUT /item/edit`, `GET /warehouse/list-names` |  |
-| `/articulos/validado` | `src/pages/catalogos/articulos/detalleValidaciones/index.jsx` | fuera del menú · ACL `VALIDACIONES` | [REV], `GET /current-inventory/:id`, `GET /file/:id`, `GET /file/catalog/:id` |  |
-| `/catalogo/inventario` | `src/pages/catalogos/7.inventarioVisual/index.jsx` | `V-CATALOGO-INVENTARIO` ≠ ACL `V-CATALOGO-INVENTARIOS` ⚠️ | [REV], [BAL], `GET /activity/prior-activity/:id`, `POST /current-inventory/list-catalog-codes`, `POST /current-inventory/list-catalog-general`, `GET /file/catalog/:id`, `GET /user/get-areas`, `GET /user/get-warehouses` |  |
+| `/catalogo/general` | `src/pages/catalogos/1.general/index.tsx` | `V-CATALOGO-GENERAL` (= ACL) | [REV], [BAL], `GET /activity/prior-activity/:id`, `POST /current-inventory/list-catalog-general`, `GET /file/catalog/:id`, `GET /user/get-areas`, `GET /user/get-warehouses` | ✅ |
+| `/catalogo/por-codigos` | `src/pages/catalogos/2.porCodigos/index.tsx` | `V-CATALOGO-CODIGOS` (= ACL) | [REV], [BAL], `GET /activity/prior-activity/:id`, `POST /current-inventory/list-catalog-codes`, `GET /file/catalog/:id` | ✅ |
+| `/catalogo/bajas` | `src/pages/catalogos/3.bajas/index.tsx` | `V-CATALOGO-BAJAS` (= ACL) | [REV], [BAL], `GET /activity/prior-activity/:id`, `POST /current-inventory/list-catalog-deregister`, `GET /file/catalog/:id`, `GET /user/get-areas`, `GET /user/get-warehouses` |  |
+| `/catalogo/por-proyecto` | `src/pages/catalogos/4.porProyecto/index.tsx` | `V-CATALOGO-PROYECTO` (= ACL) | [REV], [BAL], `GET /activity/prior-activity/:id`, `POST /current-inventory/list-catalog-project`, `GET /file/catalog/:id`, `GET /user/get-areas`, `GET /user/get-projects`, `GET /user/get-warehouses` |  |
+| `/catalogo/por-facturas` | `src/pages/catalogos/5.porFacturas/index.tsx` | fuera del menú · ACL `V-CATALOGO-FACTURAS` | [REV], [BAL], `GET /activity/prior-activity/:id`, `POST /current-inventory/list-catalog-project`, `GET /file/catalog/:id`, `GET /user/get-areas`, `GET /user/get-projects`, `GET /user/get-warehouses` |  |
+| `/catalogo/validaciones` | `src/pages/catalogos/6.validaciones/index.tsx` | `V-CATALOGO-VALIDACIONES` (= ACL) | [REV], `POST /current-inventory/list-catalog-general`, `GET /file/review/:id`, `GET /user/get-areas`, `GET /user/get-warehouses` |  |
+| `/articulos/detalle` | `src/pages/catalogos/articulos/detalle/index.tsx` | fuera del menú · ACL `V-ARTICULOS-DETALLE`; acción: `ARTICULOS-EDITAR` | [REV], [BAL], `GET /activity/history-by-current-inventory/:id`, `GET /current-inventory/:id`, `GET /file/:id`, `GET /file/catalog/:id`, `GET /item-balance/:id`, `POST /item-code/new`, `POST /item-code/new-self-generated`, `DELETE /item-code/remove`, `PUT /item-price/edit`, `PUT /item-spec/edit`, `POST /item-spec/new`, `DELETE /item-spec/remove` |  |
+| `/articulos/editar/detalle` | `src/pages/catalogos/articulos/editarDetalle/index.tsx` | fuera del menú · ACL `V-EDITAR-ARTICULOS-DETALLE` | [COM], [ARCH], `GET /area/list-names`, `GET /current-inventory/:id`, `PUT /current-inventory/edit`, `POST /item-code/new`, `POST /item-code/new-self-generated`, `DELETE /item-code/remove`, `PUT /item-price/edit`, `PUT /item-spec/edit`, `POST /item-spec/new`, `DELETE /item-spec/remove`, `PUT /item/edit`, `GET /warehouse/list-names` |  |
+| `/articulos/validado` | `src/pages/catalogos/articulos/detalleValidaciones/index.tsx` | fuera del menú · ACL `VALIDACIONES` | [REV], `GET /current-inventory/:id`, `GET /file/:id`, `GET /file/catalog/:id` |  |
+| `/catalogo/inventario` | `src/pages/catalogos/7.inventarioVisual/index.tsx` | `V-CATALOGO-INVENTARIO` ≠ ACL `V-CATALOGO-INVENTARIOS` ⚠️ | [REV], [BAL], `GET /activity/prior-activity/:id`, `POST /current-inventory/list-catalog-codes`, `POST /current-inventory/list-catalog-general`, `GET /file/catalog/:id`, `GET /user/get-areas`, `GET /user/get-warehouses` |  |
 
 ## Operaciones
 
 | Ruta | Componente | Rol(es) | Endpoints del API consumidos | Crítica |
 |---|---|---|---|:-:|
-| `/prestamos/nuevo` | `src/pages/operaciones/1.prestamos/nuevo/index.jsx` | `V-OPERACION-PRESTAMONUEVO` (= ACL) | [FORM-GRUPO], `POST /groups/new-details` | ✅ |
-| `/prestamos/por-grupo` | `src/pages/operaciones/1.prestamos/listado/porGrupo/index.jsx` | `V-OPERACION-PRESTAMOPORGRUPO` (= ACL) | `POST /groups/list-by-group-antd`, `DELETE /groups/remove` |  |
-| `/prestamos/por-proyecto` | `src/pages/operaciones/1.prestamos/listado/porProyecto/index.jsx` | `V-OPERACION-PRESTAMOPORPROYECTO` (= ACL) | `GET /file/:id`, `GET /file/thumbnail/:id`, `POST /groups/list-by-project-antd`, `POST /reports/by-project`, `GET /user/get-areas`, `GET /user/get-projects`, `POST /user/list-names-dynamic` |  |
-| `/prestamos/operacion` | `src/pages/operaciones/1.prestamos/operacion/index.jsx` | fuera del menú · ACL `V-OPERACION-PRESTAMOOPERACION` | [REV], [BAL], [COM], [ARCH], `GET /file/:id`, `GET /file/catalog/:id`, `GET /file/thumbnail/:id`, `GET /groups/:id`, `PUT /groups/activity`, `DELETE /groups/activity`, `POST /groups/activity-list-by-group`, `PUT /groups/disable/:id`, `PUT /groups/enable/:id`, `POST /reports/by-group` | ✅ |
-| `/prestamos/activos` | `src/pages/operaciones/1.prestamos/listado/porActivos/index.jsx` | `V-OPERACION-PRESTAMOSACTIVOS` (= ACL) | `GET /file/:id`, `GET /file/thumbnail/:id`, `POST /groups/active-activity-list`, `POST /reports/by-project`, `GET /user/get-areas`, `GET /user/get-projects`, `POST /user/list-names-dynamic` |  |
-| `/devoluciones/nuevo` | `src/pages/operaciones/2.devoluciones/nuevo/index.jsx` | `V-OPERACION-DEVOLUCIONNUEVO` ≠ ACL `DEVOLUCION-NUEVO` ⚠️ | [FORM-GRUPO], `POST /groups/new-details` | ✅ |
-| `/devoluciones/nuevo-externa` | `src/pages/operaciones/2.devoluciones/nuevoExterno/index.jsx` | `V-OPERACION-DEVOLUCIONNUEVOEXTERNA` ≠ ACL `DEVOLUCION-NUEVO` ⚠️ | [FORM-GRUPO], `POST /groups/new-details` |  |
-| `/devoluciones/por-grupo` | `src/pages/operaciones/2.devoluciones/listado/porGrupo/index.jsx` | `V-OPERACION-DEVOLUCIONPORGRUPO` ≠ ACL `OPERACION-DEVOLUCIONPORGRUPO` ⚠️ | `POST /groups/list-by-group-antd`, `DELETE /groups/remove` |  |
-| `/devoluciones/por-proyecto` | `src/pages/operaciones/2.devoluciones/listado/porProyecto/index.jsx` | `V-OPERACION-DEVOLUCIONPORPROYECTO` ≠ ACL `OPERACION-DEVOLUCIONESPORPROYECTO` ⚠️ | `GET /file/:id`, `GET /file/thumbnail/:id`, `POST /groups/list-by-project-antd`, `POST /reports/by-project`, `GET /user/get-areas`, `GET /user/get-projects`, `POST /user/list-names-dynamic` |  |
-| `/devoluciones/operacion` | `src/pages/operaciones/2.devoluciones/operacion/index.jsx` | fuera del menú · ACL `DEVOLUCION-OPERACION` | [REV], [BAL], [COM], [ARCH], `GET /file/:id`, `GET /file/catalog/:id`, `GET /file/thumbnail/:id`, `GET /groups/:id`, `PUT /groups/activity`, `DELETE /groups/activity`, `POST /groups/activity-list-by-group`, `PUT /groups/disable/:id`, `PUT /groups/enable/:id`, `POST /reports/by-group` |  |
-| `/bajas/nuevo` | `src/pages/operaciones/3.bajas/nuevo/index.jsx` | `V-OPERACION-BAJACONPROYECTO-NUEVO` ≠ ACL `BAJA-NUEVO` ⚠️ | [FORM-GRUPO], `POST /groups/new-details` | ✅ |
-| `/bajas/por-grupo` | `src/pages/operaciones/3.bajas/listado/porGrupo/index.jsx` | `V-OPERACION-BAJACONPROYECTO-LISTADOPORGRUPO` ≠ ACL `OPERACION-BajasPORGRUPO` ⚠️ | `POST /groups/list-by-group-antd`, `DELETE /groups/remove` |  |
-| `/bajas/por-proyecto` | `src/pages/operaciones/3.bajas/listado/porProyecto/index.jsx` | `V-OPERACION-BAJACONPROYECTO-LISTADOPORPROYECTO` ≠ ACL `OPERACION-BAJASPORPROYECTO` ⚠️ | `GET /file/:id`, `GET /file/thumbnail/:id`, `POST /groups/list-by-project-antd`, `POST /reports/by-project`, `GET /user/get-areas`, `GET /user/get-projects`, `POST /user/list-names-dynamic` |  |
-| `/bajas/operacion` | `src/pages/operaciones/3.bajas/operacion/index.jsx` | fuera del menú · ACL `BAJAS-OPERACION` | [REV], [BAL], [COM], [ARCH], `GET /file/:id`, `GET /file/catalog/:id`, `GET /file/thumbnail/:id`, `GET /groups/:id`, `PUT /groups/activity`, `DELETE /groups/activity`, `POST /groups/activity-list-by-group`, `PUT /groups/disable/:id`, `PUT /groups/enable/:id`, `POST /reports/by-group` |  |
-| `/bajas/sin-proyecto/nuevo` | `src/pages/operaciones/3.bajas/deAdministrador/nuevo/index.jsx` | `V-OPERACION-BAJASINRPOYECTO-NUEVO` ≠ ACL `BAJASINRPOYECTO-NUEVO` ⚠️ | [FORM-GRUPO], `POST /groups/new-details` |  |
-| `/bajas/sin-proyecto/por-grupo` | `src/pages/operaciones/3.bajas/deAdministrador/listado/porGrupo/index.jsx` | `V-OPERACION-BAJASINRPOYECTO-LISTADOPORPROYECTO` ≠ ACL `OPERACION-BajasPORGRUPO` ⚠️ | `POST /groups/list-by-group-antd`, `DELETE /groups/remove` |  |
-| `/bajas/sin-proyecto/operacion` | `src/pages/operaciones/3.bajas/deAdministrador/operacion/index.jsx` | fuera del menú · ACL `BAJASINRPOYECTO-OPERACION` | [REV], [BAL], [COM], [ARCH], `GET /file/:id`, `GET /file/catalog/:id`, `GET /file/thumbnail/:id`, `GET /groups/:id`, `PUT /groups/activity`, `DELETE /groups/activity`, `POST /groups/activity-list-by-group`, `PUT /groups/disable/:id`, `PUT /groups/enable/:id`, `POST /reports/by-group` |  |
-| `/compras/nuevo` | `src/pages/operaciones/4.compras/nuevo/index.jsx` | `V-OPERACION-COMPRANUEVO` ≠ ACL `COMPRAS-NUEVO` ⚠️ | [FORM-GRUPO], `POST /groups/new-purchase` | ✅ |
-| `/compras/por-factura` | `src/pages/operaciones/4.compras/listado/porGrupo/index.jsx` | `V-OPERACION-COMPRAPORGRUPO` ≠ ACL `OPERACION-COMPRASPORGRUPO` ⚠️ | `POST /groups/list-by-group-antd`, `DELETE /groups/remove` |  |
-| `/compras/por-proyecto` | `src/pages/operaciones/4.compras/listado/porProyecto/index.jsx` | `V-OPERACION-COMPRAPORPROYECTO` ≠ ACL `OPERACION-COMPRASPORPROYECTO` ⚠️ | `GET /file/:id`, `GET /file/thumbnail/:id`, `POST /groups/list-by-project-antd`, `POST /reports/by-project`, `GET /user/get-areas`, `GET /user/get-projects`, `POST /user/list-names-dynamic` |  |
-| `/compras/operacion` | `src/pages/operaciones/4.compras/operacion/index.jsx` | fuera del menú · ACL `COMPRAS-OPERACION` | [REV], [BAL], [COM], [ARCH], `GET /area/list-names`, `GET /current-inventory/:id`, `GET /file/:id`, `GET /file/catalog/:id`, `GET /file/thumbnail/:id`, `GET /groups/:id`, `DELETE /groups/activity`, `POST /groups/activity-list-by-group`, `PUT /groups/activity-purchase`, `PUT /groups/disable/:id`, `PUT /groups/enable/:id`, `PUT /item-spec/edit`, `POST /item-spec/new`, `DELETE /item-spec/remove`, `POST /reports/by-group`, `GET /warehouse/list-names` | ✅ |
-| `/compras/editar` | `src/pages/operaciones/4.compras/editarGrupo/index.jsx` | fuera del menú · ACL `COMPRAS-NUEVO` | [FORM-GRUPO], `GET /groups/:id`, `PUT /groups/edit-purchase` |  |
-| `/altas/nuevo` | `src/pages/operaciones/5.altas/nuevo/index.jsx` | `V-OPERACION-ALTANUEVO` ≠ ACL `ALTA-NUEVO` ⚠️ | [FORM-GRUPO], `POST /groups/new-details` |  |
-| `/altas/por-grupo` | `src/pages/operaciones/5.altas/listado/porGrupo/index.jsx` | `V-OPERACION-ALTAPORGRUPO` ≠ ACL `OPERACION-ALTASPORGRUPO` ⚠️ | `POST /groups/list-by-group-antd`, `DELETE /groups/remove` |  |
-| `/altas/operacion` | `src/pages/operaciones/5.altas/operacion/index.jsx` | fuera del menú · ACL `ALTAS-OPERACION` | [REV], [BAL], [COM], [ARCH], `GET /area/list-names`, `GET /current-inventory/:id`, `GET /file/:id`, `GET /file/catalog/:id`, `GET /file/thumbnail/:id`, `GET /groups/:id`, `DELETE /groups/activity`, `POST /groups/activity-list-by-group`, `PUT /groups/activity-purchase`, `PUT /groups/disable/:id`, `PUT /groups/enable/:id`, `PUT /item-spec/edit`, `POST /item-spec/new`, `DELETE /item-spec/remove`, `POST /reports/by-group`, `GET /warehouse/list-names` |  |
-| `/renta-externa/nuevo` | `src/pages/operaciones/6.rentasExternas/nuevo/index.jsx` | `V-OPERACION-RENTAEXTERNANUEVO` ≠ ACL `RENTAEXTERNA-NUEVO` ⚠️ | [FORM-GRUPO], `POST /groups/new-details` |  |
-| `/renta-externa/por-grupo` | `src/pages/operaciones/6.rentasExternas/listado/porGrupo/index.jsx` | `V-OPERACION-RENTAEXTERNAPORGRUPO` ≠ ACL `OPERACION-RENTAEXTERNAPORGRUPO` ⚠️ | `POST /groups/list-by-group-antd`, `DELETE /groups/remove` |  |
-| `/renta-externa/por-proyecto` | `src/pages/operaciones/6.rentasExternas/listado/porProyecto/index.jsx` | `V-OPERACION-RENTAEXTERNAPORPROYECTO` ≠ ACL `OPERACION-RENTASPORPROYECTO` ⚠️ | `GET /file/:id`, `GET /file/thumbnail/:id`, `POST /groups/list-by-project-antd`, `POST /reports/by-project`, `GET /user/get-areas`, `GET /user/get-projects`, `POST /user/list-names-dynamic` |  |
-| `/renta-externa/operacion` | `src/pages/operaciones/6.rentasExternas/operacion/index.jsx` | fuera del menú · ACL `RENTAEXTERNA-OPERACION` | [REV], [BAL], [COM], [ARCH], `GET /file/:id`, `GET /file/catalog/:id`, `GET /file/thumbnail/:id`, `GET /groups/:id`, `PUT /groups/activity`, `DELETE /groups/activity`, `POST /groups/activity-list-by-group`, `PUT /groups/disable/:id`, `PUT /groups/enable/:id`, `POST /reports/by-group` |  |
-| `/renta-externa/activos` | `src/pages/operaciones/6.rentasExternas/listado/porActivos/index.jsx` | `V-OPERACION-RENTAEXTERNAACTIVA` ≠ ACL `OPERACION-RENTAACTIVAPORPROYECTO` ⚠️ | `GET /file/:id`, `GET /file/thumbnail/:id`, `POST /groups/active-activity-list`, `POST /reports/by-project`, `GET /user/get-areas`, `GET /user/get-projects`, `POST /user/list-names-dynamic` |  |
-| `/previo/nuevo` | `src/pages/operaciones/8.previo/nuevo/index.jsx` | `V-OPERACION-PREVIONUEVO` ≠ ACL `PREVIO-NUEVO` ⚠️ | [FORM-GRUPO], `POST /groups/new` |  |
-| `/previo/por-grupo` | `src/pages/operaciones/8.previo/listado/porGrupo/index.jsx` | `V-OPERACION-PREVIOPORGRUPO` ≠ ACL `OPERACION-PREVIOPORGRUPO` ⚠️ | `POST /groups/list-by-group-antd`, `DELETE /groups/remove` |  |
-| `/previo/operacion` | `src/pages/operaciones/8.previo/operacion/index.jsx` | fuera del menú · ACL `PREVIO-OPERACION` | [REV], [BAL], [COM], [ARCH], `GET /file/:id`, `GET /file/catalog/:id`, `GET /file/thumbnail/:id`, `GET /groups/:id`, `PUT /groups/activity`, `DELETE /groups/activity`, `POST /groups/activity-list-by-group`, `PUT /groups/disable/:id`, `PUT /groups/enable/:id`, `POST /reports/by-group` |  |
-| `/movimientos/detalle` | `src/pages/operaciones/movimiento/index.jsx` | fuera del menú · ACL `DETALLE-MOVIMIENTO` | [COM], [ARCH], `GET /activity/:id`, `GET /activity/history-by-current-inventory/:id`, `GET /file/:id`, `GET /file/catalog/:id` | ✅ |
+| `/prestamos/nuevo` | `src/pages/operaciones/1.prestamos/nuevo/index.tsx` | `V-OPERACION-PRESTAMONUEVO` (= ACL) | [FORM-GRUPO], `POST /groups/new-details` | ✅ |
+| `/prestamos/por-grupo` | `src/pages/operaciones/1.prestamos/listado/porGrupo/index.tsx` | `V-OPERACION-PRESTAMOPORGRUPO` (= ACL) | `POST /groups/list-by-group-antd`, `DELETE /groups/remove` |  |
+| `/prestamos/por-proyecto` | `src/pages/operaciones/1.prestamos/listado/porProyecto/index.tsx` | `V-OPERACION-PRESTAMOPORPROYECTO` (= ACL) | `GET /file/:id`, `GET /file/thumbnail/:id`, `POST /groups/list-by-project-antd`, `POST /reports/by-project`, `GET /user/get-areas`, `GET /user/get-projects`, `POST /user/list-names-dynamic` |  |
+| `/prestamos/operacion` | `src/pages/operaciones/1.prestamos/operacion/index.tsx` | fuera del menú · ACL `V-OPERACION-PRESTAMOOPERACION` | [REV], [BAL], [COM], [ARCH], `GET /file/:id`, `GET /file/catalog/:id`, `GET /file/thumbnail/:id`, `GET /groups/:id`, `PUT /groups/activity`, `DELETE /groups/activity`, `POST /groups/activity-list-by-group`, `PUT /groups/disable/:id`, `PUT /groups/enable/:id`, `POST /reports/by-group` | ✅ |
+| `/prestamos/activos` | `src/pages/operaciones/1.prestamos/listado/porActivos/index.tsx` | `V-OPERACION-PRESTAMOSACTIVOS` (= ACL) | `GET /file/:id`, `GET /file/thumbnail/:id`, `POST /groups/active-activity-list`, `POST /reports/by-project`, `GET /user/get-areas`, `GET /user/get-projects`, `POST /user/list-names-dynamic` |  |
+| `/devoluciones/nuevo` | `src/pages/operaciones/2.devoluciones/nuevo/index.tsx` | `V-OPERACION-DEVOLUCIONNUEVO` ≠ ACL `DEVOLUCION-NUEVO` ⚠️ | [FORM-GRUPO], `POST /groups/new-details` | ✅ |
+| `/devoluciones/nuevo-externa` | `src/pages/operaciones/2.devoluciones/nuevoExterno/index.tsx` | `V-OPERACION-DEVOLUCIONNUEVOEXTERNA` ≠ ACL `DEVOLUCION-NUEVO` ⚠️ | [FORM-GRUPO], `POST /groups/new-details` |  |
+| `/devoluciones/por-grupo` | `src/pages/operaciones/2.devoluciones/listado/porGrupo/index.tsx` | `V-OPERACION-DEVOLUCIONPORGRUPO` ≠ ACL `OPERACION-DEVOLUCIONPORGRUPO` ⚠️ | `POST /groups/list-by-group-antd`, `DELETE /groups/remove` |  |
+| `/devoluciones/por-proyecto` | `src/pages/operaciones/2.devoluciones/listado/porProyecto/index.tsx` | `V-OPERACION-DEVOLUCIONPORPROYECTO` ≠ ACL `OPERACION-DEVOLUCIONESPORPROYECTO` ⚠️ | `GET /file/:id`, `GET /file/thumbnail/:id`, `POST /groups/list-by-project-antd`, `POST /reports/by-project`, `GET /user/get-areas`, `GET /user/get-projects`, `POST /user/list-names-dynamic` |  |
+| `/devoluciones/operacion` | `src/pages/operaciones/2.devoluciones/operacion/index.tsx` | fuera del menú · ACL `DEVOLUCION-OPERACION` | [REV], [BAL], [COM], [ARCH], `GET /file/:id`, `GET /file/catalog/:id`, `GET /file/thumbnail/:id`, `GET /groups/:id`, `PUT /groups/activity`, `DELETE /groups/activity`, `POST /groups/activity-list-by-group`, `PUT /groups/disable/:id`, `PUT /groups/enable/:id`, `POST /reports/by-group` |  |
+| `/bajas/nuevo` | `src/pages/operaciones/3.bajas/nuevo/index.tsx` | `V-OPERACION-BAJACONPROYECTO-NUEVO` ≠ ACL `BAJA-NUEVO` ⚠️ | [FORM-GRUPO], `POST /groups/new-details` | ✅ |
+| `/bajas/por-grupo` | `src/pages/operaciones/3.bajas/listado/porGrupo/index.tsx` | `V-OPERACION-BAJACONPROYECTO-LISTADOPORGRUPO` ≠ ACL `OPERACION-BajasPORGRUPO` ⚠️ | `POST /groups/list-by-group-antd`, `DELETE /groups/remove` |  |
+| `/bajas/por-proyecto` | `src/pages/operaciones/3.bajas/listado/porProyecto/index.tsx` | `V-OPERACION-BAJACONPROYECTO-LISTADOPORPROYECTO` ≠ ACL `OPERACION-BAJASPORPROYECTO` ⚠️ | `GET /file/:id`, `GET /file/thumbnail/:id`, `POST /groups/list-by-project-antd`, `POST /reports/by-project`, `GET /user/get-areas`, `GET /user/get-projects`, `POST /user/list-names-dynamic` |  |
+| `/bajas/operacion` | `src/pages/operaciones/3.bajas/operacion/index.tsx` | fuera del menú · ACL `BAJAS-OPERACION` | [REV], [BAL], [COM], [ARCH], `GET /file/:id`, `GET /file/catalog/:id`, `GET /file/thumbnail/:id`, `GET /groups/:id`, `PUT /groups/activity`, `DELETE /groups/activity`, `POST /groups/activity-list-by-group`, `PUT /groups/disable/:id`, `PUT /groups/enable/:id`, `POST /reports/by-group` |  |
+| `/bajas/sin-proyecto/nuevo` | `src/pages/operaciones/3.bajas/deAdministrador/nuevo/index.tsx` | `V-OPERACION-BAJASINRPOYECTO-NUEVO` ≠ ACL `BAJASINRPOYECTO-NUEVO` ⚠️ | [FORM-GRUPO], `POST /groups/new-details` |  |
+| `/bajas/sin-proyecto/por-grupo` | `src/pages/operaciones/3.bajas/deAdministrador/listado/porGrupo/index.tsx` | `V-OPERACION-BAJASINRPOYECTO-LISTADOPORPROYECTO` ≠ ACL `OPERACION-BajasPORGRUPO` ⚠️ | `POST /groups/list-by-group-antd`, `DELETE /groups/remove` |  |
+| `/bajas/sin-proyecto/operacion` | `src/pages/operaciones/3.bajas/deAdministrador/operacion/index.tsx` | fuera del menú · ACL `BAJASINRPOYECTO-OPERACION` | [REV], [BAL], [COM], [ARCH], `GET /file/:id`, `GET /file/catalog/:id`, `GET /file/thumbnail/:id`, `GET /groups/:id`, `PUT /groups/activity`, `DELETE /groups/activity`, `POST /groups/activity-list-by-group`, `PUT /groups/disable/:id`, `PUT /groups/enable/:id`, `POST /reports/by-group` |  |
+| `/compras/nuevo` | `src/pages/operaciones/4.compras/nuevo/index.tsx` | `V-OPERACION-COMPRANUEVO` ≠ ACL `COMPRAS-NUEVO` ⚠️ | [FORM-GRUPO], `POST /groups/new-purchase` | ✅ |
+| `/compras/por-factura` | `src/pages/operaciones/4.compras/listado/porGrupo/index.tsx` | `V-OPERACION-COMPRAPORGRUPO` ≠ ACL `OPERACION-COMPRASPORGRUPO` ⚠️ | `POST /groups/list-by-group-antd`, `DELETE /groups/remove` |  |
+| `/compras/por-proyecto` | `src/pages/operaciones/4.compras/listado/porProyecto/index.tsx` | `V-OPERACION-COMPRAPORPROYECTO` ≠ ACL `OPERACION-COMPRASPORPROYECTO` ⚠️ | `GET /file/:id`, `GET /file/thumbnail/:id`, `POST /groups/list-by-project-antd`, `POST /reports/by-project`, `GET /user/get-areas`, `GET /user/get-projects`, `POST /user/list-names-dynamic` |  |
+| `/compras/operacion` | `src/pages/operaciones/4.compras/operacion/index.tsx` | fuera del menú · ACL `COMPRAS-OPERACION` | [REV], [BAL], [COM], [ARCH], `GET /area/list-names`, `GET /current-inventory/:id`, `GET /file/:id`, `GET /file/catalog/:id`, `GET /file/thumbnail/:id`, `GET /groups/:id`, `DELETE /groups/activity`, `POST /groups/activity-list-by-group`, `PUT /groups/activity-purchase`, `PUT /groups/disable/:id`, `PUT /groups/enable/:id`, `PUT /item-spec/edit`, `POST /item-spec/new`, `DELETE /item-spec/remove`, `POST /reports/by-group`, `GET /warehouse/list-names` | ✅ |
+| `/compras/editar` | `src/pages/operaciones/4.compras/editarGrupo/index.tsx` | fuera del menú · ACL `COMPRAS-NUEVO` | [FORM-GRUPO], `GET /groups/:id`, `PUT /groups/edit-purchase` |  |
+| `/altas/nuevo` | `src/pages/operaciones/5.altas/nuevo/index.tsx` | `V-OPERACION-ALTANUEVO` ≠ ACL `ALTA-NUEVO` ⚠️ | [FORM-GRUPO], `POST /groups/new-details` |  |
+| `/altas/por-grupo` | `src/pages/operaciones/5.altas/listado/porGrupo/index.tsx` | `V-OPERACION-ALTAPORGRUPO` ≠ ACL `OPERACION-ALTASPORGRUPO` ⚠️ | `POST /groups/list-by-group-antd`, `DELETE /groups/remove` |  |
+| `/altas/operacion` | `src/pages/operaciones/5.altas/operacion/index.tsx` | fuera del menú · ACL `ALTAS-OPERACION` | [REV], [BAL], [COM], [ARCH], `GET /area/list-names`, `GET /current-inventory/:id`, `GET /file/:id`, `GET /file/catalog/:id`, `GET /file/thumbnail/:id`, `GET /groups/:id`, `DELETE /groups/activity`, `POST /groups/activity-list-by-group`, `PUT /groups/activity-purchase`, `PUT /groups/disable/:id`, `PUT /groups/enable/:id`, `PUT /item-spec/edit`, `POST /item-spec/new`, `DELETE /item-spec/remove`, `POST /reports/by-group`, `GET /warehouse/list-names` |  |
+| `/renta-externa/nuevo` | `src/pages/operaciones/6.rentasExternas/nuevo/index.tsx` | `V-OPERACION-RENTAEXTERNANUEVO` ≠ ACL `RENTAEXTERNA-NUEVO` ⚠️ | [FORM-GRUPO], `POST /groups/new-details` |  |
+| `/renta-externa/por-grupo` | `src/pages/operaciones/6.rentasExternas/listado/porGrupo/index.tsx` | `V-OPERACION-RENTAEXTERNAPORGRUPO` ≠ ACL `OPERACION-RENTAEXTERNAPORGRUPO` ⚠️ | `POST /groups/list-by-group-antd`, `DELETE /groups/remove` |  |
+| `/renta-externa/por-proyecto` | `src/pages/operaciones/6.rentasExternas/listado/porProyecto/index.tsx` | `V-OPERACION-RENTAEXTERNAPORPROYECTO` ≠ ACL `OPERACION-RENTASPORPROYECTO` ⚠️ | `GET /file/:id`, `GET /file/thumbnail/:id`, `POST /groups/list-by-project-antd`, `POST /reports/by-project`, `GET /user/get-areas`, `GET /user/get-projects`, `POST /user/list-names-dynamic` |  |
+| `/renta-externa/operacion` | `src/pages/operaciones/6.rentasExternas/operacion/index.tsx` | fuera del menú · ACL `RENTAEXTERNA-OPERACION` | [REV], [BAL], [COM], [ARCH], `GET /file/:id`, `GET /file/catalog/:id`, `GET /file/thumbnail/:id`, `GET /groups/:id`, `PUT /groups/activity`, `DELETE /groups/activity`, `POST /groups/activity-list-by-group`, `PUT /groups/disable/:id`, `PUT /groups/enable/:id`, `POST /reports/by-group` |  |
+| `/renta-externa/activos` | `src/pages/operaciones/6.rentasExternas/listado/porActivos/index.tsx` | `V-OPERACION-RENTAEXTERNAACTIVA` ≠ ACL `OPERACION-RENTAACTIVAPORPROYECTO` ⚠️ | `GET /file/:id`, `GET /file/thumbnail/:id`, `POST /groups/active-activity-list`, `POST /reports/by-project`, `GET /user/get-areas`, `GET /user/get-projects`, `POST /user/list-names-dynamic` |  |
+| `/previo/nuevo` | `src/pages/operaciones/8.previo/nuevo/index.tsx` | `V-OPERACION-PREVIONUEVO` ≠ ACL `PREVIO-NUEVO` ⚠️ | [FORM-GRUPO], `POST /groups/new` |  |
+| `/previo/por-grupo` | `src/pages/operaciones/8.previo/listado/porGrupo/index.tsx` | `V-OPERACION-PREVIOPORGRUPO` ≠ ACL `OPERACION-PREVIOPORGRUPO` ⚠️ | `POST /groups/list-by-group-antd`, `DELETE /groups/remove` |  |
+| `/previo/operacion` | `src/pages/operaciones/8.previo/operacion/index.tsx` | fuera del menú · ACL `PREVIO-OPERACION` | [REV], [BAL], [COM], [ARCH], `GET /file/:id`, `GET /file/catalog/:id`, `GET /file/thumbnail/:id`, `GET /groups/:id`, `PUT /groups/activity`, `DELETE /groups/activity`, `POST /groups/activity-list-by-group`, `PUT /groups/disable/:id`, `PUT /groups/enable/:id`, `POST /reports/by-group` |  |
+| `/movimientos/detalle` | `src/pages/operaciones/movimiento/index.tsx` | fuera del menú · ACL `DETALLE-MOVIMIENTO` | [COM], [ARCH], `GET /activity/:id`, `GET /activity/history-by-current-inventory/:id`, `GET /file/:id`, `GET /file/catalog/:id` | ✅ |
 
 ## Reportes
 
 | Ruta | Componente | Rol(es) | Endpoints del API consumidos | Crítica |
 |---|---|---|---|:-:|
-| `/reportes/por-usuario` | `src/pages/reportes/6.porUsuario/index.jsx` | `V-REPORTES-GENERAL` ≠ ACL `V-OPERACION-PRESTAMOSACTIVOS` ⚠️ | `GET /file/:id`, `GET /file/thumbnail/:id`, `POST /groups/active-activity-list`, `POST /reports/by-project`, `GET /user/get-areas`, `GET /user/get-projects`, `POST /user/list-names-dynamic` |  |
-| `/reportes/de-cierre` | `src/pages/reportes/3.cierreProyecto/index.jsx` | `V-REPORTES-GENERAL` ≠ ACL solo `ADMINISTRADOR` ⚠️ | `POST /reports/by-project-final`, `GET /user/get-areas`, `GET /user/get-projects`, `POST /user/list-names-dynamic` |  |
+| `/reportes/por-usuario` | `src/pages/reportes/6.porUsuario/index.tsx` | `V-REPORTES-GENERAL` ≠ ACL `V-OPERACION-PRESTAMOSACTIVOS` ⚠️ | `GET /file/:id`, `GET /file/thumbnail/:id`, `POST /groups/active-activity-list`, `POST /reports/by-project`, `GET /user/get-areas`, `GET /user/get-projects`, `POST /user/list-names-dynamic` |  |
+| `/reportes/de-cierre` | `src/pages/reportes/3.cierreProyecto/index.tsx` | `V-REPORTES-GENERAL` ≠ ACL solo `ADMINISTRADOR` ⚠️ | `POST /reports/by-project-final`, `GET /user/get-areas`, `GET /user/get-projects`, `POST /user/list-names-dynamic` |  |
 
 ## Auth y raíz
 
 | Ruta | Componente | Rol(es) | Endpoints del API consumidos | Crítica |
 |---|---|---|---|:-:|
-| `/` | — (redirección en `router.jsx`) | — | Redirige a `/catalogo/validaciones` si `permisos` incluye `VALIDACIONES`; si no, a `/catalogo/general` | |
-| `/auth/login` | `src/pages/auth/login/index.jsx` (usa `components/cleanui/system/Auth/Login`) | pública | `GET /auth/version`; vía saga `redux/user/sagas.js` → `services/jwt`: `POST /auth/login` (antes `GET https://api.ipify.org`, F2) y `GET /user/current` | ✅ |
-| `/auth/401` | `src/pages/auth/401/index.jsx` | pública | — |  |
-| `/auth/404` | `src/pages/auth/404/index.jsx` | pública | — |  |
-| `/auth/500` | `src/pages/auth/500/index.jsx` | pública | — |  |
-| `/auth/503` | `src/pages/auth/503/index.jsx` | pública | — |  |
+| `/` | — (redirección en `router.tsx`) | — | Redirige a `/catalogo/validaciones` si `permisos` incluye `VALIDACIONES`; si no, a `/catalogo/general` | |
+| `/auth/login` | `src/app/auth/LoginPage.tsx` | pública | `GET /auth/version`; vía `stores/usuario.store`: `POST /auth/login` (`{c, p}`, sin `ip`: F2) y `GET /user/current` | ✅ |
+| `/auth/401` | `src/app/errors/ErrorPage.tsx` (`code={401}`) | pública | — |  |
+| `/auth/404` | `src/app/errors/ErrorPage.tsx` (`code={404}`) | pública | — |  |
+| `/auth/500` | `src/app/errors/ErrorPage.tsx` (`code={500}`) | pública | — |  |
+| `/auth/503` | `src/app/errors/ErrorPage.tsx` (`code={503}`) | pública | — |  |
 
 ## Servicios y endpoints
 
@@ -151,7 +151,7 @@ Todas las rutas listadas existen en `api/src/routes`, salvo la marcada ❌.
 |---|---|
 | `quitarArchivo` | `DELETE /file/file` |
 | `obtenerResponseFileDeId` | `POST /file/get-response-interface` |
-| (subida) | `POST /file/file`: la hace el `Upload` de `pages/componentes/subirArchivos.jsx` con `apiURLBase` y token de `localStorage` (F11) |
+| (subida) | `POST /file/file`: la hace el `Upload` de `pages/componentes/subirArchivos.tsx` con `apiURLBase` y token de `localStorage` (F11) |
 
 ### `areas` (`area`) · `bodegas` (`warehouse`) · `proyectos` (`project`)
 
@@ -222,7 +222,7 @@ Mismos 7 métodos estándar: `listadoSimple` → `GET /R/list-names`, `listado` 
 | `obtenerUltimoMovimiento` | `GET /activity/prior-activity/:id` | `catalogos/componentes/tarjetaProducto.js` |
 | `obtenerGrupo` | `GET /activity/get-group/:id` | sin uso |
 | `obtenerId` | `GET /activity/:id` | |
-| `obtenerHistorial` | `GET /activity/history-by-current-inventory/:id` | `pages/componentes/movimientos.jsx` |
+| `obtenerHistorial` | `GET /activity/history-by-current-inventory/:id` | `pages/componentes/movimientos.tsx` |
 
 ### `productoCaracteristicas` (`item-spec`) · `productoClaves` (`item-code`) · `productoPrecios` (`item-price`)
 

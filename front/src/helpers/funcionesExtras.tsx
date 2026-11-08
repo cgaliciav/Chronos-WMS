@@ -1,3 +1,4 @@
+import type { Key, ReactNode } from 'react'
 import { Select } from 'antd'
 
 const { Option } = Select
@@ -39,3 +40,29 @@ export function normalizeAndFilterOptions(entrada: string, opcion?: { label?: un
   if (typeof opcion?.label !== 'string') return false
   return sinAcentos(opcion.label).toLowerCase().includes(sinAcentos(entrada).toLowerCase())
 }
+
+/**
+ * `filterOption` de `Select` con búsqueda: compara, sin acentos ni mayúsculas, con el texto de la opción.
+ * rc-select entrega la opción como datos (`{ value, children }` con `<Option>` o `{ value, label }` con `options`),
+ * no como elemento React: el heredado `option.props.children[0]` lanzaba `TypeError` al escribir. `mapeoOpciones`
+ * deja los hijos como `[nombre, ' ']`, de ahí que se tome el primero si es un arreglo.
+ */
+export function filtrarOpcion(
+  entrada: string,
+  opcion?: { children?: unknown; label?: unknown },
+): boolean {
+  const hijos = opcion?.children
+  const texto: unknown = Array.isArray(hijos) ? hijos[0] : (hijos ?? opcion?.label)
+  return (
+    typeof texto === 'string' &&
+    sinAcentos(texto).toLowerCase().includes(sinAcentos(entrada).toLowerCase())
+  )
+}
+
+/**
+ * Id de un valor de `Select` con `labelInValue`. Desde antd 5 el valor es `{ value, label }` (en antd 4 era
+ * `{ key, value, label }`): leer `.key` enviaba `undefined` al API. Se acepta `key` por compatibilidad.
+ */
+export const idDeEtiquetado = (
+  valor?: { value?: Key; key?: Key; label?: ReactNode } | null,
+): Key | undefined => valor?.value ?? valor?.key

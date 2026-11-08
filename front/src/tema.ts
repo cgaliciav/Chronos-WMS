@@ -37,8 +37,19 @@ export const tema: ThemeConfig = {
   },
   components: {
     Layout: { bodyBg: 'transparent', headerBg: 'transparent', footerBg: 'transparent' },
-    Table: { headerBg: gris1, headerColor: gris6, footerBg: gris1, rowHoverBg: gris2, rowSelectedBg: gris1 },
-    Tabs: { itemHoverColor: azulClaro, itemActiveColor: azul, itemSelectedColor: azul, inkBarColor: azul },
+    Table: {
+      headerBg: gris1,
+      headerColor: gris6,
+      footerBg: gris1,
+      rowHoverBg: gris2,
+      rowSelectedBg: gris1,
+    },
+    Tabs: {
+      itemHoverColor: azulClaro,
+      itemActiveColor: azul,
+      itemSelectedColor: azul,
+      inkBarColor: azul,
+    },
     Input: { addonBg: gris1 },
     Form: { labelColor: gris6, labelRequiredMarkColor: '#f5222e' },
   },

@@ -44,7 +44,7 @@ const CatalogoPorCodigo = () => {
   }
 
   // Al paginar se repite la búsqueda por códigos (antes enviaba los campos de la búsqueda general, que esta
-  // página no tiene, y `fetch` la descartaba).
+  // página no tiene, y `buscar` la descartaba).
   const onChange = (pagina: number, paginaTamanio: number) => {
     const { current, pageSize, ...restPagination } = pagination
     const tempPaginacion = {
@@ -54,7 +54,7 @@ const CatalogoPorCodigo = () => {
     }
 
     setPagination({ ...tempPaginacion })
-    fetch({
+    buscar({
       pagination: tempPaginacion,
       codigosBusqueda: busqueda.codigosBusqueda?.trim(),
     })
@@ -70,7 +70,7 @@ const CatalogoPorCodigo = () => {
       ...restPagination,
     }
     setPagination({ ...tempPaginacion })
-    fetch({
+    buscar({
       pagination: tempPaginacion,
       codigosBusqueda: busqueda.codigosBusqueda?.trim(),
     })
@@ -79,7 +79,7 @@ const CatalogoPorCodigo = () => {
   useEffect(() => {
     guardarJSON('catalogoPorCodigo.busqueda', busqueda)
 
-    fetch({
+    buscar({
       pagination,
       codigosBusqueda: busqueda.codigosBusqueda?.trim(),
     })
@@ -87,7 +87,7 @@ const CatalogoPorCodigo = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [busqueda])
 
-  const fetch = (params: ParametrosCatalogo = {}) => {
+  const buscar = (params: ParametrosCatalogo = {}) => {
     if (params.codigosBusqueda !== undefined) {
       if (params.codigosBusqueda.length === 0) return
       setCargando(true)

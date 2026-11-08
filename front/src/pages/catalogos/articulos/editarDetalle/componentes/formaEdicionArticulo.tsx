@@ -5,25 +5,29 @@ import AreaPeticiones from 'services/axios/areas'
 import BodegaPeticiones from 'services/axios/bodegas'
 import type { ElementoListado } from 'services/axios'
 import type { Numerico } from 'types/api'
-import { filtrarOpcion } from '../../../componentes/filtrarOpcion'
+import { filtrarOpcion } from 'helpers/funcionesExtras'
 
 const { TextArea } = Input
 
-/** Valores del formulario de artículo (también lo usa `operaciones/componentes/formaAC` para altas). */
+/**
+ * Valores que entrega el formulario de artículo al validar (también lo usa `operaciones/componentes/formaAC` para
+ * altas). `cantidad` y `precio` pueden llegar como texto: `limpiarNuevo` los fija a `'1'` y `''`, y en edición el
+ * precio viene del API (columna `numeric`).
+ */
 export interface ValoresArticulo {
   /** Inventario actual que se edita; con `0` se muestra el esqueleto. */
   id?: number
-  titulo?: string
-  descripcion?: string
-  cantidad?: Numerico
-  precio?: Numerico
-  moneda?: string
-  area?: number
-  bodega?: number
+  titulo: string
+  descripcion: string
+  cantidad: Numerico
+  precio: Numerico
+  moneda: string
+  area: number
+  bodega: number
 }
 
 export interface FormaEdicionArticuloProps {
-  valoresIniciales?: ValoresArticulo
+  valoresIniciales?: Partial<ValoresArticulo>
   /** Sin valor (`null`/`undefined`) se muestra el esqueleto. */
   guardando?: boolean | null
   habilitado?: boolean

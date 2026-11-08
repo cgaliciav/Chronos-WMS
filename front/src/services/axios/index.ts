@@ -112,12 +112,20 @@ export class PeticionBase {
   static finalizar = <T = RespuestaMensaje>(recurso: string, id: number | string) =>
     pedir<T>({ method: 'put', url: `/${recurso}/closure/${id}` })
 
-  static generalPut = <T = RespuestaMensaje>(recurso: string, ruta: string, parametros: object = {}) => {
+  static generalPut = <T = RespuestaMensaje>(
+    recurso: string,
+    ruta: string,
+    parametros: object = {},
+  ) => {
     registrar('PUT', parametros)
     return pedir<T>({ method: 'put', url: `/${recurso}/${ruta}`, data: { ...parametros } })
   }
 
-  static generalPost = <T = RespuestaMensaje>(recurso: string, ruta: string, parametros: object = {}) => {
+  static generalPost = <T = RespuestaMensaje>(
+    recurso: string,
+    ruta: string,
+    parametros: object = {},
+  ) => {
     registrar('POST', parametros)
     return pedir<T>({ method: 'post', url: `/${recurso}/${ruta}`, data: { ...parametros } })
   }
@@ -138,8 +146,11 @@ export class PeticionBase {
   static generalGetNoParam = <T>(recurso: string, ruta: string) =>
     pedir<T>({ method: 'get', url: `/${recurso}/${ruta}` })
 
-  static generalDelete = <T = RespuestaMensaje>(recurso: string, ruta: string, parametros: object = {}) =>
-    pedir<T>({ method: 'delete', url: `/${recurso}/${ruta}`, data: { ...parametros } })
+  static generalDelete = <T = RespuestaMensaje>(
+    recurso: string,
+    ruta: string,
+    parametros: object = {},
+  ) => pedir<T>({ method: 'delete', url: `/${recurso}/${ruta}`, data: { ...parametros } })
 }
 
 export { AxiosError }

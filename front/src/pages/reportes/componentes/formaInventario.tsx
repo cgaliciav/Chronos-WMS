@@ -4,7 +4,7 @@ import { mapeoOpciones } from 'helpers/funcionesExtras'
 import { leerJSON } from 'helpers/storage'
 import UsuarioPeticiones from 'services/axios/usuarios'
 import type { ElementoListado } from 'services/axios'
-import { filtrarPorPrimerHijo } from 'pages/componentes/filtrosSelect'
+import { filtrarOpcion } from 'helpers/funcionesExtras'
 
 const { Option } = Select
 
@@ -99,7 +99,7 @@ const FormaInventario = ({ handleFinish, cargando = false }: FormaInventarioProp
               allowClear
               mode="multiple"
               disabled={!habilitadoInterno || cargando}
-              filterOption={filtrarPorPrimerHijo}
+              filterOption={filtrarOpcion}
             >
               {mapeoOpciones(listadoAreas)}
             </Select>
@@ -123,7 +123,7 @@ const FormaInventario = ({ handleFinish, cargando = false }: FormaInventarioProp
               allowClear
               mode="multiple"
               disabled={!habilitadoInterno || cargando}
-              filterOption={filtrarPorPrimerHijo}
+              filterOption={filtrarOpcion}
             >
               {mapeoOpciones(listadoBodegas)}
             </Select>

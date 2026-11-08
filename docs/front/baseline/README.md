@@ -36,6 +36,7 @@ imágenes; en las fases 1 y 2 se contaron los píxeles con diferencia de color >
 | Fase | Capturas | Resultado |
 |---|---|---|
 | 1 (borrado de plantilla) | — (idénticas) | Solo cambia la campana de MagicBell (retirada). |
+| 6 (antd puro, sin Clean UI, 100 % TS) | [`../after/`](../after/) | Layout nuevo: menú lateral de antd con iconos de `@ant-design/icons`, cabecera blanca, migas de antd, login en tarjeta, errores con `Result`. Las páginas conservan su estructura con `Card` y `Typography`. Sin errores en las 67 rutas (F36 resuelto). |
 | 5 (antd 6) | — (idénticas a la fase 4) | < 0,25 % frente a la fase 4 (subpíxel). Sin avisos en `dev` en las 67 rutas. |
 | 4 (antd 5, dayjs, React 19, Router 8) | [`fase-4/`](fase-4/) | ≈ 3 % frente a la fase 2 (tipografía y controles de antd 5: paginación sin bordes, selector de tamaño también abajo, iconos). Textos de antd en español. Sin avisos en `dev` en las 67 rutas. |
 | 3 (React 18, Router 7, Zustand, servicios TS) | — (idénticas a la fase 2) | 0 % salvo los nombres por defecto con marca de tiempo. Humo de sesión con `flujo-sesion.js`: 10/10. |

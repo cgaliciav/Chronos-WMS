@@ -29,7 +29,8 @@ const Validacion = ({ productoId, productoValidado = null, disabled = false }: V
   const [validacionProducto, setValidacionProducto] = useState<string | null>(null)
 
   useEffect(() => {
-    if (productoValidado !== null) setValidacionProducto(productoValidado.validacion ?? 'no-revisado')
+    if (productoValidado !== null)
+      setValidacionProducto(productoValidado.validacion ?? 'no-revisado')
     else setValidacionProducto('no-revisado')
   }, [productoValidado])
 

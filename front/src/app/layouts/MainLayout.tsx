@@ -19,7 +19,8 @@ import { useVersionApi } from './useVersionApi'
 export default function MainLayout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation()
   const { items, seleccionadas, abiertas, camino } = useMenuItems(pathname)
-  const { menuColapsado, esMovil, menuMovilAbierto, fijarMenuColapsado, alternarMenuMovil } = useUiStore()
+  const { menuColapsado, esMovil, menuMovilAbierto, fijarMenuColapsado, alternarMenuMovil } =
+    useUiStore()
   const nombre = useUsuarioStore(estado => estado.nombre)
   const versionApi = useVersionApi()
   const { token } = theme.useToken()
@@ -58,7 +59,13 @@ export default function MainLayout({ children }: { children: ReactNode }) {
           onCollapse={fijarMenuColapsado}
           breakpoint="lg"
           theme="light"
-          style={{ position: 'sticky', top: 0, height: '100vh', overflow: 'auto', borderInlineEnd: `1px solid ${token.colorBorderSecondary}` }}
+          style={{
+            position: 'sticky',
+            top: 0,
+            height: '100vh',
+            overflow: 'auto',
+            borderInlineEnd: `1px solid ${token.colorBorderSecondary}`,
+          }}
         >
           <Logo soloIcono={menuColapsado} />
           {menu}
@@ -98,7 +105,10 @@ export default function MainLayout({ children }: { children: ReactNode }) {
               style={{ marginBottom: 16 }}
               items={[
                 { key: 'inicio', title: <Link to="/">Inicio</Link> },
-                ...camino.map(entrada => ({ key: entrada.key ?? entrada.title, title: entrada.title })),
+                ...camino.map(entrada => ({
+                  key: entrada.key ?? entrada.title,
+                  title: entrada.title,
+                })),
               ]}
             />
           ) : null}

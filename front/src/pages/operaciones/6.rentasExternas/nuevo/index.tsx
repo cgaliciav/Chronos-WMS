@@ -1,3 +1,4 @@
+import { idDeEtiquetado } from 'helpers/funcionesExtras'
 import { useState } from 'react'
 import Titulo from 'components/Titulo'
 import { useNavigate } from 'react-router'
@@ -24,7 +25,7 @@ const RentasNuevo = () => {
         nombre,
         proyectoId,
         movimientoTipoId: 11, // renta externa
-        usuariosIds: usuariosIds.map(usr => usr.key),
+        usuariosIds: usuariosIds.map(idDeEtiquetado),
       })
       if (resp !== undefined) {
         // mandar a la edición del grupo

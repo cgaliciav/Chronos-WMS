@@ -4,10 +4,14 @@ import Titulo from 'components/Titulo'
 
 export type CodigoError = 401 | 404 | 500 | 503
 
-const TEXTOS: Record<CodigoError, { titulo: string; descripcion: string; estado: '403' | '404' | '500' }> = {
+const TEXTOS: Record<
+  CodigoError,
+  { titulo: string; descripcion: string; estado: '403' | '404' | '500' }
+> = {
   401: {
     titulo: 'Sin autorización',
-    descripcion: 'No tienes permiso para acceder a la página solicitada. Verifícalo con tu administrador.',
+    descripcion:
+      'No tienes permiso para acceder a la página solicitada. Verifícalo con tu administrador.',
     estado: '403',
   },
   404: {
@@ -17,12 +21,14 @@ const TEXTOS: Record<CodigoError, { titulo: string; descripcion: string; estado:
   },
   500: {
     titulo: 'Error del servidor',
-    descripcion: 'Esta página presenta un error de servidor; reintenta más tarde o comunícate con tu administrador.',
+    descripcion:
+      'Esta página presenta un error de servidor; reintenta más tarde o comunícate con tu administrador.',
     estado: '500',
   },
   503: {
     titulo: 'Error en la aplicación',
-    descripcion: 'Ups... hubo un error en la aplicación; vuelve a entrar o comunícate con tu administrador.',
+    descripcion:
+      'Ups... hubo un error en la aplicación; vuelve a entrar o comunícate con tu administrador.',
     estado: '500',
   },
 }

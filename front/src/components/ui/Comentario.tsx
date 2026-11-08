@@ -15,7 +15,14 @@ export interface ComentarioProps {
  * Comentario con autor, fecha, contenido y acciones. Sustituye al `Comment` que antd eliminó en la v5
  * (plan 01 fase 4; no se usa `@ant-design/compatible`).
  */
-export default function Comentario({ author, datetime, content, actions, avatar, style }: ComentarioProps) {
+export default function Comentario({
+  author,
+  datetime,
+  content,
+  actions,
+  avatar,
+  style,
+}: ComentarioProps) {
   return (
     <Flex gap={12} align="flex-start" style={{ padding: '12px 0', ...style }}>
       {avatar ?? <Avatar size="small" icon={<UserOutlined />} />}

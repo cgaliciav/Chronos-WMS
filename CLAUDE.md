@@ -5,7 +5,7 @@ Monorepo del sistema de almacén (WMS) de Teleset/Sony México. Dos aplicaciones
 | Carpeta | Qué es | Guía propia |
 |---|---|---|
 | `api/` | API REST Node.js + Express 4 + TypeORM 0.2 + MariaDB (TypeScript) | `api/CLAUDE.md` |
-| `front/` | SPA React 19 + antd 6 + Vite (TypeScript nuevo, JavaScript heredado) sobre la plantilla Clean UI, en migración (plan 01) | `front/CLAUDE.md` |
+| `front/` | SPA React 19 + antd 6 + Vite, 100 % TypeScript (plan 01: falta la fase 7, pruebas e2e y CI) | `front/CLAUDE.md` |
 | `docs/` | Documentación técnica, hallazgos y planes de trabajo | `docs/README.md` |
 
 No hay `node_modules` ni base de datos en este repositorio; cada app se instala y arranca por separado
