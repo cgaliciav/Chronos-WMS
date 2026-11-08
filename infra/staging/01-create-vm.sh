@@ -4,7 +4,7 @@
 # shellcheck source=lib.sh
 source "$(dirname "$0")/lib.sh"
 
-require_cmds virsh virt-install curl sha256sum ssh
+require_cmds virsh virt-install curl sha256sum ssh genisoimage
 [[ -x "$QEMU_IMG" ]] || die "No se encontró $QEMU_IMG (sudo apt install qemu-utils)"
 [[ -r "$VM_SSH_PUBKEY" ]] || die "No existe la llave pública $VM_SSH_PUBKEY (ajusta VM_SSH_PUBKEY en staging.conf)"
 [[ -e /dev/kvm ]] || die "/dev/kvm no disponible: habilita la virtualización"
@@ -14,8 +14,8 @@ wait_for_ip() {
   step "Esperando IP de la VM"
   local ip=""
   for _ in $(seq 1 90); do
-    ip=$(virshc domifaddr "$VM_NAME" --source lease 2>/dev/null | awk '/ipv4/ {split($4,a,"/"); print a[1]; exit}')
-    [[ -z "$ip" ]] && ip=$(virshc domifaddr "$VM_NAME" --source agent 2>/dev/null | awk '/ipv4/ && $4 !~ /^127\./ {split($4,a,"/"); print a[1]; exit}')
+    ip=$(virshc domifaddr "$VM_NAME" --source lease 2>/dev/null | awk '/ipv4/ {split($4,a,"/"); print a[1]; exit}' || true)
+    [[ -z "$ip" ]] && ip=$(virshc domifaddr "$VM_NAME" --source agent 2>/dev/null | awk '/ipv4/ && $4 !~ /^127\./ {split($4,a,"/"); print a[1]; exit}' || true)
     [[ -n "$ip" ]] && break
     sleep 5
   done
@@ -95,6 +95,16 @@ USER_DATA="$CACHE_DIR/user-data"
 pubkey=$(<"$VM_SSH_PUBKEY")
 sed -e "s|__VM_NAME__|$VM_NAME|g" -e "s|__VM_USER__|$VM_USER|g" -e "s|__SSH_PUBKEY__|$pubkey|g" \
   "$STAGING_DIR/cloud-init/user-data.tpl" > "$USER_DATA"
+printf 'instance-id: %s-%s\nlocal-hostname: %s\n' "$VM_NAME" "$(date +%s)" "$VM_NAME" > "$CACHE_DIR/meta-data"
+
+# Seed NoCloud propio (label "cidata") guardado en el pool. No se usa `virt-install --cloud-init`
+# porque con --noautoconsole borra su ISO temporal antes de que la VM lo lea.
+SEED_ISO="$CACHE_DIR/${VM_NAME}-seed.iso"
+SEED_VOL="${VM_NAME}-seed.iso"
+genisoimage -quiet -output "$SEED_ISO" -volid cidata -joliet -rock "$USER_DATA" "$CACHE_DIR/meta-data"
+virshc vol-delete --pool "$VM_POOL" "$SEED_VOL" >/dev/null 2>&1 || true
+virshc vol-create-as "$VM_POOL" "$SEED_VOL" "$(stat -c%s "$SEED_ISO")" --format raw >/dev/null
+virshc vol-upload --pool "$VM_POOL" "$SEED_VOL" "$SEED_ISO"
 
 step "Creando VM '$VM_NAME' (${VM_VCPUS} vCPU, ${VM_RAM_MB} MB RAM)"
 virt-install --connect "$LIBVIRT_URI" \
@@ -102,9 +112,9 @@ virt-install --connect "$LIBVIRT_URI" \
   --vcpus "$VM_VCPUS" --memory "$VM_RAM_MB" \
   --osinfo ubuntu24.04 \
   --disk "vol=$VM_POOL/$DISK_VOL,bus=virtio" \
+  --disk "vol=$VM_POOL/$SEED_VOL,device=cdrom,readonly=on" \
   --network "network=$VM_NETWORK,model=virtio" \
   --channel unix,target.type=virtio,target.name=org.qemu.guest_agent.0 \
-  --cloud-init "user-data=$USER_DATA" \
   --graphics none --console pty,target_type=serial \
   --import --noautoconsole
 virshc autostart "$VM_NAME" >/dev/null
