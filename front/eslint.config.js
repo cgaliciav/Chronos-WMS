@@ -11,8 +11,6 @@ export default defineConfig([
     'build',
     'node_modules',
     'public',
-    // Página huérfana y rota (variables sin definir); pendiente de confirmar su borrado con el propietario.
-    'src/pages/reportes/5.inventario',
   ]),
   {
     files: ['**/*.{js,jsx,ts,tsx}'],

@@ -34,6 +34,7 @@ const CaracteristicasProducto = ({
           // productoCaracteristicas = productoCaracteristicas.filter(pc=>pc.id!==id);
         }
       })
+      .catch(() => {})
       .finally(() => {
         setHabilitadoInterno(true)
       })
@@ -60,21 +61,25 @@ const CaracteristicasProducto = ({
 
     let resp
     // console.log("agregarCaracteristica", esNuevo)
-    if (esNuevo) {
-      // console.log("agregarCaracteristica NUEVO")
-      resp = await ProductoCaracteristicaPeticiones.nuevo({
-        productoId,
-        productoCaracteristicas: [{ llave, valor }],
-      })
-    } else {
-      // console.log("agregarCaracteristica EDITAR")
-      resp = await ProductoCaracteristicaPeticiones.editar({
-        productoCaracteristicas: { llave, valor },
-        productoCaracteristicasId,
-      })
-    }
-    if (resp !== undefined) {
-      fnActualizar()
+    try {
+      if (esNuevo) {
+        // console.log("agregarCaracteristica NUEVO")
+        resp = await ProductoCaracteristicaPeticiones.nuevo({
+          productoId,
+          productoCaracteristicas: [{ llave, valor }],
+        })
+      } else {
+        // console.log("agregarCaracteristica EDITAR")
+        resp = await ProductoCaracteristicaPeticiones.editar({
+          productoCaracteristicas: { llave, valor },
+          productoCaracteristicasId,
+        })
+      }
+      if (resp !== undefined) {
+        fnActualizar()
+      }
+    } catch {
+      // El interceptor de axios ya mostró el error.
     }
 
     setHabilitadoInterno(true)

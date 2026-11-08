@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Link, useHistory } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router'
 import { Tag, Spin, Col, Row, Card, Typography, Divider } from 'antd'
 import { EyeOutlined } from '@ant-design/icons'
 import moment from 'moment'
@@ -45,16 +45,18 @@ const TarjetaProducto = ({
           setMovimiento(resp)
         }
       })
+      // El interceptor de axios ya mostró el error.
+      .catch(() => {})
       .finally(() => {
         setCargando(false)
       })
   }, [id])
 
-  const history = useHistory()
+  const navigate = useNavigate()
 
   const onClick = e => {
     e.preventDefault()
-    history.push(`/articulos/detalle?uid=${id}`)
+    navigate(`/articulos/detalle?uid=${id}`)
   }
 
   // Intl.NumberFormat().resolvedOptions().loca

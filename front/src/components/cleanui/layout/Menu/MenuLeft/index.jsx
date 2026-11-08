@@ -1,48 +1,39 @@
 import React, { useState, useEffect } from 'react'
-import { connect } from 'react-redux'
-import { Link, withRouter } from 'react-router-dom'
+import { Link, useLocation } from 'react-router'
 import { Menu, Layout } from 'antd'
 import classNames from 'classnames'
-import store from 'store'
+import { guardarJSON, leerJSON } from 'helpers/storage'
+import { ANCHO_MENU, useUiStore } from 'stores/ui.store'
+import { useUsuarioStore } from 'stores/usuario.store'
+import menuData from 'services/menu'
 import PerfectScrollbar from 'react-perfect-scrollbar'
 import { find } from 'lodash'
 import style from './style.module.scss'
 
-const mapStateToProps = ({ menu, settings, user }) => ({
-  menuData: menu.menuData,
-  isMenuCollapsed: settings.isMenuCollapsed,
-  isMobileView: settings.isMobileView,
-  isMenuUnfixed: settings.isMenuUnfixed,
-  isMenuShadow: settings.isMenuShadow,
-  leftMenuWidth: settings.leftMenuWidth,
-  menuColor: settings.menuColor,
-  logo: settings.logo,
-  roles: user.permisos,
-  // user,
-})
+// Valores fijos de la plantilla (antes en `redux/settings`).
+const MENU_SIN_FIJAR = false
+const MENU_CON_SOMBRA = false
+const COLOR_MENU = 'gray'
+const LOGO = 'Sony Almacén México'
 
-const MenuLeft = ({
-  dispatch,
-  menuData = [],
-  location: { pathname },
-
-  isMenuCollapsed,
-  isMobileView,
-  isMenuUnfixed,
-  isMenuShadow,
-  leftMenuWidth,
-  menuColor,
-  logo,
-  roles,
-  // user,
-}) => {
-  const [selectedKeys, setSelectedKeys] = useState(store.get('app.menu.selectedKeys') || [])
-  const [openedKeys, setOpenedKeys] = useState(store.get('app.menu.openedKeys') || [])
+const MenuLeft = () => {
+  const { pathname } = useLocation()
+  const isMenuCollapsed = useUiStore(estado => estado.menuColapsado)
+  const isMobileView = useUiStore(estado => estado.esMovil)
+  const alternarMenuColapsado = useUiStore(estado => estado.alternarMenuColapsado)
+  const roles = useUsuarioStore(estado => estado.permisos)
+  const isMenuUnfixed = MENU_SIN_FIJAR
+  const isMenuShadow = MENU_CON_SOMBRA
+  const leftMenuWidth = ANCHO_MENU
+  const menuColor = COLOR_MENU
+  const logo = LOGO
+  const [selectedKeys, setSelectedKeys] = useState(() => leerJSON('app.menu.selectedKeys', []))
+  const [openedKeys, setOpenedKeys] = useState(() => leerJSON('app.menu.openedKeys', []))
 
   useEffect(() => {
     applySelectedKeys()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, menuData])
+  }, [pathname])
 
   const applySelectedKeys = () => {
     const flattenItems = (items, key) =>
@@ -61,23 +52,17 @@ const MenuLeft = ({
     if (type === 'responsive' && isMenuCollapsed) {
       return
     }
-    dispatch({
-      type: 'settings/CHANGE_SETTING',
-      payload: {
-        setting: 'isMenuCollapsed',
-        value: !isMenuCollapsed,
-      },
-    })
+    alternarMenuColapsado()
     setOpenedKeys([])
   }
 
   const onOpenChange = keys => {
-    store.set('app.menu.openedKeys', keys)
+    guardarJSON('app.menu.openedKeys', keys)
     setOpenedKeys(keys)
   }
 
   const handleClick = e => {
-    store.set('app.menu.selectedKeys', [e.key])
+    guardarJSON('app.menu.selectedKeys', [e.key])
     setSelectedKeys([e.key])
   }
 
@@ -242,4 +227,4 @@ const MenuLeft = ({
   )
 }
 
-export default withRouter(connect(mapStateToProps)(MenuLeft))
+export default MenuLeft

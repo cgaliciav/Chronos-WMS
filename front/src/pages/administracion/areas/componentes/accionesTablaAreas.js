@@ -10,11 +10,8 @@ export default class AccionesTablaProveedores {
         })
         document.location.reload()
       })
-      .catch(error => {
-        notification.error({
-          message: error.message,
-          // description: error.message,
-        })
+      .catch(() => {
+        // El interceptor de axios ya mostró el error.
       })
   }
 }

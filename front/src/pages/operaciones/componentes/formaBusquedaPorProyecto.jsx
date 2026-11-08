@@ -62,6 +62,7 @@ const FormaBusquedaPorProyecto = ({
           // setListadoBodegas(bodegas)
         }
       })
+      .catch(() => {}) // El interceptor de axios ya mostró el error.
       .finally(() => {
         setHabilitadoInterno(true)
       })
@@ -85,6 +86,7 @@ const FormaBusquedaPorProyecto = ({
           setData(resp)
         }
       })
+      .catch(() => {})
       .finally(() => {
         setFetching(false)
       })

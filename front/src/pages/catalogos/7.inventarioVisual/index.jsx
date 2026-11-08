@@ -1,7 +1,7 @@
 import { Divider, Tabs } from 'antd'
 import ACL from 'components/cleanui/system/ACL'
 import React, { useEffect, useState } from 'react'
-import { Helmet } from 'react-helmet'
+import Titulo from 'components/Titulo'
 import InventarioActualPeticiones from 'services/axios/inventarioActual'
 import FormaBusquedaPorCodigo from '../2.porCodigos/componentes/forma'
 import CatalogoResultados from '../componentes/catalogoResultados'
@@ -115,6 +115,8 @@ const CatalogoInventario = () => {
           // localStorage.setItem('catalogoInventarios.pagination', JSON.stringify(respData.pagination))
         }
       })
+      // El interceptor de axios ya mostró el error.
+      .catch(() => {})
       .finally(() => {
         setCargando(false)
         localStorage.setItem('catalogoInventarios.pagination', JSON.stringify(pagination))
@@ -197,6 +199,7 @@ const CatalogoInventario = () => {
             )
           }
         })
+        .catch(() => {})
         .finally(() => {
           setCargando(false)
           localStorage.setItem('catalogoInventarios.pagination', JSON.stringify(pagination))
@@ -208,7 +211,7 @@ const CatalogoInventario = () => {
 
   return (
     <ACL roles={['ADMINISTRADOR', 'V-CATALOGO-INVENTARIOS']} redirect>
-      <Helmet title="Catálogo Inventarios" />
+      <Titulo texto="Catálogo Inventarios" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Catálogo Inventarios</span>

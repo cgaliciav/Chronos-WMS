@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { Helmet } from 'react-helmet'
-import { useLocation } from 'react-router-dom'
+import Titulo from 'components/Titulo'
+import { useLocation } from 'react-router'
 import { Col, Divider, Row, Spin, Tabs, Tag } from 'antd'
 import QueryString from 'query-string'
 import moment from 'moment'
@@ -38,7 +38,7 @@ const ArticuloDetalle = () => {
     },
   })
 
-  // const history = useHistory()
+  // const navigate = useNavigate()
   const location = useLocation()
 
   useEffect(() => {
@@ -56,6 +56,8 @@ const ArticuloDetalle = () => {
           // console.log('****** INVENTARIO ACTUAL', resp)
         }
       })
+      // El interceptor de axios ya mostró el error.
+      .catch(() => {})
       .finally(() => {
         setCargando(false)
       })
@@ -87,7 +89,7 @@ const ArticuloDetalle = () => {
 
   return (
     <ACL roles={['V-ARTICULOS-DETALLE', 'ADMINISTRADOR']} redirect>
-      <Helmet title="Artículo detalle" />
+      <Titulo texto="Artículo detalle" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Artículo detalle</span>

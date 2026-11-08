@@ -22,7 +22,7 @@ export default class ManejandoErrores extends React.Component {
     // this.props.history.push("/first"); 
     // const {history}=this.props;
     // console.log('PROSP',this.props)
-    // history.push("/auth/500");
+    // navigate("/auth/500");
   }
 
   render(){

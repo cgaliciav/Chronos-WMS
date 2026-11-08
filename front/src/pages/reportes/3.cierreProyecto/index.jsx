@@ -13,7 +13,7 @@ import {
   Tag,
   Typography,
 } from 'antd'
-import { Helmet } from 'react-helmet'
+import Titulo from 'components/Titulo'
 import 'moment/locale/es'
 import ACL from 'components/cleanui/system/ACL'
 import ReportePeticiones from 'services/axios/reportes'
@@ -68,6 +68,8 @@ const ReporteDeCierre = () => {
         notification.success({ message: resp.message })
       }
     })
+      // El interceptor de axios ya mostró el error.
+      .catch(() => {})
     // setProyectoId(proyectoId)
   }
 
@@ -91,6 +93,7 @@ const ReporteDeCierre = () => {
           setListadoAreas( areas?.map(area => ({ label: area.nombre ?? '', value: area.id })) || [])
         }
       })
+      .catch(() => {})
       .finally(() => {
         setHabilitadoInterno(true)
       })
@@ -114,6 +117,7 @@ const ReporteDeCierre = () => {
           setData(resp)
         }
       })
+      .catch(() => {})
       .finally(() => {
         setFetching(false)
       })
@@ -144,7 +148,7 @@ const ReporteDeCierre = () => {
 
   return (
     <ACL roles={['ADMINISTRADOR']} redirect>
-      <Helmet title="Reporte de Cierre" />
+      <Titulo texto="Reporte de Cierre" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Reporte de Cierre</span>

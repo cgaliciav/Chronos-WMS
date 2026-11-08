@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Helmet } from 'react-helmet'
+import Titulo from 'components/Titulo'
 // import { Tag, Tooltip } from 'antd'
 // import moment from 'moment'
 import 'moment/locale/es'
@@ -51,7 +51,7 @@ const ReportePorUsuario = () => {
 
   return (
     <ACL roles={['V-OPERACION-PRESTAMOSACTIVOS', 'ADMINISTRADOR']} redirect>
-      <Helmet title="Reporte Por Usuario" />
+      <Titulo texto="Reporte Por Usuario" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Reporte Activos por Usuario</span>

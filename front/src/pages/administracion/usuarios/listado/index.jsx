@@ -1,5 +1,5 @@
 import React from 'react'
-import { Helmet } from 'react-helmet'
+import Titulo from 'components/Titulo'
 import { Popconfirm, Tag, Tooltip } from 'antd'
 import ACL from 'components/cleanui/system/ACL'
 import {
@@ -122,7 +122,7 @@ const UsuariosListado = () => {
   ]
   return (
     <ACL roles={['ADMINISTRACION-USUARIOSLISTADO', 'ADMINISTRADOR']} redirect>
-      <Helmet title="Usuarios" />
+      <Titulo texto="Usuarios" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Lista de usuarios</span>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { Helmet } from 'react-helmet'
-import { useHistory } from 'react-router-dom'
+import Titulo from 'components/Titulo'
+import { useNavigate } from 'react-router'
 import { notification } from 'antd'
 // import QueryString from 'query-string'
 import moment from 'moment'
@@ -11,7 +11,7 @@ import FormaConfiguracionGrupo from 'pages/operaciones/componentes/formaConfigur
 const PrevioNuevo = () => {
   const [guardando, setGuardando] = useState(false)
 
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const handleFinish = async values => {
     console.log(values)
@@ -28,15 +28,19 @@ const PrevioNuevo = () => {
      } = values;
     setGuardando(true);
 
-    const resp = await GrupoPeticiones.nuevo({
-      nombre,
-    })
-    if(resp!==undefined){
-      // mandar a la edicion del grupo
-      history.push(`/previo/operacion?uid=${resp.id}`);
-      notification.success({
-        message: 'Listado creado correctamente',
+    try {
+      const resp = await GrupoPeticiones.nuevo({
+        nombre,
       })
+      if(resp!==undefined){
+        // mandar a la edicion del grupo
+        navigate(`/previo/operacion?uid=${resp.id}`);
+        notification.success({
+          message: 'Listado creado correctamente',
+        })
+      }
+    } catch {
+      // El interceptor de axios ya mostró el error.
     }
     setGuardando(false);
   }
@@ -44,7 +48,7 @@ const PrevioNuevo = () => {
   // console.log("***********************USUARIO",usuario);
   return (
     <ACL roles={['PREVIO-NUEVO', 'ADMINISTRADOR']} redirect>
-      <Helmet title="Nuevo listado de previo" />
+      <Titulo texto="Nuevo listado de previo" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Nuevo listado de previo</span>

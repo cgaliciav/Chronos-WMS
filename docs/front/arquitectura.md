@@ -9,44 +9,46 @@ JWT en la cabecera `auth`.
 | Área | Tecnología | Versión |
 |---|---|---|
 | Build | Vite 8 + `@vitejs/plugin-react` + `vite-tsconfig-paths`; TypeScript 5.9 (`tsc -b`, `allowJs`, `checkJs: false`) | Node 24, npm |
-| Calidad | ESLint 10 (flat: typescript-eslint, @eslint-react, react-hooks, prettier), Prettier 3, Vitest 5 (jsdom) | |
-| UI | React 16.14, antd 4.24, `@ant-design/icons` 4, Bootstrap 4 CSS | |
-| Estado | redux 4, redux-saga 1.1, `connected-react-router` 6, `react-router-dom` 5 (hash history) | |
-| HTTP | axios 1.x (`src/services/axios/index.js`) | |
+| Calidad | ESLint 10 (flat: typescript-eslint, @eslint-react, react-hooks, prettier), Prettier 3, Vitest 5 (jsdom) + Testing Library 16 + MSW 3 | |
+| UI | React 18.3, antd 4.24, `@ant-design/icons` 4, Bootstrap 4 CSS | |
+| Estado y rutas | Zustand 5 (`stores/`), `react-router` 7 (`createHashRouter`) | |
+| Observabilidad | `@sentry/react` 11 (solo con `VITE_SENTRY_DSN`) + `@sentry/vite-plugin` (source maps si hay credenciales) | |
+| HTTP | axios 1.21 (`src/services/axios/index.ts`) | |
 | Fechas | moment 2.24 (fijado con `overrides`) | |
 | Estilos | SCSS (Dart Sass) + LESS 4 (tema antd en `styles/antd.less`) + CSS Modules | |
-| i18n | react-intl 4.5.4 fijado (solo lo usa la plantilla); locale `es-MX` (único) | |
+| i18n | Ninguna librería: textos en español; antd con `locale` `es_ES` | |
 
 ## Estructura de `front/src`
 
 ```
-index.jsx           importa estilos (antd base, styles/antd.less, Bootstrap, perfect-scrollbar, global.scss) y ReactDOM.render
-redux/store.js      store (redux + saga + router middleware); redux/history.js: hash history
-router.jsx          array estático de 67 rutas (React.lazy) + transición CSS; guarda localStorage.ultimaVisitada
-localization.jsx    ConfigProvider(antd es_ES) + IntlProvider
+index.tsx           estilos (antd base, styles/antd.less, Bootstrap, perfect-scrollbar, global.scss), Sentry,
+                    detección de viewport, recuperación de sesión y createRoot(<ConfigProvider><RouterProvider/>)
+router.tsx          createHashRouter: layout raíz + 67 rutas lazy + "/" según permisos + "*" → /auth/404
+sentry.ts           Sentry.init solo con VITE_SENTRY_DSN
+stores/             usuario.store.ts (sesión, permisos, login, cargarCuentaActual, logout), ui.store.ts (menú, móvil; persiste menuColapsado)
+types/api.ts        tipos de las respuestas del API (Grupo, Movimiento, InventarioActual, ResultadoTabla<T>…)
 styles/antd.less    componentes de antd 4 con el tema claro dentro de [data-kit-theme='default'] (atributo fijo en index.html)
-global.scss         estilos de la plantilla (kit-vendors/{antd,bootstrap,nprogress,perfect-scrollbar}, kit-core, cui-styles)
-layouts/            index.jsx (elige Public/Auth/Main según ruta y auth), Main (Layout antd + cleanui), Auth, Public
-redux/              reducers.js, sagas.js, user/ (login, currentAccount, logout), menu/ (menuData), settings/ (tema y layout de la plantilla)
+global.scss         estilos de la plantilla (kit-vendors/{antd,bootstrap,perfect-scrollbar}, kit-core, cui-styles)
+layouts/            index.jsx (raíz: elige Public/Auth/Main, protege rutas, guarda ultimaVisitada, <Outlet/>), Main, Auth, Public
 services/
-  axios/index.js    apiClient + PeticionBase (listado, obtenerId, nuevo, editar, enable/disable/closure, generalGet/Post/Put/Delete)
-  axios/<recurso>/  20 clases por recurso (grupos, usuarios, inventarioActual, movimientos, …) con `portionEndPoint`
-  jwt/              login/currentAccount/logout
+  axios/index.ts    apiClient (interceptores: token, renovación, error → notifica y rechaza), conToken(url), PeticionBase<T>
+  axios/<recurso>/  20 servicios en TypeScript (grupos, usuarios, inventarioActual, movimientos, …)
   menu/index.js     menú estático con roles por entrada
 pages/
   administracion/   usuarios, proyectos, proveedores, areas, bodegas
   catalogos/        1.general … 7.inventarioVisual, articulos (detalle/editar/validado)
   operaciones/      1.prestamos, 2.devoluciones, 3.bajas, 4.compras, 5.altas, 6.rentaExterna, 7.inventario, 8.previo, movimiento, componentes
-  reportes/         por-usuario, de-cierre (+ carpetas vacías)
+  reportes/         por-usuario, de-cierre
   componentes/      formularios y modales compartidos (precios, claves, características, archivos, comentarios, imágenes)
   auth/             login, 401, 404, 500, 503
 components/
-  cleanui/          layout (TopBar, Menu/MenuLeft, Breadcrumbs, Footer, Sidebar), system (ACL, Auth/Login, Errors), styles/mixins.scss
+  Titulo.tsx        fija document.title ("Sony Almacén | …"), sustituye a react-helmet
+  cleanui/          layout (TopBar, Menu/MenuLeft, Breadcrumbs, Footer), system (ACL, Auth/Login, Errors), styles/mixins.scss
   kit/core/         mixins.scss (mixins SCSS de cleanui)
   kit-core, kit-vendors, cui-styles   estilos globales vía global.scss (utilidades kit__utils__*, ajustes antd/Bootstrap)
   mixins.scss       punto de entrada de mixins para los .module.scss de cleanui
-helpers/funcionesExtras.js
-locales/es-MX.js
+helpers/            funcionesExtras.jsx, storage.ts (token y localStorage), limpiarCache.ts
+test/               setup.ts (jest-dom, matchMedia, MSW) y servidor.ts (manejadores del API para pruebas)
 ```
 
 Tamaño tras la fase 1 del plan 01: 263 archivos / ≈ 21,7 k LOC de JS (antes 961 / ≈ 76 k); el negocio real son ≈ 130 archivos / ≈ 17 k LOC.
@@ -54,16 +56,17 @@ Demos, `kit/widgets`, `kit-widgets`, `cui-layout`, `cui-system`, MagicBell e idi
 
 ## Flujo de autenticación
 
-1. `pages/auth/login` → `cleanui/system/Auth/Login` → saga `user/LOGIN` → `services/jwt.login` →
-   `services/axios/autorizacion.login`: obtiene la IP pública en `https://api.ipify.org`, hace
-   `POST /auth/login {c, p, ip}` y guarda `t` en `localStorage`.
-2. Al cargar la app, saga `LOAD_CURRENT_ACCOUNT` → `GET /user/current` → `user.permisos` (códigos de rol).
-3. Interceptor de request: `headers.auth = localStorage.t`. Interceptor de respuesta: si llega
-   cabecera `t`, la guarda (renovación). Interceptor de error: muestra `notification.error` y
-   **devuelve** el error (no lo rechaza; ver hallazgos).
+1. `pages/auth/login` → `cleanui/system/Auth/Login` → `useUsuarioStore.login(correo, contraseña)` →
+   `services/axios/autorizacion.login`: `POST /auth/login {c, p}` (sin `ip`: la toma el API) y guarda `t`
+   con `helpers/storage`. Si va bien, carga la cuenta y `Login` navega a `localStorage.ultimaVisitada` o a `/`.
+2. Al arrancar (`index.tsx`), si hay token, `cargarCuentaActual()` → `GET /user/current` → `permisos`
+   (códigos de rol). Mientras tanto el layout raíz no pinta nada; sin sesión manda a `/auth/login`.
+3. Interceptor de request: cabecera `auth` con el token. Interceptor de respuesta: si llega cabecera `t`, la
+   guarda (renovación). Interceptor de error: muestra `notification.error` y **rechaza** la promesa.
 4. `components/cleanui/system/ACL` (`roles`, `redirect`, `defaultRedirect`) envuelve cada página y
-   bloque sensible: oculta `children` si `user.permisos` no intersecta `roles`; con `redirect` navega a `/auth/401`.
+   bloque sensible: oculta `children` si `permisos` no intersecta `roles`; con `redirect` navega a `/auth/401`.
 5. El menú (`services/menu`) filtra entradas por `role`; `ADMINISTRADOR` ve todo.
+6. `logout()` llama a `POST /auth/logout` y, falle o no, borra token, `ultimaVisitada` y permisos.
 
 ## Convenciones del código de negocio
 
@@ -75,13 +78,13 @@ Demos, `kit/widgets`, `kit-widgets`, `cui-layout`, `cui-system`, MagicBell e idi
 - Formularios con `Form.useForm` (antd 4); fechas con `moment`; códigos de barras leídos con
   escáner en `operaciones/componentes/formaAC.jsx`.
 - Importaciones absolutas desde `src` (`tsconfig.json` `baseUrl` + `vite-tsconfig-paths`): `components/…`,
-  `services/…`, `pages/…`, `redux/…`. Variables de entorno con `import.meta.env.VITE_*`.
-- Sin pruebas automatizadas todavía (Vitest configurado; primeras pruebas en la fase 3). ESLint 10 + Prettier 3
+  `services/…`, `pages/…`, `stores/…`. Variables de entorno con `import.meta.env.VITE_*`.
+- Pruebas con Vitest + MSW en `stores/` y `services/` (`*.test.ts` junto al código). ESLint 10 + Prettier 3
   (sin punto y coma, comillas simples, 100 col).
 
 ### Estilos y cascada (transitorio hasta la fase 4)
 
-Orden de carga: `antd/lib/style/index.less` → `styles/antd.less` → Bootstrap → perfect-scrollbar → `global.scss`.
+Orden de carga (`index.tsx`): `antd/lib/style/index.less` → `styles/antd.less` → Bootstrap → perfect-scrollbar → `global.scss`.
 Los componentes de antd se compilan dentro de `[data-kit-theme='default']` para que su especificidad supere a los
 ajustes de `kit-vendors/antd/css`, como en el build de CRA. El plugin PostCSS `unificarAmbitoTema`
 (`vite.config.ts`) reemplaza al antiguo `AntdThemeLoader`: une el ámbito que Less repite en selectores con `&`.

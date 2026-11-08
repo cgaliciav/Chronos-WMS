@@ -2,6 +2,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tsconfigPaths from 'vite-tsconfig-paths'
+import { sentryVitePlugin } from '@sentry/vite-plugin'
 import { fileURLToPath } from 'node:url'
 
 /**
@@ -29,6 +30,13 @@ const unificarAmbitoTema = {
   },
 }
 
+// Source maps a Sentry solo si el entorno de build trae credenciales (plan 01 D16).
+const { SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT } = process.env
+const pluginSentry =
+  SENTRY_AUTH_TOKEN && SENTRY_ORG && SENTRY_PROJECT
+    ? [sentryVitePlugin({ authToken: SENTRY_AUTH_TOKEN, org: SENTRY_ORG, project: SENTRY_PROJECT })]
+    : []
+
 const raiz = fileURLToPath(new URL('.', import.meta.url))
 const src = fileURLToPath(new URL('./src', import.meta.url))
 
@@ -37,6 +45,7 @@ export default defineConfig({
     react(),
     // Resuelve las importaciones absolutas desde src (components/…, services/…, pages/…) vía baseUrl.
     tsconfigPaths({ loose: true }),
+    ...pluginSentry,
   ],
   css: {
     postcss: { plugins: [unificarAmbitoTema] },
@@ -64,7 +73,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    // Las primeras pruebas llegan en la fase 3 del plan 01.
-    passWithNoTests: true,
+    setupFiles: ['src/test/setup.ts'],
+    css: false,
+    coverage: { include: ['src/services/**', 'src/stores/**', 'src/helpers/**'] },
   },
 })

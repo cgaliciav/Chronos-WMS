@@ -1,23 +1,16 @@
 import React, { useState, useEffect } from 'react'
-import { Link, withRouter } from 'react-router-dom'
-import { connect } from 'react-redux'
+import { Link, useLocation } from 'react-router'
+import menuData from 'services/menu'
 import { reduce } from 'lodash'
 import styles from './style.module.scss'
 
-const mapStateToProps = ({ menu }) => ({
-  menuData: menu.menuData,
-})
-
-const Breadcrumbs = props => {
+const Breadcrumbs = () => {
   const [breadcrumbs, setBreadcrumbs] = useState([])
-  const {
-    location: { pathname },
-    menuData = [],
-  } = props
+  const { pathname } = useLocation()
   useEffect(() => {
     setBreadcrumbs(() => getBreadcrumbs())
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, menuData])
+  }, [pathname])
 
   const getPath = (data, url, parents = []) => {
     const items = reduce(
@@ -87,4 +80,4 @@ const Breadcrumbs = props => {
   )
 }
 
-export default withRouter(connect(mapStateToProps)(Breadcrumbs))
+export default Breadcrumbs

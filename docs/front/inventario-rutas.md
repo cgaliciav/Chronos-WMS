@@ -1,6 +1,6 @@
 # Inventario de rutas del front
 
-> **2026-11-07** · Origen: `front/src/router.jsx`, `front/src/services/menu/index.js`, `<ACL>` de cada página y
+> **2026-11-07** · Origen: `front/src/router.tsx`, `front/src/services/menu/index.js`, `<ACL>` de cada página y
 > cierre estático de imports de cada página (`src/pages/**`, `helpers/`) hasta `src/services/axios/<recurso>`;
 > endpoints contrastados con `api/src/routes/*.Routes.ts`. **Conteo real: 68 filas** = 67 `path` activos
 > (68 declarados − `/dashboard/alpha`) + la redirección `/`. De ellas, **62 rutas de negocio** (Administración 16,

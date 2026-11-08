@@ -1,5 +1,5 @@
 import React from 'react'
-import { Helmet } from 'react-helmet'
+import Titulo from 'components/Titulo'
 import { Popconfirm, Tag, Tooltip } from 'antd'
 import ACL from 'components/cleanui/system/ACL'
 import AreasPeticiones from 'services/axios/areas'
@@ -95,7 +95,7 @@ const columns = [
 const AreasListado = () => {
   return (
     <ACL roles={['AREA-LISTADO', 'ADMINISTRADOR']} redirect>
-      <Helmet title="Areas" />
+      <Titulo texto="Areas" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Lista de areas</span>

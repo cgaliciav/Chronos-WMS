@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { notification, Row, Spin, Upload } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import { apiURLBase } from 'services/axios'
+import { obtenerToken } from 'helpers/storage'
 import ArchivoPeticiones from 'services/axios/archivos'
 import Modal from 'antd/lib/modal/Modal'
 
@@ -31,6 +32,7 @@ const SubirArchivos = ({
             setFileList(resp)
           }
         })
+        .catch(() => {})
         .finally(() => {
           setHabilitadoInterno(true)
         })
@@ -46,18 +48,22 @@ const SubirArchivos = ({
   const handleRemove = async fileUploaded => {
     // console.log("handleRemove",fileUploaded);
 
-    const resp = await ArchivoPeticiones.quitarArchivo({
-      relacion,
-      id: relacionId,
-      archivoId: fileUploaded.uid * -1,
-    })
+    try {
+      const resp = await ArchivoPeticiones.quitarArchivo({
+        relacion,
+        id: relacionId,
+        archivoId: fileUploaded.uid * -1,
+      })
 
-    if (resp !== undefined) {
-      notification.success({ message: 'Archivo eliminado correctamente' })
-      // fnActualizar();
-      return true
+      if (resp !== undefined) {
+        notification.success({ message: 'Archivo eliminado correctamente' })
+        // fnActualizar();
+        return true
+      }
+    } catch {
+      // El interceptor de axios ya mostró el error.
+      return false
     }
-    return false
   }
 
   const handlePreview = fileUploaded => {
@@ -94,7 +100,7 @@ const SubirArchivos = ({
       <Row style={{ width: '90%', margin: 'auto' }}>
         <Upload
           action={rutaUploadProducto}
-          headers={{ auth: localStorage.getItem('t') }}
+          headers={{ auth: obtenerToken() }}
           disabled={!componenteHabilitado}
           data={{ relacion, id: relacionId }}
           listType="picture-card"

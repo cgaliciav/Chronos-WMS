@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { Helmet } from 'react-helmet'
-import { useHistory, useLocation } from 'react-router-dom'
+import Titulo from 'components/Titulo'
+import { useNavigate, useLocation } from 'react-router'
 import { Button, Divider, notification, Row } from 'antd'
 import QueryString from 'query-string'
 import ACL from 'components/cleanui/system/ACL'
@@ -11,7 +11,7 @@ const ProveedorEditar = () => {
   const [guardando, setGuardando] = useState(false)
   const [id, setId] = useState(0)
   const [proveedor, setProveedor] = useState({ nombre: '', RFCEmite: '', estatus: 'inactivo' })
-  const history = useHistory()
+  const navigate = useNavigate()
   const location = useLocation()
   // const params = useParams();
   // setId(params.id);
@@ -31,6 +31,8 @@ const ProveedorEditar = () => {
             // console.log(prv)
           }
         })
+        // El interceptor de axios ya mostró el error.
+        .catch(() => {})
         .finally(() => {
           setGuardando(false)
         })
@@ -46,12 +48,14 @@ const ProveedorEditar = () => {
         RFCEmite: values.rfc,
       })
       if (respuesta !== undefined) {
-        history.push('/proveedores/listado')
+        navigate('/proveedores/listado')
         notification.success({
           message: 'Actualizado correctamente',
           description: 'El proveedor fue actualizado correctamente',
         })
       }
+    } catch {
+      // El interceptor de axios ya mostró el error.
     } finally {
       setGuardando(false)
     }
@@ -73,6 +77,7 @@ const ProveedorEditar = () => {
           })
         }
       })
+      .catch(() => {})
       .finally(() => {
         setGuardando(false)
       })
@@ -94,6 +99,7 @@ const ProveedorEditar = () => {
           })
         }
       })
+      .catch(() => {})
       .finally(() => {
         setGuardando(false)
       })
@@ -102,7 +108,7 @@ const ProveedorEditar = () => {
   // console.log("***********************proveedor",proveedor);
   return (
     <ACL roles={['PROVEEDOR-EDITAR', 'ADMINISTRADOR']} redirect>
-      <Helmet title="Editar proveedor" />
+      <Titulo texto="Editar proveedor" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Editar proveedor</span>

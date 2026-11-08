@@ -1,29 +1,21 @@
 import React from 'react'
-import { connect } from 'react-redux'
 import { Layout } from 'antd'
-import { /* Link, */ withRouter } from 'react-router-dom'
 import classNames from 'classnames'
 // import SupportChat from 'components/cleanui/layout/SupportChat'
 import style from './style.module.scss'
 
-const mapStateToProps = ({ settings }) => ({
-  logo: settings.logo,
-  isGrayTopbar: settings.isGrayTopbar,
-  isCardShadow: settings.isCardShadow,
-  isSquaredBorders: settings.isSquaredBorders,
-  isBorderless: settings.isBorderless,
-  authPagesColor: settings.authPagesColor,
-})
+// Valores fijos de la plantilla (antes en `redux/settings`).
+const AJUSTES = {
+  logo: 'Sony Almacén México',
+  isGrayTopbar: false,
+  isCardShadow: true,
+  isSquaredBorders: false,
+  isBorderless: false,
+  authPagesColor: 'gray',
+}
 
-const AuthLayout = ({
-  children,
-  logo,
-  isGrayTopbar,
-  isCardShadow,
-  isSquaredBorders,
-  isBorderless,
-  authPagesColor,
-}) => {
+const AuthLayout = ({ children }) => {
+  const { logo, isGrayTopbar, isCardShadow, isSquaredBorders, isBorderless, authPagesColor } = AJUSTES
   return (
     <Layout>
       <Layout.Content>
@@ -94,4 +86,4 @@ const AuthLayout = ({
   )
 }
 
-export default withRouter(connect(mapStateToProps)(AuthLayout))
+export default AuthLayout

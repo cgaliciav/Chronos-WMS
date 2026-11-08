@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { Helmet } from 'react-helmet'
-import { useLocation } from 'react-router-dom'
+import Titulo from 'components/Titulo'
+import { useLocation } from 'react-router'
 import {
   // Divider,
   notification,
@@ -70,6 +70,8 @@ const EditarArticuloDetalle = () => {
           // console.log('****** INVENTARIO ACTUAL', resp)
         }
       })
+      // El interceptor de axios ya mostró el error.
+      .catch(() => {})
       .finally(() => {
         setCargando(false)
       })
@@ -121,6 +123,7 @@ const EditarArticuloDetalle = () => {
           })
         }
       })
+      .catch(() => {})
       .finally(() => {
         setCargando(false)
       })
@@ -146,6 +149,7 @@ const EditarArticuloDetalle = () => {
           })
         }
       })
+      .catch(() => {})
       .finally(() => {
         setCargando(false)
       })
@@ -164,7 +168,7 @@ const EditarArticuloDetalle = () => {
 
   return (
     <ACL roles={['V-EDITAR-ARTICULOS-DETALLE', 'ADMINISTRADOR']} redirect>
-      <Helmet title="Editar artículo" />
+      <Titulo texto="Editar artículo" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Editar artículo</span>

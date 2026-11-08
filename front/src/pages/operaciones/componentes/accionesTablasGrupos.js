@@ -1,5 +1,5 @@
 import { notification } from 'antd'
-// import { useHistory } from 'react-router-dom'
+// import { useNavigate } from 'react-router'
 import GrupoPeticiones from 'services/axios/grupos'
 
 export default class AccionesTablasGrupos {
@@ -10,11 +10,12 @@ export default class AccionesTablasGrupos {
           notification.success({
             message: 'Grupo eliminado correctamente',
           })
-          // const history = useHistory();
+          // const navigate = useNavigate();
           // history.go(0)
           document.location.reload()
         }
       })
+      .catch(() => {}) // El interceptor de axios ya mostró el error.
       // .catch(error => {
       //   notification.error({
       //     message: error.message,

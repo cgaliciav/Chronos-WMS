@@ -81,6 +81,7 @@ const FormaConfiguracionGrupo = ({
           setListadoAreas(areas.map(area => ({ label: area.nombre ?? '', value: area.id })))
         }
       })
+      .catch(() => {})
       .finally(() => {
         setHabilitadoInterno(true)
       })
@@ -123,6 +124,7 @@ const FormaConfiguracionGrupo = ({
           setData(resp)
         }
       })
+      .catch(() => {})
       .finally(() => {
         setFetching(false)
       })
@@ -152,15 +154,16 @@ const FormaConfiguracionGrupo = ({
           setDataProveedor(resp)
         }
       })
+      .catch(() => {})
       .finally(() => {
-        setFetching(false)
+        setFetchingProveedor(false)
       })
   }
 
   const handleChangeSupplier = valor => {
     setValueProveedor(valor)
-    setData([])
-    setFetching(false)
+    setDataProveedor([])
+    setFetchingProveedor(false)
   }
 
 
@@ -431,15 +434,19 @@ const FormaConfiguracionGrupo = ({
                   const nombre = proposalName
                   setHabilitadoInterno(false)
 
-                  const conteoNombresSimilares = await GrupoPeticiones.obtenerConteoNombresSimilares(
-                    { nombre },
-                  )
+                  try {
+                    const conteoNombresSimilares = await GrupoPeticiones.obtenerConteoNombresSimilares(
+                      { nombre },
+                    )
 
-                  setHabilitadoInterno(true)
-
-                  form.setFieldsValue({
-                    nombre: `${proposalName}${conteoNombresSimilares.conteo + 1}`,
-                  })
+                    form.setFieldsValue({
+                      nombre: `${proposalName}${conteoNombresSimilares.conteo + 1}`,
+                    })
+                  } catch {
+                    // El interceptor de axios ya mostró el error.
+                  } finally {
+                    setHabilitadoInterno(true)
+                  }
                 }}
               >
                 Crear Nombre

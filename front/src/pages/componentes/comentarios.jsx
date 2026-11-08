@@ -74,15 +74,19 @@ const Comentarios = ({
   const handleEliminarComentario = async comentarioId => {
     // e.preventDefault();
     setHabilitadoInterno(false)
-    const resp = await ComentarioPeticiones.quitar({
-      relacion,
-      id: relacionId,
-      comentarioId,
-    })
+    try {
+      const resp = await ComentarioPeticiones.quitar({
+        relacion,
+        id: relacionId,
+        comentarioId,
+      })
 
-    if (resp !== undefined) {
-      notification.success({ message: 'Comentario eliminado correctamente' })
-      fnActualizar()
+      if (resp !== undefined) {
+        notification.success({ message: 'Comentario eliminado correctamente' })
+        fnActualizar()
+      }
+    } catch {
+      // El interceptor de axios ya mostró el error.
     }
     setHabilitadoInterno(true)
   }
@@ -90,14 +94,19 @@ const Comentarios = ({
   const handleFinish = async values => {
     setHabilitadoInterno(false)
 
-    const resp = await ComentarioPeticiones.nuevo({
-      comentario: values.nuevoComentario,
-      relacion,
-      id: relacionId,
-    })
-    form.resetFields()
+    let resp
+    try {
+      resp = await ComentarioPeticiones.nuevo({
+        comentario: values.nuevoComentario,
+        relacion,
+        id: relacionId,
+      })
+    } catch {
+      // El interceptor de axios ya mostró el error; se conserva el texto escrito para reintentar.
+    }
 
     if (resp !== undefined) {
+      form.resetFields()
       notification.success({ message: 'Comentario agregado correctamente' })
       fnActualizar()
     }

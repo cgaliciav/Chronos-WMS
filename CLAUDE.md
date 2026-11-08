@@ -5,7 +5,7 @@ Monorepo del sistema de almacén (WMS) de Teleset/Sony México. Dos aplicaciones
 | Carpeta | Qué es | Guía propia |
 |---|---|---|
 | `api/` | API REST Node.js + Express 4 + TypeORM 0.2 + MariaDB (TypeScript) | `api/CLAUDE.md` |
-| `front/` | SPA React 16 + antd 4 (JavaScript) sobre la plantilla Clean UI | `front/CLAUDE.md` |
+| `front/` | SPA React 18 + antd 4 + Vite (TypeScript nuevo, JavaScript heredado) sobre la plantilla Clean UI, en migración (plan 01) | `front/CLAUDE.md` |
 | `docs/` | Documentación técnica, hallazgos y planes de trabajo | `docs/README.md` |
 
 No hay `node_modules` ni base de datos en este repositorio; cada app se instala y arranca por separado
@@ -40,6 +40,6 @@ No hay `node_modules` ni base de datos en este repositorio; cada app se instala 
 1. Lee el `CLAUDE.md` de la app que vas a tocar.
 2. Si el cambio corresponde a una fase de un plan, sigue sus pasos y sus criterios de aceptación.
 3. Ejecuta las pruebas de la app (`npm test` en `api/`; en `front/`, `npm run lint`, `npm run typecheck`,
-   `npm test` y `npm run build`: aún no hay pruebas, llegan en el plan 01 fase 3).
+   `npm test` y `npm run build`).
 4. Commits pequeños y descriptivos en español; no mezcles cambios de `api/` y `front/` salvo que un
    cambio de contrato lo exija (y entonces documenta el contrato en `docs/api/endpoints.md`).

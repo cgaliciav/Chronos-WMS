@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { Helmet } from 'react-helmet'
-import { useHistory } from 'react-router-dom'
+import Titulo from 'components/Titulo'
+import { useNavigate } from 'react-router'
 import {
   Divider,
   notification
@@ -14,7 +14,7 @@ import FormaProyecto from '../componentes/forma'
 
 const ProyectoNuevo = () =>{
   const [guardando,setGuardando]=useState(false);
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const handleFinish = async values => {
     try {
@@ -29,13 +29,15 @@ const ProyectoNuevo = () =>{
       })
       if(respuesta!==undefined){
         // console.log("*******************************PROYECTO GUARDADO",respuesta);
-        history.push('/proyectos/listado')
+        navigate('/proyectos/listado')
         notification.success({
           message: 'Creado correctamente',
           description: 'El proyecto fue creado correctamente',
         })
       }
         
+    } catch {
+      // El interceptor de axios ya mostró el error.
     } finally {
       setGuardando(false);
     }
@@ -48,7 +50,7 @@ const ProyectoNuevo = () =>{
         roles={["PROYECTO-NUEVO","ADMINISTRADOR"]}
         redirect
       >
-        <Helmet title="Nuevo proyecto" />
+        <Titulo texto="Nuevo proyecto" />
         <div className="kit__utils__heading">
           <h5>
             <span className="mr-3">Nuevo Proyecto</span>

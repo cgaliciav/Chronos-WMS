@@ -101,6 +101,7 @@ const FormaNuevoItemAC = ({
         setInventarioActual(resp);
       }
     })
+    .catch(() => {}) // El interceptor de axios ya mostró el error.
     .finally(()=>{
       setGuardando(false);
     })
@@ -151,14 +152,11 @@ const FormaNuevoItemAC = ({
         setCurrent(current+1);
       }
     })
+    .catch(() => {})
     .finally(()=>{
       setGuardando(false);
       
     })
-
-
-    setGuardando(false);
-    // console.log("hola");
   }
 
   const siguiente = ()=>{

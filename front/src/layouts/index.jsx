@@ -1,9 +1,7 @@
-import React, { Fragment } from 'react'
-import { withRouter, Redirect } from 'react-router-dom'
-import { connect } from 'react-redux'
-import NProgress from 'nprogress'
-import { Helmet } from 'react-helmet'
-// import Loader from 'components/cleanui/layout/Loader'
+import React, { useEffect, useLayoutEffect } from 'react'
+import { Navigate, Outlet, useLocation } from 'react-router'
+import { PREFIJO_TITULO } from 'components/Titulo'
+import { useUsuarioStore } from 'stores/usuario.store'
 import PublicLayout from './Public'
 import AuthLayout from './Auth'
 import MainLayout from './Main'
@@ -14,56 +12,41 @@ const Layouts = {
   main: MainLayout,
 }
 
-const mapStateToProps = ({ user }) => ({ user })
-let previousPath = ''
+/** Layout según la ruta: `/` público, `/auth/*` autenticación, el resto principal. */
+export function tipoDeLayout(pathname) {
+  if (pathname === '/') return 'public'
+  if (/^\/auth(?=\/|$)/i.test(pathname)) return 'auth'
+  return 'main'
+}
 
-const Layout = ({ user, children, location: { pathname, search } }) => {
-  // NProgress & ScrollTop Management
-  const currentPath = pathname + search
-  if (currentPath !== previousPath) {
+/** Elemento raíz del router: elige layout, protege las rutas privadas y recuerda la última ruta visitada. */
+const Layout = () => {
+  const { pathname, search } = useLocation()
+  const autorizado = useUsuarioStore(estado => estado.autorizado)
+  const cargando = useUsuarioStore(estado => estado.cargando)
+
+  // Título por defecto. Es un efecto de layout para que lo sobrescriba el <Titulo> de la página (efecto normal).
+  useLayoutEffect(() => {
+    document.title = `${PREFIJO_TITULO} | Sony México Almacén General`
+  }, [pathname])
+
+  useEffect(() => {
     window.scrollTo(0, 0)
-    NProgress.start()
-  }
-  setTimeout(() => {
-    NProgress.done()
-    previousPath = currentPath
-  }, 300)
+    if (!pathname.includes('auth')) localStorage.setItem('ultimaVisitada', pathname + search)
+  }, [pathname, search])
 
-  // Layout Rendering
-  const getLayout = () => {
-    if (pathname === '/') {
-      return 'public'
-    }
-    if (/^\/auth(?=\/|$)/i.test(pathname)) {
-      return 'auth'
-    }
-    return 'main'
-  }
+  const tipo = tipoDeLayout(pathname)
+  const Contenedor = Layouts[tipo]
 
-  const Container = Layouts[getLayout()]
-  const isUserAuthorized = user.authorized
-  const isUserLoading = user.loading
-  const isAuthLayout = getLayout() === 'auth'
-
-  const BootstrappedLayout = () => {
-    // show loader when user in check authorization process, not authorized yet and not on login pages
-    if (isUserLoading && !isUserAuthorized && !isAuthLayout) {
-      return null
-    }
-    // redirect to login page if current is not login page and user not authorized
-    if (!isAuthLayout && !isUserAuthorized) {
-      return <Redirect to="/auth/login" />
-    }
-    // in other case render previously set layout
-    return <Container>{children}</Container>
-  }
+  // Mientras se comprueba la sesión guardada no se muestra nada (ni se manda al login).
+  if (cargando && !autorizado && tipo !== 'auth') return null
+  if (tipo !== 'auth' && !autorizado) return <Navigate to="/auth/login" replace />
 
   return (
-    <Fragment>
-      <Helmet titleTemplate="Sony Almacén | %s" title="Sony México Almacén General" />
-      {BootstrappedLayout()}
-    </Fragment>
+    <Contenedor>
+      <Outlet />
+    </Contenedor>
   )
 }
 
-export default withRouter(connect(mapStateToProps)(Layout))
+export default Layout

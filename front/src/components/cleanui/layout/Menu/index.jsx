@@ -1,64 +1,45 @@
 import React, { useEffect } from 'react'
 import { Drawer } from 'antd'
-import { connect } from 'react-redux'
+import { ANCHO_MENU, useUiStore } from 'stores/ui.store'
 import MenuLeft from './MenuLeft'
 // import MenuTop from './MenuTop'
 import style from './style.module.scss'
 
-const mapStateToProps = ({ settings }) => ({
-  // menuLayoutType: settings.menuLayoutType,
-  isMobileMenuOpen: settings.isMobileMenuOpen,
-  isMobileView: settings.isMobileView,
-  leftMenuWidth: settings.leftMenuWidth,
-})
-
 let touchStartPrev = 0
 let touchStartLocked = false
 
-const Menu = ({
-  dispatch,
-  isMobileMenuOpen,
-  isMobileView,
-  /* menuLayoutType, */ leftMenuWidth,
-}) => {
+const Menu = () => {
+  const isMobileMenuOpen = useUiStore(estado => estado.menuMovilAbierto)
+  const isMobileView = useUiStore(estado => estado.esMovil)
+  const toggleMobileMenu = useUiStore(estado => estado.alternarMenuMovil)
+  const leftMenuWidth = ANCHO_MENU
+
   useEffect(() => {
     // mobile menu touch slide opener
     const unify = e => {
       return e.changedTouches ? e.changedTouches[0] : e
     }
-    document.addEventListener(
-      'touchstart',
-      e => {
-        const x = unify(e).clientX
-        touchStartPrev = x
-        touchStartLocked = x > 70
-      },
-      { passive: false },
-    )
-    document.addEventListener(
-      'touchmove',
-      e => {
-        const x = unify(e).clientX
-        const prev = touchStartPrev
-        if (x - prev > 50 && !touchStartLocked) {
-          toggleMobileMenu()
-          touchStartLocked = true
-        }
-      },
-      { passive: false },
-    )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const toggleMobileMenu = () => {
-    dispatch({
-      type: 'settings/CHANGE_SETTING',
-      payload: {
-        setting: 'isMobileMenuOpen',
-        value: !isMobileMenuOpen,
-      },
-    })
-  }
+    const alTocar = e => {
+      const x = unify(e).clientX
+      touchStartPrev = x
+      touchStartLocked = x > 70
+    }
+    const alDeslizar = e => {
+      const x = unify(e).clientX
+      const prev = touchStartPrev
+      if (x - prev > 50 && !touchStartLocked) {
+        toggleMobileMenu()
+        touchStartLocked = true
+      }
+    }
+    document.addEventListener('touchstart', alTocar, { passive: false })
+    document.addEventListener('touchmove', alDeslizar, { passive: false })
+    // Antes los listeners nunca se quitaban (hallazgo F7).
+    return () => {
+      document.removeEventListener('touchstart', alTocar)
+      document.removeEventListener('touchmove', alDeslizar)
+    }
+  }, [toggleMobileMenu])
 
   const GetMenu = () => {
     if (isMobileView) {
@@ -103,4 +84,4 @@ const Menu = ({
   return GetMenu()
 }
 
-export default connect(mapStateToProps)(Menu)
+export default Menu

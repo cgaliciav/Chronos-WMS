@@ -24,6 +24,7 @@ const Movimientos = ({
           setListadoMovimientos(resp);
         }
       })
+      .catch(() => {}) // El interceptor de axios ya mostró el error.
       .finally(()=>{
         setHabilitadoInterno(true);
       })

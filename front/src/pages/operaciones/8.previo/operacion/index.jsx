@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { Helmet } from 'react-helmet'
-import { useLocation } from 'react-router-dom'
-import { connect } from 'react-redux'
+import Titulo from 'components/Titulo'
+import { useLocation } from 'react-router'
+import { useUsuarioStore } from 'stores/usuario.store'
 import QueryString from 'query-string'
 import { Row, Button, Col, Typography, notification, Space } from 'antd'
 import ACL from 'components/cleanui/system/ACL'
@@ -13,9 +13,8 @@ import ModalArchivos from 'pages/componentes/modalArchivos'
 import ModalComentarios from 'pages/componentes/modalComentarios'
 import ColumnasOperaciones from 'pages/operaciones/componentes/columnasTablaOperaciones'
 
-const mapStateToProps = ({ user }) => ({ user })
-
-const PrevioOperacion = ({ user }) => {
+const PrevioOperacion = () => {
+  const user = useUsuarioStore()
   const [grupoId, setGrupoId] = useState(0)
   const [cargando, setCargando] = useState(true)
   const [conteoRefresh, setConteoRefresh] = useState(0) // utilizado para acutalizar la lista en su vista actual
@@ -59,6 +58,7 @@ const PrevioOperacion = ({ user }) => {
           })
         }
       })
+      .catch(() => {}) // El interceptor de axios ya mostró el error.
       .finally(() => {
         setCargando(false)
       })
@@ -75,7 +75,7 @@ const PrevioOperacion = ({ user }) => {
   ]
   console.log("*************grupo.estatus",grupo.estatus);
 
-  // const history = useHistory()
+  // const navigate = useNavigate()
   const location = useLocation()
 
   useEffect(() => {
@@ -104,6 +104,7 @@ const PrevioOperacion = ({ user }) => {
             setArchivosGrupo(resp.archivos)
           }
         })
+        .catch(() => {})
         .finally(() => {
           setCargando(false)
         })
@@ -123,6 +124,7 @@ const PrevioOperacion = ({ user }) => {
           actualizar()
         }
       })
+      .catch(() => {})
       .finally(() => {
         setCargando(false)
       })
@@ -140,6 +142,7 @@ const PrevioOperacion = ({ user }) => {
           actualizar()
         }
       })
+      .catch(() => {})
       .finally(() => {
         setCargando(false)
       })
@@ -158,23 +161,24 @@ const PrevioOperacion = ({ user }) => {
     // const usuariosIds = usuarios.map(usr => usr.id)
     setCargando(true)
 
-    const resp=await GrupoPeticiones.agregarMovimiento({
-      codigo: valores.clave,
-      cantidad: 1,
-      // movimientoTipoId, // Prestamos
-      // proyectoId,
-      // usuariosIds,
-      grupoId: grupo.id,
-    })
-
-    setCargando(false);
-    
-    if (resp !== undefined) {
+    try {
+      const resp=await GrupoPeticiones.agregarMovimiento({
+        codigo: valores.clave,
+        cantidad: 1,
+        // movimientoTipoId, // Prestamos
+        // proyectoId,
+        // usuariosIds,
+        grupoId: grupo.id,
+      })
       console.log('ultimoMovimientoAgregado', resp)
       setConteoRefresh(conteoRefresh + 1);
       return 1;
+    } catch {
+      // El interceptor de axios ya mostró el error.
+      return 0;
+    } finally {
+      setCargando(false);
     }
-    return 0;
     
   }
 
@@ -209,7 +213,7 @@ const PrevioOperacion = ({ user }) => {
 
   return (
     <ACL roles={['PREVIO-OPERACION', 'ADMINISTRADOR']} redirect>
-      <Helmet title="Previo" />
+      <Titulo texto="Previo" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Previo</span>
@@ -326,4 +330,4 @@ const PrevioOperacion = ({ user }) => {
   )
 }
 
-export default connect(mapStateToProps)(PrevioOperacion)
+export default PrevioOperacion

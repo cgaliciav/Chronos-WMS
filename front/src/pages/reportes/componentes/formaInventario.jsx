@@ -43,6 +43,8 @@ const FormaInventario = ({
           setListadoBodegas(bodegas)
         }
       })
+      // El interceptor de axios ya mostró el error.
+      .catch(() => {})
       .finally(() => {
         setHabilitadoInterno(true)
         const tempBusqueda = JSON.parse(localStorage.getItem('catalogoValidaciones.busqueda'))

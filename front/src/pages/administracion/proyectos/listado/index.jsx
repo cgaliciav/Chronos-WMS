@@ -1,5 +1,5 @@
 import React from 'react'
-import { Helmet } from 'react-helmet'
+import Titulo from 'components/Titulo'
 import { Popconfirm, Tag, Tooltip } from 'antd'
 import moment from 'moment'
 import ACL from 'components/cleanui/system/ACL'
@@ -138,7 +138,7 @@ const columns = [
 const ProyectosListado = () => {
   return (
     <ACL roles={['PROYECTO-LISTADO', 'ADMINISTRADOR']} redirect>
-      <Helmet title="Proyectos" />
+      <Titulo texto="Proyectos" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Lista de proyectos</span>

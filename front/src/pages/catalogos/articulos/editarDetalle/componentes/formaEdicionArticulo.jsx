@@ -98,6 +98,8 @@ const FormaEdicionArticulo = ({
           setListadoBodegas(bodegas)
         }
       })
+      // El interceptor de axios ya mostró el error.
+      .catch(() => {})
       .finally(() => {
         setHabilitadoInterno(true)
       })

@@ -1,6 +1,6 @@
 import React from 'react'
 import { Button, Carousel } from 'antd'
-import { apiURLBase } from 'services/axios'
+import { apiURLBase, conToken } from 'services/axios'
 import styles from './style.module.scss'
 
 const ImagenesEnCarrusel = ({ archivos, rutaEnApi, hacerGrande, onClickImagen }) => {
@@ -25,7 +25,7 @@ const ImagenesEnCarrusel = ({ archivos, rutaEnApi, hacerGrande, onClickImagen })
                     onClick={onClickImagen}
                   />
                 ) : null}
-                <img alt="" src={source.href} style={{ width: '100%', margin: 'auto' }} />
+                <img alt="" src={conToken(source.href)} style={{ width: '100%', margin: 'auto' }} />
               </div>
             )
           })

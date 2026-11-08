@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { Helmet } from 'react-helmet'
-import { useHistory } from 'react-router-dom'
+import Titulo from 'components/Titulo'
+import { useNavigate } from 'react-router'
 import { notification, Divider } from 'antd'
 import moment from 'moment'
 import ACL from 'components/cleanui/system/ACL'
@@ -9,7 +9,7 @@ import FormaUsuario from '../componentes/forma'
 
 const UsuarioNuevo = () => {
   const [guardando, setGuardando] = useState(false)
-  const history = useHistory()
+  const navigate = useNavigate()
 
   const handleFinish = async values => {
     try {
@@ -33,12 +33,14 @@ const UsuarioNuevo = () => {
       })
       if (respuesta !== undefined) {
         // console.log('*******************************USUARIO GUARDADO', respuesta)
-        history.push('/usuarios/listado')
+        navigate('/usuarios/listado')
         notification.success({
           message: 'Creado correctamente',
           description: 'El usuario fue creado correctamente',
         })
       }
+    } catch {
+      // El interceptor de axios ya mostró el error.
     } finally {
       setGuardando(false)
     }
@@ -47,7 +49,7 @@ const UsuarioNuevo = () => {
   // console.log("***********************BODEGAS",interno,externo)
   return (
     <ACL roles={['USUARIO-NUEVO', 'ADMINISTRADOR']} redirect>
-      <Helmet title="Nuevo usuario" />
+      <Titulo texto="Nuevo usuario" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Nuevo Usuario</span>

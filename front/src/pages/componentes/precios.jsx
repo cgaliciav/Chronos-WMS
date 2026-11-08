@@ -15,14 +15,18 @@ const PreciosProducto = ({ productoPrecios, loading, editar, fnActualizar }) => 
   const actualizarPrecio = async values => {
     const { precio, moneda } = values
     setHabilitadoInterno(false)
-    const resp = await ProductoPrecioPeticiones.editar({
-      precio,
-      moneda,
-      productoPrecioId,
-    })
+    try {
+      const resp = await ProductoPrecioPeticiones.editar({
+        precio,
+        moneda,
+        productoPrecioId,
+      })
 
-    if (resp !== undefined) {
-      fnActualizar()
+      if (resp !== undefined) {
+        fnActualizar()
+      }
+    } catch {
+      // El interceptor de axios ya mostró el error.
     }
 
     setHabilitadoInterno(true)

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { Helmet } from 'react-helmet'
-import { useHistory } from 'react-router-dom'
+import Titulo from 'components/Titulo'
+import { useNavigate } from 'react-router'
 import { Divider, notification } from 'antd'
 import ACL from 'components/cleanui/system/ACL'
 import ProveedorPeticiones from 'services/axios/proveedores'
@@ -8,7 +8,7 @@ import FormaProveedor from '../componentes/forma'
 
 const ProveedorNuevo = () => {
   const [guardando, setGuardando] = useState(false)
-  const history = useHistory()
+  const navigate = useNavigate()
 
   const handleFinish = async values => {
     try {
@@ -20,12 +20,14 @@ const ProveedorNuevo = () => {
       })
       if (respuesta !== undefined) {
         // console.log('*******************************Proveedor GUARDADO', respuesta)
-        history.push('/proveedores/listado')
+        navigate('/proveedores/listado')
         notification.success({
           message: 'Creado correctamente',
           description: 'El Proveedor fue creado correctamente',
         })
       }
+    } catch {
+      // El interceptor de axios ya mostró el error.
     } finally {
       setGuardando(false)
     }
@@ -34,7 +36,7 @@ const ProveedorNuevo = () => {
   // console.log("***********************BODEGAS",interno,externo)
   return (
     <ACL roles={['PROVEEDOR-NUEVO', 'ADMINISTRADOR']} redirect>
-      <Helmet title="Nuevo Proveedor" />
+      <Titulo texto="Nuevo Proveedor" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Nuevo Proveedor</span>

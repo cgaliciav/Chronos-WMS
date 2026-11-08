@@ -1,7 +1,7 @@
 import { Button, Col, Form, Input, notification, Row } from 'antd'
 import React, { useState } from 'react'
-import { Helmet } from 'react-helmet'
-import { useHistory } from 'react-router-dom'
+import Titulo from 'components/Titulo'
+import { useNavigate } from 'react-router'
 import UsuarioPeticiones from 'services/axios/usuarios'
 
 const FormItem = Form.Item
@@ -14,7 +14,7 @@ const UsuarioCambiarPassword = () => {
   const [ayudaPassNuevoConfirmacion,setAyudaPassNuevoConfirmacion]=useState('');
 
   const [form] = Form.useForm();
-  const history = useHistory();
+  const navigate = useNavigate();
   
 
   const handleFinish = async values =>{
@@ -27,7 +27,7 @@ const UsuarioCambiarPassword = () => {
       });
 
       if(respuesta!==undefined){
-        history.goBack()
+        navigate(-1)
         notification.success({
           message: 'Password actualizado',
           description: 'Tu acceso será con el nuevo password.',
@@ -42,6 +42,8 @@ const UsuarioCambiarPassword = () => {
     //     console.log(error);
     //   }
       
+    } catch {
+      // El interceptor de axios ya mostró el error.
     } finally {
       setGuardando(false);
       setHabilitado(true);
@@ -78,7 +80,7 @@ const UsuarioCambiarPassword = () => {
 
   return (
     <div>
-      <Helmet title="Editar usuario" />
+      <Titulo texto="Editar usuario" />
       <div className="card">
         <div className="card-header">
           <div className="utils__title">

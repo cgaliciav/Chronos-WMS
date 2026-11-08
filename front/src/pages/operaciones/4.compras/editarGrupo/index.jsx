@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { Helmet } from 'react-helmet'
-import { useHistory, useLocation } from 'react-router-dom'
+import Titulo from 'components/Titulo'
+import { useNavigate, useLocation } from 'react-router'
 import { notification } from 'antd'
 import QueryString from 'query-string'
 import moment from 'moment'
@@ -39,7 +39,7 @@ const CompraEditarGrupo = () => {
   })
   const [cargando, setCargando] = useState(true)
 
-  const history = useHistory()
+  const navigate = useNavigate()
 
   const location = useLocation()
 
@@ -53,6 +53,7 @@ const CompraEditarGrupo = () => {
             setGrupo(resp)
           }
         })
+        .catch(() => {})
         .finally(() => {
           setCargando(false)
         })
@@ -99,14 +100,18 @@ const CompraEditarGrupo = () => {
 
     console.log('***********VALORES', newValues);
 
-    const resp = await GrupoPeticiones.editarConCompra(newValues);
+    try {
+      const resp = await GrupoPeticiones.editarConCompra(newValues);
 
-    if (resp !== undefined) {
-      // mandar a la edicion del grupo
-      history.push(`/compras/operacion?uid=${grupoId}`)
-      notification.success({
-        message: 'Listado editado correctamente',
-      })
+      if (resp !== undefined) {
+        // mandar a la edicion del grupo
+        navigate(`/compras/operacion?uid=${grupoId}`)
+        notification.success({
+          message: 'Listado editado correctamente',
+        })
+      }
+    } catch {
+      // El interceptor de axios ya mostró el error.
     }
 
     setGuardando(false)
@@ -115,7 +120,7 @@ const CompraEditarGrupo = () => {
   // console.log("***********************USUARIO",usuario);
   return (
     <ACL roles={['COMPRAS-NUEVO', 'ADMINISTRADOR']} redirect>
-      <Helmet title="Nuevo listado de compras" />
+      <Titulo texto="Nuevo listado de compras" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Nuevo listado de compras</span>

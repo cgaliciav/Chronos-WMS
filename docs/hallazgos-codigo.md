@@ -122,24 +122,24 @@ fase se corrige cada uno.
 
 | # | Ubicación | Descripción | Evidencia |
 |---|---|---|---|
-| F1 | `src/services/axios/index.js:75` | El interceptor de error **devuelve** el error en lugar de rechazarlo: los `.then` de los servicios reciben el objeto `error` como respuesta y los `.catch` nunca se ejecutan. Las páginas pueden tratar un error como éxito. | `return error;` |
-| F2 | `src/services/axios/autorizacion/index.js:15` | El login depende de `https://api.ipify.org`; si ese servicio externo falla o está bloqueado, nadie puede iniciar sesión. | |
-| F3 | `src/services/axios/grupos/index.js:27` | `finalizar` hace `PUT groups/list-by-group-antd` (ruta del listado) en vez de `groups/closure/:id`. | `super.generalPut(portionEndPoint,"list-by-group-antd",parametros)` |
-| F4 | `src/redux/user/sagas.js:126-136` | `LOGOUT` reinicia `name/role/email` (llaves de la plantilla) en vez de `nombre/correo/permisos`: los permisos siguen en memoria tras cerrar sesión. | |
-| F5 | `src/redux/settings/sagas.js` (`SETUP`) | Cualquier parámetro de la query string se convierte en un ajuste del store en cada navegación (`qs.parse` + `changeSetting`). | |
+| F1 | `src/services/axios/index.js:75` | El interceptor de error **devuelve** el error en lugar de rechazarlo: los `.then` de los servicios reciben el objeto `error` como respuesta y los `.catch` nunca se ejecutan. Las páginas pueden tratar un error como éxito. | `return error;` **✅ Corregido (plan 01 fase 3).** El interceptor rechaza (`Promise.reject`) tras notificar; ~150 llamadas de páginas revisadas (`.catch`/`try`). Prueba: `services/axios/index.test.ts`. |
+| F2 | `src/services/axios/autorizacion/index.js:15` | El login depende de `https://api.ipify.org`; si ese servicio externo falla o está bloqueado, nadie puede iniciar sesión. | **✅ Corregido (plan 01 fase 3).** `autorizacion.login` ya no consulta `api.ipify.org` ni envía `ip` (D15). |
+| F3 | `src/services/axios/grupos/index.js:27` | `finalizar` hace `PUT groups/list-by-group-antd` (ruta del listado) en vez de `groups/closure/:id`. | `super.generalPut(portionEndPoint,"list-by-group-antd",parametros)` **✅ Corregido (plan 01 fase 3).** `finalizar(id)` → `PUT /groups/closure/:id`. Prueba: `grupos.test.ts`. |
+| F4 | `src/redux/user/sagas.js:126-136` | `LOGOUT` reinicia `name/role/email` (llaves de la plantilla) en vez de `nombre/correo/permisos`: los permisos siguen en memoria tras cerrar sesión. | **✅ Corregido (plan 01 fase 3).** `useUsuarioStore.logout` limpia permisos, token y última ruta. Prueba: `usuario.store.test.ts`. |
+| F5 | `src/redux/settings/sagas.js` (`SETUP`) | Cualquier parámetro de la query string se convierte en un ajuste del store en cada navegación (`qs.parse` + `changeSetting`). | **✅ Corregido (plan 01 fase 3).** Sin redux ni saga `SETUP`: la query string ya no modifica ajustes. |
 | F6 | `src/pages/operaciones/7.inventario/nuevo/index.jsx:35`; `3.bajas/nuevo/index.jsx:33` | Tipos de movimiento incorrectos/legados enviados al API (15 para inventario, 5 para baja). | |
 
 ### B.2 Medios
 
 | # | Ubicación | Descripción |
 |---|---|---|
-| F7 | `src/components/cleanui/layout/Menu/index.jsx:29-49` | Listeners `touchstart/touchmove` en `document` sin limpieza (fuga). |
+| F7 | `src/components/cleanui/layout/Menu/index.jsx:29-49` | Listeners `touchstart/touchmove` en `document` sin limpieza (fuga). **✅ Corregido (plan 01 fase 3).** Los listeners táctiles se quitan al desmontar el menú. |
 | F8 | `src/components/cleanui/layout/MenuLeft/index.js:88`; `src/helpers/funcionesExtras.jsx:8,15` | `key={Math.random()}` en listas (re-render completo y pérdida de estado). |
-| F9 | `src/components/cleanui/layout/Sidebar/index.js:325` | Asigna `menuColor: 'light'`, valor inexistente (white/gray/dark). Tema por defecto `'dark'` en el store vs `data-kit-theme="default"` en `index.html`. |
+| F9 | `src/components/cleanui/layout/Sidebar/index.js:325` | Asigna `menuColor: 'light'`, valor inexistente (white/gray/dark). Tema por defecto `'dark'` en el store vs `data-kit-theme="default"` en `index.html`. **✅ Corregido (fases 2-3):** `Sidebar` y ajustes de tema eliminados. |
 | F10 | `src/services/axios/index.js:6` | `console.log(NODE_ENV, REACT_APP_API_URL)` incondicional; URL de ngrok antigua en comentario (35). 68 `console.*` activos en 35 archivos de negocio (p. ej. `operaciones/componentes/formaAC.jsx:73,96` `console.log("hola")`). **Parcial (plan 01 fase 2):** el `console.log` de `services/axios/index.js` y los de `PeticionBase` solo se ejecutan en desarrollo (`import.meta.env.DEV`); quedan los `console.*` de negocio (fase 6). |
-| F11 | `src/pages/componentes/subirArchivos.jsx:97` | Lee el token directamente de `localStorage` para la cabecera de `Upload` en vez de usar el cliente axios (duplicación de la lógica de auth). |
+| F11 | `src/pages/componentes/subirArchivos.jsx:97` | Lee el token directamente de `localStorage` para la cabecera de `Upload` en vez de usar el cliente axios (duplicación de la lógica de auth). **✅ Corregido (plan 01 fase 3).** La cabecera de `Upload` sale de `helpers/storage.obtenerToken()`. |
 | F12 | Componentes antd obsoletos | `Row type="flex"` (prop v3, 35 usos), `Comment` (eliminado en v5), `visible` en Modal (8), `Menu.Item`/`SubMenu` como hijos (42), `Tabs.TabPane` (58), `Dropdown overlay` (10), `antd/lib/modal/Modal` import profundo. Ver plan 01. |
-| F13 | `src/locales/es-MX.js` | Usa `es_ES` de antd con `locale: 'en-MX'` (código inexistente). |
+| F13 | `src/locales/es-MX.js` | Usa `es_ES` de antd con `locale: 'en-MX'` (código inexistente). **✅ Corregido (plan 01 fase 3).** `src/locales` y `react-intl` eliminados; `ConfigProvider` usa `antd/es/locale/es_ES`. |
 
 ### B.3 Bajos
 
@@ -167,7 +167,12 @@ Detalle en `docs/front/inventario-rutas.md` (sección "Observaciones") y `docs/f
 | F26 | Baja | `src/services/axios/*` | 25 métodos sin uso (17 en `grupos`); clases con nombre copiado (`productoInventariado` → `ProductoValidado`, `roles` → `ProyectoPeticiones`); `generalGet` arma `/<recurso>/<ruta>/undefined` si falta el parámetro. |
 | F27 | Baja | `pages/componentes/imagenesEnCarrusel.jsx:11`; `pages/operaciones/componentes/columnasTablaOperaciones.jsx:14` | Usan `resources/images/no-photo-available.png` como imagen por defecto, pero ese archivo no existe en `public/` (imagen rota cuando el artículo no tiene fotos). Resolver en la fase 6 (`Image` de antd con `fallback` o un SVG propio). |
 | F28 | Alta | Migración a Vite (plan 01 fase 2) | **✅ Corregido (fase 2).** Incompatibilidades que el build de CRA ocultaba y que con ESM/Vite fallan en ejecución: `import * as moment from 'moment'` en 19 archivos (13 lo invocaban como función: "Cannot call a namespace"); `global.window` en `redux/settings/sagas.js` (Vite no define `global`); `export default store` evaluado después de arrancar las sagas que lo importan (TDZ en desarrollo); `Form.useForm()` después de un `return` temprano en `operaciones/componentes/formaConfiguracionGrupo.jsx` (orden de hooks variable: "Rendered more hooks than during the previous render" al cargar `valoresIniciales`). |
-| F29 | Baja | `src/pages/reportes/5.inventario/index.jsx:69,76` | Página huérfana (sin ruta) que usa `InventarioActualPeticiones` y `setData` sin definirlos; excluida de ESLint hasta confirmar su borrado con el propietario. |
+| F29 | Baja | `src/pages/reportes/5.inventario/index.jsx:69,76` | Página huérfana (sin ruta) que usa `InventarioActualPeticiones` y `setData` sin definirlos; excluida de ESLint hasta confirmar su borrado con el propietario. **✅ Resuelto (fase 3):** página borrada a petición del propietario. |
+| F30 | Media | `src/pages/operaciones/componentes/formaConfiguracionGrupo.jsx:159,165-166` | **✅ Corregido (fase 3).** La búsqueda de proveedores apagaba el spinner de usuarios (`setFetching`) y al elegir proveedor vaciaba la lista de usuarios (`setData`) en vez de las suyas. |
+| F31 | Baja | `src/pages/operaciones/componentes/formaAC.jsx:162` | **✅ Corregido (fase 3).** `setGuardando(false)` justo después de lanzar la petición, sin esperarla (el botón se reactivaba antes de tiempo). |
+| F32 | Baja | `src/pages/componentes/comentarios.jsx` | **✅ Corregido (fase 3).** El formulario se vaciaba aunque el comentario no se guardara; ahora conserva el texto para reintentar. |
+| F33 | Info | Carga de catálogos con `Promise.all` (`usuarios/componentes/forma.jsx`, `catalogos/*/componentes/forma.jsx`, `formaConfiguracionGrupo.jsx`, `formaBusquedaPorProyecto.jsx`, `formaEdicionArticulo.jsx`, `reportes/3.cierreProyecto`, `reportes/componentes/formaInventario.jsx`) | Tras F1, si falla una petición no se carga ninguna lista (antes se cargaban las demás y la fallida quedaba `undefined`, lo que podía romper un `.map`). Valorar `Promise.allSettled` si se quiere carga parcial. |
+| F34 | Info | antd 4.24 (`rc-table`) | Con React 18.3 aparece en desarrollo el aviso "Support for defaultProps will be removed from function components" desde el `Table` interno de antd; desaparece al subir a antd 5 (fase 4). |
 
 ---
 

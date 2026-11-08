@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Helmet } from 'react-helmet'
+import Titulo from 'components/Titulo'
 // import { Tag, Tooltip } from 'antd'
 // import moment from 'moment'
 import 'moment/locale/es'
@@ -51,7 +51,7 @@ const PrestamosListadoPorProyecto = () => {
 
   return (
     <ACL roles={['V-OPERACION-PRESTAMOSACTIVOS', 'ADMINISTRADOR']} redirect>
-      <Helmet title="Listado Préstamos Activps" />
+      <Titulo texto="Listado Préstamos Activps" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Listados Préstamos Activos</span>

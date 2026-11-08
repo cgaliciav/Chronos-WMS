@@ -36,6 +36,7 @@ imágenes; en las fases 1 y 2 se contaron los píxeles con diferencia de color >
 | Fase | Capturas | Resultado |
 |---|---|---|
 | 1 (borrado de plantilla) | — (idénticas) | Solo cambia la campana de MagicBell (retirada). |
+| 3 (React 18, Router 7, Zustand, servicios TS) | — (idénticas a la fase 2) | 0 % salvo los nombres por defecto con marca de tiempo. Humo de sesión con `flujo-sesion.js`: 10/10. |
 | 2 (CRA → Vite, antd 4.2 → 4.24) | [`fase-2/`](fase-2/) | 0,2-0,7 % de píxeles distintos en 9 rutas; 18 % en `prestamos-operacion`. Sin errores de consola en `build`, `preview` ni `dev` (solo avisos de deprecación de antd 4.24 en `dev`, que resuelve la fase 4). |
 
 Diferencias aceptadas en la fase 2, todas por la subida a antd 4.24 o por retiradas previstas en el plan:
@@ -50,3 +51,9 @@ Diferencias aceptadas en la fase 2, todas por la subida a antd 4.24 o por retira
 Dos diferencias que **sí** eran regresiones se corrigieron en `src/styles/antd.less` y `vite.config.ts`: la cascada
 antd ↔ `kit-vendors` (envoltorio `[data-kit-theme='default']` + plugin PostCSS) y la altura de los títulos de grupo
 del menú (el minificador de CSS convertía `height: 1.5715` en `1.5715px`).
+
+## Humo de sesión automatizado (`flujo-sesion.js`)
+
+`node flujo-sesion.js <front/build>` sirve el build, simula el API y comprueba: redirección al login sin sesión,
+login con `{ c, p }` sin `ip`, vuelta a la última ruta, título, menú filtrado por permisos, ACL → `/auth/401`,
+ruta inexistente → `/auth/404`, F5 con sesión, logout (borra el token) y ausencia de `pageerror`.

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Helmet } from 'react-helmet'
+import Titulo from 'components/Titulo'
 import { Popconfirm, Tag, Tooltip, notification } from 'antd'
 import moment from 'moment'
 import 'moment/locale/es'
@@ -91,11 +91,12 @@ const BajasListado = () => {
             message: 'Grupo eliminado correctamente',
           })
           setConteoRefresh(conteoRefresh+1)
-          // const history = useHistory();
+          // const navigate = useNavigate();
           // history.go(0)
           // document.location.reload()
         }
       })
+      .catch(() => {}) // El interceptor de axios ya mostró el error.
       // .catch(error => {
       //   notification.error({
       //     message: error.message,
@@ -107,7 +108,7 @@ const BajasListado = () => {
 
   return (
     <ACL roles={['OPERACION-BajasPORGRUPO', 'ADMINISTRADOR']} redirect>
-      <Helmet title="Listado Bajas" />
+      <Titulo texto="Listado Bajas" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Listados de Bajas</span>

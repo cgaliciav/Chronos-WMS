@@ -1,5 +1,5 @@
 import React from 'react'
-import { useHistory } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { Col, Row, Card, Typography, Divider } from 'antd'
 import { EyeOutlined } from '@ant-design/icons'
 import ImagenesEnCarrusel from 'pages/componentes/imagenesEnCarrusel'
@@ -12,11 +12,11 @@ const TarjetaProductoValidacion = ({
   id,
   producto: { titulo, descripcion, archivos, id: productoId, productoInventariado },
 }) => {
-  const history = useHistory()
+  const navigate = useNavigate()
 
   const onClick = e => {
     e.preventDefault()
-    history.push(`/articulos/validado?uid=${id}`)
+    navigate(`/articulos/validado?uid=${id}`)
   }
 
   return (

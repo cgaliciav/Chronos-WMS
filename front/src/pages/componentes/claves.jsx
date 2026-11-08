@@ -23,6 +23,7 @@ const ClavesProducto = ({ productoClaves, loading, productoId, editar, fnActuali
           fnActualizar()
         }
       })
+      .catch(() => {})
       .finally(() => {
         setHabilitadoInterno(true)
       })
@@ -35,21 +36,25 @@ const ClavesProducto = ({ productoClaves, loading, productoId, editar, fnActuali
   const agregarClave = async valores => {
     const { modo, clave: barras } = valores
     let resp
-    if (modo === 'autogenerada') {
-      resp = await ProductoClavePeticiones.nuevoAutogenerado({
-        productoId,
-      })
-    } else {
-      resp = await ProductoClavePeticiones.nuevo({
-        productoId,
-        productoCodigo: {
-          barras,
-          barrasTipo: 'Manual',
-        },
-      })
-    }
-    if (resp !== undefined) {
-      fnActualizar()
+    try {
+      if (modo === 'autogenerada') {
+        resp = await ProductoClavePeticiones.nuevoAutogenerado({
+          productoId,
+        })
+      } else {
+        resp = await ProductoClavePeticiones.nuevo({
+          productoId,
+          productoCodigo: {
+            barras,
+            barrasTipo: 'Manual',
+          },
+        })
+      }
+      if (resp !== undefined) {
+        fnActualizar()
+      }
+    } catch {
+      // El interceptor de axios ya mostró el error.
     }
 
     setHabilitadoInterno(true)

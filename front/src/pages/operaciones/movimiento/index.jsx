@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Helmet } from 'react-helmet'
-import { useLocation } from 'react-router-dom'
+import Titulo from 'components/Titulo'
+import { useLocation } from 'react-router'
 import QueryString from 'query-string'
 import { Row, Divider, Col, Typography, Tabs } from 'antd'
 import ACL from 'components/cleanui/system/ACL'
@@ -36,7 +36,7 @@ const DetalleMovimiento = () => {
 
   const location = useLocation();
 
-  // const hystory = useHistory();
+  // const navigate = useNavigate();
 
   useEffect(() => {
     // console.log('*******************LOCATION', location)
@@ -63,6 +63,7 @@ const DetalleMovimiento = () => {
         setMovimiento(resp);
       }
     })
+    .catch(() => {}) // El interceptor de axios ya mostró el error.
     .finally(()=>{
       setCargando(false);
     });
@@ -101,7 +102,7 @@ const DetalleMovimiento = () => {
   console.log('inventarioActual',movimiento.inventarioActual)
   return ( 
     <ACL roles={['DETALLE-MOVIMIENTO', 'ADMINISTRADOR']} redirect>
-      <Helmet title="Detalle movimientos" />
+      <Titulo texto="Detalle movimientos" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Detalle movimiento</span>

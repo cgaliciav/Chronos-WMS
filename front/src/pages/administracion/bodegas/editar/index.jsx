@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { Helmet } from 'react-helmet'
-import { useHistory, useLocation } from 'react-router-dom'
+import Titulo from 'components/Titulo'
+import { useNavigate, useLocation } from 'react-router'
 import { Button, Divider, notification, Row } from 'antd'
 import QueryString from 'query-string'
 import ACL from 'components/cleanui/system/ACL'
@@ -11,7 +11,7 @@ const BodegaEditar = () => {
   const [guardando, setGuardando] = useState(false)
   const [id, setId] = useState(0)
   const [bodega, setBodega] = useState({ nombre: '', descripcion: '', estatus: 'inactivo' })
-  const history = useHistory()
+  const navigate = useNavigate()
   const location = useLocation()
 
   useEffect(() => {
@@ -29,6 +29,8 @@ const BodegaEditar = () => {
             console.log(bod)
           }
         })
+        // El interceptor de axios ya mostró el error.
+        .catch(() => {})
         .finally(() => {
           setGuardando(false)
         })
@@ -45,12 +47,14 @@ const BodegaEditar = () => {
         cobacha: false,
       })
       if (respuesta !== undefined) {
-        history.push('/bodegas/listado')
+        navigate('/bodegas/listado')
         notification.success({
           message: 'Actualizado correctamente',
           description: 'El almacén fue actualizado correctamente',
         })
       }
+    } catch {
+      // El interceptor de axios ya mostró el error.
     } finally {
       setGuardando(false)
     }
@@ -72,6 +76,7 @@ const BodegaEditar = () => {
           })
         }
       })
+      .catch(() => {})
       .finally(() => {
         setGuardando(false)
       })
@@ -93,6 +98,7 @@ const BodegaEditar = () => {
           })
         }
       })
+      .catch(() => {})
       .finally(() => {
         setGuardando(false)
       })
@@ -101,7 +107,7 @@ const BodegaEditar = () => {
   // console.log("***********************bodega",bodega);
   return (
     <ACL roles={['BODEGA-EDITAR', 'ADMINISTRADOR']} redirect>
-      <Helmet title="Editar almacén" />
+      <Titulo texto="Editar almacén" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Editar almacén</span>

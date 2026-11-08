@@ -15,11 +15,8 @@ export default class AccionesTablaProyectos{
         // const { pagination } = this.state
         // this.fetch({ pagination })
       })
-      .catch(error => {
-        notification.error({
-          message: error.message,
-          // description: error.message,
-        })
+      .catch(() => {
+        // El interceptor de axios ya mostró el error.
       })
 
   }

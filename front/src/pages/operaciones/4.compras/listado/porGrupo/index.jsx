@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Helmet } from 'react-helmet'
+import Titulo from 'components/Titulo'
 import { Popconfirm, Tag, Tooltip, notification } from 'antd'
 import moment from 'moment'
 import 'moment/locale/es'
@@ -98,11 +98,12 @@ const ComprasListado = () => {
             message: 'Factura eliminada correctamente',
           })
           setConteoRefresh(conteoRefresh+1)
-          // const history = useHistory();
+          // const navigate = useNavigate();
           // history.go(0)
           // document.location.reload()
         }
       })
+      .catch(() => {}) // El interceptor de axios ya mostró el error.
       // .catch(error => {
       //   notification.error({
       //     message: error.message,
@@ -114,7 +115,7 @@ const ComprasListado = () => {
 
   return (
     <ACL roles={['OPERACION-COMPRASPORGRUPO', 'ADMINISTRADOR']} redirect>
-      <Helmet title="Listado Compras" />
+      <Titulo texto="Listado Compras" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Listados Compras</span>

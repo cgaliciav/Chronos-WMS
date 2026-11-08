@@ -86,6 +86,7 @@ const TablaOperacionesPorProyecto = ({
           setPagination(respData.pagination)
         }
       })
+      .catch(() => {}) // El interceptor de axios ya mostró el error.
       .finally(() => {
         setLoading(false)
       })
@@ -127,7 +128,7 @@ const TablaOperacionesPorProyecto = ({
       if (resp !== undefined) {
         notification.success({ message: resp.message })
       }
-    })
+    }).catch(() => {})
   }
 
   const generarReporte = e => {

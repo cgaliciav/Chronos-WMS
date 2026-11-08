@@ -1,11 +1,11 @@
 import React from 'react'
-import { Helmet } from 'react-helmet'
+import Titulo from 'components/Titulo'
 import Error500 from 'components/cleanui/system/Errors/500'
 
 const System500 = () => {
   return (
     <div>
-      <Helmet title="Error 500" />
+      <Titulo texto="Error 500" />
       <Error500 />
     </div>
   )

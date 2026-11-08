@@ -65,6 +65,8 @@ const FormaUsuario = ({ valoresIniciales, valores, guardando, habilitado, handle
           setListadoRoles(roles)
         }
       })
+      // El interceptor de axios ya mostró el error.
+      .catch(() => {})
       .finally(() => {
         setHabilitadoInterno(true)
       })

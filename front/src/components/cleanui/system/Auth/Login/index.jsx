@@ -1,21 +1,21 @@
 import React, { useEffect, useState } from 'react'
-import { connect } from 'react-redux'
-import { Input, Button, Radio, Form, Tooltip } from 'antd'
+import { useNavigate } from 'react-router'
+import { Input, Button, Form } from 'antd'
+import { useUsuarioStore } from 'stores/usuario.store'
 import { limpiarCache } from "helpers/limpiarCache"
-// import { Link } from 'react-router-dom'
+// import { Link } from 'react-router'
 import AutorizacionPeticiones from 'services/axios/autorizacion';
 import { version } from "../../../../../../package.json";
 import style from '../style.module.scss'
 
 
-const mapStateToProps = ({ user, settings, dispatch }) => ({
-  dispatch,
-  user,
-  authProvider: settings.authProvider,
-  logo: settings.logo,
-})
+const LOGO = 'Sony Almacén México'
 
-const Login = ({ dispatch, user, authProvider, logo }) => {
+const Login = () => {
+  const logo = LOGO
+  const login = useUsuarioStore(estado => estado.login)
+  const cargando = useUsuarioStore(estado => estado.cargando)
+  const navigate = useNavigate()
   const [apiVersion, setApiVersion] = useState("");
   
   // const [nuevaVersion, setNuevaVersion] = useState(false);
@@ -38,26 +38,17 @@ const Login = ({ dispatch, user, authProvider, logo }) => {
     })
   }, []);
   
-  const onFinish = values => {
-    dispatch({
-      type: 'user/LOGIN',
-      payload: values,
-    })
+  const onFinish = async ({ email, password }) => {
+    if (await login(email, password)) {
+      // Vuelve a la última ruta visitada (la guarda el layout raíz) o al inicio.
+      navigate(localStorage.getItem('ultimaVisitada') ?? '/')
+    }
   }
 
   const onFinishFailed = errorInfo => {
     console.log('Failed:', errorInfo)
   }
 
-  const changeAuthProvider = value => {
-    dispatch({
-      type: 'settings/CHANGE_SETTING',
-      payload: {
-        setting: 'authProvider',
-        value,
-      },
-    })
-  }
 
   const actualizar=(e)=>{
     e.preventDefault()
@@ -84,22 +75,6 @@ const Login = ({ dispatch, user, authProvider, logo }) => {
         <div className="text-dark font-size-24 mb-3">
           <strong>Información de acceso</strong>
         </div>
-        <div className="mb-4" style={{display:"none"}}>
-          <Radio.Group onChange={e => changeAuthProvider(e.target.value)} value={authProvider}>
-            <Radio value="firebase">Firebase</Radio>
-            <Radio value="jwt">JWT</Radio>
-            <Tooltip title="Read Docs Guide">
-              <Radio value="Auth0" disabled>
-                Auth0
-              </Radio>
-            </Tooltip>
-            <Tooltip title="Read Docs Guide">
-              <Radio value="Strapi" disabled>
-                Strapi
-              </Radio>
-            </Tooltip>
-          </Radio.Group>
-        </div>
         <Form
           layout="vertical"
           hideRequiredMark
@@ -125,7 +100,7 @@ const Login = ({ dispatch, user, authProvider, logo }) => {
             size="large"
             className="text-center w-100"
             htmlType="submit"
-            loading={user.loading}
+            loading={cargando}
           >
             <strong>Acceso</strong>
           </Button>
@@ -164,4 +139,4 @@ const Login = ({ dispatch, user, authProvider, logo }) => {
   )
 }
 
-export default connect(mapStateToProps)(Login)
+export default Login

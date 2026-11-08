@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { Helmet } from 'react-helmet'
-import { useHistory } from 'react-router-dom'
+import Titulo from 'components/Titulo'
+import { useNavigate } from 'react-router'
 import { Divider, notification } from 'antd'
 import ACL from 'components/cleanui/system/ACL'
 import BodegaPeticiones from 'services/axios/bodegas'
@@ -8,7 +8,7 @@ import FormaBodega from '../componentes/forma'
 
 const BodegaNuevo = () => {
   const [guardando, setGuardando] = useState(false)
-  const history = useHistory()
+  const navigate = useNavigate()
 
   const handleFinish = async values => {
     try {
@@ -19,12 +19,14 @@ const BodegaNuevo = () => {
         cobacha: false,
       })
       if (respuesta !== undefined) {
-        history.push('/bodegas/listado')
+        navigate('/bodegas/listado')
         notification.success({
           message: 'Creado correctamente',
           description: 'El almacén fue creado correctamente',
         })
       }
+    } catch {
+      // El interceptor de axios ya mostró el error.
     } finally {
       setGuardando(false)
     }
@@ -33,7 +35,7 @@ const BodegaNuevo = () => {
   // console.log("***********************area",area);
   return (
     <ACL roles={['BODEGA-NUEVO', 'ADMINISTRADOR']} redirect>
-      <Helmet title="Nuevo almacén" />
+      <Titulo texto="Nuevo almacén" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Nuevo almacén</span>

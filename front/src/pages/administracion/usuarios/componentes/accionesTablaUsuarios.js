@@ -7,18 +7,15 @@ export default class AccionesTablaUsuario{
   static regenerarUsuario=(correo)=>{
     UsuarioPeticiones.regenerarPassword(correo)
       .then((respuesta) => {
-        // console.log(respuesta)
+        // Desde la fase 2 del plan 02 el API ya no devuelve la contraseña: responde { correo, enviado }.
         notification.success({
-          message: `Nuevo pwd:${respuesta.c}`,
-          description: 'El nuevo password fue enviado al correo del usuario.',
+          message: 'Contraseña regenerada',
+          description: `La nueva contraseña fue enviada por correo a ${respuesta?.correo ?? correo}.`,
           duration:0, // mantiene la notificacion abierta
         })
       })
-      .catch(error => {
-        notification.error({
-          message: error.message,
-          // description: error.message,
-        })
+      .catch(() => {
+        // El interceptor de axios ya mostró el error.
       })
   }
 
@@ -33,11 +30,8 @@ export default class AccionesTablaUsuario{
         // const { pagination } = this.state
         // this.fetch({ pagination })
       })
-      .catch(error => {
-        notification.error({
-          message: error.message,
-          // description: error.message,
-        })
+      .catch(() => {
+        // El interceptor de axios ya mostró el error.
       })
 
   }

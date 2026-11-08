@@ -21,6 +21,7 @@ const Inventarios = ({ productoId = 0, loading }) => {
             setListadoInventarios(resp)
           }
         })
+        .catch(() => {}) // El interceptor de axios ya mostró el error.
         .finally(() => {
           setHabilitadoInterno(true)
         })

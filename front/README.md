@@ -11,7 +11,8 @@ Documentación: [`../docs/front/arquitectura.md`](../docs/front/arquitectura.md)
 ### Stack actual
 - Node 24 (`.nvmrc`, `engines` con `engine-strict`), npm
 - Vite 8 + TypeScript 5.9 (`allowJs`: el código heredado sigue en `.js/.jsx` y se convierte por fases)
-- React 16.14, antd 4.24, redux + redux-saga, react-router-dom 5 (hash)
+- React 18.3, antd 4.24, Zustand 5, react-router 7 (hash), Sentry opcional
+- Pruebas: Vitest + Testing Library + MSW
 
 ### Variables de entorno
 Ver `.env.example`: `VITE_API_URL` (por defecto `/api/`), `VITE_SENTRY_DSN`, `VITE_NOTIFICACIONES`.

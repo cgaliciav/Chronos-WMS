@@ -1,7 +1,7 @@
 import { Divider } from 'antd'
 import ACL from 'components/cleanui/system/ACL'
 import React, { useEffect, useState } from 'react'
-import { Helmet } from 'react-helmet'
+import Titulo from 'components/Titulo'
 import InventarioAcualPeticiones from 'services/axios/inventarioActual'
 import CatalogoResultados from '../componentes/catalogoResultados'
 import FormaBusquedaPorCodigo from './componentes/forma'
@@ -106,6 +106,8 @@ const CatalogoPorCodigo = () => {
             )
           }
         })
+        // El interceptor de axios ya mostró el error.
+        .catch(() => {})
         .finally(() => {
           setCargando(false)
           localStorage.setItem('catalogoPorCodigo.pagination', JSON.stringify(pagination))
@@ -115,7 +117,7 @@ const CatalogoPorCodigo = () => {
 
   return (
     <ACL roles={['ADMINISTRADOR', 'V-CATALOGO-CODIGOS']} redirect>
-      <Helmet title="Catálogo por Código" />
+      <Titulo texto="Catálogo por Código" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Catálogo por Código</span>

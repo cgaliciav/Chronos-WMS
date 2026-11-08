@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { Helmet } from 'react-helmet'
-import { useHistory } from 'react-router-dom'
+import Titulo from 'components/Titulo'
+import { useNavigate } from 'react-router'
 import { notification } from 'antd'
 // import QueryString from 'query-string'
 import moment from 'moment'
@@ -11,7 +11,7 @@ import FormaConfiguracionGrupo from 'pages/operaciones/componentes/formaConfigur
 const BajasSinProyectoNuevo = () => {
   const [guardando, setGuardando] = useState(false)
 
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const handleFinish = async values => {
     // console.log(values)
@@ -28,19 +28,23 @@ const BajasSinProyectoNuevo = () => {
     } = values;
     setGuardando(true);
 
-    const resp = await GrupoPeticiones.nuevoConDetalles({
-      nombre,
-      proyectoId,
-      movimientoTipoId:17, // baja administrador
-      // usuariosIds:usuariosIds.map(usr=>usr.key)
+    try {
+      const resp = await GrupoPeticiones.nuevoConDetalles({
+        nombre,
+        proyectoId,
+        movimientoTipoId:17, // baja administrador
+        // usuariosIds:usuariosIds.map(usr=>usr.key)
       
-    })
-    if(resp!==undefined){
-      // mandar a la edicion del grupo
-      history.push(`/bajas/sin-proyecto/operacion?uid=${resp.id}`);
-      notification.success({
-        message: 'Listado creado correctamente',
       })
+      if(resp!==undefined){
+        // mandar a la edicion del grupo
+        navigate(`/bajas/sin-proyecto/operacion?uid=${resp.id}`);
+        notification.success({
+          message: 'Listado creado correctamente',
+        })
+      }
+    } catch {
+      // El interceptor de axios ya mostró el error.
     }
 
     setGuardando(false);
@@ -50,7 +54,7 @@ const BajasSinProyectoNuevo = () => {
   // console.log("***********************USUARIO",usuario);
   return (
     <ACL roles={['BAJASINRPOYECTO-NUEVO', 'ADMINISTRADOR']} redirect>
-      <Helmet title="Nuevo listado de bajas" />
+      <Titulo texto="Nuevo listado de bajas" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Nuevo listado de bajas sin Proyecto</span>

@@ -1,19 +1,22 @@
 import React, { Fragment, useEffect } from 'react'
-import { connect } from 'react-redux'
+import { useNavigate } from 'react-router'
 import { notification } from 'antd'
-import history from 'redux/history'
+import { tieneAlgunRol, useUsuarioStore } from 'stores/usuario.store'
 
-const mapStateToProps = ({ user }) => ({ user })
-
+/**
+ * Muestra `children` solo si el usuario tiene alguno de `roles`. Con `redirect` (true o una ruta), además
+ * notifica y navega a `defaultRedirect` (`/auth/401`) o a la ruta indicada.
+ */
 const ACL = ({
-  user: { permisos },
   redirect = false,
   defaultRedirect = '/auth/401',
   roles = [],
   children,
 }) => {
+  const permisos = useUsuarioStore(estado => estado.permisos)
+  const navigate = useNavigate()
   useEffect(() => {
-    const authorized = permisos.some(r => roles.indexOf(r) >= 0)
+    const authorized = tieneAlgunRol(permisos, roles)
 
     if (!authorized && redirect) {
       const url = typeof redirect === 'boolean' ? defaultRedirect : redirect
@@ -21,12 +24,12 @@ const ACL = ({
         message: 'Sin autorización',
         description: 'No tienes los permisos para acceder a esta página.',
       })
-      history.push(url)
+      navigate(url)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const authorized = permisos.some(r => roles.indexOf(r) >= 0)
+  const authorized = tieneAlgunRol(permisos, roles)
   const AuthorizedChildren = () => {
     if (!authorized) {
       return null
@@ -38,4 +41,4 @@ const ACL = ({
   return AuthorizedChildren()
 }
 
-export default connect(mapStateToProps)(ACL)
+export default ACL

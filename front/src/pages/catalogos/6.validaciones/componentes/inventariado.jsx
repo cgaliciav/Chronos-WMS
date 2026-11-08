@@ -75,7 +75,13 @@ const Inventariado = ({ productoId, productoInventariado = null, disabled = fals
         })
       },
     }
-    const respValidacion = await peticiones[key]()
+    let respValidacion
+    try {
+      respValidacion = await peticiones[key]()
+    } catch {
+      // El interceptor de axios ya mostró el error; se trata como respuesta vacía (aviso de abajo).
+      respValidacion = undefined
+    }
     console.log({ respValidacion })
     if (respValidacion ?? false) {
       setInventarioProducto(respValidacion)

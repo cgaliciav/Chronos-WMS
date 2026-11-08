@@ -1,11 +1,11 @@
 import React from 'react'
-import { Helmet } from 'react-helmet'
+import Titulo from 'components/Titulo'
 import Error404 from 'components/cleanui/system/Errors/404'
 
 const System404 = () => {
   return (
     <div>
-      <Helmet title="Error 404" />
+      <Titulo texto="Error 404" />
       <Error404 />
     </div>
   )

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { Helmet } from 'react-helmet'
-import { useHistory, useLocation, } from 'react-router-dom'
+import Titulo from 'components/Titulo'
+import { useNavigate, useLocation, } from 'react-router'
 import {
   Button,
   Divider,
@@ -20,7 +20,7 @@ const ProyectoEditar = () =>{
   const [guardando,setGuardando]=useState(false);
   const [id,setId]=useState(0);
   const [proyecto,setProyecto]=useState({nombre:"",descripcion:"",productor:"",fechaInicio:new Date(),esExterno:false,estatus:'inactivo'});
-  const history = useHistory();
+  const navigate = useNavigate();
   const location = useLocation();
   // const params = useParams();
   // setId(params.id);
@@ -42,6 +42,8 @@ const ProyectoEditar = () =>{
           // console.log("proyecto*****",pry);
         }
       })
+      // El interceptor de axios ya mostró el error.
+      .catch(() => {})
       .finally( () => {
         setGuardando(false);
       })
@@ -63,13 +65,15 @@ const ProyectoEditar = () =>{
       })
       if(respuesta!==undefined){
         // console.log("*******************************PROYECTO GUARDADO",respuesta);
-        history.push('/proyectos/listado')
+        navigate('/proyectos/listado')
         notification.success({
           message: 'Actualizado correctamente',
           description: 'El proyecto fue actualizado correctamente',
         })
       }
         
+    } catch {
+      // El interceptor de axios ya mostró el error.
     } finally {
       setGuardando(false);
     }
@@ -91,6 +95,7 @@ const ProyectoEditar = () =>{
         })
       }
     })
+    .catch(() => {})
     .finally(()=>{
       setGuardando(false);
     })
@@ -112,6 +117,7 @@ const ProyectoEditar = () =>{
         });
       }
     })
+    .catch(() => {})
     .finally(()=>{
       setGuardando(false);
     })
@@ -125,7 +131,7 @@ const ProyectoEditar = () =>{
         roles={["PROYECTO-EDITAR","ADMINISTRADOR"]}
         redirect
       >
-        <Helmet title="Nuevo usuario" />
+        <Titulo texto="Nuevo usuario" />
         <div className="kit__utils__heading">
           <h5>
             <span className="mr-3">Editar Proyecto</span>

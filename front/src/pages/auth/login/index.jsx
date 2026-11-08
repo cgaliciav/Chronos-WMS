@@ -1,11 +1,11 @@
 import React from 'react'
-import { Helmet } from 'react-helmet'
+import Titulo from 'components/Titulo'
 import Login from 'components/cleanui/system/Auth/Login'
 
 const SystemLogin = () => {
   return (
     <div>
-      <Helmet title="Login" />
+      <Titulo texto="Login" />
       <Login />
     </div>
   )

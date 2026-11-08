@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { Helmet } from 'react-helmet'
-import { useLocation } from 'react-router-dom'
-import { connect } from 'react-redux'
+import Titulo from 'components/Titulo'
+import { useLocation } from 'react-router'
+import { useUsuarioStore } from 'stores/usuario.store'
 import QueryString from 'query-string'
 import { Row, Button, Col, Typography, notification, Space } from 'antd'
 import ACL from 'components/cleanui/system/ACL'
@@ -13,9 +13,8 @@ import ModalArchivos from 'pages/componentes/modalArchivos'
 import ModalComentarios from 'pages/componentes/modalComentarios'
 import ColumnasOperaciones from 'pages/operaciones/componentes/columnasTablaOperaciones'
 
-const mapStateToProps = ({ user }) => ({ user })
-
-const ComprasOperacion = ({ user }) => {
+const ComprasOperacion = () => {
+  const user = useUsuarioStore()
   const [grupoId, setGrupoId] = useState(0)
   const [cargando, setCargando] = useState(true)
   const [conteoRefresh, setConteoRefresh] = useState(0) // utilizado para acutalizar la lista en su vista actual
@@ -59,6 +58,7 @@ const ComprasOperacion = ({ user }) => {
           })
         }
       })
+      .catch(() => {}) // El interceptor de axios ya mostró el error.
       .finally(() => {
         setCargando(false)
       })
@@ -75,7 +75,7 @@ const ComprasOperacion = ({ user }) => {
   ]
   console.log("*************grupo.estatus",grupo.estatus);
 
-  // const history = useHistory()
+  // const navigate = useNavigate()
   const location = useLocation()
 
   useEffect(() => {
@@ -104,6 +104,7 @@ const ComprasOperacion = ({ user }) => {
             setArchivosGrupo(resp.archivos)
           }
         })
+        .catch(() => {})
         .finally(() => {
           setCargando(false)
         })
@@ -123,6 +124,7 @@ const ComprasOperacion = ({ user }) => {
           actualizar()
         }
       })
+      .catch(() => {})
       .finally(() => {
         setCargando(false)
       })
@@ -140,6 +142,7 @@ const ComprasOperacion = ({ user }) => {
           actualizar()
         }
       })
+      .catch(() => {})
       .finally(() => {
         setCargando(false)
       })
@@ -212,7 +215,7 @@ const ComprasOperacion = ({ user }) => {
 
   return (
     <ACL roles={['COMPRAS-OPERACION', 'ADMINISTRADOR']} redirect>
-      <Helmet title={movimientoNombre} />
+      <Titulo texto={movimientoNombre} />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">{movimientoNombre}</span>
@@ -373,4 +376,4 @@ const ComprasOperacion = ({ user }) => {
   )
 }
 
-export default connect(mapStateToProps)(ComprasOperacion)
+export default ComprasOperacion

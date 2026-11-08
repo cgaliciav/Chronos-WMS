@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { Helmet } from 'react-helmet'
-import { useHistory, useLocation } from 'react-router-dom'
+import Titulo from 'components/Titulo'
+import { useNavigate, useLocation } from 'react-router'
 import { Button, Divider, notification, Row } from 'antd'
 import QueryString from 'query-string'
 import ACL from 'components/cleanui/system/ACL'
@@ -11,7 +11,7 @@ const AreaEditar = () => {
   const [guardando, setGuardando] = useState(false)
   const [id, setId] = useState(0)
   const [area, setArea] = useState({ nombre: '', estatus: 'inactivo' })
-  const history = useHistory()
+  const navigate = useNavigate()
   const location = useLocation()
   // const params = useParams();
   // setId(params.id);
@@ -31,6 +31,8 @@ const AreaEditar = () => {
             // console.log(are)
           }
         })
+        // El interceptor de axios ya mostró el error.
+        .catch(() => {})
         .finally(() => {
           setGuardando(false)
         })
@@ -45,12 +47,14 @@ const AreaEditar = () => {
         nombre: values.nombre,
       })
       if (respuesta !== undefined) {
-        history.push('/areas/listado')
+        navigate('/areas/listado')
         notification.success({
           message: 'Actualizado correctamente',
           description: 'El area fue actualizada correctamente',
         })
       }
+    } catch {
+      // El interceptor de axios ya mostró el error.
     } finally {
       setGuardando(false)
     }
@@ -72,6 +76,7 @@ const AreaEditar = () => {
           })
         }
       })
+      .catch(() => {})
       .finally(() => {
         setGuardando(false)
       })
@@ -93,6 +98,7 @@ const AreaEditar = () => {
           })
         }
       })
+      .catch(() => {})
       .finally(() => {
         setGuardando(false)
       })
@@ -101,7 +107,7 @@ const AreaEditar = () => {
   // console.log("***********************area",area);
   return (
     <ACL roles={['AREA-EDITAR', 'ADMINISTRADOR']} redirect>
-      <Helmet title="Editar area" />
+      <Titulo texto="Editar area" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Editar area</span>

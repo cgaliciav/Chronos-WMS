@@ -1,6 +1,6 @@
 import React from 'react'
 import { Tag, Popconfirm, Typography, Badge } from 'antd'
-import { apiURLBase } from 'services/axios'
+import { apiURLBase, conToken } from 'services/axios'
 import { obtenerPropsBusquedaInput } from 'pages/componentes/filtrosTablas'
 
 const ColumnasOperaciones = {
@@ -10,7 +10,7 @@ const ColumnasOperaciones = {
     key: 'thumbnail',
     render: archivos => {
       let ruta
-      if (archivos?.length > 0) ruta = `${apiURLBase}/file/thumbnail/${archivos[0].id}`
+      if (archivos?.length > 0) ruta = conToken(`${apiURLBase}/file/thumbnail/${archivos[0].id}`)
       else ruta = 'resources/images/no-photo-available.png'
       return (
         <a

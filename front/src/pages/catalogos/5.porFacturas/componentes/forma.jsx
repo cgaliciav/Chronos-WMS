@@ -51,6 +51,8 @@ const FormaBusquedaPorFactura = ({
           setListadoProyectos(proyectos)
         }
       })
+      // El interceptor de axios ya mostró el error.
+      .catch(() => {})
       .finally(() => {
         setHabilitadoInterno(true)
         const tempBusqueda = JSON.parse(localStorage.getItem('catalogoFacturas.busqueda'))

@@ -1,7 +1,7 @@
 import { Divider } from 'antd'
 import ACL from 'components/cleanui/system/ACL'
 import React, { useEffect, useState } from 'react'
-import { Helmet } from 'react-helmet'
+import Titulo from 'components/Titulo'
 import InventarioAcualPeticiones from 'services/axios/inventarioActual'
 import CatalogoResultados from './componentes/resultadosValidaciones'
 import FormaBusquedaGeneral from './componentes/forma'
@@ -126,6 +126,8 @@ const CatalogoValidaciones = () => {
           // localStorage.setItem('catalogoValidaciones.pagination', JSON.stringify(respData.pagination))
         }
       })
+      // El interceptor de axios ya mostró el error.
+      .catch(() => {})
       .finally(() => {
         setCargando(false)
         localStorage.setItem('catalogoValidaciones.pagination', JSON.stringify(pagination))
@@ -134,7 +136,7 @@ const CatalogoValidaciones = () => {
 
   return (
     <ACL roles={['ADMINISTRADOR', 'V-CATALOGO-VALIDACIONES']} redirect>
-      <Helmet title="Catálogo Validaciones" />
+      <Titulo texto="Catálogo Validaciones" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Catálogo Validaciones</span>

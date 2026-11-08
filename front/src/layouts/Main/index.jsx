@@ -1,7 +1,6 @@
 import React from 'react'
 import { Layout } from 'antd'
-import { connect } from 'react-redux'
-import { withRouter } from 'react-router-dom'
+import { useLocation } from 'react-router'
 
 import classNames from 'classnames'
 import TopBar from 'components/cleanui/layout/TopBar'
@@ -13,28 +12,30 @@ import ManejandoErrores from './manejandoErrores'
 
 
 
-const mapStateToProps = ({ settings }) => ({
-  isContentMaxWidth: settings.isContentMaxWidth,
-  isAppMaxWidth: settings.isAppMaxWidth,
-  isGrayBackground: settings.isGrayBackground,
-  isSquaredBorders: settings.isSquaredBorders,
-  isCardShadow: settings.isCardShadow,
-  isBorderless: settings.isBorderless,
-  isTopbarFixed: settings.isTopbarFixed,
-  isGrayTopbar: settings.isGrayTopbar,
-})
+// Valores fijos de la plantilla (antes en `redux/settings`).
+const AJUSTES = {
+  isContentMaxWidth: false,
+  isAppMaxWidth: false,
+  isGrayBackground: true,
+  isSquaredBorders: false,
+  isCardShadow: true,
+  isBorderless: false,
+  isTopbarFixed: false,
+  isGrayTopbar: false,
+}
 
-const MainLayout = ({
-  children,
-  isContentMaxWidth,
-  isAppMaxWidth,
-  isGrayBackground,
-  isSquaredBorders,
-  isCardShadow,
-  isBorderless,
-  isTopbarFixed,
-  isGrayTopbar,
-}) => {
+const MainLayout = ({ children }) => {
+  const { pathname } = useLocation()
+  const {
+    isContentMaxWidth,
+    isAppMaxWidth,
+    isGrayBackground,
+    isSquaredBorders,
+    isCardShadow,
+    isBorderless,
+    isTopbarFixed,
+    isGrayTopbar,
+  } = AJUSTES
   return (
     <div className={classNames({ cui__layout__grayBackground: isGrayBackground })}>
       <Layout
@@ -60,7 +61,8 @@ const MainLayout = ({
           </Layout.Header>
           <Breadcrumbs />
           <Layout.Content style={{ height: '100%', position: 'relative' }}>
-            <ManejandoErrores>{children}</ManejandoErrores>
+            {/* La clave reinicia el límite de errores al cambiar de ruta (antes quedaba en 503 para siempre). */}
+            <ManejandoErrores key={pathname}>{children}</ManejandoErrores>
             {/* <div className="cui__utils__content">{children}</div> */}
           </Layout.Content>
           <Layout.Footer>
@@ -72,4 +74,4 @@ const MainLayout = ({
   )
 }
 
-export default withRouter(connect(mapStateToProps)(MainLayout))
+export default MainLayout

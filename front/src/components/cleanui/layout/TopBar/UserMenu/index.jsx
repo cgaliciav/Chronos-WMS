@@ -1,31 +1,25 @@
 import React /* , { useState } */ from 'react'
-import { FormattedMessage } from 'react-intl'
-import { connect } from 'react-redux'
+import { useNavigate } from 'react-router'
 import { UserOutlined } from '@ant-design/icons'
 import { Menu, Dropdown, Avatar /* , Badge */ } from 'antd'
-import history from 'redux/history'
+import { useUsuarioStore } from 'stores/usuario.store'
 import styles from './style.module.scss'
 
-
-
-
-const mapStateToProps = ({ user }) => ({ user })
-
-const ProfileMenu = ({ dispatch, user }) => {
+const ProfileMenu = () => {
+  const user = useUsuarioStore()
+  const navigate = useNavigate()
   // const [count, setCount] = useState(7)
 
   const logout = e => {
     e.preventDefault()
-    dispatch({
-      type: 'user/LOGOUT',
-    })
+    // Al quedar sin autorizar, el layout redirige al login.
+    user.logout()
   }
 
   const cambiarClave = e =>{
     e.preventDefault();
     // const {history}=props
-    // console.log(dispatch);
-    history.push('/usuarios/cambiar-password')
+    navigate('/usuarios/cambiar-password')
   }
 
   // const addCount = () => {
@@ -36,17 +30,17 @@ const ProfileMenu = ({ dispatch, user }) => {
     <Menu selectable={false}>
       <Menu.Item>
         <strong>
-          <FormattedMessage id="topBar.profileMenu.hello" />, {user.nombre || '???'}
+          Hola, {user.nombre || '???'}
         </strong>
         {/* <div>
           <strong className="mr-1">
-            <FormattedMessage id="topBar.profileMenu.billingPlan" />:{' '}
+            Pagos:{' '}
           </strong>
           Professional
         </div> */}
         {/* <div>
           <strong>
-            <FormattedMessage id="topBar.profileMenu.role" />:{' '}
+            Rol:{' '}
           </strong>
           {user.role || '—'}
         </div> */}
@@ -55,12 +49,12 @@ const ProfileMenu = ({ dispatch, user }) => {
         <Menu.Item> */}
         <div>
           <strong>
-            <FormattedMessage id="topBar.profileMenu.email" />:{' '}
+            Email:{' '}
           </strong>
           {user.correo || '—'}
           <br />
           {/* <strong>
-            <FormattedMessage id="topBar.profileMenu.phone" />:{' '}
+            Teléfono:{' '}
           </strong>
           {user.phone || '—'} */}
         </div>
@@ -69,14 +63,14 @@ const ProfileMenu = ({ dispatch, user }) => {
       <Menu.Item>
         <a href="#" onClick={cambiarClave}>
           <i className="fe fe-user mr-2" />
-          <FormattedMessage id="topBar.profileMenu.cambiarClave" />
+          Cambiar contraseña
         </a>
       </Menu.Item>
       <Menu.Divider />
       <Menu.Item>
         <a href="#" onClick={logout}>
           <i className="fe fe-log-out mr-2" />
-          <FormattedMessage id="topBar.profileMenu.logout" />
+          Salir
         </a>
       </Menu.Item>
     </Menu>
@@ -92,4 +86,4 @@ const ProfileMenu = ({ dispatch, user }) => {
   )
 }
 
-export default connect(mapStateToProps)(ProfileMenu)
+export default ProfileMenu

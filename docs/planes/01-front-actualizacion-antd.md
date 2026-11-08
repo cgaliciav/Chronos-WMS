@@ -269,6 +269,27 @@ resolver; `npm run lint`; checklist de humo.
 (`finalizar` → `PUT /groups/closure/:id`). Build; checklist de humo.
 **Aceptación:** sin warnings de React en consola en las rutas críticas; `src/redux` no existe; `npm run typecheck` verde. Commit.
 
+> **Ejecutada (2026-11-08).** `npm run typecheck`, `npm run lint` (0 errores), `npm test` (20 pruebas) y
+> `npm run build` en verde. Capturas de las 10 rutas críticas idénticas a las de la fase 2 y humo funcional
+> automatizado (`docs/front/baseline/flujo-sesion.js`: login sin `ip`, redirección a la última ruta, menú por
+> permisos, ACL → 401, 404, F5 con sesión, logout). Desviaciones:
+> - **React 18.3 + React Router 7.18**, no 19 + 8: antd 4.24 no funciona con React 19 (paso 7 lo preveía) y
+>   React Router 8 exige React ≥ 19.2.7. La API usada (`createHashRouter`, `RouterProvider`, hooks, todo desde
+>   `'react-router'`) es la misma; subir a 8 es cambiar la versión al pasar a React 19 en la fase 4.
+> - **`react-intl` retirado ya** (D11 lo dejaba para la fase 6): su 4.5.4 exige React 16. `UserMenu` usa textos
+>   fijos y se borraron `src/locales` y `localization` (F13).
+> - **Helmet → componente `components/Titulo.tsx`** (fija `document.title` en un efecto) en vez de `<title>`
+>   nativo, que solo existe en React 19; al subir basta con cambiar ese componente.
+> - El menú es un módulo estático (`services/menu` exporta el array); `app/menu/menuItems.ts` llega en la fase 6.
+> - Ajustes fijos de la plantilla (logo, color de menú, bordes…) pasan a constantes en cada layout; `ui.store`
+>   solo guarda `menuColapsado`, `esMovil` y `menuMovilAbierto`.
+> - La navegación tras el login la hace `Login` (el store devuelve `true/false`), no el store: así los stores no
+>   dependen del router.
+> - La revisión de consumidores (F1) cambió algunos comportamientos ante error, documentados en
+>   `docs/hallazgos-codigo.md` (F30-F33). Se regeneró parte de `package-lock.json` (React 18 y sus tipos).
+> - Quedan avisos de deprecación de antd 4.24 y el de `defaultProps` de su `Table` (F34): se resuelven en la
+>   fase 4, así que el criterio "sin warnings de React" se cumple para el código propio, no para antd 4.
+
 ### Fase 4 · antd 4 → 5.29 (último v5) y moment → dayjs
 
 1. `npm i antd@5 @ant-design/icons@5 dayjs && npm un moment` (quitar `resolutions.moment`).

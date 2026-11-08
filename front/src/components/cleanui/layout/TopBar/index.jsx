@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react'
-import { connect } from 'react-redux'
+import { useUsuarioStore } from 'stores/usuario.store'
 import AutorizacionPeticiones from 'services/axios/autorizacion'
 import { version } from '../../../../../package.json'
 import UserMenu from './UserMenu'
 import style from './style.module.scss'
 
-const mapStateToProps = ({ user }) => ({ usuario: user.nombre })
-
-const TopBar = ({ usuario }) => {
+const TopBar = () => {
+  const usuario = useUsuarioStore(estado => estado.nombre)
   const [apiVersion, setApiVersion] = useState('')
 
   useEffect(() => {
@@ -46,5 +45,5 @@ const TopBar = ({ usuario }) => {
   )
 }
 
-export default connect(mapStateToProps)(TopBar)
+export default TopBar
 // export default TopBar

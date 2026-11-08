@@ -66,6 +66,7 @@ const TablaListados = ({
           setPagination(respData.pagination);
         }
       })
+      .catch(() => {}) // El interceptor de axios ya mostró el error.
       .finally(() => {
         setLoading(false);
       });

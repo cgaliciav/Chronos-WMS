@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { Helmet } from 'react-helmet'
-import { useHistory, useLocation } from 'react-router-dom'
+import Titulo from 'components/Titulo'
+import { useNavigate, useLocation } from 'react-router'
 import { Button, Divider, notification, Row } from 'antd'
 import QueryString from 'query-string'
 import ACL from 'components/cleanui/system/ACL'
@@ -21,7 +21,7 @@ const UsuarioEditar = () => {
     roles: [],
     estatus: 'inactivo',
   })
-  const history = useHistory()
+  const navigate = useNavigate()
   const location = useLocation()
   // const params = useParams();
   // setId(params.id);
@@ -43,6 +43,8 @@ const UsuarioEditar = () => {
             // console.log(usr)
           }
         })
+        // El interceptor de axios ya mostró el error.
+        .catch(() => {})
         .finally(() => {
           setGuardando(false)
         })
@@ -72,12 +74,14 @@ const UsuarioEditar = () => {
       })
       if (respuesta !== undefined) {
         // console.log("*******************************USUARIO GUARDADO",respuesta);
-        history.push('/usuarios/listado')
+        navigate('/usuarios/listado')
         notification.success({
           message: 'Actualizado correctamente',
           description: 'El usuario fue actualizado correctamente',
         })
       }
+    } catch {
+      // El interceptor de axios ya mostró el error.
     } finally {
       setGuardando(false)
     }
@@ -99,6 +103,7 @@ const UsuarioEditar = () => {
           })
         }
       })
+      .catch(() => {})
       .finally(() => {
         setGuardando(false)
       })
@@ -120,6 +125,7 @@ const UsuarioEditar = () => {
           })
         }
       })
+      .catch(() => {})
       .finally(() => {
         setGuardando(false)
       })
@@ -128,7 +134,7 @@ const UsuarioEditar = () => {
   // console.log("***********************USUARIO",usuario);
   return (
     <ACL roles={['USUARIO-EDITAR', 'ADMINISTRADOR']} redirect>
-      <Helmet title="Editar usuario" />
+      <Titulo texto="Editar usuario" />
       <div className="kit__utils__heading">
         <h5>
           <span className="mr-3">Editar Usuario</span>
