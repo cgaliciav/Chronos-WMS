@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import LogGeneralController from "../controllers/LogGeneral.Controller";
 import { LogTipo } from "../entity/LogGeneral";
 import { AppError } from "../helpers/errorClases";
+import { logger } from "../helpers/logger";
 // import { getRepository } from "typeorm";
 
 // import { LogTipo, LogGeneral } from "../entity/LogGeneral";
@@ -17,7 +18,7 @@ const conManejoDeErroresPromise = fnGeneralManejoErroresPromise =>(
     fnGeneralManejoErroresPromise(req,res,next)
     .then((val)=>{
       if(val!==undefined){
-        console.log("conManejoDeErroresPromise->",val)
+        logger.debug("conManejoDeErroresPromise->",val)
       }
     })
     .catch(error=>next(error))
@@ -43,7 +44,7 @@ const errorCodes= (code:string):string=>{
 }
 
 const errorMiddlewere = (err:any, req: Request, res: any, next: NextFunction) => {    
-    if (process.env.NODE_ENV !== "test") console.log("******* ERROR MIDDLEWERE --- : ", err.message)
+    logger.warn("Error en la petición:", req.method, req.originalUrl, err.message)
     // console.log("DETALLE ERROR :", err)
     const {path,body,params,headers,ip}=req;
     // console.log("DETALLE REQ :", { path,body,params,headers,ip })

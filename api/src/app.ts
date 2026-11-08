@@ -5,6 +5,8 @@ import routes from "./routes";
 import { errorMiddlewere } from "./middlewares/manejoErrores";
 import { pasadas } from "./middlewares/pasada";
 import { registrarPeticiones } from "./middlewares/registrarPeticiones";
+import pinoHttp from "pino-http";
+import { pinoBase } from "./helpers/logger";
 import rateLimit from "express-rate-limit";
 import { Sentry, sentryActivo } from "./sentry";
 
@@ -14,7 +16,17 @@ import { Sentry, sentryActivo } from "./sentry";
  */
 export const crearApp = (opciones: { registrarPeticiones?: boolean } = {}) => {
   const app = express();
-  if (opciones.registrarPeticiones) app.use(registrarPeticiones); // LogPeticiones (solo en index.ts)
+  if (opciones.registrarPeticiones) {
+    // Solo en index.ts: una línea por petición en el log (pino-http) y una fila en LogPeticiones.
+    app.use(
+      pinoHttp({
+        logger: pinoBase,
+        redact: ["req.headers.auth", "req.headers.authorization", "req.headers.cookie", "res.headers.t"],
+        customLogLevel: (_req, res, err) => (err || res.statusCode >= 500 ? "error" : res.statusCode >= 400 ? "warn" : "info"),
+      })
+    );
+    app.use(registrarPeticiones);
+  }
 
   // IP real del cliente detrás del proxy inverso (nginx/docker). TRUST_PROXY admite los valores de Express:
   // "loopback" (por defecto), "loopback, 172.18.0.0/16", un número de saltos, "true"...

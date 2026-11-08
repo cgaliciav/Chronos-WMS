@@ -1,4 +1,5 @@
 import { Connection, createConnection } from "typeorm";
+import { logger } from "./helpers/logger";
 
 export let conexion: Connection;
 
@@ -9,15 +10,15 @@ export let conexion: Connection;
  */
 export const conectarORM = async () => {
   conexion = await createConnection();
-  console.log("conectado a la base de datos");
+  logger.info("conectado a la base de datos");
   if (conexion.options.synchronize) {
-    console.warn("ADVERTENCIA: DB_SYNCRO=true. El esquema debe cambiarse con migraciones (npm run migration:run).");
+    logger.warn("ADVERTENCIA: DB_SYNCRO=true. El esquema debe cambiarse con migraciones (npm run migration:run).");
   }
   try {
     if (await conexion.showMigrations()) {
-      console.warn("ADVERTENCIA: hay migraciones pendientes. Ejecuta `npm run migration:run` tras respaldar la BD.");
+      logger.warn("ADVERTENCIA: hay migraciones pendientes. Ejecuta `npm run migration:run` tras respaldar la BD.");
     }
   } catch (error) {
-    console.warn("No se pudo comprobar el estado de las migraciones:", error.message);
+    logger.warn("No se pudo comprobar el estado de las migraciones:", error.message);
   }
 };

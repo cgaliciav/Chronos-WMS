@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { getRepository } from "typeorm";
 import { LogPeticiones } from "../entity/LogPeticiones";
+import { logger } from "../helpers/logger";
 
 /**
  * Guarda una fila en LogPeticiones por cada petición terminada (sustituye a `request-stats`, plan 02 fase 4).
@@ -20,7 +21,7 @@ export const registrarPeticiones = (req: Request, res: Response, next: NextFunct
     registro.resStatus = res.statusCode;
     getRepository(LogPeticiones)
       .save(registro)
-      .catch((error) => console.error("No se pudo guardar LogPeticiones", error.message));
+      .catch((error) => logger.error("No se pudo guardar LogPeticiones", error.message));
   });
   next();
 };

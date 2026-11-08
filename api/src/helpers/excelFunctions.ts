@@ -17,6 +17,7 @@ import { Movimiento } from "../entity/Movimiento";
 import { Proyecto } from "../entity/Proyecto";
 import { Usuario } from "../entity/Usuario";
 import sharp = require("sharp");
+import { logger } from "./logger";
 
 function compareStringsIgnoreAccents(str1: string, str2: string): boolean {
   if (!str1 || !str2) {
@@ -759,7 +760,7 @@ const agregarDatosRenglonesMovimientoCompras = async (
   // Agregar contenido a la tabla
 
   const saltoTabla = tbl.rows?.length ?? saltar;
-  console.log('agregarDatosRenglonesMovimientoCompras', { saltoTabla });
+  logger.debug('agregarDatosRenglonesMovimientoCompras', { saltoTabla });
 
   obtenerRenglonesMovimientoCompras(resultados, saltoTabla).map((it, idx) =>
     // tbl.addRow(it, saltoTabla + idx)
@@ -782,7 +783,7 @@ const agregarDatosRenglonesMovimientoComprasUSD = async (
 
   // Agregar contenido a la tabla
   const saltoTabla = tbl.rows?.length ?? saltar;
-  console.log('agregarDatosRenglonesMovimientoCompras', { saltoTabla });
+  logger.debug('agregarDatosRenglonesMovimientoCompras', { saltoTabla });
 
   obtenerRenglonesMovimientoComprasUSD(resultados, saltoTabla).map((it, idx) =>
     // tbl.addRow(it, saltoTabla + idx)
@@ -861,7 +862,7 @@ const agregarTituloHojaExcel = async (
     });
     // row.commit();
   } catch (error) {
-    console.error(error);
+    logger.error(error);
   } finally {
   }
 };
@@ -1115,7 +1116,7 @@ async function agregarHojaMovimientos(
 
   const qryResultados = qry.clone();
 
-  console.log('---------- qry', qry.getSql());
+  logger.debug('---------- qry', qry.getSql());
 
 
   const valoresIniciales = obtenerRenglonesMovimientoProyecto(await qry.take(50).getMany(), 0);
@@ -1124,7 +1125,7 @@ async function agregarHojaMovimientos(
 
   const sheet = workbook.addWorksheet(sheetTitle);
 
-  console.log(`---------- agregarHojaMovimientos ${reportTitle} ${sheetTitle}: `, performance.now() - t0);
+  logger.debug(`---------- agregarHojaMovimientos ${reportTitle} ${sheetTitle}: `, performance.now() - t0);
   await configurarHojaExcel(sheet, columnasDetallePorProyecto);
 
   await agregarTituloHojaExcel(
@@ -1134,7 +1135,7 @@ async function agregarHojaMovimientos(
     reportTitle
   );
 
-  console.log(`---------- agregarRenglones init ${reportTitle} ${sheetTitle}: `, performance.now() - t0);
+  logger.debug(`---------- agregarRenglones init ${reportTitle} ${sheetTitle}: `, performance.now() - t0);
   const tbl = await agregarTabla(
     sheet,
     columnasDetallePorProyecto,
@@ -1147,7 +1148,7 @@ async function agregarHojaMovimientos(
   while (
     await agregarDatosRenglonesMovimientoProyecto(tbl, qry, 50 + incRenglones * 50, 50)
   ) {
-    console.log(
+    logger.debug(
       `agregarDatosRenglones. ${incRenglones} Regs:${50 + incRenglones * 50}-${50 + incRenglones * 50 + 50
       }......${reportTitle}.........`, performance.now() - t0
     );
@@ -1166,7 +1167,7 @@ async function agregarHojaMovimientos(
         50
       )
     ) {
-      console.log(
+      logger.debug(
         `agregarDatosRenglones. ${incImagenes}.....${reportTitle}..........`,
         performance.now() - t0
       );
@@ -1196,7 +1197,7 @@ async function agregarHojaMovimientos(
 
   const resultados = await resulQry.getRawOne();
 
-  console.log('------------- resultados', resultados);
+  logger.debug('------------- resultados', resultados);
 
   return resultados as {
     totalPrecio: number,
@@ -1249,7 +1250,7 @@ async function agregarHojaPrestamosActivos(
 
   const sheet = workbook.addWorksheet(sheetTitle);
 
-  console.log(`---------- agregarHojaPrestamosActivos ${reportTitle} ${sheetTitle}: `, performance.now() - t0);
+  logger.debug(`---------- agregarHojaPrestamosActivos ${reportTitle} ${sheetTitle}: `, performance.now() - t0);
   await configurarHojaExcel(sheet, columnasDetallePorProyecto);
 
   await agregarTituloHojaExcel(
@@ -1259,7 +1260,7 @@ async function agregarHojaPrestamosActivos(
     reportTitle
   );
 
-  console.log(`---------- agregarRenglones init ${reportTitle} ${sheetTitle}: `, performance.now() - t0);
+  logger.debug(`---------- agregarRenglones init ${reportTitle} ${sheetTitle}: `, performance.now() - t0);
   const tbl = await agregarTabla(
     sheet,
     columnasDetallePorProyecto,
@@ -1272,7 +1273,7 @@ async function agregarHojaPrestamosActivos(
   while (
     await agregarDatosRenglonesMovimientoProyecto(tbl, qry, 50 + incRenglones * 50, 50)
   ) {
-    console.log(
+    logger.debug(
       `agregarDatosRenglones. ${incRenglones} Regs:${50 + incRenglones * 50}-${50 + incRenglones * 50 + 50
       }......${reportTitle}.........`, performance.now() - t0
     );
@@ -1291,7 +1292,7 @@ async function agregarHojaPrestamosActivos(
         50
       )
     ) {
-      console.log(
+      logger.debug(
         `agregarDatosRenglones. ${incImagenes}.....${reportTitle}..........`,
         performance.now() - t0
       );
@@ -1306,11 +1307,11 @@ async function agregarHojaPrestamosActivos(
     .andWhere("precioTipo.id = 2")
     .select("SUM(productoPrecios.precio)", "totalPrecio")
     .addSelect("COUNT(movimiento.id)", "totalRegistros")
-  console.log('---------- resultados', resul.getSql());
+  logger.debug('---------- resultados', resul.getSql());
 
   const resultados = await resul.getRawOne();
 
-  console.log('------------- resultados', resultados);
+  logger.debug('------------- resultados', resultados);
 
   return resultados as {
     totalPrecio: number,
@@ -1332,7 +1333,7 @@ const reporteGeneral = async (body: {
   campoOrden?: string | string[],
   direccion?: string
 }) => {
-  console.log("...............reporteGeneral................", body);
+  logger.debug("...............reporteGeneral................", body);
   const { proyectoId, conFoto,
     usuariosIds = [], fechaInicio, fechaFin, areasId = [], bodegasId, filters, campoOrden, direccion
   } = body
@@ -1343,7 +1344,7 @@ const reporteGeneral = async (body: {
   });
 
   if (proyecto === undefined) {
-    console.log(">>>>>> Proyecto no encontrado para reporte general");
+    logger.debug(">>>>>> Proyecto no encontrado para reporte general");
     throw new Error("Proyecto no encontrado para reporte general");
   }
 
@@ -1355,7 +1356,7 @@ const reporteGeneral = async (body: {
   //obtener los nombres de usuarios definidos en usuariosIds
   const usuarios = (await getRepository(Usuario).findByIds(usuariosIds)).map((it) => it.nombre).join(" ") || "";
 
-  console.log("Iniciando generacion de reporte................");
+  logger.debug("Iniciando generacion de reporte................");
   const tituloReporte = `CIERRE - ${proyecto.nombre.toLocaleUpperCase()}
   ${areas.toLocaleUpperCase()} ${usuarios.toLocaleUpperCase()}`;
 
@@ -1371,7 +1372,7 @@ const reporteGeneral = async (body: {
 
   const sheetResumen = workbook.addWorksheet("RESUMEN");
 
-  console.log("...............COMPRAS");
+  logger.debug("...............COMPRAS");
   const comprasResumen = await agregarHojaMovimientos(
     workbook,
     `COMPRAS - ${areas.toLocaleUpperCase()} ${usuarios.toLocaleUpperCase()} ${proyecto.nombre.toLocaleUpperCase()}`,
@@ -1385,7 +1386,7 @@ const reporteGeneral = async (body: {
     t0
   );
 
-  console.log("...............PRÉSTAMOS");
+  logger.debug("...............PRÉSTAMOS");
   const prestamosResumen = await agregarHojaMovimientos(
     workbook,
     `PRÉSTAMOS - ${areas.toLocaleUpperCase()} ${usuarios.toLocaleUpperCase()} ${proyecto.nombre.toLocaleUpperCase()}`,
@@ -1399,7 +1400,7 @@ const reporteGeneral = async (body: {
     t0
   );
 
-  console.log("...............DEVOLUCIONES");
+  logger.debug("...............DEVOLUCIONES");
   const DevolucionesResumen = await agregarHojaMovimientos(
     workbook,
     `DEVOLUCIONES - ${areas.toLocaleUpperCase()} ${usuarios.toLocaleUpperCase()} ${proyecto.nombre.toLocaleUpperCase()}`,
@@ -1413,7 +1414,7 @@ const reporteGeneral = async (body: {
     t0
   );
 
-  console.log("...............BAJAS JUSTIFICADAS");
+  logger.debug("...............BAJAS JUSTIFICADAS");
   const BajasJResumen = await agregarHojaMovimientos(
     workbook,
     `BAJAS JUSTIFICADAS - ${areas.toLocaleUpperCase()} ${usuarios.toLocaleUpperCase()} ${proyecto.nombre.toLocaleUpperCase()}`,
@@ -1427,7 +1428,7 @@ const reporteGeneral = async (body: {
     t0
   );
 
-  console.log("...............BAJAS INJUSTIFICADAS");
+  logger.debug("...............BAJAS INJUSTIFICADAS");
   const BajasIResumen = await agregarHojaMovimientos(
     workbook,
     `BAJAS INJUSTIFICADAS - ${areas.toLocaleUpperCase()} ${usuarios.toLocaleUpperCase()} ${proyecto.nombre.toLocaleUpperCase()}`,
@@ -1441,7 +1442,7 @@ const reporteGeneral = async (body: {
     t0
   );
 
-  console.log("...............FALTANTES");
+  logger.debug("...............FALTANTES");
   const FaltentesResumen = await agregarHojaPrestamosActivos(
     workbook,
     `FALTANTES - ${areas.toLocaleUpperCase()} ${usuarios.toLocaleUpperCase()} ${proyecto.nombre.toLocaleUpperCase()}`,
@@ -1465,12 +1466,12 @@ const reporteGeneral = async (body: {
 
 
 
-  console.log("...............RESUMEN");
+  logger.debug("...............RESUMEN");
   await configurarHojaExcel(sheetResumen, columnasDetalleResumen);
-  console.log("configurarHojaExcel................", performance.now() - t0);
+  logger.debug("configurarHojaExcel................", performance.now() - t0);
 
   await agregarTituloHojaExcel(sheetResumen, workbook, columnasDetalleResumen.length, tituloReporte);
-  console.log("agregarTituloHojaExcel................", performance.now() - t0);
+  logger.debug("agregarTituloHojaExcel................", performance.now() - t0);
 
   const valores = [
     [1, "COMPRAS", Number(comprasResumen.totalRegistros), +Number(comprasResumen.totalPrecio).toFixed(2)],
@@ -1481,7 +1482,7 @@ const reporteGeneral = async (body: {
     [6, "FALTANTES", Number(FaltentesResumen.totalRegistros), +Number(FaltentesResumen.totalPrecio).toFixed(2)],
   ];
 
-  console.log("agregarTabla................", performance.now() - t0);
+  logger.debug("agregarTabla................", performance.now() - t0);
 
   await agregarTabla(
     sheetResumen,
@@ -1494,13 +1495,13 @@ const reporteGeneral = async (body: {
 
   const arch = process.env.RUTA_REPORTES + nombreReporte;
 
-  console.log(
+  logger.debug(
     `"Workbook guardando ......${nombreReporte}......."`,
     performance.now() - t0
   );
 
   await workbook.xlsx.writeFile(arch);
-  console.log(
+  logger.debug(
     `"FIN DE REPORTE ......${nombreReporte}......."`,
     performance.now() - t0
   );
@@ -1555,7 +1556,7 @@ const reporteGeneral2 = async () => {
     "TOTAL",
     "NOTAS / COMENTARIOS",
   ];
-  console.log("Iniciando generacion de reporte................");
+  logger.debug("Iniciando generacion de reporte................");
 
   // const query= queryReporteGeneral();
 
@@ -1593,12 +1594,12 @@ const reporteGeneral2 = async () => {
   const arch2 =
     process.env.RUTA_REPORTES + "RG-2-" + Date.now().toString() + ".xlsx";
   // workbook.xlsx.writeFile(arch2);
-  console.log("Workbook guardado .............", performance.now() - t0);
-  console.log("ARCHIVO EXCEL....", arch);
+  logger.debug("Workbook guardado .............", performance.now() - t0);
+  logger.debug("ARCHIVO EXCEL....", arch);
   // console.log("ARCHIVO EXCEL....", arch2)
   // console.log("ARCHIVO EXCEL....", arch2)
 
-  console.log(
+  logger.debug(
     "...............FIN DE REPORTE.............",
     performance.now() - t0
   );
@@ -1610,7 +1611,7 @@ const reporteMaquillajeGeneral = async () => {
   const t0 = performance.now();
   const arch =
     process.env.RUTA_REPORTES + "RG" + Date.now().toString() + ".xlsx";
-  console.log("Iniciando generacion de reporte................");
+  logger.debug("Iniciando generacion de reporte................");
 
   const [articulos, total] = await getRepository(InventarioActual)
     .createQueryBuilder("inventarioActual")
@@ -1630,7 +1631,7 @@ const reporteMaquillajeGeneral = async () => {
     .andWhere("inventarioActual.disponible<>'baja'")
     .getManyAndCount();
 
-  console.log(
+  logger.debug(
     "Datos obtenidos de la DB................",
     performance.now() - t0
   );
@@ -1756,7 +1757,7 @@ const reporteMaquillajeGeneral = async () => {
     rows: renglones,
   });
   // tbl.addRow()
-  console.log("Tabla agregada................", performance.now() - t0);
+  logger.debug("Tabla agregada................", performance.now() - t0);
 
   // COLOCANDO IMAGENES
   let rowInc = 0;
@@ -1785,17 +1786,17 @@ const reporteMaquillajeGeneral = async () => {
     rowInc++;
   }
 
-  console.log(
+  logger.debug(
     "Imagenes de productos agregados................",
     performance.now() - t0
   );
 
   await workbook.xlsx.writeFile(arch);
-  console.log("Workbook guardado .............", performance.now() - t0);
+  logger.debug("Workbook guardado .............", performance.now() - t0);
 
-  console.log("ARCHIVO EXCEL....", arch);
+  logger.debug("ARCHIVO EXCEL....", arch);
 
-  console.log(
+  logger.debug(
     "...............FIN DE REPORTE.............",
     performance.now() - t0
   );
@@ -1834,7 +1835,7 @@ const reportePorGrupo = async (body: any) => {
     `${movimientoTipoNombre ?? grupoNombre} ${proyectoNombre ?? ""}_${Math.trunc(Math.random() * 1000000)}.xlsx`
   );
 
-  console.log(
+  logger.debug(
     `"Iniciando generacion de reporte......${nombreReporte}.........."`
   );
   // // process.send({r:0,message:"Iniciando generacion de reporte......nombreReporte.........."});
@@ -1892,7 +1893,7 @@ const reportePorGrupo = async (body: any) => {
     await agregarDatosRenglonesMovimientoProyecto(tbl, qry, 50 + incRenglones * 50, 50)
     // await agregarDatosRenglonesMovimiento(tbl, qry, 50 + incRenglones * 50, 50)
   ) {
-    console.log(
+    logger.debug(
       `agregarDatosRenglones. ${incRenglones} Regs:${50 + incRenglones * 50}-${50 + incRenglones * 50 + 50
       }......${nombreReporte}.........`,
       performance.now() - t0
@@ -1912,7 +1913,7 @@ const reportePorGrupo = async (body: any) => {
         50
       )
     ) {
-      console.log(
+      logger.debug(
         `agregarDatosRenglones. ${incImagenes}.....${nombreReporte}..........`,
         performance.now() - t0
       );
@@ -1926,7 +1927,7 @@ const reportePorGrupo = async (body: any) => {
 
   // const totalRows = tbl.rows.length;
   const totalRows = await qryTotal.getCount();
-  console.log(">>>>>>>>>>>>>>>>>>totalRows", totalRows);
+  logger.debug(">>>>>>>>>>>>>>>>>>totalRows", totalRows);
   if (totalRows > 0) {
 
     const nombreResponsable = gres?.grupoDetalle?.usuarios?.map((it) => it.nombre).join("\r\n") ?? "SIN RESPONSABLE";
@@ -1984,7 +1985,7 @@ const reportePorGrupo = async (body: any) => {
 
 
   const arch = process.env.RUTA_REPORTES + nombreReporte;
-  console.log(
+  logger.debug(
     `"Workbook guardando ......${nombreReporte}......."`,
     performance.now() - t0
   );
@@ -1993,7 +1994,7 @@ const reportePorGrupo = async (body: any) => {
   // console.log("ARCHIVO EXCEL.........", arch)
   // // process.send({r:0,message:`9 + ${arch}`});
 
-  console.log(
+  logger.debug(
     `"FIN DE REPORTE ......${nombreReporte}......."`,
     performance.now() - t0
   );
@@ -2035,7 +2036,7 @@ const reportePorGrupoFotoGrande = async (body: any) => {
     `${movimientoTipoNombre ?? ""} ${proyectoNombre ?? ""}_BIGPIC_${Math.trunc(Math.random() * 1000000)}.xlsx`
   );
 
-  console.log(
+  logger.debug(
     `"Iniciando generacion de reporte......${nombreReporte}.........."`
   );
   // // process.send({r:0,message:"Iniciando generacion de reporte......nombreReporte.........."});
@@ -2093,7 +2094,7 @@ const reportePorGrupoFotoGrande = async (body: any) => {
     await agregarDatosRenglonesMovimientoProyectoFotoGrande(tbl, qry, 50 + incRenglones * 50, 50)
     // await agregarDatosRenglonesMovimiento(tbl, qry, 50 + incRenglones * 50, 50)
   ) {
-    console.log(
+    logger.debug(
       `agregarDatosRenglones. ${incRenglones} Regs:${50 + incRenglones * 50}-${50 + incRenglones * 50 + 50
       }......${nombreReporte}.........`,
       performance.now() - t0
@@ -2113,7 +2114,7 @@ const reportePorGrupoFotoGrande = async (body: any) => {
         50
       )
     ) {
-      console.log(
+      logger.debug(
         `agregarDatosRenglones. ${incImagenes}.....${nombreReporte}..........`,
         performance.now() - t0
       );
@@ -2127,7 +2128,7 @@ const reportePorGrupoFotoGrande = async (body: any) => {
 
   // const totalRows = tbl.rows.length;
   const totalRows = await qryTotal.getCount();
-  console.log(">>>>>>>>>>>>>>>>>>totalRows", totalRows);
+  logger.debug(">>>>>>>>>>>>>>>>>>totalRows", totalRows);
   if (totalRows > 0) {
 
     const nombreResponsable = gres?.grupoDetalle?.usuarios?.map((it) => it.nombre).join("\r\n") ?? "SIN RESPONSABLE";
@@ -2159,13 +2160,13 @@ const reportePorGrupoFotoGrande = async (body: any) => {
 
 
   const arch = process.env.RUTA_REPORTES + nombreReporte;
-  console.log(
+  logger.debug(
     `"Workbook guardando ......${nombreReporte}......."`,
     performance.now() - t0
   );
   await workbook.xlsx.writeFile(arch);
 
-  console.log(
+  logger.debug(
     `"FIN DE REPORTE ......${nombreReporte}......."`,
     performance.now() - t0
   );
@@ -2174,7 +2175,7 @@ const reportePorGrupoFotoGrande = async (body: any) => {
 };
 
 const reportePorProyecto = async (body: any) => {
-  console.log(`"Iniciando generacion de reporte......`, { body });
+  logger.debug(`"Iniciando generacion de reporte......`, { body });
   const {
     movimientoTipoNombre,
     conFoto,
@@ -2191,7 +2192,7 @@ const reportePorProyecto = async (body: any) => {
     ...nuevoBody
   } = body;
 
-  console.log("-----------------------------", {
+  logger.debug("-----------------------------", {
     sortField,
     sortOrder,
     filters,
@@ -2219,7 +2220,7 @@ const reportePorProyecto = async (body: any) => {
       Math.random() * 1000000
     )}.xlsx`
   );
-  console.log(
+  logger.debug(
     `"Iniciando generacion de reporte......${nombreReporte}.........."${{
       proyectoId,
     }}`
@@ -2279,7 +2280,7 @@ const reportePorProyecto = async (body: any) => {
 
   qry.orderBy(columnaSegura(campoOrden, "movimiento.id"), direccionSegura(direccion === "DESC" ? "descend" : direccion === "ASC" ? "ascend" : direccion));
 
-  console.log("<<<<<<<<<<<>>>>>>>>>>>>>>>>>>qry", qry.getSql());
+  logger.debug("<<<<<<<<<<<>>>>>>>>>>>>>>>>>>qry", qry.getSql());
 
   const tbl = await agregarTabla(
     sheet,
@@ -2293,7 +2294,7 @@ const reportePorProyecto = async (body: any) => {
   while (
     await agregarDatosRenglonesMovimientoProyecto(tbl, qry, 50 + incRenglones * 50, 50)
   ) {
-    console.log(
+    logger.debug(
       `agregarDatosRenglones. ${incRenglones} Regs:${50 + incRenglones * 50}-${50 + incRenglones * 50 + 50
       }......${nombreReporte}.........`,
       performance.now() - t0
@@ -2313,7 +2314,7 @@ const reportePorProyecto = async (body: any) => {
         50
       )
     ) {
-      console.log(
+      logger.debug(
         `agregarDatosRenglones. ${incImagenes}.....${nombreReporte}..........`,
         performance.now() - t0
       );
@@ -2331,13 +2332,13 @@ const reportePorProyecto = async (body: any) => {
 
 
   const arch = process.env.RUTA_REPORTES + nombreReporte;
-  console.log(
+  logger.debug(
     `"Workbook guardando ......${nombreReporte}......."`,
     performance.now() - t0
   );
 
   await workbook.xlsx.writeFile(arch);
-  console.log(
+  logger.debug(
     `"FIN DE REPORTE ......${nombreReporte}......."`,
     performance.now() - t0
   );
@@ -2346,7 +2347,7 @@ const reportePorProyecto = async (body: any) => {
 };
 
 const reportePorProyectoCompras = async (body: any) => {
-  console.log(`"Iniciando generacion de reporte......`, { body });
+  logger.debug(`"Iniciando generacion de reporte......`, { body });
   const {
     movimientoTipoNombre,
     conFoto,
@@ -2361,7 +2362,7 @@ const reportePorProyectoCompras = async (body: any) => {
     filters,
     ...nuevoBody
   } = body;
-  console.log("-----------------------------", {
+  logger.debug("-----------------------------", {
     sortField,
     sortOrder,
     filters,
@@ -2382,7 +2383,7 @@ const reportePorProyectoCompras = async (body: any) => {
     .join('_');
 
   const nombreReporte = sanitizeFilename(`${nameProposal}.xlsx`);
-  console.log(
+  logger.debug(
     `"Iniciando generacion de reporte......${nombreReporte}.........." ${proyectoId}`
   );
 
@@ -2480,7 +2481,7 @@ const reportePorProyectoCompras = async (body: any) => {
       50
     )
   ) {
-    console.log(
+    logger.debug(
       `agregarDatosRenglones. ${incRenglones} Regs:${50 + incRenglones * 50}-${50 + incRenglones * 50 + 50
       }......${nombreReporte}.........`,
       performance.now() - t0
@@ -2499,7 +2500,7 @@ const reportePorProyectoCompras = async (body: any) => {
       50
     )
   ) {
-    console.log(
+    logger.debug(
       `agregarDatosRenglones. ${incRenglonesUSD} Regs:${50 + incRenglonesUSD * 50
       }-${50 + incRenglonesUSD * 50 + 50}......${nombreReporte}......... USD`,
       performance.now() - t0
@@ -2524,7 +2525,7 @@ const reportePorProyectoCompras = async (body: any) => {
         incRenMXP,
         incRenUSD
       );
-      console.log(
+      logger.debug(
         `agregarDatosRenglones. ${incImagenes}.....${nombreReporte}..........`,
         performance.now() - t0
       );
@@ -2550,13 +2551,13 @@ const reportePorProyectoCompras = async (body: any) => {
   }
 
   const arch = process.env.RUTA_REPORTES + nombreReporte;
-  console.log(
+  logger.debug(
     `"Workbook guardando ......${nombreReporte}......."`,
     performance.now() - t0
   );
 
   await workbook.xlsx.writeFile(arch);
-  console.log(
+  logger.debug(
     `"FIN DE REPORTE ......${nombreReporte}......."`,
     performance.now() - t0
   );
@@ -2593,7 +2594,7 @@ const reportePorPrestamosRentasActivas = async (body: any) => {
     )}.xlsx`
   );
 
-  console.log(
+  logger.debug(
     `"Iniciando generacion de reporte......${nombreReporte}.........."`
   );
 
@@ -2641,7 +2642,7 @@ const reportePorPrestamosRentasActivas = async (body: any) => {
   while (
     await agregarDatosRenglonesMovimiento(tbl, qry, 50 + incRenglones * 50, 50)
   ) {
-    console.log(
+    logger.debug(
       `agregarDatosRenglones. ${incRenglones} Regs:${50 + incRenglones * 50}-${50 + incRenglones * 50 + 50
       }......${nombreReporte}.........`,
       performance.now() - t0
@@ -2661,7 +2662,7 @@ const reportePorPrestamosRentasActivas = async (body: any) => {
         50
       )
     ) {
-      console.log(
+      logger.debug(
         `agregarDatosRenglones. ${incImagenes}.....${nombreReporte}..........`,
         performance.now() - t0
       );
@@ -2671,13 +2672,13 @@ const reportePorPrestamosRentasActivas = async (body: any) => {
   }
 
   const arch = process.env.RUTA_REPORTES + nombreReporte;
-  console.log(
+  logger.debug(
     `"Workbook guardando ......${nombreReporte}......."`,
     performance.now() - t0
   );
 
   await workbook.xlsx.writeFile(arch);
-  console.log(
+  logger.debug(
     `"FIN DE REPORTE ......${nombreReporte}......."`,
     performance.now() - t0
   );

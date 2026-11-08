@@ -1,5 +1,6 @@
 import { getRepository } from "typeorm";
 import { LogGeneral, LogTipo } from "../entity/LogGeneral";
+import { logger } from "../helpers/logger";
 
 export default class LogGeneralController{
 // INSERCIÓN Y LISTADOD DE LOGS DEL PROGRAMA
@@ -20,24 +21,13 @@ export default class LogGeneralController{
         getRepository(LogGeneral)
         .save(log)
         .then(()=>{
-            // SI TODO ESTA BIEN NO HAY NECESIDAD DE HACER NADA... 
-            // if(process.env.NODE_ENV!=='production'){
-                if((process.env.LOG_CONSOLE_VERBOSE.toLowerCase().indexOf('error') >=0 ) && (log.tipo===LogTipo.ERROR) )
-                    console.log(log);
-                if((process.env.LOG_CONSOLE_VERBOSE.toLowerCase().indexOf('warn') >=0 ) && (log.tipo===LogTipo.WARN) )
-                    console.log(log);
-                if((process.env.LOG_CONSOLE_VERBOSE.toLowerCase().indexOf('info') >=0 ) && (log.tipo===LogTipo.INFO) )
-                    console.log(log);
-                if((process.env.LOG_CONSOLE_VERBOSE.toLowerCase().indexOf('silly') >=0 ) && (log.tipo===LogTipo.SILLY) )
-                    console.log(log);
-                if((process.env.LOG_CONSOLE_VERBOSE.toLowerCase().indexOf('debug') >=0 ) && (log.tipo===LogTipo.DEBUG) )
-                    console.log(log);
-            // }
-    
+            // Además de la BD, al log de la aplicación con el nivel equivalente (el nivel visible lo decide helpers/logger).
+            const nivel = log.tipo === LogTipo.ERROR ? "error" : log.tipo === LogTipo.WARN ? "warn" : log.tipo === LogTipo.INFO ? "info" : "debug";
+            logger[nivel](log.mensaje, log.data);
         })
         .catch(error=>{
             // NO SE PUEDE GUARDAR EL LOG DEL ERROR.
-            console.error("¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡ESTAMOS MUY MAL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",error);
+            logger.error("No se pudo guardar LogGeneral:", log.mensaje, error);
         });
     }
 }

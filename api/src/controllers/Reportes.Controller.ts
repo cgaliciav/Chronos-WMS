@@ -17,6 +17,7 @@ import {
   reporteGeneral, 
   reportePorGrupoFotoGrande
 } from "../helpers/excelFunctions";
+import { logger } from "../helpers/logger";
 // import CommonController, { ResultadoTabla } from "./common/Common.Controller"
 // import { funcionQueryListadoMovimientos,condicionesWhereAnd as grupoCondicionesWhereAnd } from "./Grupo.Controller"
 
@@ -42,7 +43,7 @@ const mandarArchivo = (
     // })
 
     if (err) {
-      console.log(`No se puede leer el archivo: ${detalleArchivo.path}`, err);
+      logger.info(`No se puede leer el archivo: ${detalleArchivo.path}`, err);
       // await Notification.create({
       //   title: "ERROR al generar el reporte",
       //   content: `${detalleArchivo.nombreReporte}`,
@@ -61,7 +62,7 @@ const mandarArchivo = (
       // });
 
       if (filestats.size > 8 * 1024 * 1024) {
-        console.log(
+        logger.info(
           "********mandarArchivo***************************************************************",
           { detalleArchivo }
         );
@@ -85,14 +86,14 @@ const funcionQueryReporteCierre = async (
 ) => {
   try {
     // const { proyectoId, conFoto } = body;
-    console.log("---- funcionQueryReporteCierre ----", { body });
+    logger.info("---- funcionQueryReporteCierre ----", { body });
     const path = await reporteGeneral(body);
-    console.log("************************ funcionQueryReporteCierre", {
+    logger.info("************************ funcionQueryReporteCierre", {
       path,
     });
     mandarArchivo(correo, path);
   } catch (error) {
-    console.log("************************ funcionQueryReporteCierre error", { error });
+    logger.error("************************ funcionQueryReporteCierre error", { error });
     // const client = new MagicBellClient({
     //   apiKey: process.env.MAGICBELL_API_KEY,
     //   apiSecret: process.env.MAGICBELL_API_SECRET,
@@ -116,12 +117,12 @@ const funcionQueryMovimientosActivosReporteProyecto = async (
 ) => {
   try {
     const path = await reportePorPrestamosRentasActivas(body);
-    console.log("************************funcionQueryMovimientosActivosReporteProyecto", {
+    logger.info("************************funcionQueryMovimientosActivosReporteProyecto", {
       path,
     });
     mandarArchivo(correo, path);
   } catch (error) {
-    console.log("************************funcionQueryMovimientosActivosReporteProyecto error", { error });
+    logger.error("************************funcionQueryMovimientosActivosReporteProyecto error", { error });
     // const client = new MagicBellClient({
     //   apiKey: process.env.MAGICBELL_API_KEY,
     //   apiSecret: process.env.MAGICBELL_API_SECRET,
@@ -146,12 +147,12 @@ const funcionQueryMovimientosReporteProyecto = async (
   try {
     const condicion = (Array.isArray(body.movimientoTipoId) && body.movimientoTipoId.map(Number).includes(T.COMPRA));
     const path = condicion ? await reportePorProyectoCompras(body) : await reportePorProyecto(body);
-    console.log(`************************funcionQueryMovimientosReporteProyecto${condicion ? "COMPRAS" : ""}`, {
+    logger.info(`************************funcionQueryMovimientosReporteProyecto${condicion ? "COMPRAS" : ""}`, {
       path,
     });
     mandarArchivo(correo, path);
   } catch (error) {
-    console.log("************************funcionQueryMovimientosReporteProyecto error", { error });
+    logger.error("************************funcionQueryMovimientosReporteProyecto error", { error });
     // const client = new MagicBellClient({
     //   apiKey: process.env.MAGICBELL_API_KEY,
     //   apiSecret: process.env.MAGICBELL_API_SECRET,
@@ -172,12 +173,12 @@ const funcionQueryMovimientosReporteProyecto = async (
 const funcionGenerarReportePorGrupo = async (body: any, correo: string) => {
   try {
     const path = body.fotoGrande ? await reportePorGrupoFotoGrande(body) : await reportePorGrupo(body);
-    console.log(`************************funcionGenerarReportePorGrupo ${body.fotoGrande ? "FOTO GRANDE" : ""}`, {
+    logger.info(`************************funcionGenerarReportePorGrupo ${body.fotoGrande ? "FOTO GRANDE" : ""}`, {
       path,
     });
     mandarArchivo(correo, path);
   } catch (error) {
-    console.log("************************funcionGenerarReportePorGrupo error", { error });
+    logger.error("************************funcionGenerarReportePorGrupo error", { error });
     // const client = new MagicBellClient({
     //   apiKey: process.env.MAGICBELL_API_KEY,
     //   apiSecret: process.env.MAGICBELL_API_SECRET,
@@ -239,7 +240,7 @@ class ReporteController {
 
     try {
       if (activos) {
-        console.log(
+        logger.info(
           "funcionQueryMovimientosActivosReporteProyecto----funcionQueryMovimientosActivosReporteProyecto",
           { activos, body }
         );
@@ -281,7 +282,7 @@ class ReporteController {
     const { jwtPayload } = res.locals;
 
     try {
-      console.log(
+      logger.info(
         "---- funcionQueryReporteCierre ----",
         { body: req.body }
       );

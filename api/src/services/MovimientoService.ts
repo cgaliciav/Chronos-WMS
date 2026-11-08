@@ -34,6 +34,7 @@ import LogGeneralController from "../controllers/LogGeneral.Controller";
 import { crearBaseOperacion } from "../controllers/Operacion.Controller";
 import { aplicarEfecto, esInvertible, EstadoInventario, revertirEfecto } from "./reglas/efectosInventario";
 import { OrigenAbierto, Plan, planificarRelaciones, RelacionSolicitada } from "./reglas/planificarRelaciones";
+import { logger } from "../helpers/logger";
 
 const redondear = (n: number) => Math.round(n * 10000) / 10000;
 
@@ -129,7 +130,7 @@ const INVENTARIADO: Record<number, [string, InventarioEstado] | null> = {
 };
 
 const advertir = (mensaje: string, datos: unknown) => {
-  if (process.env.NODE_ENV !== "test") console.warn(mensaje, datos);
+  logger.warn(mensaje, datos);
   LogGeneralController.InsertarLog(LogTipo.WARN, mensaje, datos);
 };
 

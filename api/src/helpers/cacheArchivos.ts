@@ -9,6 +9,7 @@
 import { randomBytes } from "crypto";
 import { readdir, rename, stat, unlink, writeFile } from "fs/promises";
 import { join } from "path";
+import { logger } from "./logger";
 
 const DIA_MS = 24 * 60 * 60 * 1000;
 
@@ -67,7 +68,7 @@ export const iniciarLimpiezaCache = () => {
   const limpiar = async () => {
     const archivos = await limpiarDirectorio(process.env.RUTA_ARCHIVOS, dias("CACHE_ARCHIVOS_DIAS", 30));
     const reportes = await limpiarDirectorio(process.env.RUTA_REPORTES, dias("REPORTES_DIAS", 15));
-    if (archivos + reportes > 0) console.log(`Limpieza de caché: ${archivos} archivos y ${reportes} reportes borrados`);
+    if (archivos + reportes > 0) logger.info(`Limpieza de caché: ${archivos} archivos y ${reportes} reportes borrados`);
   };
   void limpiar();
   const temporizador = setInterval(() => void limpiar(), 6 * 60 * 60 * 1000);

@@ -6,6 +6,7 @@ import { AppError } from "../helpers/errorClases";
 import { idSeguro } from "../helpers/ids";
 import { Producto } from "../entity/Producto";
 import { ProductoCaracteristica } from "../entity/ProductoCaracteristica";
+import { logger } from "../helpers/logger";
 
 
 
@@ -63,7 +64,7 @@ class ProductoCaracteristicaController{
         const {productoId,productoCaracteristicas:productoCaracteristicasNuevo}=req.body;
         const {jwtPayload}=res.locals;
         try {
-            console.log("nuevo Producto Característica", {productoId,productoCaracteristicasNuevo});
+            logger.info("nuevo Producto Característica", {productoId,productoCaracteristicasNuevo});
             const producto=await getRepository(Producto).findOneOrFail(productoId,{relations:["productoCaracteristicas"],loadEagerRelations:false});
             const nuevasCaracteristicas=await ProductoCaracteristicaController.guardar(productoCaracteristicasNuevo,jwtPayload.si);
             const {productoCaracteristicas}= producto;
@@ -111,7 +112,7 @@ class ProductoCaracteristicaController{
         const {productoCaracteristicas,productoCaracteristicasId}=req.body;
         const {jwtPayload}=res.locals;
         try{
-            console.log("editar Producto Característica", {productoCaracteristicasId,productoCaracteristicas});
+            logger.info("editar Producto Característica", {productoCaracteristicasId,productoCaracteristicas});
             await ProductoCaracteristicaController.modificar(
                 await getRepository(ProductoCaracteristica).findOneOrFail(productoCaracteristicasId),
                 productoCaracteristicas,

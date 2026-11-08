@@ -11,6 +11,7 @@ import CommonController, { ResultadoTabla } from "./common/Common.Controller";
 import InventarioActualHistoricoController from "./InventarioActualHistorico.Controller";
 import ProductoController from "./Producto.Controller";
 import { MovimientoTipoId as T } from "../entity/common/MovimientoTipoId";
+import { logger } from "../helpers/logger";
 
 const queryBusqueda = () => {
     return (
@@ -331,7 +332,7 @@ class InventarioActualController {
                 throw new AppError("No se encontró el registro", 404);
             }
 
-            console.log("inventario Actual obtenerId", resp)
+            logger.info("inventario Actual obtenerId", resp)
 
             // // console.log("Get Inventory By ID", { oldId: id, newId: data[0].id, dataLen: data.length });
             // console.log("Updated Record", { oldId: id, newId: data.id });
