@@ -1,8 +1,27 @@
-import React, { useEffect } from 'react'
-
-import dayjs from 'dayjs'
 import { Form, Button, Select, Skeleton, InputNumber, Row, DatePicker } from 'antd'
+import type { Dayjs } from 'dayjs'
 import { mapeoOpciones } from 'helpers/funcionesExtras'
+import type { Numerico } from 'types/api'
+import { filtrarOpcion } from '../../../componentes/filtrarOpcion'
+
+/** Valores del formulario de disponibilidad (`fechaDisponibilidad` es un objeto dayjs del `DatePicker`). */
+export interface ValoresDisponibilidad {
+  /** Con `0` se muestra el esqueleto. */
+  id?: number
+  cantidad?: Numerico
+  cantidadAlmacen?: Numerico
+  /** `disponible`, `no-disponible`, `cuarentena` o `baja`. */
+  disponible?: string
+  fechaDisponibilidad: Dayjs
+}
+
+export interface FormaEdicionDisponibilidadProps {
+  valoresIniciales: ValoresDisponibilidad
+  /** Sin valor (`null`/`undefined`) se muestra el esqueleto. */
+  guardando?: boolean | null
+  habilitado?: boolean
+  handleFinish: (valores: ValoresDisponibilidad) => void
+}
 
 const formItemLayout = {
   labelCol: {
@@ -66,24 +85,13 @@ const wrapperColBtn = {
   },
 }
 
-// sfc
 const FormaEdicionDisponibilidad = ({
   valoresIniciales,
   guardando,
   habilitado,
-  // esNuevo,
   handleFinish,
-}) => {
-  // const [habilitadoInterno, setHabilitadoInterno] = useState(false)
-  // const [listadoBodegas, setListadoBodegas] = useState([])
-  // const [listadoAreas, setListadoAreas] = useState([])
-  // usf
-
-  // uef
-  useEffect(() => {
-  }, [])
-
-  const [form] = Form.useForm()
+}: FormaEdicionDisponibilidadProps) => {
+  const [form] = Form.useForm<ValoresDisponibilidad>()
 
   if (guardando === null || guardando === undefined || valoresIniciales.id === 0) {
     return (
@@ -92,12 +100,6 @@ const FormaEdicionDisponibilidad = ({
       </Row>
     )
   }
-  // cantidad
-  // cantidadAlmacen
-  // fechaDisponibilidad
-  // disponible
-
-  // console.log('valoresIniciales', valoresIniciales)
 
   return (
     <Row style={{ width: '90%', margin: 'auto' }}>
@@ -141,13 +143,10 @@ const FormaEdicionDisponibilidad = ({
           ]}
         >
           <Select
-            showSearch
+            showSearch={{ filterOption: filtrarOpcion }}
             placeholder="Selecciona un estado"
             allowClear
             disabled={guardando || !habilitado}
-            filterOption={(input, option) =>
-              option.props.children[0].toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }
           >
             {mapeoOpciones([
               { id: 'disponible', nombre: 'disponible' },
@@ -174,7 +173,6 @@ const FormaEdicionDisponibilidad = ({
           <Button
             type="primary"
             htmlType="submit"
-            className="mr-2"
             disabled={guardando || !habilitado}
             loading={guardando}
           >

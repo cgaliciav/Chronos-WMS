@@ -1,47 +1,34 @@
-import React, { useEffect, useState } from 'react'
-import Titulo from 'components/Titulo'
+import { useEffect, useState, type MouseEvent } from 'react'
 import { useLocation } from 'react-router'
-import { Col, Divider, Row, Spin, /* Tabs, Tag */ } from 'antd'
+import { Col, Divider, Row, Skeleton, Spin } from 'antd'
 import QueryString from 'query-string'
-import dayjs from 'dayjs'
 import ACL from 'app/auth/ACL'
+import Titulo from 'components/Titulo'
+import Encabezado from 'components/ui/Encabezado'
+import Tarjeta from 'components/ui/Tarjeta'
 import InventarioAcualPeticiones from 'services/axios/inventarioActual'
 import ModalImagenes from 'pages/componentes/modalImagenes'
 import ImagenesEnCarrusel from 'pages/componentes/imagenesEnCarrusel'
-// import Comentarios from 'pages/componentes/comentarios'
-// import CaracteristicasProducto from 'pages/componentes/caracteristicas'
-// import ClavesProducto from 'pages/componentes/claves'
-// import PreciosProducto from 'pages/componentes/precios'
-// import Movimientos from 'pages/componentes/movimientos'
+import type { InventarioDetalle } from '../../tipos'
 import ArticuloDatos from './components/articulo'
 
 const ArticuloDetalle = () => {
   const [mostrarModal, setMostrarModal] = useState(false)
-  const [id, setId] = useState(0)
+  const [id, setId] = useState<number | string>(0)
   const [cargando, setCargando] = useState(true)
-  const [inventarioActual, setInventarioActual] = useState({
-    cantidad: 0,
-    disponible: 'no definido',
-    fechaDisponibilidad: dayjs(),
-    bodega: { id: 0, nombre: '------' },
-    producto: {
-      archivos: [],
-      productoPrecios: [],
-      productoCaracteristicas: [],
-      productoClaves: [],
-      area: { id: 0, nombre: '-----' },
-      id: 0,
-      descripcion: '----------------',
-      titulo: '------',
-    },
-  })
+  // `null` hasta que responde el API; si la respuesta llega sin producto se sigue mostrando el esqueleto (F36).
+  const [inventarioActual, setInventarioActual] = useState<InventarioDetalle | null>(null)
 
-  // const navigate = useNavigate()
   const location = useLocation()
 
   useEffect(() => {
-    const value = QueryString.parse(location.search.replace('?', ''))
-    setId(value.uid)
+    const { uid } = QueryString.parse(location.search.replace('?', ''))
+    if (typeof uid === 'string') {
+      setId(uid)
+    } else {
+      // Sin `?uid` no hay nada que pedir (antes se pedía `/current-inventory/undefined`).
+      setCargando(false)
+    }
   }, [location])
 
   useEffect(() => {
@@ -51,7 +38,6 @@ const ArticuloDetalle = () => {
       .then(resp => {
         if (resp !== undefined) {
           setInventarioActual(resp)
-          // console.log('****** INVENTARIO ACTUAL', resp)
         }
       })
       // El interceptor de axios ya mostró el error.
@@ -61,75 +47,48 @@ const ArticuloDetalle = () => {
       })
   }, [id])
 
-  const abrirModal = e => {
+  const abrirModal = (e: MouseEvent) => {
     e.preventDefault()
     setMostrarModal(true)
   }
 
-  const cerrarModal = e => {
-    e.preventDefault()
+  const cerrarModal = () => {
     setMostrarModal(false)
   }
 
-  const {
-    archivos,
-    // productoClaves,
-    // productoCaracteristicas,
-    // comentarios,
-    // productoPrecios,
-  } = inventarioActual.producto
+  const producto = inventarioActual?.producto
 
   return (
     <ACL roles={['VALIDACIONES', 'ADMINISTRADOR']} redirect>
       <Titulo texto="Artículo validacion" />
-      <div className="kit__utils__heading">
-        <h5>
-          <span className="mr-3">Artículo validación</span>
-        </h5>
-      </div>
-      <div className="card">
+      <Encabezado>Artículo validación</Encabezado>
+      <Tarjeta>
         <Spin spinning={cargando}>
-          <Row gutter={{ xs: 4, sm: 8, md: 12, lg: 24, xl: 24 }}>
-            <Col xl={6} xxl={6} lg={8} md={8} sm={24} xs={24}>
-              <ImagenesEnCarrusel
-                archivos={archivos}
-                rutaEnApi="file/catalog/"
-                hacerGrande
-                onClickImagen={abrirModal}
-              />
-            </Col>
-            <Col xl={18} xxl={18} lg={16} md={16} sm={24} xs={24}>
-              <ArticuloDatos
-                producto={inventarioActual.producto}
-                inventarioActual={inventarioActual}
-              />
-              <Divider dashed />
-              {/* <Tabs defaultActiveKey="caracteristicas" size="small">
-                <Tabs.TabPane tab="Características" key="caracteristicas">
-                  <CaracteristicasProducto
-                    productoCaracteristicas={productoCaracteristicas}
-                    loading={cargando}
-                  />
-                </Tabs.TabPane>
-                <Tabs.TabPane tab="Códigos" key="codigos">
-                  <ClavesProducto productoClaves={productoClaves} loading={cargando} />
-                </Tabs.TabPane>
-                <Tabs.TabPane tab="Precios" key="precios">
-                  <PreciosProducto productoPrecios={productoPrecios} loading={cargando} />
-                </Tabs.TabPane>
-                <Tabs.TabPane tab="Movimientos" key="movimientos">
-                  <Movimientos inventarioActualId={id} loading={cargando} />
-
-                </Tabs.TabPane>
-                <Tabs.TabPane tab="Comentarios" key="comentarios">
-                  <Comentarios comentarios={comentarios} loading={cargando} formVisible={false} />
-                </Tabs.TabPane>
-              </Tabs> */}
-            </Col>
-          </Row>
+          {inventarioActual && producto ? (
+            <Row gutter={{ xs: 4, sm: 8, md: 12, lg: 24, xl: 24 }}>
+              <Col xl={6} xxl={6} lg={8} md={8} sm={24} xs={24}>
+                <ImagenesEnCarrusel
+                  archivos={producto.archivos}
+                  rutaEnApi="file/catalog/"
+                  hacerGrande
+                  onClickImagen={abrirModal}
+                />
+              </Col>
+              <Col xl={18} xxl={18} lg={16} md={16} sm={24} xs={24}>
+                <ArticuloDatos producto={producto} inventarioActual={inventarioActual} />
+                <Divider dashed />
+              </Col>
+            </Row>
+          ) : (
+            <Skeleton active />
+          )}
         </Spin>
-        <ModalImagenes mostrarModal={mostrarModal} cerrarModal={cerrarModal} archivos={archivos} />
-      </div>
+        <ModalImagenes
+          mostrarModal={mostrarModal}
+          cerrarModal={cerrarModal}
+          archivos={producto?.archivos}
+        />
+      </Tarjeta>
     </ACL>
   )
 }

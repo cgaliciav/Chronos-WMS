@@ -1,12 +1,39 @@
-import React, { useEffect, useState } from 'react'
-
-import dayjs from 'dayjs'
+import { useEffect, useState } from 'react'
 import { Form, Button, Select, Input, Skeleton, InputNumber, Row } from 'antd'
 import { mapeoOpciones } from 'helpers/funcionesExtras'
 import AreaPeticiones from 'services/axios/areas'
 import BodegaPeticiones from 'services/axios/bodegas'
+import type { ElementoListado } from 'services/axios'
+import type { Numerico } from 'types/api'
+import { filtrarOpcion } from '../../../componentes/filtrarOpcion'
 
 const { TextArea } = Input
+
+/** Valores del formulario de artículo (también lo usa `operaciones/componentes/formaAC` para altas). */
+export interface ValoresArticulo {
+  /** Inventario actual que se edita; con `0` se muestra el esqueleto. */
+  id?: number
+  titulo?: string
+  descripcion?: string
+  cantidad?: Numerico
+  precio?: Numerico
+  moneda?: string
+  area?: number
+  bodega?: number
+}
+
+export interface FormaEdicionArticuloProps {
+  valoresIniciales?: ValoresArticulo
+  /** Sin valor (`null`/`undefined`) se muestra el esqueleto. */
+  guardando?: boolean | null
+  habilitado?: boolean
+  /** Habilita cantidad y precio (alta de artículo). */
+  esNuevo?: boolean
+  handleFinish: (valores: ValoresArticulo) => void
+  textoBoton?: string
+  /** Contador: cada vez que aumenta se vacía el formulario para el siguiente artículo. */
+  limpiarNuevo?: number
+}
 
 const formItemLayout = {
   labelCol: {
@@ -70,22 +97,20 @@ const wrapperColBtn = {
   },
 }
 
-// sfc
 const FormaEdicionArticulo = ({
-  valoresIniciales={moneda:'MXN'},
+  valoresIniciales = { moneda: 'MXN' },
   guardando,
   habilitado,
   esNuevo,
   handleFinish,
   textoBoton,
   limpiarNuevo,
-}) => {
+}: FormaEdicionArticuloProps) => {
   const [habilitadoInterno, setHabilitadoInterno] = useState(false)
-  const [listadoBodegas, setListadoBodegas] = useState([])
-  const [listadoAreas, setListadoAreas] = useState([])
-  // usf
+  const [listadoBodegas, setListadoBodegas] = useState<ElementoListado[]>([])
+  const [listadoAreas, setListadoAreas] = useState<ElementoListado[]>([])
+  const [form] = Form.useForm<ValoresArticulo>()
 
-  // uef
   useEffect(() => {
     setHabilitadoInterno(false)
     Promise.all([BodegaPeticiones.listadoSimple(), AreaPeticiones.listadoSimple()])
@@ -116,8 +141,6 @@ const FormaEdicionArticulo = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [limpiarNuevo])
 
-  const [form] = Form.useForm()
-
   if (
     guardando === null ||
     guardando === undefined ||
@@ -130,14 +153,6 @@ const FormaEdicionArticulo = ({
       </Row>
     )
   }
-  // titulo
-  // cantidad
-  // precio
-  // area
-  // bodega
-  // descripcion
-
-  // console.log('valoresIniciales', valoresIniciales)
 
   return (
     <Row style={{ width: '90%', margin: 'auto' }}>
@@ -205,10 +220,9 @@ const FormaEdicionArticulo = ({
           <InputNumber
             step={0.01}
             formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-            parser={value => value.replace(/\$\s?|(,*)/g, '')}
+            parser={value => (value ?? '').replace(/\$\s?|(,*)/g, '')}
             placeholder="Precio del producto"
             disabled={guardando || !habilitado || !esNuevo}
-            // style={{ width: '100%' }}
           />
         </Form.Item>
         <Form.Item
@@ -224,7 +238,10 @@ const FormaEdicionArticulo = ({
           <Select
             placeholder="Selecciona la moneda"
             disabled={guardando || !habilitado}
-            options={[{label: 'MXN', value: 'MXN'}, {label: 'USD', value: 'USD'}]}
+            options={[
+              { label: 'MXN', value: 'MXN' },
+              { label: 'USD', value: 'USD' },
+            ]}
           />
         </Form.Item>
         <Form.Item
@@ -238,13 +255,10 @@ const FormaEdicionArticulo = ({
           ]}
         >
           <Select
-            showSearch
+            showSearch={{ filterOption: filtrarOpcion }}
             placeholder="Selecciona el áreas asociada"
             allowClear
             disabled={guardando || !habilitado}
-            filterOption={(input, option) =>
-              option.props.children[0].toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }
           >
             {mapeoOpciones(listadoAreas)}
           </Select>
@@ -260,13 +274,10 @@ const FormaEdicionArticulo = ({
           ]}
         >
           <Select
-            showSearch
+            showSearch={{ filterOption: filtrarOpcion }}
             placeholder="Selecciona el almacén asociado"
             allowClear
             disabled={guardando || !habilitado}
-            filterOption={(input, option) =>
-              option.props.children[0].toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }
           >
             {mapeoOpciones(listadoBodegas)}
           </Select>
@@ -275,7 +286,6 @@ const FormaEdicionArticulo = ({
           <Button
             type="primary"
             htmlType="submit"
-            className="mr-2"
             disabled={guardando || !habilitado}
             loading={guardando}
           >
