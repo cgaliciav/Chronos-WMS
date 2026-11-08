@@ -66,97 +66,41 @@ const MenuLeft = () => {
     setSelectedKeys([e.key])
   }
 
-  const generateMenuItems = () => {
-    const generateItem = item => {
-      const { key, title, url, icon, disabled, count } = item
+  /** Contenido de una entrada: título, contador e icono de la plantilla (fuentes icmn/fe). */
+  const etiqueta = (item, colapsable) => (
+    <>
+      <span className={style.title}>{item.title}</span>
+      {item.count && <span className="badge badge-success ml-2">{item.count}</span>}
+      {item.icon && (
+        <span className={`${item.icon} ${style.icon}${colapsable ? ' icon-collapsed-hidden' : ''}`} />
+      )}
+    </>
+  )
+
+  const permitido = item => !roles || roles.includes('ADMINISTRADOR') || roles.includes(item?.role)
+
+  /** Menú de la plantilla convertido a `items` de antd 5 (antes `Menu.Item`/`SubMenu` como hijos). */
+  const generateMenuItems = (entradas = menuData) =>
+    entradas.filter(permitido).map(item => {
       if (item.category) {
-        return <Menu.ItemGroup key={Math.random()} title={item.title} />
+        // Clave estable (antes `Math.random()`, hallazgo F8).
+        return { type: 'group', key: `grupo-${item.title}`, label: item.title }
       }
-      if (item.url) {
-        return (
-          <Menu.Item key={key} disabled={disabled}>
-            {item.target && (
-              <a href={url} target={item.target} rel="noopener noreferrer">
-                <span className={style.title}>{title}</span>
-                {count && <span className="badge badge-success ml-2">{count}</span>}
-                {icon && <span className={`${icon} ${style.icon} icon-collapsed-hidden`} />}
-              </a>
-            )}
-            {!item.target && (
-              <Link to={url}>
-                <span className={style.title}>{title}</span>
-                {count && <span className="badge badge-success ml-2">{count}</span>}
-                {icon && <span className={`${icon} ${style.icon} icon-collapsed-hidden`} />}
-              </Link>
-            )}
-          </Menu.Item>
+      if (item.children) {
+        return { key: item.key, label: <span>{etiqueta(item, false)}</span>, children: generateMenuItems(item.children) }
+      }
+      let label = etiqueta(item, true)
+      if (item.url && item.target) {
+        label = (
+          <a href={item.url} target={item.target} rel="noopener noreferrer">
+            {label}
+          </a>
         )
+      } else if (item.url) {
+        label = <Link to={item.url}>{label}</Link>
       }
-      return (
-        <Menu.Item key={key} disabled={disabled}>
-          <span className={style.title}>{title}</span>
-          {count && <span className="badge badge-success ml-2">{count}</span>}
-          {icon && <span className={`${icon} ${style.icon} icon-collapsed-hidden`} />}
-        </Menu.Item>
-      )
-    }
-
-    const generateSubmenu = items =>
-      items.map(menuItem => {
-        if (roles) {
-          if (!roles.includes('ADMINISTRADOR') && !roles.includes(menuItem?.role)) {
-            return null
-          }
-        }
-        if (menuItem.children) {
-          const subMenuTitle = (
-            <span key={menuItem.key}>
-              <span className={style.title}>{menuItem.title}</span>
-              {menuItem.count && <span className="badge badge-success ml-2">{menuItem.count}</span>}
-              {menuItem.icon && <span className={`${menuItem.icon} ${style.icon}`} />}
-            </span>
-          )
-          return (
-            <Menu.SubMenu title={subMenuTitle} key={menuItem.key}>
-              {generateSubmenu(menuItem.children)}
-            </Menu.SubMenu>
-          )
-        }
-        return generateItem(menuItem)
-      })
-
-    // console.log('user', user)
-    // console.log('roles', roles)
-    // console.log('menuData', menuData)
-    return menuData.map(menuItem => {
-      // console.log({
-      //   menu: menuItem.key,
-      //   count: menuItem.count,
-      //   rol: menuItem.role,
-      //   usrRol:roles,
-      // })
-      if (roles) {
-        if (!roles.includes('ADMINISTRADOR') && !roles.includes(menuItem?.role)) {
-          return null
-        }
-      }
-      if (menuItem.children) {
-        const subMenuTitle = (
-          <span key={menuItem.key}>
-            <span className={style.title}>{menuItem.title}</span>
-            {menuItem.count && <span className="badge badge-success ml-2">{menuItem.count}</span>}
-            {menuItem.icon && <span className={`${menuItem.icon} ${style.icon}`} />}
-          </span>
-        )
-        return (
-          <Menu.SubMenu title={subMenuTitle} key={menuItem.key}>
-            {generateSubmenu(menuItem.children)}
-          </Menu.SubMenu>
-        )
-      }
-      return generateItem(menuItem)
+      return { key: item.key, disabled: item.disabled, label }
     })
-  }
 
   const menuSettings = isMobileView
     ? {
@@ -206,10 +150,9 @@ const MenuLeft = () => {
             onOpenChange={onOpenChange}
             mode="inline"
             className={style.navigation}
-            inlineIndent="15"
-          >
-            {generateMenuItems()}
-          </Menu>
+            inlineIndent={15}
+            items={generateMenuItems()}
+          />
           {/* <div className={style.banner}>
             <p>More components, more style, more themes, and premium support!</p>
             <a

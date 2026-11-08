@@ -1,7 +1,6 @@
 import React, { useState,useEffect } from 'react'
 import { Table, Row, Tag, Descriptions } from 'antd'
-import moment from 'moment'
-import 'moment/locale/es'
+import dayjs from 'dayjs'
 import MovimientoPeticiones from 'services/axios/movimientos'
 
 // import ACL from 'components/cleanui/system/ACL';
@@ -41,8 +40,7 @@ const Movimientos = ({
       dataIndex: ['operacion','fecha'],
       align: 'right',
       render: fecha => {
-        moment.locale('es');
-        return moment(fecha).format('D-MMM-YYYY HH:mm')
+        return dayjs(fecha).format('D-MMM-YYYY HH:mm')
       },
     },
     { 
@@ -97,7 +95,7 @@ const Movimientos = ({
                 column={{ lg: 1, md: 1, sm: 1, xs: 1 }}
               >
                 <Descriptions.Item label="Operacion:">{`${movimientoTipoNombre} (#${operacionId})`}</Descriptions.Item>
-                <Descriptions.Item label="Fecha:">{moment(operacionFecha).format('D-MMM-YY HH:mm') }</Descriptions.Item>
+                <Descriptions.Item label="Fecha:">{dayjs(operacionFecha).format('D-MMM-YY HH:mm') }</Descriptions.Item>
                 {proyecto ? (
                   <Descriptions.Item label="Proyecto:"><strong>{proyectoNombre}</strong></Descriptions.Item>
                 ):( null )}

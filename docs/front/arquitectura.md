@@ -10,25 +10,26 @@ JWT en la cabecera `auth`.
 |---|---|---|
 | Build | Vite 8 + `@vitejs/plugin-react` + `vite-tsconfig-paths`; TypeScript 5.9 (`tsc -b`, `allowJs`, `checkJs: false`) | Node 24, npm |
 | Calidad | ESLint 10 (flat: typescript-eslint, @eslint-react, react-hooks, prettier), Prettier 3, Vitest 5 (jsdom) + Testing Library 16 + MSW 3 | |
-| UI | React 18.3, antd 4.24, `@ant-design/icons` 4, Bootstrap 4 CSS | |
-| Estado y rutas | Zustand 5 (`stores/`), `react-router` 7 (`createHashRouter`) | |
+| UI | React 19.3, antd 5.29 (+ `@ant-design/v5-patch-for-react-19`), `@ant-design/icons` 5, Bootstrap 4 CSS | |
+| Estado y rutas | Zustand 5 (`stores/`), `react-router` 8 (`createHashRouter`) | |
 | Observabilidad | `@sentry/react` 11 (solo con `VITE_SENTRY_DSN`) + `@sentry/vite-plugin` (source maps si hay credenciales) | |
 | HTTP | axios 1.21 (`src/services/axios/index.ts`) | |
-| Fechas | moment 2.24 (fijado con `overrides`) | |
-| Estilos | SCSS (Dart Sass) + LESS 4 (tema antd en `styles/antd.less`) + CSS Modules | |
+| Fechas | dayjs 1.11 (`helpers/fechas.ts`: plugins y locale `es-mx`) | |
+| Estilos | antd 5 CSS-in-JS con tokens (`tema.ts`) + SCSS heredado de la plantilla (Dart Sass) + CSS Modules | |
 | i18n | Ninguna librería: textos en español; antd con `locale` `es_ES` | |
 
 ## Estructura de `front/src`
 
 ```
-index.tsx           estilos (antd base, styles/antd.less, Bootstrap, perfect-scrollbar, global.scss), Sentry,
-                    detección de viewport, recuperación de sesión y createRoot(<ConfigProvider><RouterProvider/>)
+index.tsx           estilos (antd reset, Bootstrap, perfect-scrollbar, global.scss, layout-plantilla), fechas, Sentry,
+                    detección de viewport, recuperación de sesión y createRoot(<ConfigProvider tema><App><RouterProvider/>)
 router.tsx          createHashRouter: layout raíz + 67 rutas lazy + "/" según permisos + "*" → /auth/404
 sentry.ts           Sentry.init solo con VITE_SENTRY_DSN
 stores/             usuario.store.ts (sesión, permisos, login, cargarCuentaActual, logout), ui.store.ts (menú, móvil; persiste menuColapsado)
 types/api.ts        tipos de las respuestas del API (Grupo, Movimiento, InventarioActual, ResultadoTabla<T>…)
-styles/antd.less    componentes de antd 4 con el tema claro dentro de [data-kit-theme='default'] (atributo fijo en index.html)
-global.scss         estilos de la plantilla (kit-vendors/{antd,bootstrap,perfect-scrollbar}, kit-core, cui-styles)
+tema.ts             tokens del tema claro de antd 5 (traducidos de las antiguas variables LESS)
+styles/layout-plantilla.css  reglas estructurales del layout de la plantilla sobre antd (temporal, fase 6)
+global.scss         estilos de la plantilla (kit-vendors/{bootstrap,perfect-scrollbar}, kit-core, cui-styles)
 layouts/            index.jsx (raíz: elige Public/Auth/Main, protege rutas, guarda ultimaVisitada, <Outlet/>), Main, Auth, Public
 services/
   axios/index.ts    apiClient (interceptores: token, renovación, error → notifica y rechaza), conToken(url), PeticionBase<T>
@@ -43,11 +44,12 @@ pages/
   auth/             login, 401, 404, 500, 503
 components/
   Titulo.tsx        fija document.title ("Sony Almacén | …"), sustituye a react-helmet
+  ui/Comentario.tsx comentario (autor, fecha, contenido, acciones); sustituye a Comment de antd 4
   cleanui/          layout (TopBar, Menu/MenuLeft, Breadcrumbs, Footer), system (ACL, Auth/Login, Errors), styles/mixins.scss
   kit/core/         mixins.scss (mixins SCSS de cleanui)
   kit-core, kit-vendors, cui-styles   estilos globales vía global.scss (utilidades kit__utils__*, ajustes antd/Bootstrap)
   mixins.scss       punto de entrada de mixins para los .module.scss de cleanui
-helpers/            funcionesExtras.jsx, storage.ts (token y localStorage), limpiarCache.ts
+helpers/            funcionesExtras.jsx, storage.ts (token y localStorage), limpiarCache.ts, fechas.ts (dayjs), feedback.ts (notification/message con contexto de <App>)
 test/               setup.ts (jest-dom, matchMedia, MSW) y servidor.ts (manejadores del API para pruebas)
 ```
 
@@ -75,19 +77,18 @@ Demos, `kit/widgets`, `kit-widgets`, `cui-layout`, `cui-system`, MagicBell e idi
 - Tablas server-side con antd `Table` y el contrato `list-antd` del API
   (`{ results, pagination: { current, pageSize, total, totalItems }, filtered }`); filtros y orden se
   envían como `{ sortField, sortOrder, pagination, filters }`.
-- Formularios con `Form.useForm` (antd 4); fechas con `moment`; códigos de barras leídos con
+- Formularios con `Form.useForm` (antd 5); fechas con `dayjs`; códigos de barras leídos con
   escáner en `operaciones/componentes/formaAC.jsx`.
 - Importaciones absolutas desde `src` (`tsconfig.json` `baseUrl` + `vite-tsconfig-paths`): `components/…`,
   `services/…`, `pages/…`, `stores/…`. Variables de entorno con `import.meta.env.VITE_*`.
 - Pruebas con Vitest + MSW en `stores/` y `services/` (`*.test.ts` junto al código). ESLint 10 + Prettier 3
   (sin punto y coma, comillas simples, 100 col).
 
-### Estilos y cascada (transitorio hasta la fase 4)
+### Estilos (transitorio hasta la fase 6)
 
-Orden de carga (`index.tsx`): `antd/lib/style/index.less` → `styles/antd.less` → Bootstrap → perfect-scrollbar → `global.scss`.
-Los componentes de antd se compilan dentro de `[data-kit-theme='default']` para que su especificidad supere a los
-ajustes de `kit-vendors/antd/css`, como en el build de CRA. El plugin PostCSS `unificarAmbitoTema`
-(`vite.config.ts`) reemplaza al antiguo `AntdThemeLoader`: une el ámbito que Less repite en selectores con `&`.
+`index.tsx` carga `antd/dist/reset.css` → Bootstrap → perfect-scrollbar → `global.scss` → `styles/layout-plantilla.css`;
+antd 5 inyecta sus estilos en tiempo de ejecución con el tema de `tema.ts` (`ConfigProvider theme`). Ya no hay
+LESS, ni `data-kit-theme`, ni ajustes de antd 4 de la plantilla (`kit-vendors/antd`).
 
 ## Despliegue
 

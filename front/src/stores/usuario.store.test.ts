@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { http, HttpResponse } from 'msw'
-import { notification } from 'antd'
+import { notification } from 'helpers/feedback'
 import { API, USUARIO_PRUEBA, servidor } from 'test/servidor'
 import { SESION_VACIA, tieneAlgunRol, useUsuarioStore } from './usuario.store'
 

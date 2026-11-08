@@ -3,7 +3,7 @@ import Titulo from 'components/Titulo'
 import { useLocation } from 'react-router'
 import { Col, Divider, Row, Spin, /* Tabs, Tag */ } from 'antd'
 import QueryString from 'query-string'
-import moment from 'moment'
+import dayjs from 'dayjs'
 import ACL from 'components/cleanui/system/ACL'
 import InventarioAcualPeticiones from 'services/axios/inventarioActual'
 import ModalImagenes from 'pages/componentes/modalImagenes'
@@ -22,7 +22,7 @@ const ArticuloDetalle = () => {
   const [inventarioActual, setInventarioActual] = useState({
     cantidad: 0,
     disponible: 'no definido',
-    fechaDisponibilidad: moment(),
+    fechaDisponibilidad: dayjs(),
     bodega: { id: 0, nombre: '------' },
     producto: {
       archivos: [],

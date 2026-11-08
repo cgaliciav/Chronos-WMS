@@ -37,7 +37,7 @@ const ModalFormaPrecios = ({
 
   return (
     <Modal
-      visible={mostrarModal}
+      open={mostrarModal}
       onCancel={cerrarModal}
       onOk={() => {
         form

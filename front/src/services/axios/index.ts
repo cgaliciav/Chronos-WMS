@@ -1,5 +1,5 @@
 import axios, { AxiosError, type AxiosRequestConfig } from 'axios'
-import { notification } from 'antd'
+import { notification } from 'helpers/feedback'
 import { guardarToken, obtenerToken } from 'helpers/storage'
 import type { NombreEstatus, ParametrosTabla, RespuestaMensaje, ResultadoTabla } from 'types/api'
 

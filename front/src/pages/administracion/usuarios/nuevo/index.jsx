@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
 import Titulo from 'components/Titulo'
 import { useNavigate } from 'react-router'
-import { notification, Divider } from 'antd'
-import moment from 'moment'
+import { Divider } from 'antd'
+import { notification } from 'helpers/feedback'
+import dayjs from 'dayjs'
 import ACL from 'components/cleanui/system/ACL'
 import UsuarioPeticiones from 'services/axios/usuarios'
 import FormaUsuario from '../componentes/forma'
@@ -62,7 +63,7 @@ const UsuarioNuevo = () => {
             guardando={guardando}
             habilitado
             valoresIniciales={{
-              fechaVencimiento: moment().add(3, 'months'),
+              fechaVencimiento: dayjs().add(3, 'months'),
             }}
           />
           <Divider />

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { http, HttpResponse } from 'msw'
-import { notification } from 'antd'
+import { notification } from 'helpers/feedback'
 import { API, servidor } from 'test/servidor'
 import { apiClient, conToken, PeticionBase } from '.'
 

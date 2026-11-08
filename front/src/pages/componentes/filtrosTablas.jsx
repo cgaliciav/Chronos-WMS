@@ -38,10 +38,12 @@ const obtenerPropsBusquedaInput = () => {
     //   record[dataIndex]
     //     ? record[dataIndex].toString().toLowerCase().includes(value.toLowerCase())
     //     : '',
-    onFilterDropdownVisibleChange: visible => {
-      if (visible) {
-        setTimeout(() => searchInput.select(), 100)
-      }
+    filterDropdownProps: {
+      onOpenChange: abierto => {
+        if (abierto) {
+          setTimeout(() => searchInput?.select(), 100)
+        }
+      },
     },
     // render: text =>
     //   this.state.searchedColumn === dataIndex ? (

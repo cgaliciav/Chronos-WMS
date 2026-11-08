@@ -6,7 +6,7 @@
 // que es básicamente un campo de texto
 import React, { useState } from 'react'
 import { Button, Tabs, Steps, Spin } from 'antd'
-import moment from 'moment'
+import dayjs from 'dayjs'
 import FormaEdicionArticulo from 'pages/catalogos/articulos/editarDetalle/componentes/formaEdicionArticulo'
 import CaracteristicasProducto from 'pages/componentes/caracteristicas'
 import Comentarios from 'pages/componentes/comentarios'
@@ -49,7 +49,7 @@ const FormaNuevoItemAC = ({
   const [inventarioActual, setInventarioActual] = useState({
     cantidad: 0,
     disponible: 'no definido',
-    fechaDisponibilidad: moment(),
+    fechaDisponibilidad: dayjs(),
     bodega: { id: 0, nombre: '------' },
     producto: {
       archivos: [],
@@ -76,7 +76,7 @@ const FormaNuevoItemAC = ({
     setInventarioActual({
       cantidad: 0,
       disponible: 'no definido',
-      fechaDisponibilidad: moment(),
+      fechaDisponibilidad: dayjs(),
       bodega: { id: 0, nombre: '------' },
       producto: {
         archivos: [],
@@ -173,15 +173,24 @@ const FormaNuevoItemAC = ({
   // clave, tipoBaja
   return (
     <>
-      <Steps current={current}>
-        <Steps.Step key="A" title="Datos generales" />
-        <Steps.Step key="B" title="Fotos" />
-        <Steps.Step key="C" title="Caracteristicas" />
-        <Steps.Step key="D" title="Comentarios" />
-      </Steps>
+      <Steps
+        current={current}
+        items={[
+          { key: 'A', title: 'Datos generales' },
+          { key: 'B', title: 'Fotos' },
+          { key: 'C', title: 'Caracteristicas' },
+          { key: 'D', title: 'Comentarios' },
+        ]}
+      />
       <Spin spinning={guardando}>
-        <Tabs activeKey={`${current}`} style={{ margin: '8px' }} tabBarStyle={{display:"none"}}>
-          <Tabs.TabPane tab="Detalles" key="0" disabled={current!==0}>
+        <Tabs activeKey={`${current}`} style={{ margin: '8px' }} tabBarStyle={{display:"none"}}
+          items={[
+            {
+              key: '0',
+              label: 'Detalles',
+              disabled: current!==0,
+              children: (
+                <>
             <FormaEdicionArticulo 
               guardando={guardando}
               habilitado
@@ -190,8 +199,15 @@ const FormaNuevoItemAC = ({
               textoBoton="Guardar y siguiente"
               limpiarNuevo={conteoNuevo}
             />
-          </Tabs.TabPane>
-          <Tabs.TabPane tab="Fotos" key="1" disabled={current!==1}>
+                </>
+              ),
+            },
+            {
+              key: '1',
+              label: 'Fotos',
+              disabled: current!==1,
+              children: (
+                <>
             <SubirArchivos
               habilitado
               archivosIdsIniciales={archivos}
@@ -201,8 +217,15 @@ const FormaNuevoItemAC = ({
             />
             <Button type="primary" onClick={siguiente}>Siguiente</Button>
             <Button type="primary" ghost onClick={terminar}>Terminar</Button>
-          </Tabs.TabPane>
-          <Tabs.TabPane tab="Características" key="2" disabled={current!==2}>
+                </>
+              ),
+            },
+            {
+              key: '2',
+              label: 'Características',
+              disabled: current!==2,
+              children: (
+                <>
             <CaracteristicasProducto
               productoCaracteristicas={productoCaracteristicas}
               loading={cargando}
@@ -212,8 +235,15 @@ const FormaNuevoItemAC = ({
             />
             <Button type="primary" onClick={siguiente}>Siguiente</Button>
             <Button type="primary" ghost onClick={terminar}>Terminar</Button>
-          </Tabs.TabPane>
-          <Tabs.TabPane tab="Comentarios" key="3" disabled={current!==3}>
+                </>
+              ),
+            },
+            {
+              key: '3',
+              label: 'Comentarios',
+              disabled: current!==3,
+              children: (
+                <>
             <Comentarios
               comentarios={comentarios}
               loading={cargando}
@@ -224,8 +254,11 @@ const FormaNuevoItemAC = ({
               fnActualizar={actualizar}
             />
             <Button type="primary" ghost onClick={terminar}>Terminar</Button>
-          </Tabs.TabPane>
-        </Tabs>
+                </>
+              ),
+            },
+          ]}
+        />
       </Spin>
     </>
   )

@@ -2,7 +2,7 @@ import React from 'react'
 import { Layout } from 'antd'
 import classNames from 'classnames'
 // import SupportChat from 'components/cleanui/layout/SupportChat'
-import style from './style.module.scss'
+import style from './style.module.css'
 
 // Valores fijos de la plantilla (antes en `redux/settings`).
 const AJUSTES = {

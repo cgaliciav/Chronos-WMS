@@ -219,14 +219,28 @@ const CatalogoInventario = () => {
       </div>
       <div className="card">
         <div className="card-body">
-          <Tabs size="large" activeKey={activeTabKey} onChange={onChangeCodigos}>
-            <Tabs.TabPane tab="Por Palabra Clave" key="palabraClave">
+          <Tabs size="large" activeKey={activeTabKey} onChange={onChangeCodigos}
+            items={[
+              {
+                key: 'palabraClave',
+                label: 'Por Palabra Clave',
+                children: (
+                  <>
               <FormaBusquedaGeneral cargando={cargando} handleFinish={handleFinishPalabras} />
-            </Tabs.TabPane>
-            <Tabs.TabPane tab="Por Códigos" key="codigos">
+                  </>
+                ),
+              },
+              {
+                key: 'codigos',
+                label: 'Por Códigos',
+                children: (
+                  <>
               <FormaBusquedaPorCodigo cargando={cargando} handleFinish={handleFinishCodigos} />
-            </Tabs.TabPane>
-          </Tabs>
+                  </>
+                ),
+              },
+            ]}
+          />
         </div>
       </div>
       <Divider />

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import Titulo from 'components/Titulo'
 import { useNavigate, useLocation } from 'react-router'
-import { notification } from 'antd'
+import { notification } from 'helpers/feedback'
 import QueryString from 'query-string'
-import moment from 'moment'
+import dayjs from 'dayjs'
 import ACL from 'components/cleanui/system/ACL'
 import GrupoPeticiones from 'services/axios/grupos'
 import FormaConfiguracionGrupo from 'pages/operaciones/componentes/formaConfiguracionGrupo'
@@ -33,7 +33,7 @@ const CompraEditarGrupo = () => {
         tipoFactura: {
           id: 0,
         },
-        fechaEmision: moment(),
+        fechaEmision: dayjs(),
       }
     },
   })
@@ -143,7 +143,7 @@ const CompraEditarGrupo = () => {
                 proyectoInterno: grupo.grupoDetalle.proyecto.id,
                 proveedor: {value:grupo.grupoDetalle.facturaDetalle.proveedor.id, label:grupo.grupoDetalle.facturaDetalle.proveedor.nombre},
                 tipoFactura: grupo.grupoDetalle.facturaDetalle.facturaTipo.id,
-                fechaInicio: moment(grupo.grupoDetalle.facturaDetalle.fechaEmision),
+                fechaInicio: dayjs(grupo.grupoDetalle.facturaDetalle.fechaEmision),
                 usuariosResponsables: grupo.grupoDetalle.usuarios.map(usr => ({
                   key: usr.id,
                   label: usr.nombre,

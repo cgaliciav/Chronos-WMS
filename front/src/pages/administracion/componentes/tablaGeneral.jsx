@@ -51,10 +51,10 @@ const TablaGeneral = ({ fnPeticion, columns, titulo, filters = null }) => {
         <h2 className="text-truncate">{titulo}</h2>
       </Col>
       <Col span={8}>
-        <Row justify="end" type="flex" />
+        <Row justify="end" />
       </Col>
       <Col span={8}>
-        <Row justify="center" type="flex">
+        <Row justify="center">
           <h3>{`TOTAL: ${pagination.total || '-'}${
             pagination.total !== pagination.totalItems ? ' *filtrado' : ''
           } `}</h3>

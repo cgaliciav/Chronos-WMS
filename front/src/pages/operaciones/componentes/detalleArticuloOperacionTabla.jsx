@@ -1,7 +1,6 @@
 import React from 'react'
 import { Descriptions, Tag } from 'antd'
-import moment from 'moment'
-import 'moment/locale/es'
+import dayjs from 'dayjs'
 import { formatoMonedaMexico } from 'helpers/funcionesExtras'
 
 const DetalleArticuloOperacioTabla = ({
@@ -30,7 +29,6 @@ const DetalleArticuloOperacioTabla = ({
     },
   },
 }) => {
-  moment.locale('es')
   const { nombre: proyectoNombre } = proyecto ?? { nombre: '' }
   const precioObj = productoPrecios.find(pp => pp.precioTipo.id === 2)
   // console.log('precioObj', precioObj)
@@ -39,7 +37,7 @@ const DetalleArticuloOperacioTabla = ({
     <Descriptions size="small" bordered column={{ lg: 1, md: 1, sm: 1, xs: 1 }}>
       <Descriptions.Item label="Operacion:">{`${movimientoTipoNombre} ${estatus==='finalizado'?'*':''} (#${operacionId})`}</Descriptions.Item>
       <Descriptions.Item label="Fecha:">
-        {moment(operacionFecha).format('D-MMM-YY HH:mm')}
+        {dayjs(operacionFecha).format('D-MMM-YY HH:mm')}
       </Descriptions.Item>
       {proyecto ? (
         <Descriptions.Item label="Proyecto:">

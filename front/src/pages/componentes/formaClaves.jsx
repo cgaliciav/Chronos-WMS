@@ -19,7 +19,7 @@ const ModalFormaClave = ({ mostrarModal, guardando, habilitado, handleCreate, ce
 
   return (
     <Modal
-      visible={mostrarModal}
+      open={mostrarModal}
       onCancel={cerrarModal}
       onOk={() => {
         form

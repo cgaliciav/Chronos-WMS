@@ -3,7 +3,7 @@ import Titulo from 'components/Titulo'
 import { useLocation } from 'react-router'
 import { Col, Divider, Row, Spin, Tabs, Tag } from 'antd'
 import QueryString from 'query-string'
-import moment from 'moment'
+import dayjs from 'dayjs'
 import ACL from 'components/cleanui/system/ACL'
 import InventarioAcualPeticiones from 'services/axios/inventarioActual'
 import ModalImagenes from 'pages/componentes/modalImagenes'
@@ -23,7 +23,7 @@ const ArticuloDetalle = () => {
   const [inventarioActual, setInventarioActual] = useState({
     cantidad: 0,
     disponible: 'no definido',
-    fechaDisponibilidad: moment(),
+    fechaDisponibilidad: dayjs(),
     bodega: { id: 0, nombre: '------' },
     producto: {
       archivos: [],
@@ -121,31 +121,71 @@ const ArticuloDetalle = () => {
                 inventarioActual={inventarioActual}
               />
               <Divider dashed />
-              <Tabs defaultActiveKey="caracteristicas" size="small">
-                <Tabs.TabPane tab="Características" key="caracteristicas">
+              <Tabs defaultActiveKey="caracteristicas" size="small"
+                items={[
+                  {
+                    key: 'caracteristicas',
+                    label: 'Características',
+                    children: (
+                      <>
                   <CaracteristicasProducto
                     productoCaracteristicas={productoCaracteristicas}
                     loading={cargando}
                   />
-                </Tabs.TabPane>
-                <Tabs.TabPane tab="Códigos" key="codigos">
+                      </>
+                    ),
+                  },
+                  {
+                    key: 'codigos',
+                    label: 'Códigos',
+                    children: (
+                      <>
                   <ClavesProducto productoClaves={productoClaves} loading={cargando} />
-                </Tabs.TabPane>
-                <Tabs.TabPane tab="Precios" key="precios">
+                      </>
+                    ),
+                  },
+                  {
+                    key: 'precios',
+                    label: 'Precios',
+                    children: (
+                      <>
                   <PreciosProducto productoPrecios={productoPrecios} loading={cargando} />
-                </Tabs.TabPane>
-                <Tabs.TabPane tab="Movimientos" key="movimientos">
+                      </>
+                    ),
+                  },
+                  {
+                    key: 'movimientos',
+                    label: 'Movimientos',
+                    children: (
+                      <>
                   <Movimientos inventarioActualId={id} loading={cargando} />
                   {/* TODO: colocar movimientos aqui */}
-                </Tabs.TabPane>
-                <Tabs.TabPane tab="Inventarios" key="inventarios">
+                      </>
+                    ),
+                  },
+                  {
+                    key: 'inventarios',
+                    label: 'Inventarios',
+                    children: (
+                      <>
                   <Inventarios productoId={productoId} loading={cargando} />
                   {/* TODO: colocar movimientos aqui */}
-                </Tabs.TabPane>
-                {/* <Tabs.TabPane tab="Comentarios" key="comentarios">
+                      </>
+                    ),
+                  },
+                  /*
+                  {
+                    key: 'comentarios',
+                    label: 'Comentarios',
+                    children: (
+                      <>
                   <Comentarios comentarios={comentarios} loading={cargando} formVisible={false} />
-                </Tabs.TabPane> */}
-              </Tabs>
+                      </>
+                    ),
+                  },
+                  */
+                ]}
+              />
             </Col>
           </Row>
         </Spin>

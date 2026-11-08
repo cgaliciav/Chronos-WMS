@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { notification } from 'antd'
+import { notification } from 'helpers/feedback'
 import AutorizacionPeticiones from 'services/axios/autorizacion'
 import UsuarioPeticiones from 'services/axios/usuarios'
 import { borrar, borrarToken, obtenerToken } from 'helpers/storage'

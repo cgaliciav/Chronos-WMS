@@ -22,7 +22,7 @@ const columns = [
     title: 'RFC',
     dataIndex: 'RFCEmite',
     sorter: true,
-    // render: fechaInicio => moment(fechaInicio).format("DD/MMM/YY")
+    // render: fechaInicio => dayjs(fechaInicio).format("DD/MMM/YY")
     ...obtenerPropsBusquedaInput(),
   },
   {

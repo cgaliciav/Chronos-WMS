@@ -77,7 +77,7 @@ const Login = () => {
         </div>
         <Form
           layout="vertical"
-          hideRequiredMark
+          requiredMark={false}
           onFinish={onFinish}
           onFinishFailed={onFinishFailed}
           className="mb-4"

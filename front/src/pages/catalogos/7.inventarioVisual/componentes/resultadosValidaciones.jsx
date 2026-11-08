@@ -18,7 +18,7 @@ const CatalogoResultados = ({ data, cargando, pagination, onChange, onShowSizeCh
 
   return (
     <>
-      <Row type="flex" justify="end">
+      <Row justify="end">
         <Pagination
           showTotal={showTotal}
           pageSizeOptions={['2','4','6', '9', '12', '24', '48']}
@@ -43,7 +43,7 @@ const CatalogoResultados = ({ data, cargando, pagination, onChange, onShowSizeCh
       </Spin>
 
       <Divider dashed />
-      <Row type="flex" justify="end">
+      <Row justify="end">
         <Pagination
           showTotal={showTotal}
           pageSizeOptions={['2', '4','6', '9', '12', '24', '48']}

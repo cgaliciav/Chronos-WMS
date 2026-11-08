@@ -1,0 +1,76 @@
+/* Convertido desde SCSS en la fase 4 del plan 01 (sin el bloque del tema oscuro, D10). */
+.container {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+}
+.container.white {
+  background: #fff;
+}
+.container.gray {
+  background: #f2f4f8;
+}
+
+.containerInner {
+  max-width: 32rem;
+  width: 100%;
+}
+
+.topbar {
+  height: 4.26rem;
+  border-bottom: 1px solid #e4e9f0;
+  background: #fff;
+  margin-bottom: 7vh;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.86rem;
+  width: 100%;
+}
+.topbar.topbarGray {
+  background: #f2f4f8;
+}
+
+.logoContainer {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 0 1.86rem 0 0;
+}
+.logoContainer .logo {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 1.6rem;
+  white-space: nowrap;
+  width: 100%;
+}
+.logoContainer .name {
+  font-size: 1.33rem;
+  font-weight: 700;
+  color: #141322;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  max-width: 90%;
+  display: block;
+}
+.logoContainer .descr {
+  margin-left: 0.86rem;
+  padding-left: 0.86rem;
+  height: 2.53rem;
+  line-height: 2.53rem;
+  border-left: 1px solid #e4e9f0;
+  font-size: 0.93rem;
+}
+
+.footerNav li {
+  margin: 0.33rem 0.93rem;
+}

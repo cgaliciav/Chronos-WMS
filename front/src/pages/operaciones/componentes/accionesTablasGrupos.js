@@ -1,4 +1,4 @@
-import { notification } from 'antd'
+import { notification } from 'helpers/feedback'
 // import { useNavigate } from 'react-router'
 import GrupoPeticiones from 'services/axios/grupos'
 

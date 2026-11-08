@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { Dropdown, Button, Menu, notification } from 'antd'
+import { Dropdown, Button } from 'antd'
+import { notification } from 'helpers/feedback'
 import { DownOutlined, CheckCircleTwoTone, CloseCircleTwoTone, QuestionCircleTwoTone } from '@ant-design/icons'
 import ProductoValidado from 'services/axios/productoValidado'
 
@@ -82,13 +83,14 @@ const Validacion = ({
     'no-revisado': (<QuestionCircleTwoTone style={{ fontSize: '150%' }} twoToneColor="#eba02f" />),
   }
 
-  const menuValidacion = (
-    <Menu onClick={handleMenuClick}>
-      <Menu.Item key="valido" icon={iconosJsx.valido}> Válido </Menu.Item>
-      <Menu.Item key="invalido" icon={iconosJsx.invalido}> Inválido </Menu.Item>
-      <Menu.Item key="no-revisado" icon={iconosJsx['no-revisado']}> No revisado </Menu.Item>
-    </Menu>
-  );
+  const menuValidacion = {
+    onClick: handleMenuClick,
+    items: [
+      { key: 'valido', icon: iconosJsx.valido, label: 'Válido' },
+      { key: 'invalido', icon: iconosJsx.invalido, label: 'Inválido' },
+      { key: 'no-revisado', icon: iconosJsx['no-revisado'], label: 'No revisado' },
+    ],
+  }
 
 
   return (
@@ -101,7 +103,7 @@ const Validacion = ({
               loading={guardandoValidacion}
             />
           ) : (
-            <Dropdown overlay={menuValidacion}>
+            <Dropdown menu={menuValidacion}>
               <Button 
                 type="text"
                 icon={iconosJsx[validacionProducto]} 

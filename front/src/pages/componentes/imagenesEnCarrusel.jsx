@@ -1,7 +1,7 @@
 import React from 'react'
 import { Button, Carousel } from 'antd'
 import { apiURLBase, conToken } from 'services/axios'
-import styles from './style.module.scss'
+import styles from './style.module.css'
 
 const ImagenesEnCarrusel = ({ archivos, rutaEnApi, hacerGrande, onClickImagen }) => {
   return (

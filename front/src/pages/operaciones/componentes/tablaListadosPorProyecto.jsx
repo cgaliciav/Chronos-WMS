@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { Table, Row, Col, Dropdown, Menu, Button, notification, Tag } from 'antd'
+import { Table, Row, Col, Dropdown, Button, Tag } from 'antd'
+import { notification } from 'helpers/feedback'
 // import moment from 'moment';
 // import 'moment/locale/es'
 import { PrinterFilled, DownOutlined } from '@ant-design/icons'
@@ -147,32 +148,35 @@ const TablaOperacionesPorProyecto = ({
         <h2 className="text-truncate">{titulo}</h2>
       </Col>
       <Col span={8}>
-        <Row justify="end" type="flex" />
+        <Row justify="end" />
       </Col>
       <Col span={8}>
         <Dropdown
-          overlay={
-            <Menu>
-              <Menu.Item>
-                <Tag color="cyan">
-                  {' '}
-                  <a href="#" onClick={generarReporte}>
-                    {' '}
-                    <PrinterFilled /> Sin Foto{' '}
-                  </a>
-                </Tag>
-              </Menu.Item>
-              <Menu.Item>
-                <Tag color="purple">
-                  {' '}
-                  <a href="#" onClick={generarReporteConFoto}>
-                    {' '}
-                    <PrinterFilled /> Con Foto
-                  </a>
-                </Tag>
-              </Menu.Item>
-            </Menu>
-          }
+          menu={{
+            // antd 5: `items` en lugar de `overlay` con `Menu.Item`.
+            items: [
+              {
+                key: 'sinFoto',
+                label: (
+                  <Tag color="cyan">
+                    <a href="#" onClick={generarReporte}>
+                      <PrinterFilled /> Sin Foto
+                    </a>
+                  </Tag>
+                ),
+              },
+              {
+                key: 'conFoto',
+                label: (
+                  <Tag color="purple">
+                    <a href="#" onClick={generarReporteConFoto}>
+                      <PrinterFilled /> Con Foto
+                    </a>
+                  </Tag>
+                ),
+              },
+            ],
+          }}
         >
           <Button style={{ float: 'right', marginTop: '-16px' }} type="link" size="small">
             Reportes
@@ -182,7 +186,7 @@ const TablaOperacionesPorProyecto = ({
             ... <DownOutlined />
           </a> */}
         </Dropdown>
-        <Row justify="center" type="flex">
+        <Row justify="center">
           <h3>
             {`TOTAL: ${pagination.total || '-'}${
               pagination.total !== pagination.totalItems ? ' *filtrado' : ''

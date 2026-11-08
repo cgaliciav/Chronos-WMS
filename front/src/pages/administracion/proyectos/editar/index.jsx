@@ -1,16 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import Titulo from 'components/Titulo'
 import { useNavigate, useLocation, } from 'react-router'
-import {
-  Button,
-  Divider,
-  notification,
-  Row,
-  
-} from 'antd'
+import { Button, Divider, Row } from 'antd'
+import { notification } from 'helpers/feedback'
 import QueryString from 'query-string'
 import ACL from 'components/cleanui/system/ACL'
-import Moment from 'moment'
+import dayjs from 'dayjs'
 import ProyectoPeticiones from 'services/axios/proyectos'
 import FormaProyecto from '../componentes/forma'
 
@@ -139,7 +134,7 @@ const ProyectoEditar = () =>{
         </div>
         <div className="card">
           <div className="card-header">
-            <Row justify="end" type="flex">
+            <Row justify="end">
               <Button
                 type={proyecto.estatus!=="inactivo"?"default":"primary"}
                 danger={proyecto.estatus!=="inactivo"}
@@ -157,7 +152,7 @@ const ProyectoEditar = () =>{
               valores={{
                 nombre:proyecto.nombre,
                 descripcion:proyecto.descripcion,
-                fecha:Moment(proyecto.fechaInicio),
+                fecha:dayjs(proyecto.fechaInicio),
                 productor:proyecto.productor,
                 tipoProyecto:proyecto.esExterno?"externo":"interno",
               }}

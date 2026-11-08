@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
-import moment from 'moment'
-import 'moment/locale/es'
+import dayjs from 'dayjs'
 import { Form, Button, Select, Input, Spin, Row, Col, DatePicker, Typography } from 'antd'
 import { mapeoOpciones, normalizeAndFilterOptions } from 'helpers/funcionesExtras'
 // import ProyectoPeticiones from 'services/axios/proyectos'
@@ -64,7 +63,6 @@ const FormaConfiguracionGrupo = ({
   // uef
   useEffect(() => {
     setHabilitadoInterno(false)
-    moment.locale('es')
     Promise.all([
       UsuarioPeticiones.obtenerBodegas(),
       UsuarioPeticiones.obtenerProyectos(),

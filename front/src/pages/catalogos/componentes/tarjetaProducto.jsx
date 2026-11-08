@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { Tag, Spin, Col, Row, Card, Typography, Divider } from 'antd'
 import { EyeOutlined } from '@ant-design/icons'
-import moment from 'moment'
-import 'moment/locale/es'
+import dayjs from 'dayjs'
 import MovimientoPeticiones from 'services/axios/movimientos'
 import ImagenesEnCarrusel from 'pages/componentes/imagenesEnCarrusel'
 import { formatoMonedaMexico } from 'helpers/funcionesExtras'
@@ -34,7 +33,6 @@ const TarjetaProducto = ({
   const [movimiento, setMovimiento] = useState({})
 
   useEffect(() => {
-    moment.locale('es')
 
     // obtener ultimo movimiento
     setCargando(true)
@@ -141,7 +139,7 @@ const TarjetaProducto = ({
                 <Text type="secondary">
                   {' '}
                   {movimiento.fecha !== undefined
-                    ? moment(movimiento.fecha).format('D-MMM-YY')
+                    ? dayjs(movimiento.fecha).format('D-MMM-YY')
                     : ''}{' '}
                 </Text>{' '}
               </Col>
@@ -180,7 +178,7 @@ const TarjetaProducto = ({
           <Col span={24}>
             <Row justify="center">
               {disponible === 'cuarentena'
-                ? `Disponible en: ${moment(fechaDisponibilidad).format('D MMM YYYY')}`
+                ? `Disponible en: ${dayjs(fechaDisponibilidad).format('D MMM YYYY')}`
                 : ''}
             </Row>
           </Col>

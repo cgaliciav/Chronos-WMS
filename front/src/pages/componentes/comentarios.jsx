@@ -1,17 +1,8 @@
 import React, { useState } from 'react'
-import {
-  Button,
-  Comment,
-  Divider,
-  Empty,
-  Row,
-  Tooltip,
-  Form,
-  Input,
-  notification,
-  List,
-} from 'antd'
-import moment from 'moment'
+import { Button, Divider, Empty, Row, Tooltip, Form, Input, List } from 'antd'
+import Comentario from 'components/ui/Comentario'
+import { notification } from 'helpers/feedback'
+import dayjs from 'dayjs'
 import ACL from 'components/cleanui/system/ACL'
 import ComentarioPeticiones from 'services/axios/comentarios'
 
@@ -168,8 +159,8 @@ const Comentarios = ({
             dataSource={comentarios}
             renderItem={comentario => (
               <List.Item>
-                <Comment
-                  key={`cm${Math.random()}`}
+                <Comentario
+                  key={comentario.id}
                   author={comentario.sesion.usuario?.nombre}
                   content={comentario.comentario}
                   style={{ width: '100%' }}
@@ -189,8 +180,8 @@ const Comentarios = ({
                     </ACL>,
                   ]}
                   datetime={
-                    <Tooltip title={moment(comentario.fecha).format('DD/MMM/YYY  HH:mm:ss')}>
-                      <span>{moment(comentario.fecha).fromNow()}</span>
+                    <Tooltip title={dayjs(comentario.fecha).format('DD/MMM/YYYY HH:mm:ss')}>
+                      <span>{dayjs(comentario.fecha).fromNow()}</span>
                     </Tooltip>
                   }
                 />
@@ -231,8 +222,8 @@ export default Comentarios
 //         </ACL>,
 //       ]}
 //       datetime={
-//         <Tooltip title={moment(comentario.fecha).format('DD/MMM/YYY  HH:mm:ss')}>
-//           <span>{moment(comentario.fecha).fromNow()}</span>
+//         <Tooltip title={dayjs(comentario.fecha).format('DD/MMM/YYYY HH:mm:ss')}>
+//           <span>{dayjs(comentario.fecha).fromNow()}</span>
 //         </Tooltip>
 //       }
 //     />

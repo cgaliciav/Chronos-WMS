@@ -1,6 +1,6 @@
 import React from 'react'
 import { Row, Space, Tag, Typography } from 'antd'
-import moment from 'moment'
+import dayjs from 'dayjs'
 import { formatoMonedaMexico } from 'helpers/funcionesExtras'
 import Validacion from 'pages/catalogos/6.validaciones/componentes/validacion'
 import Inventariado from 'pages/catalogos/6.validaciones/componentes/inventariado'
@@ -38,7 +38,7 @@ const ArticuloDatos = ({
             {disponible}
           </Tag>
           {disponible === 'cuarentena'
-            ? ` hasta: ${moment(fechaDisponibilidad).format('D MMM YYYY')}  `
+            ? ` hasta: ${dayjs(fechaDisponibilidad).format('D MMM YYYY')}  `
             : '  '}
           <Tag style={{ fontSize: '130%' }}>
             {' '}

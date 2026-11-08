@@ -5,7 +5,7 @@ import ImagenesEnCarrusel from './imagenesEnCarrusel'
 const ModalImagenes = ({ archivos, mostrarModal, cerrarModal }) => {
   return (
     <Modal
-      visible={mostrarModal}
+      open={mostrarModal}
       centered
       width="90%"
       style={{ height: '90%' }}

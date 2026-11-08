@@ -318,6 +318,32 @@ resolver; `npm run lint`; checklist de humo.
 bloqueantes; pruebas de componente para los formularios con fecha; checklist.
 **Aceptación:** cero warnings de deprecación en consola en las rutas críticas. Commit.
 
+> **Ejecutada (2026-11-08).** antd 5.29.3 + icons 5.6, dayjs, **React 19.3 + React Router 8.5** (con
+> `@ant-design/v5-patch-for-react-19`). `npm run typecheck`, `npm run lint` (0 errores), `npm test` (28 pruebas,
+> incluidas las de fechas, `FormaEdicionDisponibilidad` y `Comentario`) y `npm run build` en verde. Recorrido en
+> `dev` de las **67 rutas**: cero avisos de deprecación de antd y cero avisos de React (los únicos errores son de
+> datos simulados incompletos en 5 rutas de detalle/edición, idénticos en el build legado). Humo de sesión 10/10.
+> Capturas en `docs/front/baseline/fase-4/` (≈ 3 % de píxeles distintos frente a la fase 2: tipografía y controles
+> de antd 5). Desviaciones:
+> - **Sin codemod oficial**: la ejecución de `@ant-design/codemod-v5` con `npx` no se autorizó en el entorno de
+>   trabajo; los cambios (`visible`→`open`, `Comment`, imports profundos, `items`) se hicieron con scripts propios
+>   y revisión manual. Tampoco se ejecutó `npx antd lint` (mismo motivo); en su lugar, el recorrido de las 67 rutas
+>   con la consola de desarrollo.
+> - **React 19 + Router 8 ya en esta fase** (el plan lo dejaba como alternativa del paso 6): antd 5 + parche lo admite.
+> - **Estilos:** fuera `styles/antd.less`, LESS, el plugin PostCSS, `data-kit-theme` y `kit-vendors/antd` (ajustes
+>   de antd 4 que ya no encajan con el DOM de antd 5). El tema pasa a `src/tema.ts` (tokens traducidos de las
+>   variables LESS) y las reglas estructurales del layout a `src/styles/layout-plantilla.css` (temporal, fase 6).
+>   **`sass` se mantiene** hasta la fase 6: `global.scss`, `cleanui` y `kit-*` siguen en SCSS. Los dos módulos de
+>   negocio (`pages/componentes`, `layouts/Auth`) ya son `.module.css`.
+> - `notification`/`message` (54 archivos) se importan de `helpers/feedback.ts`, que usa la instancia de
+>   `App.useApp()` (con tema y locale) y cae a los estáticos fuera de `<App>` (pruebas).
+> - Locale: `antd/es/locale/es_ES` (la ruta `antd/locale/es_ES` dejaba los textos de antd en inglés con Vite);
+>   dayjs global en `es-mx` (`helpers/fechas.ts`). `src/locales` ya se borró en la fase 3.
+> - `<Titulo>` sigue fijando `document.title` en un efecto: el `<title>` nativo de React 19 compite con el de
+>   `index.html` y el título por defecto del layout; se revisa en la fase 6 junto con el layout nuevo.
+> - Corregido de paso: el filtro de estatus de `usuarios/listado` estaba fijo (`filteredValue`), ahora es valor
+>   inicial (`defaultFilteredValue`), y las claves del menú lateral ya no son aleatorias (F8 parcial).
+
 ### Fase 5 · antd 5 → 6.7 + icons 6
 
 1. `npm i antd@6 @ant-design/icons@6 && npm un @ant-design/v5-patch-for-react-19`.

@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 import Titulo from 'components/Titulo'
-import { Popconfirm, Tag, Tooltip, notification } from 'antd'
-import moment from 'moment'
-import 'moment/locale/es'
+import { Popconfirm, Tag, Tooltip } from 'antd'
+import { notification } from 'helpers/feedback'
+import dayjs from 'dayjs'
 import ACL from 'components/cleanui/system/ACL'
 import GrupoPeticiones from 'services/axios/grupos'
 import {
@@ -32,8 +32,7 @@ const DevolucionesListado = () => {
       key: 'grupo.fecha',
       sorter: true,
       render: fecha=>{
-        moment.locale('es');
-        return moment(fecha).format('D-MMM-YY HH:mm:ss')
+        return dayjs(fecha).format('D-MMM-YY HH:mm:ss')
       }
       // ...obtenerPropsBusquedaInput(),
     },

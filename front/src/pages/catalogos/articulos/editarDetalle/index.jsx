@@ -3,12 +3,11 @@ import Titulo from 'components/Titulo'
 import { useLocation } from 'react-router'
 import {
   // Divider,
-  notification,
   Tabs,
 } from 'antd'
+import { notification } from 'helpers/feedback'
 import QueryString from 'query-string'
-import moment from 'moment'
-import 'moment/locale/es'
+import dayjs from 'dayjs'
 import ACL from 'components/cleanui/system/ACL'
 import CaracteristicasProducto from 'pages/componentes/caracteristicas'
 import ClavesProducto from 'pages/componentes/claves'
@@ -27,7 +26,7 @@ const EditarArticuloDetalle = () => {
   const [inventarioActual, setInventarioActual] = useState({
     cantidad: 0,
     disponible: 'no definido',
-    fechaDisponibilidad: moment(),
+    fechaDisponibilidad: dayjs(),
     bodega: { id: 0, nombre: '------' },
     producto: {
       archivos: [],
@@ -43,7 +42,6 @@ const EditarArticuloDetalle = () => {
   const [currentKey, setCurrentKey] = useState('detalles');
 
   const location = useLocation()
-  moment.locale('es')
 
   useEffect(() => {
     const value = QueryString.parse(location.search.replace('?', ''));
@@ -79,7 +77,7 @@ const EditarArticuloDetalle = () => {
   const obtenerValoresInicialesDisponibilidad = inventario => ({
     cantidad: inventario.cantidad,
     cantidadAlmacen: inventario.cantidadAlmacen,
-    fechaDisponibilidad: moment(inventario.fechaDisponibilidad),
+    fechaDisponibilidad: dayjs(inventario.fechaDisponibilidad),
     disponible: inventario.disponible,
   })
 
@@ -175,8 +173,13 @@ const EditarArticuloDetalle = () => {
         </h5>
       </div>
       <div className="card">
-        <Tabs defaultActiveKey="detalles" activeKey={currentKey} onChange={(activeKey)=>setCurrentKey(activeKey)} style={{ margin: '8px' }}>
-          <Tabs.TabPane tab="Detalles" key="detalles">
+        <Tabs defaultActiveKey="detalles" activeKey={currentKey} onChange={setCurrentKey} style={{ margin: '8px' }}
+          items={[
+            {
+              key: 'detalles',
+              label: 'Detalles',
+              children: (
+                <>
             <FormaEdicionArticulo
               guardando={cargando}
               valoresIniciales={obtenerValoresIniciales(inventarioActual)}
@@ -184,8 +187,14 @@ const EditarArticuloDetalle = () => {
               handleFinish={guardarArticuloDetalles}
               esNuevo={false}
             />
-          </Tabs.TabPane>
-          <Tabs.TabPane tab="Disponibilidad" key="disponibilidad">
+                </>
+              ),
+            },
+            {
+              key: 'disponibilidad',
+              label: 'Disponibilidad',
+              children: (
+                <>
             {/* <PreciosProducto productoPrecios={productoPrecios} loading={cargando} /> */}
             <FormaEdicionDisponibilidad
               guardando={cargando}
@@ -193,13 +202,18 @@ const EditarArticuloDetalle = () => {
               habilitado
               handleFinish={guardarDisponibilidad}
             />
-          </Tabs.TabPane>
-
-          {/* 
+                </>
+              ),
+            },
+            /* 
             // TODO EDITAR (REIMPRIMIR) CODIGOS
             // TODO EDITAR COMENTARIOS
-          */}
-          <Tabs.TabPane tab="Fotos" key="fotos">
+          */
+            {
+              key: 'fotos',
+              label: 'Fotos',
+              children: (
+                <>
             <SubirArchivos
               habilitado={disponible !== 'baja'}
               archivosIdsIniciales={archivos}
@@ -207,8 +221,14 @@ const EditarArticuloDetalle = () => {
               relacion="Producto"
               relacionId={productoId}
             />
-          </Tabs.TabPane>
-          <Tabs.TabPane tab="Características" key="caracteristicas">
+                </>
+              ),
+            },
+            {
+              key: 'caracteristicas',
+              label: 'Características',
+              children: (
+                <>
             <CaracteristicasProducto
               productoCaracteristicas={productoCaracteristicas}
               loading={cargando}
@@ -216,8 +236,14 @@ const EditarArticuloDetalle = () => {
               editar
               fnActualizar={actualizar}
             />
-          </Tabs.TabPane>
-          <Tabs.TabPane tab="Códigos" key="codigos">
+                </>
+              ),
+            },
+            {
+              key: 'codigos',
+              label: 'Códigos',
+              children: (
+                <>
             <ClavesProducto
               productoClaves={productoClaves}
               loading={cargando}
@@ -225,16 +251,28 @@ const EditarArticuloDetalle = () => {
               editar
               fnActualizar={actualizar}
             />
-          </Tabs.TabPane>
-          <Tabs.TabPane tab="Precios" key="precios">
+                </>
+              ),
+            },
+            {
+              key: 'precios',
+              label: 'Precios',
+              children: (
+                <>
             <PreciosProducto
               productoPrecios={productoPrecios}
               loading={cargando}
               editar
               fnActualizar={actualizar}
             />
-          </Tabs.TabPane>
-          <Tabs.TabPane tab="Comentarios" key="comentarios">
+                </>
+              ),
+            },
+            {
+              key: 'comentarios',
+              label: 'Comentarios',
+              children: (
+                <>
             <Comentarios
               comentarios={comentarios}
               loading={cargando}
@@ -244,8 +282,11 @@ const EditarArticuloDetalle = () => {
               relacionId={productoId}
               fnActualizar={actualizar}
             />
-          </Tabs.TabPane>
-        </Tabs>
+                </>
+              ),
+            },
+          ]}
+        />
       </div>
     </ACL>
   )

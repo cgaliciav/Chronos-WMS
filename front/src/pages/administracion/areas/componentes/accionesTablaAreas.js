@@ -1,4 +1,4 @@
-import { notification } from 'antd'
+import { notification } from 'helpers/feedback'
 import AreaPeticiones from 'services/axios/areas'
 
 export default class AccionesTablaProveedores {

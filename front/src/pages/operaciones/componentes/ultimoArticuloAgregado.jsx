@@ -27,8 +27,13 @@ const UltimoArticuloAgregado = ({
   const {producto}=inventarioActual??{};
   return ( 
     <>
-      <Collapse>
-        <Collapse.Panel key="1" header="Último artículo agregado">
+      <Collapse
+        items={[
+          {
+            key: '1',
+            label: 'Último artículo agregado',
+            children: (
+              <>
           {movimiento.id===0?(
             <Empty description="Sin información" />
           ) : (
@@ -50,8 +55,11 @@ const UltimoArticuloAgregado = ({
             </Row>
 
           )}
-        </Collapse.Panel>
-      </Collapse>
+              </>
+            ),
+          },
+        ]}
+      />
       {movimiento.id!==0?(
         <ModalImagenes mostrarModal={mostrarModal} cerrarModal={()=>{setMostrarModal(false)}} archivos={producto.archivos} />
       ):(null)}

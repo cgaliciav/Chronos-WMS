@@ -1,4 +1,5 @@
-import { Button, Col, Form, Input, notification, Row } from 'antd'
+import { Button, Col, Form, Input, Row } from 'antd'
+import { notification } from 'helpers/feedback'
 import React, { useState } from 'react'
 import Titulo from 'components/Titulo'
 import { useNavigate } from 'react-router'

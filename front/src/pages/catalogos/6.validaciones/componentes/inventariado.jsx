@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { Dropdown, Button, Menu, notification, Tooltip } from 'antd'
-import moment from 'moment'
-import 'moment/locale/es'
+import { Dropdown, Button, Tooltip } from 'antd'
+import { notification } from 'helpers/feedback'
+import dayjs from 'dayjs'
 import {
   DownOutlined,
   SmileTwoTone,
@@ -20,7 +20,7 @@ const Inventariado = ({ productoId, productoInventariado = null, disabled = fals
 
     if (pi.fecha) {
       if (
-        moment().isAfter(moment(pi.fecha).add(12, 'months')) &&
+        dayjs().isAfter(dayjs(pi.fecha).add(12, 'months')) &&
         pi.validacion !== 'inventarioNegativo' && !pi.invalido
       ) {
         const {fecha} = pi;
@@ -35,7 +35,7 @@ const Inventariado = ({ productoId, productoInventariado = null, disabled = fals
     console.log({ productoInventariado })
     if (Array.isArray(productoInventariado)) {
       const inventarioMasReciente = productoInventariado.reduce(
-        (prev, curr) => (moment(prev.fecha).isSameOrAfter(moment(curr.fecha)) ? prev : curr),
+        (prev, curr) => (dayjs(prev.fecha).isSameOrAfter(dayjs(curr.fecha)) ? prev : curr),
         { fecha: new Date(0), validacion: 'no-revisado', invalido:true },
       )
 
@@ -102,25 +102,19 @@ const Inventariado = ({ productoId, productoInventariado = null, disabled = fals
     inventarioViejo: <AlertTwoTone style={{ fontSize: '150%' }} twoToneColor="#E86610" />,
   }
 
-  const menuValidacion = (
-    <Menu onClick={handleMenuClick}>
-      <Menu.Item key="fecha" disabled>
-        {(!inventarioProducto.invalido)  ? moment(inventarioProducto.fecha).format('ll') : '-'}
-      </Menu.Item>
-      <Menu.Item key="inventarioPositivo" icon={iconosJsx.inventarioPositivo}>
-        {' '}
-        Existe{' '}
-      </Menu.Item>
-      <Menu.Item key="inventarioNegativo" icon={iconosJsx.inventarioNegativo}>
-        {' '}
-        No Existe{' '}
-      </Menu.Item>
-      <Menu.Item key="no-revisado" icon={iconosJsx['no-revisado']}>
-        {' '}
-        No revisado{' '}
-      </Menu.Item>
-    </Menu>
-  )
+  const menuValidacion = {
+    onClick: handleMenuClick,
+    items: [
+      {
+        key: 'fecha',
+        disabled: true,
+        label: !inventarioProducto.invalido ? dayjs(inventarioProducto.fecha).format('ll') : '-',
+      },
+      { key: 'inventarioPositivo', icon: iconosJsx.inventarioPositivo, label: 'Existe' },
+      { key: 'inventarioNegativo', icon: iconosJsx.inventarioNegativo, label: 'No Existe' },
+      { key: 'no-revisado', icon: iconosJsx['no-revisado'], label: 'No revisado' },
+    ],
+  }
 
   // console.warn({disabled});
 
@@ -128,12 +122,12 @@ const Inventariado = ({ productoId, productoInventariado = null, disabled = fals
     <>
       {disabled ? (
         <Tooltip
-          title={(!inventarioProducto.invalido) ? moment(inventarioProducto.fecha).format('ll') : '-'}
+          title={(!inventarioProducto.invalido) ? dayjs(inventarioProducto.fecha).format('ll') : '-'}
         >
           <Button type="text" icon={iconosJsx[inventarioProducto.validacion]} loading={guardandoValidacion} />
         </Tooltip>
       ) : (
-        <Dropdown overlay={menuValidacion}>
+        <Dropdown menu={menuValidacion}>
           <Button type="text" icon={iconosJsx[inventarioProducto.validacion]} loading={guardandoValidacion}>
             <DownOutlined />
           </Button>

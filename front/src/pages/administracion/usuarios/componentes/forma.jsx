@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
-import moment from 'moment'
-import 'moment/locale/es'
+import dayjs from 'dayjs'
 import {
   Form,
   Button,
@@ -49,7 +48,6 @@ const FormaUsuario = ({ valoresIniciales, valores, guardando, habilitado, handle
   // uef
   useEffect(() => {
     setHabilitadoInterno(false)
-    moment.locale('es')
     Promise.all([
       RolPeticiones.listadoSimple(),
       BodegaPeticiones.listadoSimple(),
@@ -74,7 +72,7 @@ const FormaUsuario = ({ valoresIniciales, valores, guardando, habilitado, handle
 
   const handleVencimiento = date => {
     // console.log("fecha*******************",date)
-    if (moment().isAfter(date)) {
+    if (dayjs().isAfter(date)) {
       setVencimientoAviso({
         color: 'red',
         texto: 'VENCIDO',

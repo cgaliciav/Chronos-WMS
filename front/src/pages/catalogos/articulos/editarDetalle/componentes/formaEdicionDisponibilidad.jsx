@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react'
 
-import moment from 'moment'
-import 'moment/locale/es'
+import dayjs from 'dayjs'
 import { Form, Button, Select, Skeleton, InputNumber, Row, DatePicker } from 'antd'
 import { mapeoOpciones } from 'helpers/funcionesExtras'
 
@@ -82,7 +81,6 @@ const FormaEdicionDisponibilidad = ({
 
   // uef
   useEffect(() => {
-    moment.locale('es')
   }, [])
 
   const [form] = Form.useForm()

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { Row, Table, Typography, Popconfirm, Tooltip, Tag, notification, Space, Button } from 'antd'
+import { Row, Table, Typography, Popconfirm, Tooltip, Tag, Space, Button } from 'antd'
+import { notification } from 'helpers/feedback'
 import { PlusOutlined } from '@ant-design/icons'
 import ProductoClavePeticiones from 'services/axios/productoClaves'
 import ModalFormaClave from './formaClaves'

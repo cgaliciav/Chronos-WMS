@@ -57,7 +57,7 @@ const UsuariosListado = () => {
       },
       // filters: [{ text: 'Male', value: 'male' }, { text: 'Female', value: 'female' }],
       width: '15%',
-      filteredValue: ['activo'],
+      defaultFilteredValue: ['activo'],
       ...obtenerPropsBusquedaCheck([
         {
           text: 'Inhabilitado',

@@ -1,5 +1,6 @@
 import React, { useEffect,useState } from 'react'
-import { Table,Row,Col,Dropdown, Menu, Button, notification, Tag } from 'antd'
+import { Table, Row, Col, Dropdown, Button, Tag } from 'antd'
+import { notification } from 'helpers/feedback'
 import { PrinterFilled,DownOutlined } from '@ant-design/icons';
 import ReportePeticiones from 'services/axios/reportes'
 import UltimoArticuloAgregado from './ultimoArticuloAgregado';
@@ -125,24 +126,39 @@ const TablaOperaciones = ({
         <h2 className="text-truncate">{titulo}</h2>
       </Col>
       <Col span={8}>
-        <Row justify="end" type="flex" />
+        <Row justify="end" />
       </Col>
       <Col span={8}>
         {/* <Row justify="end" style={{ marginTop: '15px' }}> */}
         {/* <div>
 
         </div> */}
-        <Dropdown 
-          overlay={
-            <Menu>
-              <Menu.Item>
-                <Tag color="cyan"> <a href="#" onClick={generarReporte}> <PrinterFilled /> Sin Foto </a></Tag>
-              </Menu.Item>
-              <Menu.Item>
-                <Tag color="purple"> <a href="#" onClick={generarReporteConFoto}> <PrinterFilled /> Con Foto</a></Tag>
-              </Menu.Item>
-            </Menu>
-          }
+        <Dropdown
+          menu={{
+            // antd 5: `items` en lugar de `overlay` con `Menu.Item`.
+            items: [
+              {
+                key: 'sinFoto',
+                label: (
+                  <Tag color="cyan">
+                    <a href="#" onClick={generarReporte}>
+                      <PrinterFilled /> Sin Foto
+                    </a>
+                  </Tag>
+                ),
+              },
+              {
+                key: 'conFoto',
+                label: (
+                  <Tag color="purple">
+                    <a href="#" onClick={generarReporteConFoto}>
+                      <PrinterFilled /> Con Foto
+                    </a>
+                  </Tag>
+                ),
+              },
+            ],
+          }}
         >
           <Button style={{float:"right",marginTop:'-16px'}} type="link" size="small">
             Reportes<DownOutlined />
@@ -152,7 +168,7 @@ const TablaOperaciones = ({
           </a> */}
         </Dropdown>
         {/* </Row> */}
-        <Row justify="center" type="flex">
+        <Row justify="center">
           <h3>{`TOTAL: ${pagination.total || '-'}${pagination.total !== pagination.totalItems?' *filtrado':''} `}</h3>
         </Row>
       </Col>
@@ -185,7 +201,7 @@ const TablaOperaciones = ({
                 //   column={{ lg: 1, md: 1, sm: 1, xs: 1 }}
                 // >
                 //   <Descriptions.Item label="Operacion:">{`${record.operacion.movimientoTipo.nombre} (#${record.id})`}</Descriptions.Item>
-                //   <Descriptions.Item label="Fecha:">{moment(record.operacion.fecha).format('D-MMM-YY HH:mm') }</Descriptions.Item>
+                //   <Descriptions.Item label="Fecha:">{dayjs(record.operacion.fecha).format('D-MMM-YY HH:mm') }</Descriptions.Item>
                 //   <Descriptions.Item label="Proyecto:"><strong>{record.operacion.proyecto.nombre}</strong></Descriptions.Item>
                 //   <Descriptions.Item label="Clave:">{record.inventarioActual.producto.productoClaves[record.inventarioActual.producto.productoClaves.length-1].barras}</Descriptions.Item>
                 //   <Descriptions.Item label="Producto:">{record.inventarioActual.producto.titulo} </Descriptions.Item>

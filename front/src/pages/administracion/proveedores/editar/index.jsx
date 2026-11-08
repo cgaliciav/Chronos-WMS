@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import Titulo from 'components/Titulo'
 import { useNavigate, useLocation } from 'react-router'
-import { Button, Divider, notification, Row } from 'antd'
+import { Button, Divider, Row } from 'antd'
+import { notification } from 'helpers/feedback'
 import QueryString from 'query-string'
 import ACL from 'components/cleanui/system/ACL'
 import ProveedorPeticiones from 'services/axios/proveedores'
@@ -116,7 +117,7 @@ const ProveedorEditar = () => {
       </div>
       <div className="card">
         <div className="card-header">
-          <Row justify="end" type="flex">
+          <Row justify="end">
             <Button
               type={proveedor.estatus !== 'inactivo' ? 'default' : 'primary'}
               danger={proveedor.estatus !== 'inactivo'}

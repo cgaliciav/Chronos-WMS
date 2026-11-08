@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
-import moment from 'moment'
-import 'moment/locale/es'
+import dayjs from 'dayjs'
 import { Form, Button, Select, Input, Skeleton, InputNumber, Row } from 'antd'
 import { mapeoOpciones } from 'helpers/funcionesExtras'
 import AreaPeticiones from 'services/axios/areas'
@@ -89,7 +88,6 @@ const FormaEdicionArticulo = ({
   // uef
   useEffect(() => {
     setHabilitadoInterno(false)
-    moment.locale('es')
     Promise.all([BodegaPeticiones.listadoSimple(), AreaPeticiones.listadoSimple()])
       .then(resp => {
         if (resp !== undefined) {

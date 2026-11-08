@@ -1,12 +1,12 @@
 # front/ · guía para agentes
 
-SPA del almacén. **React 18.3 · antd 4.24 · Zustand 5 · react-router 7 (hash, data router) ·
+SPA del almacén. **React 19.3 · antd 5.29 · dayjs · Zustand 5 · react-router 8 (hash, data router) ·
 Vite 8 · TypeScript 5.9 (`allowJs`, código heredado en `.js/.jsx`) · Node 24 · npm**.
 Construida sobre la plantilla comercial **Clean UI Admin Template**; el plan
 `docs/planes/01-front-actualizacion-antd.md` describe cómo retirarla y actualizar todo el stack.
 Arquitectura detallada: `docs/front/arquitectura.md`. Fallos conocidos: `docs/hallazgos-codigo.md` (sección B).
-**Estado del plan 01:** fases 0-3 hechas (línea base, borrado de la plantilla muerta, CRA → Vite + TypeScript,
-React 18 + Router 7 + Zustand + servicios en TS). Siguiente: fase 4 (antd 5, dayjs, React 19 y Router 8).
+**Estado del plan 01:** fases 0-4 hechas (línea base, borrado de la plantilla muerta, CRA → Vite + TypeScript,
+React + Router + Zustand + servicios en TS, antd 5 + dayjs + React 19). Siguiente: fase 5 (antd 6).
 Rutas, roles y endpoints: `docs/front/inventario-rutas.md`; verificación manual: `docs/front/checklist-humo.md`.
 
 Scripts (Node 24, `nvm use`): `npm run dev` (puerto 3000, proxy `/api` → `http://localhost:4100`),
@@ -31,15 +31,16 @@ src/services/axios/         TypeScript: apiClient + PeticionBase genérica + 20 
 src/services/menu/index.js  menú estático con `role` por entrada
 src/types/api.ts            tipos de las respuestas del API
 src/router.tsx              67 rutas (createHashRouter + React.lazy); layouts/index.jsx es el elemento raíz
-src/index.tsx               createRoot, ConfigProvider es_ES, Sentry (solo con VITE_SENTRY_DSN)
+src/index.tsx               createRoot, ConfigProvider (es_ES + tema.ts), <App>, Sentry (solo con VITE_SENTRY_DSN)
+src/tema.ts                 tokens del tema claro de antd 5 (colores, fuente Mukta, radios)
 ```
 
 **Lo que queda de la plantilla está en uso** (las demos se borraron en la fase 1 del plan 01):
 `src/components/cleanui/{layout,system}` (layout, `ACL`, `Login`, páginas de error) y los estilos globales que
-importa `global.scss`: `components/{kit-core,kit-vendors,cui-styles}` y `components/kit/core/mixins.scss`. El tema
-de antd está en `src/styles/antd.less`, dentro de `[data-kit-theme='default']` (atributo fijo en `index.html`) para
-conservar la cascada de CRA; `vite.config.ts` lleva el plugin PostCSS que limpia ese ámbito. No añadas código
-nuevo en la plantilla; todo esto se retira en las fases 4-6.
+importa `global.scss`: `components/{kit-core,kit-vendors/{bootstrap,perfect-scrollbar},cui-styles}` y
+`components/kit/core/mixins.scss`, más `src/styles/layout-plantilla.css` (reglas del layout sobre antd). El tema de
+antd 5 se define con tokens en `src/tema.ts` (no hay LESS). No añadas código nuevo en la plantilla; todo esto se
+retira en la fase 6.
 
 ## Convenciones
 
@@ -53,7 +54,12 @@ nuevo en la plantilla; todo esto se retira en las fases 4-6.
   importado de `'react-router'` (no existe `react-router-dom`). Título de página: `<Titulo texto="…" />`.
 - Token y localStorage solo vía `helpers/storage.ts`; URLs de archivos que carga el navegador con `conToken(url)`.
 - Variables de entorno con `import.meta.env.VITE_*` (tipadas en `src/vite-env.d.ts`); nada de `process.env`
-  ni `global` (Vite no los inyecta en el navegador). `moment` se importa por defecto (`import moment from 'moment'`).
+  ni `global` (Vite no los inyecta en el navegador).
+- Fechas con **dayjs** (`import dayjs from 'dayjs'`; plugins y locale `es-mx` en `helpers/fechas.ts`). Los
+  `DatePicker` reciben y devuelven objetos dayjs.
+- `notification`/`message` se importan de `helpers/feedback` (no de `'antd'`): usan el contexto de `<App>`.
+- API de antd 5 sin lo obsoleto: `items` en `Menu`/`Dropdown menu`/`Tabs`/`Collapse`/`Steps`, `open` en
+  `Modal`/`Drawer`, `components/ui/Comentario` en vez de `Comment`. El objetivo es 0 avisos en la consola de `dev`.
 - Cada página = `index.jsx` + carpeta `componentes/` (`forma*.jsx`, `tabla*.jsx`, `columnas*.jsx`).
 - Permisos: envuelve páginas y acciones con `<ACL roles={['CODIGO-ROL']} redirect>`; los códigos son los
   `codigoRol` del API (`services/menu/index.js` tiene la lista por entrada de menú).
@@ -61,7 +67,7 @@ nuevo en la plantilla; todo esto se retira en las fases 4-6.
   Si el API falla, el interceptor muestra la notificación y **rechaza** la promesa (F1 corregido): maneja el
   error con `.catch(() => {})` o `try/catch/finally` (apaga spinners en `finally`; éxito solo dentro del `try`).
 - Tablas server-side: antd `Table` + `PeticionBase.listado(endpoint, { sortField, sortOrder, pagination, filters })`.
-- Formularios con `Form.useForm` (API antd 4). Fechas con `moment` (se migrará a `dayjs`).
+- Formularios con `Form.useForm`. Pruebas de componentes con `renderizar()` de `src/test/renderizar.tsx` (mismo `ConfigProvider`).
 - Estilo: Prettier 3 (`.prettierrc.json`: sin punto y coma, comillas simples, 100 columnas) y ESLint 10
   (`eslint.config.js`: typescript-eslint, @eslint-react, react-hooks). Respeta el fin de línea de cada archivo (hay CRLF heredados).
 - No introduzcas más dependencias de la plantilla (bootstrap, reactstrap, `kit__*`/`cui__*` clases) en páginas nuevas:
@@ -74,9 +80,7 @@ nuevo en la plantilla; todo esto se retira en las fases 4-6.
 ## Qué no hacer
 
 - No actualices `antd`, `react` o `react-router` de forma aislada: sigue el orden de fases del plan 01
-  (CRA→Vite+TypeScript ✅, React 18/Router 7/Zustand ✅, luego antd 5 + React 19/Router 8, antd 6, retirar Clean UI).
-- No quites `data-kit-theme="default"` de `index.html` ni el envoltorio de `src/styles/antd.less` antes de la fase 4:
-  sin ellos `kit-vendors` se impone a antd en todos los componentes.
+  (CRA→Vite+TypeScript ✅, React/Router/Zustand ✅, antd 5 + React 19/Router 8 ✅, luego antd 6, retirar Clean UI).
 - Decisiones ya tomadas (`docs/decisiones.md`): Vite + npm, Zustand (no redux ni RTK), TypeScript a la par,
   solo tema claro, sin MagicBell (notificaciones propias), sin `api.ipify.org` (la IP la toma el API).
 - No borres `components/cleanui/system/ACL` sin su reemplazo (`app/auth/ACL`, plan 01 fase 6): lo importan 76 archivos.

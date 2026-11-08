@@ -1,12 +1,10 @@
 import React, { useState } from 'react'
 import Titulo from 'components/Titulo'
 import { useNavigate } from 'react-router'
-import {
-  Divider,
-  notification
-} from 'antd'
+import { Divider } from 'antd'
+import { notification } from 'helpers/feedback'
 import ACL from 'components/cleanui/system/ACL'
-import Moment from 'moment'
+import dayjs from 'dayjs'
 import ProyectoPeticiones from 'services/axios/proyectos'
 import FormaProyecto from '../componentes/forma'
 
@@ -64,7 +62,7 @@ const ProyectoNuevo = () =>{
               habilitado
               valoresIniciales={{
                   productor:".",
-                  fecha:Moment(),
+                  fecha:dayjs(),
                   descripcion:"-",
                   tipoProyecto:"interno",
               }}

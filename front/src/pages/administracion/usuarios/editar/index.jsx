@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import Titulo from 'components/Titulo'
 import { useNavigate, useLocation } from 'react-router'
-import { Button, Divider, notification, Row } from 'antd'
+import { Button, Divider, Row } from 'antd'
+import { notification } from 'helpers/feedback'
 import QueryString from 'query-string'
 import ACL from 'components/cleanui/system/ACL'
-import moment from 'moment'
+import dayjs from 'dayjs'
 import UsuarioPeticiones from 'services/axios/usuarios'
 import FormaUsuario from '../componentes/forma'
 
@@ -142,7 +143,7 @@ const UsuarioEditar = () => {
       </div>
       <div className="card">
         <div className="card-header">
-          <Row justify="end" type="flex">
+          <Row justify="end">
             <Button
               type={usuario.estatus !== 'inactivo' ? 'default' : 'primary'}
               danger={usuario.estatus !== 'inactivo'}
@@ -160,7 +161,7 @@ const UsuarioEditar = () => {
             valores={{
               nombre: usuario.nombre,
               correo: usuario.correo,
-              fechaVencimiento: moment(usuario.vencimiento),
+              fechaVencimiento: dayjs(usuario.vencimiento),
               areas: usuario.areas.map(elem => elem.id),
               bodegas: usuario.bodegas.map(elem => elem.id),
               proyectosExternos: usuario.proyectos

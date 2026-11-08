@@ -24,7 +24,7 @@ const ModalComentarios = ({
 }) => {
   return (
     <Modal
-      visible={mostrarModal}
+      open={mostrarModal}
       centered
       width="70%"
       // style={{ height: '90%' }}

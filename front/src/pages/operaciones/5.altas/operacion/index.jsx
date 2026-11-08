@@ -3,7 +3,8 @@ import Titulo from 'components/Titulo'
 import { useLocation } from 'react-router'
 import { useUsuarioStore } from 'stores/usuario.store'
 import QueryString from 'query-string'
-import { Row, Button, Col, Typography, notification, Space } from 'antd'
+import { Row, Button, Col, Typography, Space } from 'antd'
+import { notification } from 'helpers/feedback'
 import ACL from 'components/cleanui/system/ACL'
 import GrupoPeticiones from 'services/axios/grupos'
 import ModalImagenes from 'pages/componentes/modalImagenes'
@@ -241,7 +242,7 @@ const AltasOperacion = () => {
               </Row>
             </Col>
             <Col span={12}>
-              <Row justify="end" type="flex">
+              <Row justify="end">
                 <Button
                   type={estatusGrupo !== 'inactivo' ? 'default' : 'primary'}
                   danger={estatusGrupo !== 'inactivo'}
@@ -262,7 +263,7 @@ const AltasOperacion = () => {
               </Typography.Title>
             </Col>
             <Col span={8}>
-              <Row justify="center" align="bottom" type="flex">
+              <Row justify="center" align="bottom">
                 <Space>
                   {/* <Button
                     type="primary"

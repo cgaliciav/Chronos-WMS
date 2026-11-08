@@ -1,4 +1,4 @@
-import { notification } from 'antd'
+import { notification } from 'helpers/feedback'
 import BodegaPeticiones from 'services/axios/bodegas'
 
 export default class AccionesTablaProveedores {

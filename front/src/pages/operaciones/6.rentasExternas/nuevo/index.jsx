@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import Titulo from 'components/Titulo'
 import { useNavigate } from 'react-router'
-import { notification } from 'antd'
+import { notification } from 'helpers/feedback'
 // import QueryString from 'query-string'
-import moment from 'moment'
+import dayjs from 'dayjs'
 import ACL from 'components/cleanui/system/ACL'
 import GrupoPeticiones from 'services/axios/grupos'
 import FormaConfiguracionGrupo from 'pages/operaciones/componentes/formaConfiguracionGrupo'
@@ -73,7 +73,7 @@ const RentasNuevo = () => {
             // fechaInicial
             // fechaFinal
             // bodega
-            valoresIniciales={{nombre:moment().format('x')}} 
+            valoresIniciales={{nombre:dayjs().format('x')}} 
             botonTexto="Crear renta externa"
             prefijoMovimiento='R'
           />

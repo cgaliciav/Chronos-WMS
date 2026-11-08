@@ -1,0 +1,21 @@
+/* Convertido desde SCSS en la fase 4 del plan 01 (sin el bloque del tema oscuro, D10). */
+.carousel :global(.ant-carousel .slick-dots li button) {
+  background-color: gray;
+  height: 10px;
+  border-radius: 5px;
+  border: 2px solid whitesmoke;
+  opacity: 0.9;
+}
+.carousel :global(.slick-dots li.slick-active button) {
+  background-color: whitesmoke;
+  border-radius: 5px;
+  border: 3px solid black;
+  height: 12px;
+  opacity: 0.9;
+}
+
+.hacerGrande {
+  position: absolute;
+  top: 1.33rem;
+  left: 1.66rem;
+}

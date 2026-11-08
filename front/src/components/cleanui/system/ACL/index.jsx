@@ -1,6 +1,6 @@
 import React, { Fragment, useEffect } from 'react'
 import { useNavigate } from 'react-router'
-import { notification } from 'antd'
+import { notification } from 'helpers/feedback'
 import { tieneAlgunRol, useUsuarioStore } from 'stores/usuario.store'
 
 /**

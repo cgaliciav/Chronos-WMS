@@ -1,20 +1,8 @@
 import React, { useEffect, useState } from 'react'
 
-import {
-  Button,
-  Checkbox,
-  Col,
-  Form,
-  notification,
-  Row,
-  Select,
-  Space,
-  Spin,
-  Tag,
-  Typography,
-} from 'antd'
+import { Button, Checkbox, Col, Form, Row, Select, Space, Spin, Tag, Typography } from 'antd'
+import { notification } from 'helpers/feedback'
 import Titulo from 'components/Titulo'
-import 'moment/locale/es'
 import ACL from 'components/cleanui/system/ACL'
 import ReportePeticiones from 'services/axios/reportes'
 import UsuarioPeticiones from 'services/axios/usuarios'

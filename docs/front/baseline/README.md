@@ -36,6 +36,7 @@ imágenes; en las fases 1 y 2 se contaron los píxeles con diferencia de color >
 | Fase | Capturas | Resultado |
 |---|---|---|
 | 1 (borrado de plantilla) | — (idénticas) | Solo cambia la campana de MagicBell (retirada). |
+| 4 (antd 5, dayjs, React 19, Router 8) | [`fase-4/`](fase-4/) | ≈ 3 % frente a la fase 2 (tipografía y controles de antd 5: paginación sin bordes, selector de tamaño también abajo, iconos). Textos de antd en español. Sin avisos en `dev` en las 67 rutas. |
 | 3 (React 18, Router 7, Zustand, servicios TS) | — (idénticas a la fase 2) | 0 % salvo los nombres por defecto con marca de tiempo. Humo de sesión con `flujo-sesion.js`: 10/10. |
 | 2 (CRA → Vite, antd 4.2 → 4.24) | [`fase-2/`](fase-2/) | 0,2-0,7 % de píxeles distintos en 9 rutas; 18 % en `prestamos-operacion`. Sin errores de consola en `build`, `preview` ni `dev` (solo avisos de deprecación de antd 4.24 en `dev`, que resuelve la fase 4). |
 

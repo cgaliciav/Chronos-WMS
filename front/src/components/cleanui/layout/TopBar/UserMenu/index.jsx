@@ -1,7 +1,7 @@
 import React /* , { useState } */ from 'react'
 import { useNavigate } from 'react-router'
 import { UserOutlined } from '@ant-design/icons'
-import { Menu, Dropdown, Avatar /* , Badge */ } from 'antd'
+import { Dropdown, Avatar } from 'antd'
 import { useUsuarioStore } from 'stores/usuario.store'
 import styles from './style.module.scss'
 
@@ -26,57 +26,43 @@ const ProfileMenu = () => {
   //   setCount(count + 1)
   // }
 
-  const menu = (
-    <Menu selectable={false}>
-      <Menu.Item>
-        <strong>
-          Hola, {user.nombre || '???'}
-        </strong>
-        {/* <div>
-          <strong className="mr-1">
-            Pagos:{' '}
-          </strong>
-          Professional
-        </div> */}
-        {/* <div>
-          <strong>
-            Rol:{' '}
-          </strong>
-          {user.role || '—'}
-        </div> */}
-        {/* </Menu.Item>
-        <Menu.Divider />
-        <Menu.Item> */}
-        <div>
-          <strong>
-            Email:{' '}
-          </strong>
-          {user.correo || '—'}
-          <br />
-          {/* <strong>
-            Teléfono:{' '}
-          </strong>
-          {user.phone || '—'} */}
-        </div>
-      </Menu.Item>
-      <Menu.Divider />
-      <Menu.Item>
+  // `items` de antd 5 (antes `Menu.Item` como hijos y `Dropdown overlay`).
+  const items = [
+    {
+      key: 'usuario',
+      label: (
+        <>
+          <strong>Hola, {user.nombre || '???'}</strong>
+          <div>
+            <strong>Email: </strong>
+            {user.correo || '—'}
+          </div>
+        </>
+      ),
+    },
+    { type: 'divider' },
+    {
+      key: 'cambiarClave',
+      label: (
         <a href="#" onClick={cambiarClave}>
           <i className="fe fe-user mr-2" />
           Cambiar contraseña
         </a>
-      </Menu.Item>
-      <Menu.Divider />
-      <Menu.Item>
+      ),
+    },
+    { type: 'divider' },
+    {
+      key: 'salir',
+      label: (
         <a href="#" onClick={logout}>
           <i className="fe fe-log-out mr-2" />
           Salir
         </a>
-      </Menu.Item>
-    </Menu>
-  )
+      ),
+    },
+  ]
   return (
-    <Dropdown overlay={menu} trigger={['click']}>
+    <Dropdown menu={{ items, selectable: false }} trigger={['click']}>
       <div className={styles.dropdown}>
         {/* <Badge count={count}> */}
         <Avatar className={styles.avatar} shape="square" size="large" icon={<UserOutlined />} />

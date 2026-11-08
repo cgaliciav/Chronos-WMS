@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react'
-import { notification, Row, Spin, Upload } from 'antd'
+import { Modal, Row, Spin, Upload } from 'antd'
+import { notification } from 'helpers/feedback'
 import { PlusOutlined } from '@ant-design/icons'
 import { apiURLBase } from 'services/axios'
 import { obtenerToken } from 'helpers/storage'
 import ArchivoPeticiones from 'services/axios/archivos'
-import Modal from 'antd/lib/modal/Modal'
 
 const SubirArchivos = ({
   habilitado,
@@ -122,7 +122,7 @@ const SubirArchivos = ({
         </Upload>
       </Row>
       <Modal
-        visible={previewVisible}
+        open={previewVisible}
         // title={previewTitle}
         footer={null}
         onCancel={handleCancel}

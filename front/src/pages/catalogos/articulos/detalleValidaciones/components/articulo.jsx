@@ -26,7 +26,7 @@ const ArticuloDatos = ({
           <Validacion productoId={productoId} productoValidado={productoValidado} />
           {/* <Tag color={colores[disponible]}>{disponible}</Tag>
           {disponible === 'cuarentena'
-            ? ` hasta: ${moment(fechaDisponibilidad).format('D MMM YYYY')}  `
+            ? ` hasta: ${dayjs(fechaDisponibilidad).format('D MMM YYYY')}  `
             : '  '} */}
           <Tag style={{ fontSize: '130%' }}> {productoClaves.length > 0 ? productoClaves[0].barras : '---'} </Tag>
         </Space>

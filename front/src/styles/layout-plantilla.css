@@ -1,6 +1,8 @@
-// Import mixins
-@import 'components/kit-core/mixins.scss';
-
+/*
+ * Reglas estructurales del layout de la plantilla Clean UI sobre antd (antes en kit-vendors/antd/css/layout.scss,
+ * retirado en la fase 4 junto con el resto de ajustes de antd 4). Temporal: desaparece con el layout de antd
+ * puro de la fase 6 (plan 01).
+ */
 .ant-layout {
   min-height: 100vh !important;
   min-width: 0;

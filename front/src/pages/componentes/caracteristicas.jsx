@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { Button, notification, Popconfirm, Row, Table, Tag, Tooltip, Typography, Space } from 'antd'
+import { Button, Popconfirm, Row, Table, Tag, Tooltip, Typography, Space } from 'antd'
+import { notification } from 'helpers/feedback'
 import { PlusOutlined } from '@ant-design/icons'
 // import ACL from 'components/cleanui/system/ACL';
 import ProductoCaracteristicaPeticiones from 'services/axios/productoCaracteristicas'

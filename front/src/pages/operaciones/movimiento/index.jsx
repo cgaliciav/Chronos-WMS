@@ -126,14 +126,25 @@ const DetalleMovimiento = () => {
             />
           ):(null)}
           <Divider />
-          <Tabs defaultActiveKey="comentariosMovimiento" size="small">
-            <Tabs.TabPane tab="Historial" key="historial">
+          <Tabs defaultActiveKey="comentariosMovimiento" size="small"
+            items={[
+              {
+                key: 'historial',
+                label: 'Historial',
+                children: (
+                  <>
               <Movimientos 
                 inventarioActualId={inventarioActualId} 
                 loading={cargando}
               />
-            </Tabs.TabPane> 
-            <Tabs.TabPane tab="Comentarios Movimiento" key="comentariosMovimiento">
+                  </>
+                ),
+              },
+              {
+                key: 'comentariosMovimiento',
+                label: 'Comentarios Movimiento',
+                children: (
+                  <>
               <Comentarios
                 comentarios={comentariosMovimiento}
                 loading={cargando}
@@ -144,8 +155,14 @@ const DetalleMovimiento = () => {
                 fnActualizar={fnActualizar}
               />
 
-            </Tabs.TabPane> 
-            <Tabs.TabPane tab="Archivos Movimiento" key="archivosMovimiento">
+                  </>
+                ),
+              },
+              {
+                key: 'archivosMovimiento',
+                label: 'Archivos Movimiento',
+                children: (
+                  <>
               <SubirArchivos
                 habilitado
                 archivosIdsIniciales={archivosMovimiento}
@@ -153,22 +170,39 @@ const DetalleMovimiento = () => {
                 relacion="Operacion"
                 relacionId={operacionId} 
               />
-            </Tabs.TabPane> 
-            <Tabs.TabPane tab="Comentarios Grupo" key="comentariosGrupo" disabled={grupoId===0}>
+                  </>
+                ),
+              },
+              {
+                key: 'comentariosGrupo',
+                label: 'Comentarios Grupo',
+                disabled: grupoId===0,
+                children: (
+                  <>
               <Comentarios
                 comentarios={comentariosGrupo}
                 loading={cargando}
                 disabled
               />
-            </Tabs.TabPane> 
-            <Tabs.TabPane tab="Archivos Grupo" key="archivosGrupo" disabled={grupoId===0}>
+                  </>
+                ),
+              },
+              {
+                key: 'archivosGrupo',
+                label: 'Archivos Grupo',
+                disabled: grupoId===0,
+                children: (
+                  <>
               <SubirArchivos
                 habilitado={false}
                 archivosIdsIniciales={archivosGrupo}
                 cargando={cargando}
               />
-            </Tabs.TabPane> 
-          </Tabs>
+                  </>
+                ),
+              },
+            ]}
+          />
         </div>
       </div>
     </ACL>

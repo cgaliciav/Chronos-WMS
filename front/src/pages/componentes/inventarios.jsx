@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Table, Row, Button } from 'antd'
-import moment from 'moment'
-import 'moment/locale/es'
+import dayjs from 'dayjs'
 import ProductoInventariadoPeticiones from 'services/axios/productoInventariado'
 import { AlertTwoTone, FrownTwoTone, MehTwoTone, SmileTwoTone } from '@ant-design/icons'
 
@@ -43,8 +42,7 @@ const Inventarios = ({ productoId = 0, loading }) => {
       dataIndex: 'fecha',
       align: 'right',
       render: fecha => {
-        moment.locale('es')
-        return moment(fecha).format('D-MMM-YYYY HH:mm')
+        return dayjs(fecha).format('D-MMM-YYYY HH:mm')
       },
     },
     {
