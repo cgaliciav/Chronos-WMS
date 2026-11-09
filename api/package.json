@@ -1,6 +1,6 @@
 {
   "name": "almacen-api",
-  "version": "2.63.67",
+  "version": "2.80.0",
   "description": "Proyecto de Almacen para Sony Mexico usando TypeORM, Express, Multer, Sharp...etc",
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
