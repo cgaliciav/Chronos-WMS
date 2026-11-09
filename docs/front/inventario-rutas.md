@@ -192,7 +192,7 @@ Mismos 7 métodos estándar: `listadoSimple` → `GET /R/list-names`, `listado` 
 | `obtenerId` | `GET /groups/:id` | |
 | `nuevo` / `editar` | `POST /groups/new` / `PUT /groups/edit` | `editar` sin uso |
 | `quitar` | `DELETE /groups/remove` | |
-| `nuevoConCompra` / `nuevoConDetalles` / `nuevoConInventario` | `POST /groups/new-purchase` / `new-details` / `new-inventory` | `nuevoConInventario` solo en `operaciones/7.inventario/nuevo` (sin ruta) |
+| `nuevoConCompra` / `nuevoConDetalles` / `nuevoConInventario` | `POST /groups/new-purchase` / `new-details` / `new-inventory` | `nuevoConInventario` sin uso en el front (su única página, `operaciones/7.inventario/nuevo`, se borró al cerrar la fase 6) |
 | `editarConDetalle` / `editarConCompra` / `editarconInventario` | `PUT /groups/edit-details` / `edit-purchase` / `edit-inventory` | solo `editarConCompra` en uso |
 | `movimientosPorGrupo` | `POST /groups/activity-list-by-group` | |
 | `movimientosActivosProyecto` | `POST /groups/active-activity-list` | |
@@ -307,7 +307,7 @@ Mismos 7 métodos estándar: `listadoSimple` → `GET /R/list-names`, `listado` 
    las 8 `*/operacion`, `/compras/editar` y `/movimientos/detalle`. Se llega a ellas desde enlaces de tablas
    (parámetro `?uid=` en la query).
 7. **Rutas comentadas o páginas sin ruta**: `/articulos/editar/inventarioActual` (ruta comentada; sus archivos
-   están vacíos), `operaciones/7.inventario/nuevo` (82 líneas, F6), `reportes/5.inventario` (121 líneas),
+   están vacíos), `operaciones/7.inventario/nuevo` (82 líneas, F6; borrada al cerrar la fase 6), `reportes/5.inventario` (121 líneas; borrada en la fase 3),
    `administracion/parametros/editar` y `reportes/{1.general,2.movimientos/inde.js,4.ultimoUso}` (vacíos, F15).
 8. **Menú**: ninguna entrada activa apunta a una ruta inexistente. Las entradas comentadas sí apuntan a rutas que
    no existen (`/inventario/*`, `/operacion/editar`, `/reporte/{general,movimientos,cierre,depuracion}`,
