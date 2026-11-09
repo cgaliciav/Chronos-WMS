@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Fase 1: crea (o arranca) la VM local de staging con libvirt/KVM.
-# Mismas specs que producción: Ubuntu 24.04, 4 vCPU, 8 GB RAM.
+# Ubuntu 24.04 como producción; 2 vCPU y 4 GB RAM (suficiente para ~6-12 usuarios).
 # shellcheck source=lib.sh
 source "$(dirname "$0")/lib.sh"
 

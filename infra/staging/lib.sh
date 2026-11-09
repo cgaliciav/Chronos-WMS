@@ -15,8 +15,8 @@ DB_NAME="almacen_sony_migracion"
 DB_USER="almacen_usr"
 
 VM_NAME="chronos-staging"
-VM_VCPUS=4
-VM_RAM_MB=8192
+VM_VCPUS=2
+VM_RAM_MB=4096
 VM_DISK_GB=150
 VM_USER="cesargv"
 VM_SSH_PUBKEY="$HOME/.ssh/id_ed25519.pub"

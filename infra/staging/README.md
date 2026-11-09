@@ -7,7 +7,7 @@ mismo SO, mismo runtime, misma imagen del backend, misma DB y mismos archivos. P
 
 | | Producción | Staging |
 |---|---|---|
-| SO / HW | Ubuntu 24.04, 4 vCPU, 8 GB | Igual (VM libvirt `chronos-staging`) |
+| SO / HW | Ubuntu 24.04, 4 vCPU, 8 GB | Ubuntu 24.04, **2 vCPU, 4 GB** (VM libvirt `chronos-staging`; suficiente para ~6-12 usuarios) |
 | Runtime | docker.io + docker-compose v1 (apt) + nginx en el host | Igual |
 | DB | `mariadb:10.3`, `almacen_sony_migracion` (~24.5 GB) | Igual, restaurada de `mysqldump --single-transaction` |
 | Backend | imagen `almacen-backend:<tag>` que corre en prod | La **misma imagen** (`docker save`/`load`) |
@@ -24,7 +24,7 @@ Diferencias intencionales:
 - `/dev/kvm`, `libvirt`, `virt-install`, `qemu-utils`; usuario en grupos `libvirt` y `kvm`.
 - Acceso `ssh linode-prod`.
 - ~80 GB libres en `/var/lib/libvirt/images` y ~40 GB en `~/staging-cache`.
-- 8 GB de RAM libres para la VM (ajustable en `staging.conf`).
+- 4 GB de RAM libres para la VM (ajustable en `staging.conf`).
 
 ## Uso
 
@@ -35,7 +35,7 @@ cp staging.conf.example staging.conf   # opcional
 ./replicate-prod.sh                    # primera vez: VM + copia de prod + aprovisionamiento
 ```
 
-Tiempos aproximados: VM 5-10 min · dump 30-90 min · rsync 13 GB según red · restore 1-2 h.
+Tiempos medidos (2026-11-08): VM ~2 min · dump ~28 min (31 GB gz) · rsync exogrid ~7 min · restore ~21 min (con 4 vCPU; con 2 vCPU puede tardar más).
 El dump genera mucha lectura en prod; si es horario laboral el script pide confirmación. Todo es reanudable:
 si algo falla, vuelve a ejecutar el mismo comando.
 
