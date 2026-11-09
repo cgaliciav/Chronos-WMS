@@ -5,6 +5,7 @@ import { Producto } from "../entity/Producto";
 import { ProductoInventariado, InventarioEstado } from "../entity/ProductoInventariado";
 import { Sesion } from "../entity/Sesion";
 import { idSeguro } from "../helpers/ids";
+import { logger } from "../helpers/logger";
 // import { ProductoInventariado, ValidacionEstado } from "../entity/ProductoInventariado";
 
 export default class ProductoInventariadoController {
@@ -39,7 +40,7 @@ export default class ProductoInventariadoController {
     res: Response,
     next: NextFunction
   ) => {
-    console.log("ProductoInventariadoController-InventarioExiste",{body:req.body});
+    logger.info("ProductoInventariadoController-InventarioExiste",{body:req.body});
     const { productoId, nombre: nombre_comentario = "" } = req.body;
     const { jwtPayload } = res.locals;
     try {
@@ -63,7 +64,7 @@ export default class ProductoInventariadoController {
 
     const { productoId, nombre: nombre_comentario = "" } = req.body;
     const { jwtPayload } = res.locals;
-    console.log("ProductoInventariadoController-InventarioNoExiste", { body: req.body });
+    logger.info("ProductoInventariadoController-InventarioNoExiste", { body: req.body });
     try {
       const respuesta = await ProductoInventariadoController.guardar(
         productoId,
@@ -82,7 +83,7 @@ export default class ProductoInventariadoController {
     res: Response,
     next: NextFunction
   ) => {
-    console.log("ProductoInventariadoController - NOREVISADO", { body: req.body });
+    logger.info("ProductoInventariadoController - NOREVISADO", { body: req.body });
     const { productoId, nombre: nombre_comentario = "" } = req.body;
     const { jwtPayload } = res.locals;
     try {
@@ -103,7 +104,7 @@ export default class ProductoInventariadoController {
     res: Response,
     next: NextFunction
   ) => {
-    console.log("ProductoInventariadoController - DETALLE", { param: req.params });
+    logger.info("ProductoInventariadoController - DETALLE", { param: req.params });
     const { id } = req.params;
     //const { jwtPayload } = res.locals;
     try {

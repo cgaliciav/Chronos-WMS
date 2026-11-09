@@ -4,6 +4,7 @@ import { EstatusEstado } from "../entity/common/NombreEstatus";
 import { Sesion } from "../entity/Sesion";
 import LogGeneralController from "../controllers/LogGeneral.Controller";
 import { LogTipo } from "../entity/LogGeneral";
+import { logger } from "../helpers/logger";
 
 // import { LoadEvent } from "typeorm/subscriber/event/LoadEvent";
 
@@ -53,7 +54,7 @@ const nuevaOperacion = async (connection:Connection,entity:any,funcionamiento:Fu
         }
         await connection.getRepository(LogFuncionamiento).save(logOp)
     } catch (error) {
-        if (process.env.NODE_ENV !== "test") console.log("Error en suscriptor", error.message);
+        logger.error("Error en el suscriptor de auditoría:", error.message);
     }
 }
 

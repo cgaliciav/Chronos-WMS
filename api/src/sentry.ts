@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/node";
-import { version } from "../package.json";
+import { versionPaquete as version } from "./helpers/paquete";
 
 /**
  * Sentry queda PREPARADO: solo se inicializa si existe SENTRY_DSN. Debe llamarse antes de crear la app.

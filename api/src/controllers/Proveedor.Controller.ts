@@ -3,6 +3,7 @@ import { getRepository } from "typeorm";
 import { Proveedor } from "../entity/Proveedor";
 import CommonController from "./common/Common.Controller";
 import { construirFiltros } from "../helpers/filtrosTabla";
+import { logger } from "../helpers/logger";
 
 
 // Filtros de las tablas antd, parametrizados (antes se interpolaban llaves y valores: hallazgo C1).
@@ -37,7 +38,7 @@ class ProveedorController{
 
   //TABLA SEGUN LO REQUIEREN LAS TABLAS DE ANTD
     static listaTabla = async (req: Request, res: Response, next: NextFunction) =>{
-        console.log("******* LISTA TABLA PROVEEDORES BODY",req.body)
+        logger.info("******* LISTA TABLA PROVEEDORES BODY",req.body)
         CommonController.listaTabla(
             getRepository(Proveedor),
             req.body,

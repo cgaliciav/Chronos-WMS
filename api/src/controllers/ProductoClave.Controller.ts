@@ -1,7 +1,7 @@
 
 
 import { NextFunction, Request, Response } from "express";
-import { getRepository } from "typeorm";
+import { getRepository, EntityManager, getManager } from "typeorm";
 import { Producto } from "../entity/Producto";
 import { ProductoClave } from "../entity/ProductoClave";
 import { AppError } from "../helpers/errorClases";
@@ -24,7 +24,7 @@ class ProductoClaveController{
     // XXX NO SE DEBEN BORRAR NI EDITAR CODIGOS ASIGNADOS.
 
     
-    static guardar=async (productoCodigos:{barras:string,barrasTipo:string}[],sesionId:number)=>{
+    static guardar=async (productoCodigos:{barras:string,barrasTipo:string}[],sesionId:number,manager:EntityManager=getManager())=>{
         const pc=productoCodigos.map(ppcc => {
             const ppccNuevo=new ProductoClave();
             ppccNuevo.barras=ppcc.barras;
@@ -34,7 +34,7 @@ class ProductoClaveController{
         })
 
         return(
-            await getRepository(ProductoClave).save(pc)
+            await manager.save(pc)
         )
 
     }

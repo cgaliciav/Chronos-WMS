@@ -14,7 +14,7 @@ Scripts: `yarn start` (dev, proxy `/api` **no** configurado: usa `REACT_APP_API_
 ```
 src/pages/administracion/   usuarios, proyectos, proveedores, areas, bodegas, parametros
 src/pages/catalogos/        búsquedas (general, por códigos, bajas, por proyecto, por facturas, validaciones, inventario visual), articulos/
-src/pages/operaciones/      1.prestamos 2.devoluciones 3.bajas 4.compras 5.altas 6.rentaExterna 7.inventario 8.previo movimiento/ componentes/
+src/pages/operaciones/      1.prestamos 2.devoluciones 3.bajas 4.compras 5.altas 6.rentaExterna 8.previo movimiento/ componentes/
 src/pages/reportes/         por-usuario, de-cierre
 src/pages/componentes/      modales/formularios compartidos (precios, claves, características, archivos, comentarios, imágenes)
 src/pages/auth/             login, 401, 404, 500, 503

@@ -8,6 +8,8 @@ import { Usuario } from "../entity/Usuario";
 import OperacionDetalleController from "./OperacionDetalle.Controller";
 import { AppError } from "../helpers/errorClases";
 import { idOpcional, idSeguro, idsSeguros } from "../helpers/ids";
+import { exigirProyectoEditable } from "../services/guardasRelacion";
+import { MovimientoTipoId as T } from "../entity/common/MovimientoTipoId";
 
 const crearBaseOperacion = async (
   tipoMovimientoId: number | string,
@@ -99,8 +101,8 @@ class OperacionController {
 
     //SOLO SE PUEDE CAMBIAR DE BAJA JUSTIFICADA A BAJA INJUSTIFICADA
     if (
-      (operacion.movimientoTipo.id == 13 && tipoMovimientoId == 16) ||
-      (operacion.movimientoTipo.id == 16 && tipoMovimientoId == 13)
+      (operacion.movimientoTipo.id === T.BAJA_JUSTIFICADA && Number(tipoMovimientoId) === T.BAJA_INJUSTIFICADA) ||
+      (operacion.movimientoTipo.id === T.BAJA_INJUSTIFICADA && Number(tipoMovimientoId) === T.BAJA_JUSTIFICADA)
     ) {
       operacion.movimientoTipo = await getRepository(
         MovimientoTipo
@@ -122,6 +124,7 @@ class OperacionController {
     const { jwtPayload } = res.locals;
 
     try {
+      await exigirProyectoEditable({ operacionId: idSeguro(operacionId, "operacionId") }, proyectoId);
       await OperacionController.modificar(
         await getRepository(Operacion).findOneOrFail(operacionId, {
           relations: ["movimientoTipo", "proyecto", "usuarios"],

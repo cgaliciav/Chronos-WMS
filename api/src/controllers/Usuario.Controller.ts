@@ -1,4 +1,5 @@
 import { validate } from "class-validator";
+import { OPCIONES_VALIDACION } from "../helpers/validacion";
 import { NextFunction, Request, Response } from "express";
 import { getRepository } from "typeorm";
 import { Area } from "../entity/Area";
@@ -14,6 +15,7 @@ import passGenerator from "../helpers/passGenerator";
 import CommonController, { ResultadoTabla } from "./common/Common.Controller";
 import { aplicarFiltros, columnaSegura, construirFiltros, direccionSegura } from "../helpers/filtrosTabla";
 import LogGeneralController from "./LogGeneral.Controller";
+import { logger } from "../helpers/logger";
 
 
 
@@ -140,7 +142,7 @@ class UsuarioController{
   //Obtener datos generales y los roles del usuario que hace la peticion
   static actual = (req: Request, res: Response, next:NextFunction) =>{
     const {jwtPayload}=res.locals;
-    console.log(`actual>>>>> ${jwtPayload.u}`);
+    logger.info(`actual>>>>> ${jwtPayload.u}`);
     CommonController.obtenerId(
       getRepository(Usuario),
       ["roles"],
@@ -276,7 +278,7 @@ class UsuarioController{
       usuario.areas = await getRepository(Area).findByIds(areasIds);
       usuario.sesionId = si;
 
-      const error = await validate(usuario);
+      const error = await validate(usuario, OPCIONES_VALIDACION);
       if (error.length > 0) {
         const errorMap = error.map(obj=>obj.property);
         throw new AppError(`Error de validación en: ${errorMap.join(", ")}`,400);

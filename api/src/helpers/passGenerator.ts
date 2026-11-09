@@ -41,28 +41,3 @@ export default class  passGenerator{
         return password;
       }    
 }
-// let passGenerator={
-//     esPasswordValido: function(password) {
-//         let uc = password.match(UPPERCASE_RE);
-//         let lc = password.match(LOWERCASE_RE);
-//         let n = password.match(NUMBER_RE);
-//       //   let sc = password.match(SPECIAL_CHAR_RE);
-//         let nr = password.match(NON_REPEATING_CHAR_RE);
-//         return password.length >= minLength &&
-//           !nr &&
-//           uc && uc.length >= uppercaseMinCount &&
-//           lc && lc.length >= lowercaseMinCount &&
-//           n && n.length >= numberMinCount //&&
-//           // sc && sc.length >= specialMinCount;
-//       },
-       
-//       generarPassword: function() {
-//         let password = "";
-//         let randomLength = Math.floor(Math.random() * (maxLength - minLength)) + minLength;
-//         while (!passGenerator.esPasswordValido(password)) {
-//           password = generatePassword(randomLength, false, /[\w\d\?\-]/);
-//         }
-//         return password;
-//       }
-      
-// }

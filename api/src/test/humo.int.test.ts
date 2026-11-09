@@ -5,6 +5,7 @@ import { crearApp } from "../app";
 import { cerrarPruebas, conectarPruebas } from "./conexion";
 import { clienteAdmin } from "./factories";
 import { SEMILLA } from "./seed";
+import { getConnection } from "typeorm";
 
 describe("humo: la aplicación arranca contra MariaDB de pruebas", () => {
   let app: Express;
@@ -45,5 +46,18 @@ describe("humo: la aplicación arranca contra MariaDB de pruebas", () => {
     const { clienteOperador } = await import("./factories");
     const res = await clienteOperador(app).get("/area/list-names");
     expect(res.status).toBe(401);
+  });
+
+  it("con registrarPeticiones cada petición queda en LogPeticiones (sustituye a request-stats)", async () => {
+    const conRegistro = crearApp({ registrarPeticiones: true });
+    const res = await supertest(conRegistro).get("/auth/version?x=1");
+    expect(res.status).toBe(200);
+    let fila: any;
+    for (let i = 0; i < 40 && !fila; i++) {
+      [fila] = await getConnection().query("SELECT * FROM log_peticiones WHERE reqPath = '/auth/version' ORDER BY id DESC LIMIT 1");
+      if (!fila) await new Promise((r) => setTimeout(r, 50));
+    }
+    expect(fila).toEqual(expect.objectContaining({ reqMethod: "GET", resStatus: 200, ok: 1 }));
+    expect(Number(fila.resBytes)).toBeGreaterThan(0);
   });
 });

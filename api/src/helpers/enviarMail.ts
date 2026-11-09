@@ -1,7 +1,7 @@
-import { method } from "lodash";
 import * as nodemailer from "nodemailer";
 import LogGeneralController from "../controllers/LogGeneral.Controller";
 import { LogTipo } from "../entity/LogGeneral";
+import { logger } from "./logger";
 
 let transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || "smtp.postmarkapp.com",
@@ -20,10 +20,10 @@ const SMTP_FROM = process.env.SMTP_FROM || 'telesetalmacen@exogrid.xyz';
 
 transporter.verify()
   .then(success => {
-      console.log("SMTP correcto");
+      logger.info("SMTP correcto");
   })
   .catch(error =>{
-      console.log("SMTP error:", error);
+      logger.error("SMTP error:", error);
   });
 
   let enviarCorreoHTML = (correoDestino:string,subject:string, text:string) =>

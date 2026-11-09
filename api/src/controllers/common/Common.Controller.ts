@@ -1,4 +1,5 @@
 import { validate } from "class-validator";
+import { OPCIONES_VALIDACION } from "../../helpers/validacion";
 import { FindManyOptions, getRepository, Like, Repository, SelectQueryBuilder } from "typeorm";
 import { Archivo } from "../../entity/Archivo";
 import { Area } from "../../entity/Area";
@@ -120,8 +121,11 @@ export default class {
     const qry = fnQuery();
     const conteoTotal = await qry.getCount();
 
-    aplicarFiltros(qry, fnFiltrado(filters ?? {}));
-    const conteoFiltrado = await qry.getCount();
+    const filtrado = fnFiltrado(filters ?? {});
+    aplicarFiltros(qry, filtrado);
+    // Sin condiciones el segundo COUNT sería idéntico al primero (fase 4: una consulta menos por listado).
+    const hayFiltro = typeof filtrado === "string" ? filtrado.length > 0 : filtrado.sql.length > 0;
+    const conteoFiltrado = hayFiltro ? await qry.getCount() : conteoTotal;
 
     qry.orderBy(campoOrden, direccion);
     qry.skip(starts).take(pageSize);
@@ -151,7 +155,7 @@ export default class {
   static nuevo = async (repo: Repository<any>, registro: any, body: any, sesionId: number, camposPermitidos?: string[]) => {
     registro.sesionId = sesionId;
     copiarCampos(registro, body, camposPermitidos);
-    const error = await validate(registro);
+    const error = await validate(registro, OPCIONES_VALIDACION);
     if (error.length > 0) {
       const errorMap = error.map((obj) => obj.property);
       throw new AppError(`Error de validación en: ${errorMap.join(", ")}`, 400);
@@ -168,7 +172,7 @@ export default class {
   static editarConRegistro = async (repo: Repository<any>, registro: any, body: any, sesionId: number, camposPermitidos?: string[]) => {
     registro.sesionId = sesionId;
     copiarCampos(registro, body, camposPermitidos);
-    const error = await validate(registro);
+    const error = await validate(registro, OPCIONES_VALIDACION);
     if (error.length > 0) {
       const errorMap = error.map((obj) => obj.property);
       throw new AppError(`Error de validación en: ${errorMap.join(", ")}`, 400);

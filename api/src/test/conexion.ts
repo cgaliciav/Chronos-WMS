@@ -1,6 +1,8 @@
 import "reflect-metadata";
 import { Connection, ConnectionOptions, createConnection, getConnectionManager } from "typeorm";
 import { ENTIDADES, SUSCRIPTORES } from "../entity";
+import { MIGRACIONES } from "../migration";
+import { aplicarParcheTypeorm } from "../helpers/parcheTypeorm";
 
 /** Opciones de conexión para pruebas, independientes de ormconfig.js y del cwd (clases explícitas, sin glob). */
 export const opcionesConexionPruebas = (extra: Partial<ConnectionOptions> = {}): ConnectionOptions =>
@@ -16,10 +18,12 @@ export const opcionesConexionPruebas = (extra: Partial<ConnectionOptions> = {}):
     logging: false,
     entities: ENTIDADES,
     subscribers: SUSCRIPTORES,
+    migrations: MIGRACIONES,
     ...extra,
   } as ConnectionOptions);
 
 export const conectarPruebas = async (extra: Partial<ConnectionOptions> = {}): Promise<Connection> => {
+  aplicarParcheTypeorm(); // igual que conectarORM: las pruebas ejercitan el parche
   const manager = getConnectionManager();
   if (manager.has("default") && manager.get("default").isConnected) {
     return manager.get("default");

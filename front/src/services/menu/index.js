@@ -254,45 +254,6 @@ export default async function getMenuData() {
         },
       ],
     },
-    // {
-    //   title: 'Inventarios',
-    //   key: 'operaciones-Inventarios',
-    //   role: 'V-OPERACION-INVENTARIO',
-    //   icon: 'icmn icmn-checkbox-checked',
-    //   children: [
-    //     {
-    //       key: 'operaciones-Inventarios-Nuevo',
-    //       title: 'Iniciar Inventario',
-    //       url: '/inventario/nuevo',
-    //       role: 'V-OPERACION-INVENTARIONUEVO',
-    //     },
-    //     {
-    //       key: 'operaciones-Inventarios-ListadoPorGrupo',
-    //       title: 'por Listado',
-    //       url: '/inventario/por-grupo',
-    //       role: 'V-OPERACION-INVENTARIOPORGRUPO',
-    //     },
-    //     // {
-    //     //   key: 'operaciones-Inventarios-Activo',
-    //     //   title: 'Inventario Activo',
-    //     //   rol: ['ADMINISTRADOR', 'OPERACIONES-INVENTARIOS-ACTIVO'],
-    //     //   children: [
-    //     //     {
-    //     //       key: 'operaciones-Inventarios-Activo-Pendientes',
-    //     //       title: 'Pendientes',
-    //     //       url: '/inventario/por-inventariar',
-    //     //       rol: ['ADMINISTRADOR', 'OPERACIONES-INVENTARIOS-ACTIVO-PENDIENTES'],
-    //     //     },
-    //     //     {
-    //     //       key: 'operaciones-Inventarios-Activo-Completo',
-    //     //       title: 'Progreso',
-    //     //       url: '/inventario/actual',
-    //     //       rol: ['ADMINISTRADOR', 'OPERACIONES-INVENTARIOS-ACTIVO-PROGRESO'],
-    //     //     },
-    //     //   ],
-    //     // },
-    //   ],
-    // },
     {
       title: 'Previos',
       key: 'operaciones-Previos',

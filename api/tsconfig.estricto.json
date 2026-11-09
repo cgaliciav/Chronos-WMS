@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "noEmit": true
+  },
+  "include": [
+    "src/services/**/*.ts",
+    "src/helpers/**/*.ts",
+    "src/esquemas/**/*.ts",
+    "src/middlewares/**/*.ts",
+    "src/migration/**/*.ts"
+  ],
+  "//": "strict progresivo (plan 02 fase 4): carpetas nuevas o saneadas. Amplía 'include' a medida que se tipan más archivos. excelFunctions (legado, L11) queda fuera.",
+  "exclude": [
+    "src/helpers/excelFunctions.ts"
+  ]
+}

@@ -1,13 +1,10 @@
-import { json } from "body-parser";
 import { NextFunction, Request, Response } from "express";
 import {
   Brackets,
   getConnection,
   getRepository,
-  Not,
   SelectQueryBuilder,
 } from "typeorm";
-import { EstatusEstado } from "../entity/common/NombreEstatus";
 import { Grupo } from "../entity/Grupo";
 import {
   InventarioActual,
@@ -16,7 +13,7 @@ import {
 import { Movimiento } from "../entity/Movimiento";
 import { Sesion } from "../entity/Sesion";
 import { AppError } from "../helpers/errorClases";
-import { andWhereIn, aplicarFiltros, columnaSegura, combinarFiltros, construirFiltros, direccionSegura } from "../helpers/filtrosTabla";
+import { andWhereIn, aplicarFiltros, columnaSegura, construirFiltros, direccionSegura } from "../helpers/filtrosTabla";
 import { idSeguro, idsSeguros } from "../helpers/ids";
 import CommonController from "./common/Common.Controller";
 import GrupoDetalleController from "./GrupoDetalle.Controller";
@@ -27,9 +24,11 @@ import InventarioActualController, {
   queryBusquedaProyecto,
 } from "./InventarioActual.Controller";
 import MovimientoController from "./Movimiento.Controller";
+import MovimientoService from "../services/MovimientoService";
+import { exigirProyectoEditable } from "../services/guardasRelacion";
+import { MovimientoTipoId as T, TIPOS_ORIGEN, tiposAdmitidosEnListado } from "../entity/common/MovimientoTipoId";
 import ProductoController from "./Producto.Controller";
 import { autogenerarCodigo } from "./ProductoClave.Controller";
-// import { supabase } from "../helpers/_SupabaseConfig";
 
 // Filtros de las tablas antd, parametrizados (hallazgos C1/C3). Las llaves traen alias ("grupo.nombre", "proyecto.id").
 const condicionesWhereAnd = (filters: any) => construirFiltros(filters, { textuales: /nombre|barras|titulo/, fechas: /fecha/ });
@@ -79,41 +78,9 @@ const funcionQueryListadoPorTipoMovimiento = (
   // .addSelect("usuario.nombre")
 };
 
-const funcionQueryInventario = () =>
-  getRepository(Movimiento)
-    .createQueryBuilder("movimiento")
-    .leftJoin("movimiento.sesion", "sesionMovimiento")
-    .leftJoin("sesionMovimiento.usuario", "usuario")
-    .addSelect("usuario.nombre")
-    .leftJoinAndSelect("movimiento.inventarioActual", "inventarioActual")
-    .leftJoin("inventarioActual.bodega", "bodega")
-    .addSelect("bodega.nombre")
-    .leftJoinAndSelect("inventarioActual.producto", "producto")
-    .leftJoin("producto.area", "area")
-    .addSelect("area.nombre")
-    .leftJoin("producto.productoClaves", "productoClaves")
-    .addSelect("productoClaves.barras")
-    .leftJoin("producto.productoPrecios", "productoPrecios")
-    .addSelect("productoPrecios.precio")
-    .leftJoin("productoPrecios.precioTipo", "precioTipo")
-    .addSelect("precioTipo.nombre")
-    .innerJoin("movimiento.grupos", "grupo")
-    .addSelect(["grupo.nombre", "grupo.id"])
-    .leftJoin("movimiento.operacion", "operacion")
-    .addSelect(["operacion.id"])
-    .leftJoin("operacion.movimientoTipo", "movimientoTipo")
-    .addSelect(["movimientoTipo.nombre"]);
-
-const condicionesWhereAndInventarioPendiente = (filters: any) =>
-  combinarFiltros(construirFiltros(filters, { textuales: /nombre|correo|barras|titulo/, fechas: /fecha/ }), "operacion.id is NULL");
-
 // Antes: `if (key.indexOf("nombre") || key.indexOf("correo"))` trataba CUALQUIER llave como LIKE (hallazgo M23).
 const condicionesWhereAndPrestamosActivos = (filters: any) =>
   construirFiltros(filters, { textuales: /nombre|correo|barras|titulo/, fechas: /fecha/ });
-
-
-const condicionesWhereAndInventarioHecho = (filters: any) =>
-  combinarFiltros(construirFiltros(filters, { textuales: /nombre|correo|barras|titulo/, fechas: /fecha/ }), "operacion.id is NOT NULL");
 
 const funcionQueryId = (id: number | string) => {
   return (
@@ -216,55 +183,83 @@ const obtenerMovimientosConOperacionDeGrupo = async (
     .where("grupos.id =:grupoId", { grupoId })
     .getMany();
 
+/**
+ * Préstamos (y compras, rentas, transferencias) pendientes de regreso (plan 02 fase 3, paso 8):
+ *  - Movimientos nuevos: salidas con saldo > 0 en `v_movimiento_saldo`; una fila por salida abierta.
+ *  - Inventarios que solo tienen movimientos legados (sin relaciones): heurística anterior, el último movimiento
+ *    `activo` de cada producto con el inventario `no-disponible`.
+ * Mismos filtros que antes en ambas ramas (proyecto, usuarios de la operación, áreas). `bodegasIds` no se usaba.
+ */
 const funcionQueryListadoPrestamosPendientes = (
   proyectoId: number | string,
   usuariosIds: (number | string)[],
   areasIds: (number | string)[],
   bodegasIds: (number | string)[]
 ) => {
-  const subQuery = getConnection()
+  const areas = areasIds?.length > 0 ? idsSeguros(areasIds, "areasIds") : undefined;
+  const proyecto = proyectoId && proyectoId !== "0" && proyectoId !== 0 ? idSeguro(proyectoId, "proyectoId") : undefined;
+  const usuarios = usuariosIds?.length > 0 ? idsSeguros(usuariosIds, "usuariosIds") : undefined;
+  const aplicarFiltrosComunes = (qb: SelectQueryBuilder<any>) => {
+    if (areas) qb.andWhere("p.areaId IN (:...pp_areasIds)", { pp_areasIds: areas });
+    if (proyecto !== undefined) qb.andWhere("o.proyectoId = :pp_proyectoId", { pp_proyectoId: proyecto });
+    if (usuarios) {
+      qb.andWhere("o.id IN (SELECT ou.operacionId FROM operacion_usuarios_usuario ou WHERE ou.usuarioId IN (:...pp_usuariosIds))", {
+        pp_usuariosIds: usuarios,
+      });
+    }
+    return qb;
+  };
+
+  const nuevos = aplicarFiltrosComunes(
+    getConnection()
+      .createQueryBuilder()
+      .select("v.movimientoId")
+      .from("v_movimiento_saldo", "v")
+      .innerJoin("movimiento", "mv", "mv.id = v.movimientoId")
+      .innerJoin("operacion", "o", "o.id = mv.operacionId")
+      .innerJoin("inventario_actual", "ia", "ia.id = v.inventarioActualId")
+      .innerJoin("producto", "p", "p.id = ia.productoId")
+      .where("v.legado = 0")
+      .andWhere("v.saldo > 0")
+      .andWhere(`v.movimientoTipoId IN (${TIPOS_ORIGEN.join(", ")})`)
+  );
+
+  const rankeados = aplicarFiltrosComunes(
+    getConnection()
+      .createQueryBuilder()
+      .select("m.id", "movimientoId")
+      .addSelect("ROW_NUMBER() OVER (PARTITION BY p.id ORDER BY o.fecha DESC)", "rn")
+      .from("movimiento", "m")
+      .innerJoin("operacion", "o", "o.id = m.operacionId")
+      .innerJoin("inventario_actual", "ia", "ia.id = m.inventarioActualId")
+      .innerJoin("producto", "p", "p.id = ia.productoId")
+      .where("m.estatus = 'activo'")
+      .andWhere("ia.disponible = 'no-disponible'")
+      .andWhere(
+        `NOT EXISTS (SELECT 1 FROM movimiento mn INNER JOIN operacion onn ON onn.id = mn.operacionId
+                      WHERE mn.inventarioActualId = ia.id AND mn.legado = 0 AND onn.movimientoTipoId IN (${TIPOS_ORIGEN.join(", ")}))`
+      )
+  );
+  const legados = getConnection()
     .createQueryBuilder()
-    .select("m.id", "movimientoId")
-    .addSelect("o.fecha", "FechaOperacion")
-    .addSelect("ROW_NUMBER() OVER (PARTITION BY p.id ORDER BY o.fecha DESC)", "rn")
-    .from("movimiento", "m")
-    .innerJoin("operacion", "o", "o.id = m.operacionId")
-    .innerJoin("inventario_actual", "ia", "ia.id = m.inventarioActualId")
-    .innerJoin("producto", "p", "p.id = ia.productoId")
-    .leftJoin("proyecto", "pj", "o.proyectoId = pj.id")
-    .where("m.estatus = 'activo'")
-    .andWhere("ia.disponible = 'no-disponible'");
-  if (areasIds?.length > 0)
-    subQuery.andWhere("p.areaId IN (:...pp_areasIds)", { pp_areasIds: idsSeguros(areasIds, "areasIds") });
-
-  if (proyectoId && proyectoId !== "0" && proyectoId !== 0)
-    subQuery.andWhere("o.proyectoId = :pp_proyectoId", { pp_proyectoId: idSeguro(proyectoId, "proyectoId") });
-
-  if (usuariosIds?.length > 0) {
-    subQuery.andWhere((qb) => {
-      const operacionUsuariosSubQuery = qb
-        .subQuery()
-        .select("ou.operacionId")
-        .from("operacion_usuarios_usuario", "ou")
-        .where("ou.usuarioId IN (:...pp_usuariosIds)")
-        .getQuery();
-      return "o.id IN " + operacionUsuariosSubQuery;
-    });
-    subQuery.setParameter("pp_usuariosIds", idsSeguros(usuariosIds, "usuariosIds"));
-  }
-
-  const movimientosQry = getConnection().createQueryBuilder()
-    .select("RankedMovimientos.movimientoId", "movimientoId")
-    .from("(" + subQuery.getQuery() + ")", "RankedMovimientos")
-    .setParameters(subQuery.getParameters())
-    .where("rn = 1")
-    .orderBy("RankedMovimientos.FechaOperacion", "DESC");
-
-
+    .select("rk.movimientoId")
+    .from("(" + rankeados.getQuery() + ")", "rk")
+    .where("rk.rn = 1");
 
   return funcionQueryListadoMovimientos()
-    .where("movimiento.id IN (" + movimientosQry.getQuery() + ")")
-    .setParameters(movimientosQry.getParameters());
+    .where(`(movimiento.id IN (${nuevos.getQuery()}) OR movimiento.id IN (${legados.getQuery()}))`)
+    .setParameters({ ...nuevos.getParameters(), ...rankeados.getParameters() });
+};
+
+/** Añade `saldoPendiente` (null para movimientos legados) a cada movimiento de un listado. */
+const conSaldoPendiente = async (movimientos: Movimiento[]) => {
+  if (movimientos.length === 0) return movimientos;
+  const filas = await getConnection().query(
+    "SELECT movimientoId, saldo, legado FROM v_movimiento_saldo WHERE movimientoId IN (?)",
+    [movimientos.map((m) => m.id)]
+  );
+  const saldos = new Map<number, number | null>(filas.map((f: any) => [Number(f.movimientoId), Number(f.legado) === 1 ? null : Number(f.saldo)]));
+  return movimientos.map((m) => Object.assign(m, { saldoPendiente: saldos.get(m.id) ?? null }));
 };
 
 const funcionQueryListadoMovimientos = () => {
@@ -390,10 +385,9 @@ class GrupoController {
     let fnQuery: () => SelectQueryBuilder<any>;
 
     if (movimientoTipoId !== undefined) {
-      fnQuery = () =>
-        funcionQueryListado().where("movimientoTipo.id=:movimientoTipoId", {
-          movimientoTipoId,
-        });
+      // Uno o varios tipos: los listados de bajas piden [13, 16, 5] (justificadas, injustificadas y BAJA* antiguos).
+      const tipos = idsSeguros(Array.isArray(movimientoTipoId) ? movimientoTipoId : [movimientoTipoId], "movimientoTipoId");
+      fnQuery = () => funcionQueryListado().where("movimientoTipo.id IN (:...tiposListado)", { tiposListado: tipos });
     } else {
       fnQuery = () => funcionQueryListado().where("grupoDetalle.id is NULL");
     }
@@ -420,375 +414,6 @@ class GrupoController {
   };
 
 
-  static export2supabase = async (req: Request, res: Response, next: NextFunction) => {
-    const { id } = req.params;
-
-    try {
-      // const grupo = await CommonController.obtenerIdQuery(funcionQueryId(id));
-      const grupo = await obtenerMovimientosConOperacionConInventarioActual(id);
-
-      if (grupo === undefined) {
-        throw new AppError(`Grupo no definido ${id}`);
-      }
-      // console.log('>>>>>>>>>>> grupo ', id);
-      // const { data: existingOperation, error: existingError } = await supabase.from('operations').select().eq('old_id', grupo.id).maybeSingle();
-
-      // if (existingError) {
-      //   console.log('>>>>>>>>>>> Error Export2Supabase LOOKING FOR IT', existingError);
-      //   throw new AppError('Error al BUSCAR EN Supabase');
-      // }
-
-
-      // const almacenistaId = grupo.sesion?.usuario?.id ?? null;
-      // const responsableId = grupo.grupoDetalle?.usuarios?.length > 0 ? grupo.grupoDetalle?.usuarios[0].id : null;
-
-      // const { data: warehouseUser } = almacenistaId ? await supabase.from('users').select().eq('old_id', almacenistaId).single() : { data: null };
-      // const { data: responsibleUser } = almacenistaId ? await supabase.from('users').select().eq('old_id', responsableId).single() : { data: null };
-
-      // const proyectoId = grupo.grupoDetalle?.proyecto?.id;
-      // const { data: groupProject } = proyectoId ? await supabase.from('projects').select().eq('old_id', proyectoId).single() : { data: null };
-      // let type = convertMovementType(grupo.grupoDetalle?.movimientoTipo?.id);
-      // let operation_id: string = '';
-      // if (existingOperation) {
-      //   console.log(`Grupo ya exportado a Supabase ${id}`);
-      //   // res.json({
-      //   //   operation_id: existingOperation.id,
-      //   //   old_group_id: grupo.id,
-      //   //   type: existingOperation.type,
-      //   // });
-      //   operation_id = existingOperation.id;
-      //   // return;
-      // }
-      // else {
-      //   console.log(`Exportando a Supabase ${id}`);
-      //   const newOperation = {
-      //     title: grupo.nombre,
-      //     type,
-      //     responsible_user_id: responsibleUser?.id,
-      //     project_id: groupProject?.id,
-      //     // created_at: grupo.fecha.toISOString(),
-      //     updated_at: grupo.fecha.toISOString(),
-      //     old_id: grupo.id,
-      //     warehouse_user_id: warehouseUser?.id,
-      //     old_group_id: grupo.grupoDetalle?.id
-      //   };
-      //   console.log('>>>>>>>>>>> newOperation');
-
-
-      //   // CREAR GRUPO EN SUPABASE
-      //   const { data, error } = await supabase
-      //     .from('operations')
-      //     .insert(newOperation).select();
-
-      //   if (error) {
-      //     console.log('>>>>>>>>>>> Error Export2Supabase', error);
-      //     throw new AppError('Error al exportar a Supabase', 500);
-      //   }
-
-      //   // GETTING THE OPERATION ID
-      //   operation_id = data[0].id;
-      // }
-
-
-
-
-
-      // const newOperation = {
-      //   title: grupo.nombre,
-      //   type,
-      //   responsible_user_id: responsibleUser?.id,
-      //   project_id: groupProject?.id,
-      //   // created_at: grupo.fecha.toISOString(),
-      //   updated_at: grupo.fecha.toISOString(),
-      //   old_id: grupo.id,
-      //   warehouse_user_id: warehouseUser?.id,
-      //   old_group_id: grupo.grupoDetalle?.id
-      // };
-      // console.log('>>>>>>>>>>> newOperation', newOperation);
-
-
-      // // CREAR GRUPO EN SUPABASE
-      // const { data, error } = await supabase
-      //   .from('operations')
-      //   .insert(newOperation).select();
-
-      // if (error) {
-      //   console.log('>>>>>>>>>>> Error Export2Supabase', error);
-      //   throw new AppError('Error al exportar a Supabase', 500);
-      // }
-
-      // // GETTING THE OPERATION ID
-      // const operation_id = data[0].id;
-
-
-
-
-      const { movimientos, comentarios: comentariosGrupo, archivos: archivosGrupo } = grupo;
-
-      // ****************************************************
-      // ****** Agrego Comentarios de GRUPO a SUPABASE
-      // ****************************************************
-      // try {
-      //   console.log('>>>>>>>>>>> importantdo Comentarios GRUPO',);
-
-      //   comentariosGrupo?.forEach(async comentario => {
-      //     const { data: dataUser, error: errorUser } = await supabase.from('users').select().eq('old_id', comentario.sesion.usuario.id).single();
-      //     if (errorUser) {
-      //       console.log("Error al obtener USER en SUPABASE", errorUser);
-      //       throw new AppError("Error al insertar en SUPABASE", 500);
-      //     }
-      //     const { data: dataCommnet, error: errorComment } = await supabase.from('comments').insert([{ comment: comentario.comentario, created_at: comentario.fecha, updated_at: comentario.fecha, user_id: dataUser.id }]).select();
-      //     if (errorComment) {
-      //       console.log("Error al insertar COMMENT en SUPABASE", errorComment);
-      //       throw new AppError("Error al insertar en SUPABASE", 500);
-      //     }
-
-      //     const { error: errorOperationComment } = await supabase.from('operation_comments').insert([{ operation_id, comment_id: dataCommnet[0].id }]);
-      //     if (errorOperationComment) {
-      //       console.log("Error al insertar OPERATION_COMMENT en SUPABASE", errorOperationComment);
-      //       throw new AppError("Error al insertar en SUPABASE", 500);
-      //     }
-      //   });
-      // } catch (error) {
-      //   console.log('>>>>>>>>>>> Error Export2Supabase COMENTARIOS GRUPO', error);
-      // }
-      // ****************************************************
-      // ****************************************************
-
-
-
-      // ****************************************************
-      // ****** AGREGO LAS IMAGENES de GRUPO a SUPABASE
-      // ****************************************************
-      // try {
-      //   console.log('>>>>>>>>>>> importantdo archivosGrupo',);
-      //   archivosGrupo?.forEach(async (archivo, idx) => {
-      //     const { file_path, file_type } = await obtenerGenerarArchivoComentarioSupabase(archivo.id);  //Todas las imágenes guardadas son JPG a la resolución original
-      //     const { data: dataCommnet, error: errorComment } = await supabase.from('comments').insert([{ comment: '', user_id: warehouseUser?.id, file_path, file_type }]).select();
-      //     if (errorComment) {
-      //       console.log("Error al insertar OPERATION_COMMENT en SUPABASE", errorComment);
-      //       throw new AppError("Error al insertar en SUPABASE", 500);
-      //     }
-      //     const { error: errorOperationComment } = await supabase.from('operation_comments').insert([{ operation_id, comment_id: dataCommnet[0].id }]);
-      //     if (errorOperationComment) {
-      //       console.log("Error al insertar OPERATION_COMMENT en SUPABASE", errorOperationComment);
-      //       throw new AppError("Error al insertar en SUPABASE", 500);
-      //     }
-
-      //   });
-      // } catch (error) {
-      //   console.log('>>>>>>>>>>> Error Export2Supabase ARCHIVOS GRUPO', error);
-      // }
-      // ****************************************************
-      // ****************************************************
-
-
-      let invoiceCurrency: string = 'MXP';
-      // // console.log('>>>>>>>>>>> importantdo MOVIMIENTOS');
-
-      // movimientos?.map(async (movimiento, idx) => {
-      //   console.log('>>>>>>>>>>> importantdo MOVIMIENTO ', idx);
-
-      //   const { operacion, inventarioActual: { producto } } = movimiento;
-      //   const { productoPrecios } = producto;
-
-      //   // console.log('>>>>>>>>>>> importantdo PRODUCTO', producto);
-
-      //   const productoId = producto?.id;
-      //   const { data: product } = productoId ? await supabase.from('products').select().eq('old_id', productoId).single() : null;
-
-
-      //   const operation_price = productoPrecios?.length > 0 ? productoPrecios.find(op => op.precioTipo?.id === 2).precio : 0.00;
-
-      //   const quantity = parseInt(`${movimiento.cantidad}`, 10);
-
-      //   // console.log('>>>>>>>>>>> Insertando MOVIMIENTO', { operation_id, old_operation_id: operacion.id, old_movement_id: movimiento.id, });
-      //   console.log('>>>>>>>>>>> Insertando MOVIMIENTO ', operation_id, operacion.id, movimiento.id);
-      //   const { data, error } = await supabase
-      //     .from('operation_details')
-      //     .insert([{
-      //       operation_id: operation_id,
-      //       product_id: product?.id,
-      //       quantity,
-      //       created_at: operacion.fecha,
-      //       updated_at: operacion.fecha,
-      //       operation_price,
-      //       old_operation_id: operacion.id,
-      //       old_movement_id: movimiento.id,
-
-      //     }])
-      //     .select()
-      //   if (error) {
-      //     console.log('>>>>>>>>>>> Error Export2Supabase MOVIMIENTO', error);
-      //     throw new AppError('Error al exportar a Supabase', 500);
-      //   }
-
-
-      //   // GETTING THE OPERATION_DETAIL ID
-      //   const operation_detail_id = data[0].id;
-
-      //   // 
-      //   try {
-      //     // ACTUALIZO EL TIPO DE OPERACION en caso de que no coincidan movimientos interntos con grupo
-      //     if (idx === 0) {
-      //       const operationType = convertMovementType(operacion.movimientoTipo?.id);
-
-
-      //       if (type !== operationType) {
-      //         console.log('>>>>>>>>>>> ACTUALIZANDO TIPO DE OPERACION', operationType);
-      //         const { error: errorUpdate } = await supabase
-      //           .from('operations')
-      //           .update([{
-      //             type: operationType
-      //           }]).eq('id', operation_id);
-      //         type = operationType;
-
-      //         if (errorUpdate) {
-      //           throw new AppError('Error al exportar a Supabase', 500);
-      //         }
-      //       }
-      //     }
-      //   } catch (error) {
-      //     console.log('>>>>>>>>>>> Error Export2Supabase UPDATE OPERATION TYPE', error);
-
-      //   }
-
-
-      //   // ****************************************************
-      //   // ****** Agrego Comentarios de OPERACION a SUPABASE
-      //   // ****************************************************
-      //   const { comentarios: comentariosOperacion, operacionDetalle } = operacion;
-      //   // SE OBTIENE EL TIPO DE MONEDA PARA PODER USARSE EN LA FACTURA
-
-      //   invoiceCurrency = operacionDetalle?.moneda ?? 'MXP';
-
-      //   console.log('>>>>>>>>>>> importantdo Comentarios OPERACION ', operation_detail_id);
-
-      //   try {
-      //     comentariosOperacion?.forEach(async comentario => {
-      //       const { data: dataUser, error: errorUser } = await supabase.from('users').select().eq('old_id', comentario.sesion.usuario.id).single();
-      //       if (errorUser) {
-      //         console.log("Error al obtener USER en SUPABASE", errorUser);
-      //         throw new AppError("Error al insertar en SUPABASE ", 500);
-      //       }
-      //       const { data: dataCommnet, error: errorComment } = await supabase.from('comments').insert([{ comment: comentario.comentario, created_at: comentario.fecha, updated_at: comentario.fecha, user_id: dataUser.id }]).select();
-      //       if (errorComment) {
-      //         console.log("Error al insertar COMMENT en SUPABASE", errorComment);
-      //         throw new AppError("Error al insertar en SUPABASE", 500);
-      //       }
-
-      //       const { error: errorOperationComment } = await supabase.from('operation_detail_comment').insert([{ operation_detail_id, comment_id: dataCommnet[0].id }]);
-      //       if (errorOperationComment) {
-      //         console.log("Error al insertar OPERATION_DETAIL_COMMENT en SUPABASE", errorOperationComment);
-      //         throw new AppError("Error al insertar en SUPABASE", 500);
-      //       }
-      //     });
-      //   } catch (error) {
-      //     console.log('>>>>>>>>>>> Error Export2Supabase COMENTARIOS OPERACION', error);
-      //   }
-      //   // ****************************************************
-      //   // ****************************************************
-
-
-
-      //   // ****************************************************
-      //   // ****** AGREGO LOS ARCHIVOS de OPERACION a SUPABASE
-      //   // ****************************************************
-      //   const { archivos: archivosOperacion } = operacion;
-      //   console.log('>>>>>>>>>>> importantdo archivosOperacion', operation_detail_id);
-      //   try {
-      //     archivosOperacion?.forEach(async (archivo, idx) => {
-      //       const { file_path, file_type } = await obtenerGenerarArchivoComentarioSupabase(archivo.id);  //Todas las imágenes guardadas son JPG a la resolución original
-      //       const { data: dataCommnet, error: errorComment } = await supabase.from('comments').insert([{ comment: '', user_id: warehouseUser?.id, file_path, file_type }]).select();
-      //       if (errorComment) {
-      //         console.log("Error al insertar OPERATION_COMMENT en SUPABASE", errorComment);
-      //         throw new AppError("Error al insertar en SUPABASE", 500);
-      //       }
-      //       const { error: errorOperationComment } = await supabase.from('operation_comments').insert([{ operation_detail_id, comment_id: dataCommnet[0].id }]);
-      //       if (errorOperationComment) {
-      //         console.log("Error al insertar OPERATION_COMMENT en SUPABASE", errorOperationComment);
-      //         throw new AppError("Error al insertar en SUPABASE", 500);
-      //       }
-
-      //     });
-      //   } catch (error) {
-      //     console.log('>>>>>>>>>>> Error Export2Supabase ARCHIVOS OPERACION', error);
-      //   }
-
-      // });
-
-
-      // let purchase_invoice_id = null;
-
-      // try {
-      //   if (type === 'purchase') {
-      //     // Se agregan detalles de factura
-      //     console.log('>>>>>>>>>>> importantdo FACTURA');
-
-      //     const { facturaDetalle } = grupo.grupoDetalle;
-      //     const { proveedor: { id: proveedorId }, facturaTipo: { id: facturaTipoId }, fechaEmision, numero: invoice_number } = facturaDetalle;
-      //     const { data: supplier, error: errorSupplier } = await supabase.from('suppliers').select().eq('old_id', proveedorId).single();
-      //     if (errorSupplier) {
-      //       console.log('Error al obtener PROVEEDOR en SUPABASE', errorSupplier);
-      //       throw new AppError('Error al exportar a Supabase', 500);
-      //     }
-      //     const { data: invoice, error: errorInvoice } = await supabase.from('purchase_invoices').insert([{
-      //       operation_id,
-      //       invoice_number,
-      //       invoice_type: convertInvoiceType(facturaTipoId),
-      //       invoice_date: fechaEmision.toISOString(),
-      //       currency: invoiceCurrency,
-      //       supplier_id: supplier.id,
-      //     }]).select();
-
-      //     if (errorInvoice) {
-      //       console.log('Error al insertar FACTURA en SUPABASE', errorInvoice);
-      //       throw new AppError('Error al exportar a Supabase', 500);
-      //     }
-      //     purchase_invoice_id = invoice[0].id;
-
-      //   }
-      // } catch (error) {
-      //   console.log('>>>>>>>>>>> Error Export2Supabase FACTURA', { message: error.message, stack: error.stack, error });
-
-      // }
-
-
-      // // id uuid not null default uuid_generate_v4 (),
-      // // title character varying(255) not null,
-      // // type character varying(50) null,
-      // // responsible_user_id uuid null,
-      // // almacenista_user_id uuid null,
-      // // project_id uuid null,
-      // // created_at timestamp without time zone null default now(),
-      // // updated_at timestamp without time zone null default now(),
-      // // deleted_at timestamp without time zone null,
-      // // old_id bigint null default '0'::bigint,
-      // console.log("Group Created/Updated", {
-      //   operation_id,
-      //   old_group_id: grupo.id,
-      //   type,
-      //   // purchase_invoice_id
-      // })
-
-      res.json({
-        // operation_id,
-        old_group_id: grupo.id,
-        // type
-      });
-    }
-    catch (error) {
-      next(error);
-    }
-
-    // await getRepository(Grupo).findOneOrFail(id, {
-    //   relations: ["grupoDetalle", "grupoDetalle.movimientoTipo", "grupoDetalle.proyecto", "grupoDetalle.usuarios", "grupoDetalle.facturaDetalle", "grupoDetalle.facturaDetalle.proveedor", "grupoDetalle.facturaDetalle.facturaTipo"],
-    // });
-
-
-  }
-
-  // ** obtenerId
   static obtenerId = (req: Request, res: Response, next: NextFunction) => {
 
     const { id } = req.params;
@@ -927,14 +552,10 @@ class GrupoController {
       if (condicionesWhere.sql.length > 0) {
         qry.andWhere(condicionesWhere.sql, condicionesWhere.parametros);
       }
-      const filtered = await qry.getCount();
-      const qryResult = await qry
-        .orderBy(campoOrden, direccion)
-        .skip(starts)
-        .take(pageSize)
-        .getMany();
-
-      // const parte=qryResult.slice(starts,starts+pageSize);
+      const filtered = condicionesWhere.sql.length > 0 ? await qry.getCount() : conteoTotal; // sin filtros sería el mismo COUNT
+      const qryResult = await conSaldoPendiente(
+        await qry.orderBy(campoOrden, direccion).skip(starts).take(pageSize).getMany()
+      );
 
       res.json({
         results: qryResult,
@@ -1249,105 +870,6 @@ class GrupoController {
     }
   };
 
-  // nuevoInventario... no puede haber dos inventarios del mismo almacen (bodega) activos al mismo tiempo.
-  // al crear un inventario, se crea su listado de pendientes.
-  // **
-  static nuevoConInventario = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
-    const { movimientoTipoId, fechaInicio, fechaFin, bodegaId, ...body } =
-      req.body;
-    const { jwtPayload } = res.locals;
-
-    try {
-      const grupo = new Grupo();
-      // grupo.sesion=await getRepository(Sesion).findOneOrFail(jwtPayload.si);
-      const sesion = await getRepository(Sesion).findOneOrFail(jwtPayload.si);
-      grupo.sesion = sesion;
-
-      grupo.grupoDetalle = await GrupoDetalleController.guardarInventario(
-        movimientoTipoId,
-        fechaInicio,
-        fechaFin,
-        bodegaId,
-        jwtPayload.si
-      );
-
-      // TODO (revisar con el propietario, plan 02 §7): hoy toma los inventarios de TODAS las bodegas aunque el grupo tenga bodegaId.
-      const inventarioActualCompleto = await getRepository(
-        InventarioActual
-      ).find({
-        select: ["id", "estatus", "disponible", "cantidad"],
-        where: {
-          disponible: Not(InventarioDisponible.BAJA),
-          estatus: EstatusEstado.ACTIVO,
-        },
-      });
-      // const sesion=await getRepository(Sesion).findOneOrFail(jwtPayload.si);
-      // La relación grupo↔movimiento no tiene cascade: los movimientos se guardan primero (antes nunca se creaban).
-      grupo.movimientos = await getRepository(Movimiento).save(
-        inventarioActualCompleto.map((iac) => {
-          const mov = new Movimiento();
-          mov.cantidad = iac.cantidad; // antes `mov.cantidad;` no asignaba nada (hallazgo H15)
-          mov.inventarioActual = iac;
-          mov.sesion = sesion;
-          mov.sesionId = jwtPayload.si;
-          return mov;
-        })
-      );
-
-      await CommonController.nuevo(
-        getRepository(Grupo),
-        grupo,
-        body,
-        jwtPayload.si
-      );
-      res.json();
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // **
-  static obtenerListadoInventarioPendiente = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
-    //el id del grupo debe ir en filters
-
-    CommonController.listaTablaQry(
-      req.body,
-      funcionQueryInventario,
-      condicionesWhereAndInventarioPendiente
-    )
-      .then((respuesta) => {
-        res.json(respuesta);
-      })
-      .catch((error) => next(error));
-  };
-
-  // **
-  static obtenerInventariosHechos = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
-    //el id del grupo debe ir en filters
-
-    CommonController.listaTablaQry(
-      req.body,
-      funcionQueryInventario,
-      condicionesWhereAndInventarioHecho
-    )
-      .then((respuesta) => {
-        res.json(respuesta);
-      })
-      .catch((error) => next(error));
-  };
-
   // ** eliminar  --> solo si no tiene nada
   static borrar = async (req: Request, res: Response, next: NextFunction) => {
     const { grupoId } = req.body;
@@ -1404,6 +926,7 @@ class GrupoController {
     try {
       const grupo = await funcionQueryId(grupoId).getOne();
       if (grupo === undefined) throw new AppError("Grupo ID no encontrado");
+      await exigirProyectoEditable({ grupoId }, proyectoId); // antes de modificar nada (plan 02 fase 3)
       const resp = await CommonController.editar(
         getRepository(Grupo),
         { nombre: numero, id: grupoId },
@@ -1424,35 +947,9 @@ class GrupoController {
         jwtPayload.si
       );
 
-      for (const mov of await obtenerMovimientosConOperacionDeGrupo(grupoId)) {
-        await MovimientoController.editarOperacion(mov, 15, proyectoId, usuariosIds, jwtPayload.si);
+      for (const mov of (await obtenerMovimientosConOperacionDeGrupo(grupoId)).filter((m) => m.operacion)) {
+        await MovimientoController.editarOperacion(mov, T.COMPRA, proyectoId, usuariosIds, jwtPayload.si);
       }
-
-      res.json();
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // **
-  static editarConInventario = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
-    const { grupoId, fechaInicio, fechaFin, bodegaId } = req.body;
-    const { jwtPayload } = res.locals;
-    try {
-      const grupo = await funcionQueryId(grupoId).getOne();
-      if (grupo === undefined) throw new AppError("Grupo ID no encontrado");
-
-      await GrupoDetalleController.editarInventario(
-        grupo.grupoDetalle,
-        fechaInicio,
-        fechaFin,
-        bodegaId,
-        jwtPayload.si
-      );
 
       res.json();
     } catch (error) {
@@ -1471,6 +968,20 @@ class GrupoController {
     try {
       const grupo = await funcionQueryId(grupoId).getOne();
       if (grupo === undefined) throw new AppError("Grupo ID no encontrado");
+      await exigirProyectoEditable({ grupoId }, proyectoId); // antes de modificar nada (plan 02 fase 3)
+
+      // Todas las líneas son del tipo del listado (decisión 11). Se valida ANTES de modificar nada: el tipo solo
+      // puede cambiar entre BAJA JUSTIFICADA (13) e INJUSTIFICADA (16), o seguir igual.
+      const nuevoTipo = Number(movimientoTipoId);
+      const movimientos = (await obtenerMovimientosConOperacionDeGrupo(grupoId)).filter((m) => m.operacion); // las líneas sin operación no tienen tipo
+      const intercambiables = [T.BAJA_JUSTIFICADA, T.BAJA_INJUSTIFICADA];
+      for (const mov of movimientos) {
+        const actual = Number(mov.operacion.movimientoTipo.id);
+        const admitido = tiposAdmitidosEnListado(nuevoTipo).includes(actual) || (intercambiables.includes(actual) && intercambiables.includes(nuevoTipo));
+        if (!admitido) {
+          throw new AppError("No se puede cambiar el tipo de un listado que ya tiene movimientos (solo entre baja justificada e injustificada)", 400);
+        }
+      }
 
       await GrupoDetalleController.editar(
         grupo.grupoDetalle,
@@ -1480,8 +991,10 @@ class GrupoController {
         jwtPayload.si
       );
 
-      for (const mov of await obtenerMovimientosConOperacionDeGrupo(grupoId)) {
-        await MovimientoController.editarOperacion(mov, movimientoTipoId, proyectoId, usuariosIds, jwtPayload.si);
+      for (const mov of movimientos) {
+        // Listado antiguo de BAJA* (5): cada línea conserva su tipo (13 o 16); solo cambian proyecto y responsables.
+        const tipoLinea = nuevoTipo === T.BAJA_LEGADO ? mov.operacion.movimientoTipo.id : nuevoTipo;
+        await MovimientoController.editarOperacion(mov, tipoLinea, proyectoId, usuariosIds, jwtPayload.si);
       }
 
       res.json();
@@ -1619,6 +1132,8 @@ class GrupoController {
       proyectoId,
       usuariosIds,
       grupoId,
+      relaciones,
+      strict,
     } = req.body;
     const { jwtPayload } = res.locals;
     try {
@@ -1627,44 +1142,33 @@ class GrupoController {
           codigo
         );
       let movimiento: Movimiento;
-      if (movimientoTipoId === undefined) {
+      if (movimientoTipoId === undefined || movimientoTipoId === null) {
+        // Línea de listado sin operación: no afecta al inventario.
         movimiento = await MovimientoController.guardar(
           cantidad,
           inventarioActual,
           jwtPayload.si
         );
+        await getRepository(Grupo).findOneOrFail(idSeguro(grupoId, "grupoId"), { select: ["id"], loadEagerRelations: false });
+        await getConnection().createQueryBuilder().relation(Grupo, "movimientos").of(grupoId).add(movimiento.id);
+      } else if (MovimientoService.esTipoDeEntrada(movimientoTipoId)) {
+        throw new AppError(
+          "No se pueden realizar operaciones de creacion de artículos en este listado",
+          400
+        );
       } else {
-        if (
-          movimientoTipoId == 15 ||
-          movimientoTipoId == 14 ||
-          movimientoTipoId == 1 ||
-          movimientoTipoId == 2
-        ) {
-          // compra nueva
-          throw new AppError(
-            "No se pueden realizar operaciones de creacion de artículos en este listado",
-            400
-          );
-        } else {
-          //
-          movimiento = await MovimientoController.guardarConOperacion(
-            cantidad,
-            inventarioActual,
-            movimientoTipoId,
-            proyectoId,
-            usuariosIds,
-            jwtPayload.si
-          );
-        }
-      }
-      if (movimiento !== undefined) {
-        // agregar movimiento creado al grupo (listado)
-        const grupo = await getRepository(Grupo).findOneOrFail(idSeguro(grupoId, "grupoId"), {
-          relations: ["movimientos"],
-          loadEagerRelations: false,
+        // Transaccional: inventario, histórico, operación, movimiento, relaciones y grupo (plan 02 fase 3).
+        movimiento = await MovimientoService.registrarOperacion({
+          tipo: movimientoTipoId,
+          cantidad,
+          inventarioActualId: inventarioActual.id,
+          proyectoId,
+          usuariosIds,
+          sesionId: jwtPayload.si,
+          grupoId,
+          relaciones,
+          strict,
         });
-        grupo.movimientos.push(movimiento);
-        await getRepository(Grupo).save(grupo);
       }
       res.json(movimiento);
     } catch (error) {
@@ -1698,70 +1202,42 @@ class GrupoController {
     } = req.body;
     const { jwtPayload } = res.locals;
     try {
-      // const  inventarioActual = await InventarioActualController.obtenerInventarioActualDeCodigo(codigo);
-      //crear inventarioActual
-      // El inventario nace en 0/0: `actualizarInventarioActual` (compra/alta) suma la cantidad una sola vez (hallazgo H21).
-      const inventarioActual = await crearBaseInventarioActual(
-        0,
-        bodegaId,
-        jwtPayload.si
-      );
-      inventarioActual.producto = await ProductoController.guardar(
-        titulo,
-        descripcion,
-        areaId,
-        productoTipoId,
-        productoCaracteristicas,
-        productoPrecioOriginal,
-        productoCodigos ?? [await autogenerarCodigo()],
-        jwtPayload.si,
-        moneda
-      );
-      const inventarioActualGuardado = await InventarioActualController.guardar(
-        inventarioActual,
-        jwtPayload.si
-      );
-
-      let movimiento: Movimiento;
-      if (movimientoTipoId == 15) {
-        movimiento = await MovimientoController.guardarConOperacionCompra(
-          cantidad,
-          inventarioActualGuardado,
-          movimientoTipoId,
-          proyectoId,
-          usuariosIds,
-          precioUnitario,
-          precioTotal,
-          jwtPayload.si,
-          moneda,
-        );
-      } else if (
-        movimientoTipoId == 14 ||
-        movimientoTipoId == 1 ||
-        movimientoTipoId == 2
-      ) {
-        //altas
-        movimiento = await MovimientoController.guardarConOperacion(
-          cantidad,
-          inventarioActualGuardado,
-          movimientoTipoId,
-          proyectoId,
-          usuariosIds,
-          jwtPayload.si
-        );
-        // res.json(mov);
-      } else {
+      // Se valida el tipo ANTES de crear nada (antes quedaban productos huérfanos con un tipo inválido).
+      if (!MovimientoService.esTipoDeEntrada(movimientoTipoId)) {
         throw new AppError("Tipo de movimiento inválido", 400);
       }
-      if (movimiento !== undefined) {
-        // agregar movimiento creado al grupo (listado)
-        const grupo = await getRepository(Grupo).findOneOrFail(idSeguro(grupoId, "grupoId"), {
-          relations: ["movimientos"],
-          loadEagerRelations: false,
-        });
-        grupo.movimientos.push(movimiento);
-        await getRepository(Grupo).save(grupo);
-      }
+      const codigos = productoCodigos ?? [await autogenerarCodigo()];
+      // Producto, inventario y primera operación en UNA transacción (hallazgos C7 y M10).
+      const movimiento = await MovimientoService.enTransaccion(async (manager) => {
+        // El inventario nace en 0/0: el efecto de la compra/alta suma la cantidad una sola vez (hallazgo H21).
+        const inventarioActual = await crearBaseInventarioActual(0, bodegaId, jwtPayload.si);
+        inventarioActual.producto = await ProductoController.guardar(
+          titulo,
+          descripcion,
+          areaId,
+          productoTipoId,
+          productoCaracteristicas,
+          productoPrecioOriginal,
+          codigos,
+          jwtPayload.si,
+          moneda,
+          manager
+        );
+        const inventarioActualGuardado = await manager.save(inventarioActual);
+        return MovimientoService.registrarOperacion(
+          {
+            tipo: movimientoTipoId,
+            cantidad,
+            inventarioActualId: inventarioActualGuardado.id,
+            proyectoId,
+            usuariosIds,
+            sesionId: jwtPayload.si,
+            grupoId,
+            compra: Number(movimientoTipoId) === T.COMPRA ? { precioUnitario, precioTotal, moneda } : undefined,
+          },
+          manager
+        );
+      });
       res.json(movimiento);
     } catch (error) {
       next(error);
@@ -1774,20 +1250,28 @@ class GrupoController {
     res: Response,
     next: NextFunction
   ) => {
-    const { movimientoId, movimientoTipoId, proyectoId, usuariosIds } =
+    const { movimientoId, movimientoTipoId, proyectoId, usuariosIds, relaciones, strict } =
       req.body;
     const { jwtPayload } = res.locals;
     try {
       // LA SESION DEL MOVIMIENTO DEBE SER LA DEL ULTIMO QUE LA MODIFICA.
       // El grupo se queda con la sesion de quien lo creó. cada Movimiento
+      if (MovimientoService.esTipoDeEntrada(movimientoTipoId)) {
+        throw new AppError("No se pueden realizar operaciones de creacion de artículos en este listado", 400);
+      }
+      const movimiento = await getRepository(Movimiento).findOneOrFail(idSeguro(movimientoId, "movimientoId"), { loadEagerRelations: false, relations: ["inventarioActual"] });
       res.json(
-        await MovimientoController.agregarOperacion(
-          await getRepository(Movimiento).findOneOrFail(idSeguro(movimientoId, "movimientoId")),
-          movimientoTipoId,
+        await MovimientoService.registrarOperacion({
+          tipo: movimientoTipoId,
+          cantidad: movimiento.cantidad,
+          inventarioActualId: movimiento.inventarioActual.id,
+          movimientoId: movimiento.id,
           proyectoId,
           usuariosIds,
-          jwtPayload.si
-        )
+          sesionId: jwtPayload.si,
+          relaciones,
+          strict,
+        })
       );
     } catch (error) {
       next(error);
@@ -1803,16 +1287,8 @@ class GrupoController {
     const { movimientoId } = req.body;
     const { jwtPayload } = res.locals;
     try {
-      await MovimientoController.quitar(
-        await getRepository(Movimiento)
-          .createQueryBuilder("movimiento")
-          .leftJoinAndSelect("movimiento.operacion", "operacion")
-          .leftJoinAndSelect("operacion.operacionDetalle", "operacionDetalle")
-          .leftJoinAndSelect("movimiento.inventarioActual", "inventarioActual")
-          .where("movimiento.id=:movimientoId", { movimientoId: idSeguro(movimientoId, "movimientoId") })
-          .getOne(),
-        jwtPayload.si
-      );
+      // Transaccional; 409 si el movimiento es origen de otros (plan 02 fase 3).
+      await MovimientoService.deshacer(movimientoId, jwtPayload.si);
       res.json();
     } catch (error) {
       next(error);
@@ -1846,95 +1322,3 @@ export {
   funcionQueryListadoPrestamosPendientes,
   condicionesWhereAndPrestamosActivos,
 };
-
-
-function convertMovementType(id: number) {
-  // 1	COMPRA*	activo
-  // 2	ALTA*	activo
-  // 3	PRÉSTAMO	activo
-  // 4	DEVOLUCIÓN	activo
-  // 5	BAJA*	activo
-  // // 6	AJUSTE INVENTARIO	activo
-  // // 7	TRANSFERENCIA ORIGEN	activo
-  // // 8	BAJA EN INVENTARIO	activo
-  // // 9	INVENTARIO	activo
-  // // 10	AJUSTE DE ADMINISTRADOR	activo
-  // 11	RENTA EXTERNA	activo
-  // // 12	TRANSFERENCIA DESTINO	activo
-  // 13	BAJA JUSTIFICADA	activo
-  // 14	ALTA	activo
-  // 15	COMPRA	activo
-  // 16	BAJA INJUSTIFICADA	activo
-  // 17	BAJA ADMINISTRADOR	activo  
-
-  switch (id) {
-    case 1:
-    case 15:
-      return "purchase";
-    case 2:
-    case 14:
-      return "new";
-    case 3:
-      return "loan";
-    case 4:
-      return "return";
-    case 5:
-      return "elimination";
-    case 11:
-      return "rent";
-    case 13:
-      return "rid_allowed";
-    case 16:
-      return "rid_not_allowed";
-    case 17:
-      return "elimination";
-
-    default:
-      return "other";
-  }
-
-  // ('new'::character varying)::text,
-  // ('purchase'::character varying)::text,
-  // ('loan'::character varying)::text,
-  // ('return'::character varying)::text,
-  // ('rid_allowed'::character varying)::text,
-  // ('rid_not_allowed'::character varying)::text,
-  // ('rent'::character varying)::text,
-  // ('other'::character varying)::text,
-  // ('elimination'::character varying)::text
-
-  // throw new Error("Function not implemented.");
-}
-
-
-function convertInvoiceType(id: number) {
-  // 1	Fiscal nacional	activo
-  // 2	Vale azul	activo
-  // 3	Nota de compra	activo
-  // 4	Extranjera	activo
-  // 5	Ticket	activo
-  // 6	Recibo / Comprobante	activo
-
-  // ('tax-bill'::character varying)::text,
-  //           ('purchase-note'::character varying)::text,
-  //           ('foreign-bill'::character varying)::text,
-  //           ('blue-voucher'::character varying)::text,
-  //           ('ticket'::character varying)::text,
-  //           ('receipt'::character varying)::text
-
-  switch (id) {
-    case 1:
-      return "tax-bill";
-    case 2:
-      return "blue-voucher";
-    case 3:
-      return "purchase-note";
-    case 4:
-      return "foreign-bill";
-    case 5:
-      return "ticket";
-    default:
-      return "receipt";
-  }
-  // throw new Error("Function not implemented.");
-}

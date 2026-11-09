@@ -150,7 +150,7 @@ const BajasOperacion = ({ user }) => {
 
     const {
       grupoDetalle: {
-        // movimientoTipo: { id: movimientoTipoId },
+        movimientoTipo: { id: movimientoTipoId },
         proyecto: { id: proyectoId },
         usuarios,
       },
@@ -161,7 +161,8 @@ const BajasOperacion = ({ user }) => {
     const resp=await GrupoPeticiones.agregarMovimiento({
       codigo: valores.clave,
       cantidad: 1,
-      movimientoTipoId:valores.tipoBaja, // baja
+      // Las líneas son del tipo del listado (13 o 16). Solo los listados antiguos de BAJA* (5) eligen por línea.
+      movimientoTipoId: movimientoTipoId === 5 ? Number(valores.tipoBaja) : movimientoTipoId,
       proyectoId,
       usuariosIds,
       grupoId: grupo.id,
@@ -313,7 +314,7 @@ const BajasOperacion = ({ user }) => {
             guardando={cargando}
             handleFinish={handleFinish}
             habilitado={estatusGrupo !== 'inactivo'}
-            mostrarBajas
+            mostrarBajas={grupo.grupoDetalle.movimientoTipo.id === 5}
           />
 
           {/* <Divider  /> */}

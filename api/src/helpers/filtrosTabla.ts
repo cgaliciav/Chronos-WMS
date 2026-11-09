@@ -1,4 +1,4 @@
-import { escape } from "mysql";
+import { escape } from "mysql2"; // mismo escape que mysql (sqlstring); mysql se retiró en la fase 4
 import { SelectQueryBuilder } from "typeorm";
 import { AppError } from "./errorClases";
 

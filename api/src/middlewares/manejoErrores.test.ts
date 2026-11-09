@@ -52,4 +52,11 @@ describe("errorMiddlewere", () => {
     errorMiddlewere(err, reqFalsa(), res, jest.fn());
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ message: "REGISTRO NO ENCONTRADO" }));
   });
+
+  it("añade el detalle de un AppError (p. ej. candidatas de un 409) sin dejar que pise code ni message", () => {
+    const res = resFalsa();
+    errorMiddlewere(new AppError("Elige", 409, { candidatas: [{ movimientoId: 1 }], message: "otro" }), reqFalsa(), res, jest.fn());
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith({ code: "Conflicto", message: "Elige", candidatas: [{ movimientoId: 1 }] });
+  });
 });

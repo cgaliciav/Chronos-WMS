@@ -1,39 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import LogGeneralController from "../controllers/LogGeneral.Controller";
 import { LogTipo } from "../entity/LogGeneral";
-// import { getRepository } from "typeorm";
-
-// import { LogTipo, LogGeneral } from "../entity/LogGeneral";
-// import { isString, isObject } from "util";
-// import { conexion } from "../conexionORM";
-// import { isError } from "lodash";
-
-declare function fnGeneralManejoErrores(req: Request, res: Response, next: NextFunction): any;
-
-declare function fnGeneralManejoErroresPromise(req: Request, res: Response, next: NextFunction): Promise<any>;
-
-const conManejoDeErroresPromise = fnGeneralManejoErroresPromise =>( 
-  (req: Request, res: Response, next: NextFunction) => 
-    fnGeneralManejoErroresPromise(req,res,next)
-    .then((val)=>{
-      if(val!==undefined){
-        console.log("conManejoDeErroresPromise->",val)
-      }
-    })
-    .catch(error=>next(error))
-)
-
-
-const conManejoDeErrores = fnGeneralManejoErrores => {
-    return (req: Request, res: Response, next: NextFunction) => {
-      try{
-        fnGeneralManejoErrores(req, res, next);
-      }
-      catch(error){
-        next(error)
-      }
-    };
-  };
+import { AppError } from "../helpers/errorClases";
+import { logger } from "../helpers/logger";
 
 const errorCodes= (code:string):string=>{
   switch(code){
@@ -43,7 +12,7 @@ const errorCodes= (code:string):string=>{
 }
 
 const errorMiddlewere = (err:any, req: Request, res: any, next: NextFunction) => {    
-    if (process.env.NODE_ENV !== "test") console.log("******* ERROR MIDDLEWERE --- : ", err.message)
+    logger.warn("Error en la petición:", req.method, req.originalUrl, err.message)
     // console.log("DETALLE ERROR :", err)
     const {path,body,params,headers,ip}=req;
     // console.log("DETALLE REQ :", { path,body,params,headers,ip })
@@ -78,6 +47,7 @@ const errorMiddlewere = (err:any, req: Request, res: any, next: NextFunction) =>
 
     res.status(err.statusCode)
     .json({
+      ...(err instanceof AppError && err.detalle ? err.detalle : {}),
       code: status,
       message: message,
     });

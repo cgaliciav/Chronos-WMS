@@ -1,12 +1,27 @@
 import { Request, Response, NextFunction } from "express";
 import { getRepository } from "typeorm";
 import { GrupoDetalle } from "../entity/GrupoDetalle";
-import { InventarioDetalle } from "../entity/InventarioDetalle";
 import { MovimientoTipo } from "../entity/MovimientoTipo";
 import { Proyecto } from "../entity/Proyecto";
 import { Usuario } from "../entity/Usuario";
 import FacturaDetalleController from "./FacturaDetalle.Controller";
 import InventarioDetalleController from "./InventarioDetalle.Controller";
+import { AppError } from "../helpers/errorClases";
+import { esTipo, MovimientoTipoId as T, TIPOS_LISTADO_NO_PERMITIDOS } from "../entity/common/MovimientoTipoId";
+
+/** Listados nuevos (decisiones 11 y 12): ni BAJA* (5), que se sustituye por 13/16, ni tipos que no son movimientos. */
+export const exigirTipoDeListadoValido = (movimientoTipoId: number | string, tipoActual?: number) => {
+  const tipo = Number(movimientoTipoId);
+  if (tipo === T.BAJA_LEGADO && tipoActual === T.BAJA_LEGADO) return; // listado antiguo que conserva su tipo
+  if (esTipo(TIPOS_LISTADO_NO_PERMITIDOS, tipo)) {
+    throw new AppError(
+      tipo === T.BAJA_LEGADO
+        ? "Los listados de bajas son de BAJA JUSTIFICADA (13) o BAJA INJUSTIFICADA (16)"
+        : `El tipo ${tipo} (inventario o ajuste) no es un movimiento de almacén`,
+      400
+    );
+  }
+};
 
 const crearBaseGrupoDetalle = async (
   proyectoId: number | string | undefined,
@@ -14,6 +29,7 @@ const crearBaseGrupoDetalle = async (
   usuariosIds: (number | string)[] | undefined,
   sesionId: number
 ) => {
+  exigirTipoDeListadoValido(movimientoTipoId);
   const grupoDetalle = new GrupoDetalle();
 
   if (proyectoId !== undefined) {
@@ -84,30 +100,6 @@ class GrupoDetalleController {
     return await getRepository(GrupoDetalle).save(grupoDetalle);
   };
 
-  // guardarInventario  -- basico con proyecto, tipoMovimiento, y usuarios
-  static guardarInventario = async (
-    movimientoTipoId: number | string,
-    fechaInicio: string | Date,
-    fechaFin: string | Date | undefined,
-    bodegaId: number | string,
-    sesionId: number
-  ) => {
-    const grupoDetalle = await crearBaseGrupoDetalle(
-      undefined,
-      movimientoTipoId,
-      undefined,
-      sesionId
-    );
-    grupoDetalle.inventarioDetalle = await InventarioDetalleController.guardar(
-      fechaInicio,
-      fechaFin,
-      bodegaId,
-      sesionId
-    );
-    return await getRepository(GrupoDetalle).save(grupoDetalle);
-  };
-
-  // editar
   static editar = async (
     grupoDetalle: GrupoDetalle,
     proyectoId: number | string,
@@ -116,6 +108,7 @@ class GrupoDetalleController {
     sesionId: number
   ) => {
     //al editar tipoMovimiento o proyecto, hay que editar todos los movimientos asociados. --->> se hace en GrupoController
+    exigirTipoDeListadoValido(movimientoTipoId, grupoDetalle.movimientoTipo?.id);
     grupoDetalle.sesionId = sesionId;
     grupoDetalle.movimientoTipo = await getRepository(
       MovimientoTipo
@@ -146,7 +139,7 @@ class GrupoDetalleController {
     grupoDetalle.proyecto = await getRepository(Proyecto).findOneOrFail(
       proyectoId
     );
-    grupoDetalle.usuarios = await getRepository(Usuario).findByIds(usuariosIds);
+    grupoDetalle.usuarios = await getRepository(Usuario).findByIds(usuariosIds ?? []);
     await FacturaDetalleController.editar(
       grupoDetalle.facturaDetalle,
       numero,
@@ -162,27 +155,6 @@ class GrupoDetalleController {
     return await getRepository(GrupoDetalle).save(grupoDetalle);
   };
 
-  // editarInventario
-  static editarInventario = async (
-    grupoDetalle: GrupoDetalle,
-    fechaInicio: string | Date,
-    fechaFin: string | Date,
-    bodegaId: number | string,
-    sesionId: number
-  ) => {
-    //al editar movimiento o proyecto, hay que editar todos los movimientos asociados.--->> se hace en GrupoController
-    await InventarioDetalleController.editar(
-      grupoDetalle.inventarioDetalle,
-      fechaInicio,
-      fechaFin,
-      bodegaId,
-      sesionId
-    );
-
-    return grupoDetalle;
-  };
-
-  // quitar
   static quitar = async (grupoDetalle: GrupoDetalle, sesionId: number) => {
     //borrar
     grupoDetalle.sesionId = sesionId;
