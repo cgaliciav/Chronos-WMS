@@ -168,21 +168,7 @@ ok "Backend arriba"
 # ---------- Smoke tests ----------
 step "Smoke tests"
 fail=0
-check() { # nombre url esperado
-  local code; code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$2" || true)
-  if [[ "$code" == "$3" ]]; then ok "$1 ($2) → $code"; else warn "$1 ($2) → $code (esperado $3)"; fail=1; fi
-}
-check "Frontend" "http://$IP/" 200
-check "API" "http://$IP/api/" 200
-check "Mailpit UI" "http://$IP:8025/" 200
-smtp_ip=$(vm_ssh "docker exec $C_BACKEND node -e \"require('dns').lookup('smtp.postmarkapp.com',(e,a)=>console.log(a||e))\"")
-mailpit_ip=$(vm_ssh "docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' teleset-almacen_mailpit_1")
-if [[ "$smtp_ip" == "$mailpit_ip" ]]; then ok "smtp.postmarkapp.com → mailpit ($mailpit_ip)"; else warn "smtp.postmarkapp.com resuelve a $smtp_ip (mailpit=$mailpit_ip)"; fail=1; fi
-if vm_ssh "sudo iptables -C DOCKER-USER -o \$(ip route show default | awk '{print \$5; exit}') -p tcp -m multiport --dports 25,465,587,2525 -j REJECT --reject-with tcp-reset"; then
-  ok "SMTP saliente bloqueado (iptables DOCKER-USER)"
-else
-  warn "Regla de bloqueo SMTP no encontrada"; fail=1
-fi
+smoke_tests || fail=1
 compose ps
 
 cat <<EOF
