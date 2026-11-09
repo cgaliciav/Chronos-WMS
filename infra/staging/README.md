@@ -16,8 +16,8 @@ mismo SO, mismo runtime, misma imagen del backend, misma DB y mismos archivos. P
 | Proxy | nginx host con SSL por dominio | nginx host, HTTP por IP |
 
 Diferencias intencionales:
-- **Secretos propios** (`~/teleset-almacen/.env` en la VM, generados allí): `DB_ROOT_PASSWORD`, `DB_PASSWORD`, `JWTSECRET`. Sobrescriben los que están horneados en la imagen de prod.
-- **Correo atrapado**: el backend de prod tiene Postmark hardcodeado (`src/helpers/enviarMail.ts`). En staging `smtp.postmarkapp.com` resuelve al contenedor **mailpit** (UI en `:8025`) y además iptables bloquea SMTP saliente (25/465/587/2525). Los datos son reales: nunca quites este bloqueo.
+- **Secretos propios** (`~/teleset-almacen/.env` en la VM, generados allí): `DB_ROOT_PASSWORD`, `DB_PASSWORD`, `JWTSECRET`. Tienen prioridad sobre cualquier valor por defecto de la imagen.
+- **Correo atrapado**: en staging el host SMTP del backend resuelve al contenedor **mailpit** (UI en `:8025`) y además iptables bloquea SMTP saliente (25/465/587/2525). Los datos son reales: nunca quites este bloqueo.
 - MariaDB solo escucha en `127.0.0.1:3308` de la VM.
 
 ## Requisitos (laptop)

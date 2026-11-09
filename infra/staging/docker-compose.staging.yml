@@ -1,8 +1,8 @@
 # docker-compose de STAGING. Se instala en la VM como ~/teleset-almacen/docker-compose.yml
 # Misma estructura que producción (linode-prod) con estas diferencias:
-#   - Secretos propios de staging vía .env (sobrescriben los horneados en la imagen de prod)
+#   - Secretos propios de staging vía .env (tienen prioridad sobre los valores de la imagen)
 #   - BACKEND_IMAGE parametrizable para probar builds nuevos
-#   - mailpit atrapa TODO el correo (alias smtp.postmarkapp.com, que está hardcodeado en el backend)
+#   - mailpit atrapa TODO el correo (alias de red con el host SMTP que usa el backend)
 #   - MariaDB solo escucha en 127.0.0.1 (usar túnel SSH)
 services:
   mariadb:
