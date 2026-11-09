@@ -1,0 +1,76 @@
+# docker-compose de STAGING. Se instala en la VM como ~/teleset-almacen/docker-compose.yml
+# Misma estructura que producción (linode-prod) con estas diferencias:
+#   - Secretos propios de staging vía .env (tienen prioridad sobre los valores de la imagen)
+#   - BACKEND_IMAGE parametrizable para probar builds nuevos
+#   - mailpit atrapa TODO el correo (alias de red con el host SMTP que usa el backend)
+#   - MariaDB solo escucha en 127.0.0.1 (usar túnel SSH)
+services:
+  mariadb:
+    image: mariadb:10.3
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - ./db_data/mysql:/var/lib/mysql
+    ports:
+      - 127.0.0.1:3308:3306
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  #############
+  ##WWW services
+  #############
+  frontend:
+    image: nginx:1.25-alpine
+    restart: unless-stopped
+    ports:
+      - "34401:80"
+    volumes:
+      - ./front-www:/usr/share/nginx/html
+    depends_on:
+      backend:
+        condition: service_started
+
+  backend:
+    image: ${BACKEND_IMAGE}
+    restart: unless-stopped
+    environment:
+      JWTSECRET: ${JWTSECRET}
+      DB_HOST: mariadb
+      DB_USER: almacen_usr
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE_NAME: almacen_sony_migracion
+      # Variables usadas por versiones nuevas del API (api/.env.example); el correo va a mailpit.
+      SMTP_HOST: mailpit
+      SMTP_PORT: "2525"
+      SMTP_USER: staging
+      SMTP_PASS: staging
+      SMTP_FROM: staging@telesetalmacen.local
+    volumes:
+      - ./exogrid:/code/exogrid
+    ports:
+      - "34400:4200"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+
+  mailpit:
+    image: axllent/mailpit:v1.21
+    restart: unless-stopped
+    environment:
+      MP_SMTP_BIND_ADDR: 0.0.0.0:2525
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+      MP_MAX_MESSAGES: "5000"
+    ports:
+      - "8025:8025"
+    networks:
+      default:
+        aliases:
+          - smtp.postmarkapp.com
