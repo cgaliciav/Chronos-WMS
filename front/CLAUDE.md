@@ -1,6 +1,6 @@
 # front/ · guía para agentes
 
-SPA del almacén. **React 19.3 · antd 6.7 · dayjs · Zustand 5 · react-router 8 (hash, data router) ·
+SPA del almacén. **React 19.3 · antd 6.7 · dayjs · Zustand 5 · react-router 8 (history API, data router; `front/nginx.conf` en el servidor) ·
 Vite 8 · TypeScript 5.9 strict (100 % TS) · Node 24 · npm**.
 Construida originalmente sobre la plantilla Clean UI, ya retirada; el plan
 `docs/planes/01-front-actualizacion-antd.md` describe la migración completa.

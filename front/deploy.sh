@@ -1,6 +1,19 @@
 #!/bin/bash
 set -e  # Para que el script se detenga ante cualquier error
 
+# 0. Rutas sin `#` (v4.1.0+): el contenedor nginx del front debe devolver index.html en cualquier ruta.
+#    Se exige front-nginx.conf (copia de front/nginx.conf) junto a almacen-front y montado en su docker-compose.yml.
+#    Pasos: docs/front/arquitectura.md (sección Despliegue). Para omitir la comprobación: OMITIR_VERIFICACION_NGINX=1
+if [[ "${OMITIR_VERIFICACION_NGINX:-0}" != "1" ]]; then
+  BASE_REMOTA="$(dirname "~/teleset-almacen-test/almacen-front")"
+  echo "Verificando la configuración de nginx del front en exolog.app:$BASE_REMOTA ..."
+  if ! ssh cesargv@exolog.app "grep -q try_files $BASE_REMOTA/front-nginx.conf && grep -q front-nginx.conf $BASE_REMOTA/docker-compose.yml"; then
+    echo "ERROR: falta $BASE_REMOTA/front-nginx.conf o no está montado en el contenedor del front."
+    echo "Sin él, al recargar cualquier página distinta de / el servidor responde 404. Ver docs/front/arquitectura.md (sección Despliegue)."
+    exit 1
+  fi
+fi
+
 # # 1. Incrementar la versión (patch) en package.json
 # echo "Obteniendo la versión actual desde package.json..."
 # if ! command -v jq &> /dev/null; then

@@ -13,6 +13,7 @@ import {
 import TablaGeneral from '../../componentes/tablaGeneral'
 import type { ProveedorAdmin } from '../../tipos'
 import AccionesTablaProveedores from '../componentes/accionesTablaProveedores'
+import { Link } from 'react-router'
 
 const columns: TableColumnsType<ProveedorAdmin> = [
   {
@@ -75,9 +76,9 @@ const columns: TableColumnsType<ProveedorAdmin> = [
       <span>
         <Tooltip title="Editar proveedor">
           <Tag color="blue">
-            <a href={`#/proveedores/editar?uid=${id}`}>
+            <Link to={`/proveedores/editar?uid=${id}`}>
               <EditOutlined />
-            </a>
+            </Link>
           </Tag>
         </Tooltip>
         <Popconfirm

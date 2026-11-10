@@ -26,7 +26,7 @@
 | D2 | Node | **24 LTS** (`.nvmrc` = `24`) | Mínimo para React Router 8 es Node 22.22; Vite 8 pide 20.19/22.12+. |
 | D3 | Gestor de paquetes | **npm** | Unifica con `api/package-lock.json`. Se elimina `yarn.lock`. |
 | D4 | React | **19.3** | antd 6 exige ≥ 18 y recomienda 19; RR8 exige 19.2.7+. |
-| D5 | Router | **`react-router` 8** (sin `react-router-dom`) | `createHashRouter` + data APIs; se conserva hash routing para no cambiar el despliegue estático. |
+| D5 | Router | **`react-router` 8** (sin `react-router-dom`) | `createHashRouter` + data APIs; se conserva hash routing para no cambiar el despliegue estático. **Revisado 2026-11-10 (v4.1.0):** a petición del propietario, `createBrowserRouter` (rutas sin `#`) con `front/nginx.conf`; ver `docs/front/arquitectura.md`. |
 | D6 | Estado | **Zustand 5** (sustituye redux + redux-saga + react-redux + connected-react-router) | Stores `useUsuarioStore` (sesión, permisos), `useUiStore` (menú colapsado), `useNotificacionesStore`. Las acciones asíncronas (login, cargar cuenta) son funciones `async` dentro del store; no hay sagas. |
 | D7 | Ant Design | **6.7.x + `@ant-design/icons` 6.x**, pasando por 5.29 (último v5) con codemods | La guía oficial exige pasar por v5 primero. |
 | D8 | Fechas | **dayjs** (lo que usa antd 5/6) sustituyendo `moment` en 49 archivos | El plugin de moment es solo webpack. |

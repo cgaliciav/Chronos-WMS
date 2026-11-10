@@ -13,6 +13,7 @@ import TablaGeneral from 'pages/administracion/componentes/tablaGeneral'
 import UsuarioPeticiones from 'services/axios/usuarios'
 import type { UsuarioListado } from '../../tipos'
 import AccionesTablaUsuarios from '../componentes/accionesTablaUsuarios'
+import { Link } from 'react-router'
 
 const UsuariosListado = () => {
   const columns: TableColumnsType<UsuarioListado> = [
@@ -81,9 +82,9 @@ const UsuariosListado = () => {
         <span>
           <Tooltip title="Editar usuario">
             <Tag color="blue">
-              <a href={`#/usuarios/editar?uid=${id}`}>
+              <Link to={`/usuarios/editar?uid=${id}`}>
                 <EditOutlined />
-              </a>
+              </Link>
             </Tag>
           </Tooltip>
           <Popconfirm

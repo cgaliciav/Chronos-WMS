@@ -14,6 +14,7 @@ import {
 import TablaGeneral from '../../componentes/tablaGeneral'
 import type { ProyectoAdmin } from '../../tipos'
 import AccionesTablaProyectos from '../componentes/accionesTablaProyectos'
+import { Link } from 'react-router'
 
 const columns: TableColumnsType<ProyectoAdmin> = [
   {
@@ -110,9 +111,9 @@ const columns: TableColumnsType<ProyectoAdmin> = [
       <span>
         <Tooltip title="Editar proyecto">
           <Tag color="blue">
-            <a href={`#/proyectos/editar?uid=${id}`}>
+            <Link to={`/proyectos/editar?uid=${id}`}>
               <EditOutlined />
-            </a>
+            </Link>
           </Tag>
         </Tooltip>
         <Popconfirm

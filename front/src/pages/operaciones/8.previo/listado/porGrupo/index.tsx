@@ -11,6 +11,7 @@ import GrupoPeticiones from 'services/axios/grupos'
 import { obtenerPropsBusquedaInput } from 'pages/componentes/filtrosTablas'
 import TablaListados from 'pages/operaciones/componentes/tablaListados'
 import type { Grupo } from 'types/api'
+import { Link } from 'react-router'
 
 const PrevioListado = () => {
   const [conteoRefresh, setConteoRefresh] = useState(0)
@@ -63,9 +64,9 @@ const PrevioListado = () => {
         <span>
           <Tooltip title="Ver listado">
             <Tag color="blue">
-              <a href={`#/previo/operacion?uid=${id}`}>
+              <Link to={`/previo/operacion?uid=${id}`}>
                 <EditOutlined />
-              </a>
+              </Link>
             </Tag>
           </Tooltip>
           {/* `list-by-group-antd` añade `fecha` y `movimientosTotales` al grupo. */}

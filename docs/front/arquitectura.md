@@ -11,7 +11,7 @@ JWT en la cabecera `auth`.
 | Build | Vite 8 + `@vitejs/plugin-react` + `vite-tsconfig-paths`; TypeScript 5.9 strict (`tsc -b`, sin JavaScript) | Node 24, npm |
 | Calidad | ESLint 10 (flat: typescript-eslint, @eslint-react, react-hooks, prettier), Prettier 3, Vitest 5 (jsdom) + Testing Library 16 + MSW 3 | |
 | UI | React 19.3, antd 6.7, `@ant-design/icons` 6 | |
-| Estado y rutas | Zustand 5 (`stores/`), `react-router` 8 (`createHashRouter`) | |
+| Estado y rutas | Zustand 5 (`stores/`), `react-router` 8 (`createBrowserRouter`, rutas sin `#` desde v4.1.0) | |
 | Observabilidad | `@sentry/react` 11 (solo con `VITE_SENTRY_DSN`) + `@sentry/vite-plugin` (source maps si hay credenciales) | |
 | HTTP | axios 1.21 (`src/services/axios/index.ts`) | |
 | Fechas | dayjs 1.11 (`helpers/fechas.ts`: plugins y locale `es-mx`) | |
@@ -23,7 +23,7 @@ JWT en la cabecera `auth`.
 ```
 index.tsx           reset de antd, fechas, Sentry, viewport, recuperación de sesión y
                     createRoot(<ConfigProvider tema><App><RouterProvider/>)
-router.tsx          createHashRouter: RaizLayout + 67 rutas lazy + "/" según permisos + "*" → /auth/404
+router.tsx          createBrowserRouter: RaizLayout + 67 rutas lazy + "/" según permisos + "*" → /auth/404
 tema.ts             tokens del tema claro de antd 6 y separación de Tag
 sentry.ts           Sentry.init solo con VITE_SENTRY_DSN
 app/
@@ -87,6 +87,24 @@ componentes de antd (`Tarjeta`/`Encabezado` de `components/ui`, `Space`, `Flex`,
 
 `deploy-production.sh`: `npm version patch` (package.json + lock), commit y tag git, `npm ci && npm run build`, `rsync` de
 `build/` al servidor y `tar.gz` en `deploy_history/`. `deploy.sh` (pruebas) solo hace rsync de `build/`.
+
+### Rutas sin `#` y nginx (desde v4.1.0)
+
+El router usa la history API (`/catalogo/general`, antes `/#/catalogo/general`). Recargar o abrir un enlace directo pide
+esa ruta al servidor, así que el contenedor `frontend` (`nginx:1.25-alpine`) debe devolver `index.html` para cualquier
+ruta que no sea un archivo: lo hace [`front/nginx.conf`](../../front/nginx.conf). Los enlaces antiguos con `#/` se
+convierten al cargar (`helpers/enlacesHash.ts`), y la configuración sirve también los builds anteriores (rollback).
+
+Una sola vez por servidor, **antes** del primer despliegue de v4.1.0 (lo hace una persona; ambos scripts se niegan a
+desplegar mientras falte, salvo `OMITIR_VERIFICACION_NGINX=1`):
+
+1. Copiar `front/nginx.conf` a `~/teleset-almacen/front-nginx.conf` (pruebas: `~/teleset-almacen-test/`).
+2. En el `docker-compose.yml` de ese directorio, añadir al servicio `frontend`:
+   `- ./front-nginx.conf:/etc/nginx/conf.d/default.conf:ro`
+3. `docker-compose up -d frontend` y comprobar que `https://<dominio>/catalogo/general` responde 200 con el HTML.
+
+Staging lo hace solo: `infra/staging/docker-compose.staging.yml` monta el archivo y `update-staging.sh` lo copia en
+cada corrida.
 
 Versionado: reglas del [`CLAUDE.md` raíz](../../CLAUDE.md) (`vX.Y.Z`, sufijos `-d`/`-s`), versión en `package.json`
 (Sentry la usa como `release`). La v4.0.0 marca el cierre de las fases 0-6 del plan 01; como el script de producción

@@ -7,7 +7,7 @@ export default function Logo({ soloIcono = false }: { soloIcono?: boolean }) {
   return (
     <Flex align="center" gap={8} style={{ height: 64, padding: '0 20px', overflow: 'hidden' }}>
       <img
-        src="resources/images/logo.svg"
+        src="/resources/images/logo.svg"
         alt={NOMBRE_APP}
         style={{ width: 24, height: 24, flexShrink: 0 }}
       />

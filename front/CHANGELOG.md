@@ -15,6 +15,22 @@ Los códigos `F<n>` remiten a [`docs/hallazgos-codigo.md`](../docs/hallazgos-cod
 
 Pendiente: fase 7 del plan 01 (pruebas e2e con Playwright, CI y cobertura).
 
+## [4.1.0-d] - 2026-11-10
+
+### Cambios que rompen
+
+- **Rutas sin `#`**: `createBrowserRouter` en lugar de `createHashRouter` (`/catalogo/general`, antes
+  `/#/catalogo/general`; revisa D5). El servidor debe devolver `index.html` en cualquier ruta: **antes de desplegar**,
+  montar [`nginx.conf`](nginx.conf) en el contenedor `frontend` (pasos en `docs/front/arquitectura.md`, sección
+  Despliegue). `deploy.sh` y `deploy-production.sh` se detienen si el servidor aún no lo tiene. Staging lo aplica solo.
+
+### Cambiado
+
+- Los enlaces antiguos con `#/` (marcadores, historial) se convierten a la ruta nueva al cargar
+  (`helpers/enlacesHash.ts`, con prueba).
+- Los enlaces de las tablas (editar, operación, detalle) usan `<Link>` del router: navegan sin recargar la página.
+- Imágenes de `public/resources` con ruta absoluta (`/resources/…`) para que carguen en rutas anidadas.
+
 ## [4.0.1-d] - 2026-11-10
 
 ### Corregido

@@ -11,6 +11,7 @@ import GrupoPeticiones from 'services/axios/grupos'
 import { obtenerPropsBusquedaInput } from 'pages/componentes/filtrosTablas'
 import TablaListados from 'pages/operaciones/componentes/tablaListados'
 import type { Grupo } from 'types/api'
+import { Link } from 'react-router'
 
 // Listados de bajas: 13 justificada, 16 injustificada y 5 (BAJA*, listados antiguos). Constante fuera del
 // componente para que la referencia no cambie en cada render (TablaListados la usa como dependencia).
@@ -67,9 +68,9 @@ const BajasListado = () => {
         <span>
           <Tooltip title="Ver listado">
             <Tag color="blue">
-              <a href={`#/bajas/operacion?uid=${id}`}>
+              <Link to={`/bajas/operacion?uid=${id}`}>
                 <EditOutlined />
-              </a>
+              </Link>
             </Tag>
           </Tooltip>
           {/* `list-by-group-antd` añade `fecha` y `movimientosTotales` al grupo. */}

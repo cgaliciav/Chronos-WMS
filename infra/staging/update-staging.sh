@@ -113,8 +113,11 @@ flock -n 9 || die "Otro update-staging.sh está en curso"
 LOG="$CACHE_DIR/update-$(date +%Y%m%d-%H%M%S).log"
 info "Log completo en $LOG"
 exec > >(tee -a "$LOG") 2>&1
-# Mantener docker-compose.yml al día (variables nuevas del backend, alias de mailpit…).
+# Mantener docker-compose.yml al día (variables nuevas del backend, alias de mailpit…) y la configuración de nginx
+# del front (rutas sin `#`). `up -d frontend` solo recrea el contenedor si cambió su definición.
 vm_rsync -a "$STAGING_DIR/docker-compose.staging.yml" "$R/docker-compose.yml"
+vm_rsync -a "$STAGING_DIR/../../front/nginx.conf" "$R/front-nginx.conf"
+compose up -d frontend
 
 # ---------- --rollback: volver a producción ----------
 if [[ "$MODE" == "rollback" ]]; then
