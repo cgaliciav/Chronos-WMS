@@ -1,6 +1,5 @@
-import {Entity, ManyToMany, JoinTable, OneToMany} from "typeorm";
+import { Entity, OneToMany } from "typeorm";
 import {NombreEstatus} from './common/NombreEstatus'
-import { Comentario } from "./Comentario";
 import { Producto } from "./Producto";
 
 

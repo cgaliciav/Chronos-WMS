@@ -10,9 +10,6 @@ const router = Router();
 const upload = multer({ dest: process.env.UPLOADS, limits: { fileSize: TAMANO_MAXIMO_ARCHIVO, files: 1 } })
 
 router.delete("/:id", soloDigitos("id"), [checkJwt,checkRole(["ADMINISTRADOR","ARCHIVO-BORRAR"])],ArchivoController.borrar)
-// router.get("/:id", soloDigitos("id"), [checkJwt],ArchivoController.obtenerId)
-// router.get("/thumbnail/:id", soloDigitos("id"), [checkJwt],ArchivoController.obtenerThumbnailId)
-// router.get("/catalog/:id", soloDigitos("id"), [checkJwt],ArchivoController.obtenerCatagoloId)
 
 // Los GET de archivos exigen token (cabecera `auth` o `?auth=`); ARCHIVOS_PUBLICOS=true los deja públicos durante la transición (hallazgos H1, C4).
 router.get("/:id", soloDigitos("id"), [checkJwtArchivos],ArchivoController.obtenerId)

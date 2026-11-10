@@ -44,35 +44,8 @@ const funcionQueryListado = () => {
     .leftJoinAndSelect("facturaDetalle.proveedor", "proveedor")
     .leftJoinAndSelect("facturaDetalle.facturaTipo", "facturaTipo");
 
-  // .leftJoinAndSelect("grupo.movimientos","movimientos")
-  // .leftJoinAndSelect("grupo.comentarios","comentarios")
-  // .leftJoin("grupo.archivos","archivos")
-  // .addSelect(['archivos.id','archivos.nombre','archivos.tipoMIME',,'archivos.tipo','archivos.tipoMIME','archivos.orden','archivos.nota'])
-  // .leftJoin("comentarios.sesion","sesionComentarios")
-  // .leftJoin("sesionComentarios.usuario","usuario")
-  // .addSelect("usuario.nombre")
 };
 
-const funcionQueryListadoPorTipoMovimiento = (
-  movimientoTipoId: number | string
-) => {
-  return AppDataSource.getRepository(Grupo)
-    .createQueryBuilder("grupo")
-    .leftJoinAndSelect("grupo.sesion", "sesion")
-    .leftJoinAndSelect("sesion.usuario", "usuario")
-    .leftJoinAndSelect("grupo.grupoDetalle", "grupoDetalle")
-    .leftJoinAndSelect("grupoDetalle.movimientoTipo", "movimientoTipo")
-    .leftJoin("grupo.movimientos", "movimientos")
-    .addSelect("movimientos.id") // <<-- para poder contar cuantos movimientos tiene el grupo en el listado
-    .where("movimientoTipo.id=:movimientoTipoId", { movimientoTipoId });
-  // .leftJoinAndSelect("grupo.movimientos","movimientos")
-  // .leftJoinAndSelect("grupo.comentarios","comentarios")
-  // .leftJoin("grupo.archivos","archivos")
-  // .addSelect(['archivos.id','archivos.nombre','archivos.tipoMIME',,'archivos.tipo','archivos.tipoMIME','archivos.orden','archivos.nota'])
-  // .leftJoin("comentarios.sesion","sesionComentarios")
-  // .leftJoin("sesionComentarios.usuario","usuario")
-  // .addSelect("usuario.nombre")
-};
 
 // Antes: `if (key.indexOf("nombre") || key.indexOf("correo"))` trataba CUALQUIER llave como LIKE (hallazgo M23).
 const condicionesWhereAndPrestamosActivos = (filters: any) =>
@@ -82,88 +55,26 @@ const funcionQueryId = (id: number | string) => {
   return (
     AppDataSource.getRepository(Grupo)
       .createQueryBuilder("grupo")
-      // .leftJoinAndSelect("grupo.movimientos","movimientos")
       .leftJoinAndSelect("grupo.sesion", "sesionGrupo")
-      // .addSelect("sesionGrupo.id")
       .leftJoinAndSelect("sesionGrupo.usuario", "usuarioGrupo")
-      // .addSelect("usuarioGrupo.nombre")
       .leftJoinAndSelect("grupo.comentarios", "comentarios")
       .leftJoin("grupo.archivos", "archivos")
       .addSelect(["archivos.id"])
       .leftJoinAndSelect("comentarios.sesion", "sesionComentarios")
-      // .addSelect("sesionComentarios.id")
       .leftJoinAndSelect("sesionComentarios.usuario", "usuario")
-      // .addSelect("usuario.nombre")
       .leftJoinAndSelect("grupo.grupoDetalle", "grupoDetalle")
-      // .addSelect("grupoDetalle.id")
       .leftJoinAndSelect("grupoDetalle.proyecto", "proyecto")
-      // .addSelect(["proyecto.nombre","esExterno"])
       .leftJoinAndSelect("grupoDetalle.movimientoTipo", "movimientoTipo")
-      // .addSelect(["movimientoTipo.id","movimientoTipo.nombre"])
       .leftJoinAndSelect("grupoDetalle.usuarios", "usuarios")
-      // .addSelect(["usuarios.nombre"])
       .leftJoinAndSelect("grupoDetalle.facturaDetalle", "facturaDetalle")
-      // .addSelect(["facturaDetalle.id","facturaDetalle.numero","facturaDetalle.fechaEmision","facturaDetalle.total","facturaDetalle.impuestos","facturaDetalle.montoIngresado"])
       .leftJoinAndSelect("facturaDetalle.proveedor", "proveedor")
-      // .addSelect(["proveedor.nombre","proveedor.id"])
       .leftJoinAndSelect("facturaDetalle.facturaTipo", "facturaTipo")
-      // .addSelect(["facturaTipo.nombre","facturaTipo.id"])
       .leftJoinAndSelect("grupoDetalle.inventarioDetalle", "inventarioDetalle")
-      // .addSelect(["inventarioDetalle.id","inventarioDetalle.fechaInicio","inventarioDetalle.fechaFin"])
       .leftJoinAndSelect("inventarioDetalle.bodega", "bodega")
-      // .addSelect(["bodega.nombre","bodega.id"])
       .where("grupo.id = :id", { id })
       .orderBy("comentarios.id", "DESC")
   );
 };
-
-const obtenerMovimientosConInventarioActual = async (
-  grupoId: number | string
-) =>
-  await AppDataSource.getRepository(Movimiento)
-    .createQueryBuilder("movimientos")
-    .innerJoinAndSelect("movimientos.grupos", "grupos")
-    .leftJoinAndSelect("movimientos.inventarioActual", "inventarioActual")
-    .where("grupos.id =:grupoId", { grupoId })
-    .getMany();
-
-const obtenerMovimientosConOperacionConInventarioActual = async (
-  grupoId: number | string
-) =>
-
-  AppDataSource.getRepository(Grupo)
-    .createQueryBuilder("grupo")
-    .leftJoinAndSelect("grupo.movimientos", "movimientos")
-    .leftJoinAndSelect("movimientos.operacion", "operacionMovimientos")
-    .leftJoinAndSelect("movimientos.inventarioActual", "inventarioActual")
-    .leftJoinAndSelect("inventarioActual.producto", "producto")
-    .leftJoinAndSelect("producto.productoPrecios", "productoPrecios")
-    .leftJoinAndSelect("productoPrecios.precioTipo", "precioTipo")
-    .leftJoinAndSelect("operacionMovimientos.operacionDetalle", "operacionDetalle")
-    .leftJoinAndSelect("operacionMovimientos.comentarios", "movimientosComentarios")
-    .leftJoinAndSelect("movimientosComentarios.sesion", "movimientosComentariosSesion")
-    .leftJoinAndSelect("movimientosComentariosSesion.usuario", "movimientosComentariosSesionUsuario")
-    .leftJoin("operacionMovimientos.archivos", "archivosComentarios")
-    .addSelect(["archivosComentarios.id"])
-    .leftJoinAndSelect("grupo.sesion", "sesionGrupo")
-    .leftJoinAndSelect("sesionGrupo.usuario", "usuarioGrupo")
-    .leftJoinAndSelect("grupo.comentarios", "comentarios")
-    .leftJoin("grupo.archivos", "archivos")
-    .addSelect(["archivos.id"])
-    .leftJoinAndSelect("comentarios.sesion", "sesionComentarios")
-    .leftJoinAndSelect("sesionComentarios.usuario", "usuario")
-    .leftJoinAndSelect("grupo.grupoDetalle", "grupoDetalle")
-    .leftJoinAndSelect("grupoDetalle.proyecto", "proyecto")
-    .leftJoinAndSelect("grupoDetalle.movimientoTipo", "movimientoTipo")
-    .leftJoinAndSelect("grupoDetalle.usuarios", "usuarios")
-    .leftJoinAndSelect("grupoDetalle.facturaDetalle", "facturaDetalle")
-    .leftJoinAndSelect("facturaDetalle.proveedor", "proveedor")
-    .leftJoinAndSelect("facturaDetalle.facturaTipo", "facturaTipo")
-    .leftJoinAndSelect("grupoDetalle.inventarioDetalle", "inventarioDetalle")
-    .leftJoinAndSelect("inventarioDetalle.bodega", "bodega")
-    .where("grupo.id = :grupoId", { grupoId })
-    .getOne();
-
 
 const obtenerMovimientosConOperacionDeGrupo = async (
   grupoId: number | string
@@ -287,7 +198,6 @@ const funcionQueryListadoMovimientos = () => {
 
 
   return builder;
-  // .addSelect(["proyecto.nombre","proyecto.id"])
 };
 
 async function crearNuevoGrupoConMovimientosDeMovimientos(
@@ -375,7 +285,6 @@ class GrupoController {
     res: Response,
     next: NextFunction
   ) => {
-    // console.log('............................................listaTablaPorListado',req.body);
     const { movimientoTipoId, ...body } = req.body;
 
     let fnQuery: () => SelectQueryBuilder<any>;
@@ -389,8 +298,6 @@ class GrupoController {
     }
     CommonController.listaTablaQryAnd(body, fnQuery, condicionesWhereAnd)
       .then((respuesta) => {
-        // listado
-        // console.log(respuesta.results);
         const { results, filtered, pagination } = respuesta;
         const resultadosAjustados = results.map((resultado) => {
           const { movimientos, ...restoResultado } = resultado;
@@ -421,9 +328,6 @@ class GrupoController {
       .catch((error) => next(error));
   };
 
-  // **
-  // PorProyecto
-  //
   static listaTablaMovimientosPorProyecto = (
     req: Request,
     res: Response,
@@ -532,10 +436,6 @@ class GrupoController {
       );
 
 
-      // console.log(
-      //   "listaTablaPendientesActivos......................................",
-      //   qryC.getSql()
-      // );
       const conteoTotal = await qryC.getCount();
       const qry = funcionQueryListadoPrestamosPendientes(
         proyectoId,
@@ -603,7 +503,6 @@ class GrupoController {
     next: NextFunction
   ) => {
     const {
-      // pagination,
       nombreNuevoGrupo,
       ...body
     } = req.body;
@@ -630,7 +529,6 @@ class GrupoController {
     next: NextFunction
   ) => {
     const {
-      // pagination,
       nombreNuevoGrupo,
       ...body
     } = req.body;
@@ -657,7 +555,6 @@ class GrupoController {
     next: NextFunction
   ) => {
     const {
-      // pagination,
       nombreNuevoGrupo,
       ...body
     } = req.body;
@@ -687,7 +584,6 @@ class GrupoController {
     next: NextFunction
   ) => {
     const {
-      // pagination,
       nombreNuevoGrupo,
       ...body
     } = req.body;
@@ -707,7 +603,7 @@ class GrupoController {
     }
   };
 
-  // TODO nuevoListadoDeCatalogoFacturas
+  // Pendiente (responde 501): nuevoListadoDeCatalogoFacturas
   // **
   static nuevoListadoDeCatalogoFacturas = async (
     req: Request,
@@ -758,7 +654,7 @@ class GrupoController {
   };
 
   // **
-  // TODO nuevoListadoDeReporteUso
+  // Pendiente (responde 501): nuevoListadoDeReporteUso
   static nuevoListadoDeReporteUso = async (
     req: Request,
     res: Response,
@@ -769,7 +665,7 @@ class GrupoController {
   };
 
   // **
-  // TODO nuevoListadoDeReporteMovimiento
+  // Pendiente (responde 501): nuevoListadoDeReporteMovimiento
   static nuevoListadoDeReporteMovimiento = async (
     req: Request,
     res: Response,
@@ -928,7 +824,7 @@ class GrupoController {
       const grupo = await funcionQueryId(grupoId).getOne();
       if (grupo == null) throw new AppError("Grupo ID no encontrado");
       await exigirProyectoEditable({ grupoId }, proyectoId); // antes de modificar nada (plan 02 fase 3)
-      const resp = await CommonController.editar(
+      await CommonController.editar(
         AppDataSource.getRepository(Grupo),
         { nombre: numero, id: grupoId },
         jwtPayload.si

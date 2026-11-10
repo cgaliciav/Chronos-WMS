@@ -1,18 +1,8 @@
-import {Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn, OneToMany, ManyToOne, Index} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Index } from "typeorm";
 import { numericTransformer } from "../helpers/numericTransformer";
-// import { Bodega } from "./Bodega";
 import { Movimiento } from "./Movimiento";
-// import { Producto } from "./Producto";
 import { EstatusEstado } from "./common/NombreEstatus";
 import { InventarioDisponible } from "./InventarioActual";
-
-
-// export enum InventarioDisponible {
-//     DISPONIBLE = "disponible",
-//     NO_DISPONIBLE = "no-disponible",
-//     BAJA = "baja",
-//     CUARENTENA = "cuarentena"
-// }
 
 @Entity()
 export class InventarioActualHistorico {
@@ -46,13 +36,4 @@ export class InventarioActualHistorico {
     @ManyToOne(() => Movimiento, { nullable: true, onDelete: "SET NULL" })
     movimiento:Movimiento | null;
 
-    // @ManyToOne(type => Bodega, bodega => bodega.inventariosActual,{eager:true})
-    // bodega:Bodega;
-
-    // @OneToMany(type => Movimiento, movimiento => movimiento.inventarioActual )
-    // movimientos:Movimiento[];
-
-    // @OneToOne(() => Producto, producto => producto.inventarioActual,{eager:true})
-    // @JoinColumn()
-    // producto:Producto;
 }

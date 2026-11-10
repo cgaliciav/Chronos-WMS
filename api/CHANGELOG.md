@@ -9,6 +9,31 @@ La versión vive en `package.json` (la devuelve `/auth/version`, y Sentry la usa
 `desplegar.sh` publica una versión `X.Y.Z-d` como `X.Y.Z` y, si ya no lleva sufijo, sube el parche. Contrato con el
 front: [`docs/api/endpoints.md`](../docs/api/endpoints.md). Plan: [`docs/planes/02-api-relacion-movimientos.md`](../docs/planes/02-api-relacion-movimientos.md).
 
+## [2.83.4-d] - Sin publicar
+
+Limpieza de código (hallazgos L6, L7 y L11). Sin cambios de contrato ni migraciones.
+
+### Cambiado
+
+- ≈ 1 000 líneas menos de código muerto: imports y variables sin uso (`noUnusedLocals` limpio fuera de las pruebas),
+  funciones que nadie llamaba (`reporteGeneral2`, `reporteMaquillajeGeneral` y sus consultas, tres consultas de
+  `Grupo.Controller`, `queryBusquedaFacturas`) y ≈ 370 líneas de código comentado.
+- `excelFunctions.ts`: de 2 739 a 1 808 líneas. Un solo mapeo de renglones por tipo de reporte, una función de fotos
+  con el tamaño como parámetro y un solo reporte por grupo con variante normal o de foto grande. Entra en
+  `tsconfig.estricto.json`. Los 7 reportes salen idénticos (`reportes.int.test.ts`).
+- Los TODO obsoletos se quitan; los pendientes reales dicen que responden 501.
+
+### Corregido
+
+- Los nombres de los reportes usan un sufijo único (milisegundos + aleatorio); antes `Math.random() * 1e6` podía
+  repetirse y sobrescribir el reporte de otra persona.
+- Un reporte de un proyecto inexistente responde 404 (antes un `TypeError`).
+
+### Pruebas
+
+- `reportes.int.test.ts`: caracterización de los 7 reportes Excel (hojas, celdas, celdas combinadas, imágenes y alturas
+  de fila).
+
 ## [2.83.3-d] - Sin publicar
 
 Fallos abiertos de `docs/hallazgos-codigo.md` y dependencias. Sin migraciones.

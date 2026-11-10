@@ -6,12 +6,9 @@ import { Sesion } from "../entity/Sesion";
 import { Usuario } from "../entity/Usuario";
 import { AppError } from "../helpers/errorClases";
 import { versionPaquete as version } from "../helpers/paquete";
-// import config from "../config/config";
 
 const terminarSesion = async(sesionId:number) =>{
   const sesion = await AppDataSource.getRepository(Sesion).findOneByOrFail({ id: sesionId });
-  
-  
 
   if(sesion.fechaFin===undefined || sesion.fechaFin===null ){
     sesion.fechaFin = new Date();
@@ -37,7 +34,6 @@ class AuthController {
         select:{ id: true, nombre: true, correo: true, vencimiento: true, estatus: true, password: true }, 
         where: { correo: c },
         loadEagerRelations:false, 
-        // cache:true,
       });
 
       if (!usuario.checkIfUnencryptedPasswordIsValid(p)) {
@@ -95,4 +91,3 @@ class AuthController {
 }
 
 export default AuthController;
-// export {terminarSesion};

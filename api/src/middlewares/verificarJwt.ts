@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import * as jwt from "jsonwebtoken";
 import { AppDataSource } from "../data-source";
 import { AppError } from "../helpers/errorClases";
-// import config from "../config/config";
 
 interface jwtPaylodType{
   ui:number,

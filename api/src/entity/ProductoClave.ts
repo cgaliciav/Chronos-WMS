@@ -8,9 +8,6 @@ export class ProductoClave {
     @PrimaryGeneratedColumn()
     id: number;
 
-    // @Index({unique:true})
-    // @Column({type:"varchar" , length:"20"})
-    // clave:string;
 
     @Index({unique:true})
     @Column({type:"varchar" , length:"40"})

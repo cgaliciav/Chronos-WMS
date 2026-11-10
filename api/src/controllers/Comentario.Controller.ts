@@ -6,8 +6,6 @@ import { AppError } from "../helpers/errorClases";
 import { idSeguro } from "../helpers/ids";
 import { repositorioDeRelacion } from "./Archivo.Controller";
 
-
-
 class ComentarioController{
 
     static guardar = async (comentarioStr:string,sesionId:number,) =>{
@@ -17,7 +15,6 @@ class ComentarioController{
         comentario.sesionId=sesionId;
         comentario.sesion=await AppDataSource.getRepository(Sesion).findOneByOrFail({ id: sesionId });
 
-        // console.log("comentario",comentario);
 
         return (
             await AppDataSource.getRepository(Comentario).save(comentario)
@@ -25,7 +22,6 @@ class ComentarioController{
     }
 
     static quitar = async (comentario:Comentario,sesionId:number) => {
-        // const archivo = await getRepository(Archivo).findOneOrFail(archivoId);
         comentario.sesionId = sesionId;
         return (await AppDataSource.getRepository(Comentario).remove(comentario));
     }
@@ -35,7 +31,6 @@ class ComentarioController{
         const {id,relacion,comentario}=req.body;
         const {jwtPayload}=res.locals;
         try {
-            // console.log("jwtPayload",jwtPayload)
             if (typeof comentario !== "string" || comentario.trim().length === 0) {
                 throw new AppError("El comentario no puede estar vacío", 400);
             }

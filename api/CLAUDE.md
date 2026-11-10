@@ -2,7 +2,7 @@
 
 API REST del almacén. **Node 24** (`.nvmrc`, `Dockerfile` multietapa `node:24-alpine`) · **Express 5** ·
 **TypeORM 1.1** (`AppDataSource` de `src/data-source.ts`) · **MariaDB** (driver `mysql2` 3) · TypeScript 5.9
-(no estricto; `tsconfig.estricto.json` aplica `strict` a services, helpers, esquemas, middlewares y migration).
+(no estricto; `tsconfig.estricto.json` aplica `strict` a services, helpers (también excelFunctions), esquemas, middlewares y migration).
 Arranque: `npm run dev` (ts-node-dev) o `npm start` (ts-node); compilado: `npm run build && npm run prod`.
 Puerto `PORT_ALMACEN_API` (4100 dev). Logs: `logger` de `helpers/logger.ts` (pino), **no `console.*`**.
 Pruebas: `npm run test:unit` (sin BD), `npm run test:int` (MariaDB de `.env.test`, recrea el esquema con las
@@ -39,7 +39,7 @@ src/subscriber/         GeneralSubscriber: auditoría automática en LogFunciona
 src/helpers/            errorClases (AppError, con `detalle` para respuestas 409), filtrosTabla (filtros/orden parametrizados),
                         ids (idSeguro), numericTransformer, archivosSeguros, cacheArchivos (escritura atómica y limpieza),
                         logger (pino), opcionesFind (rutas "a.b" → objeto de relations/select), paquete (versión),
-                        validacion, enviarMail (nodemailer), excelFunctions (reportes exceljs, 2 800 líneas), passGenerator
+                        validacion, enviarMail (nodemailer), excelFunctions (reportes exceljs, 1 800 líneas, ver reportes.int.test), passGenerator
 src/esquemas/           esquemas zod de los cuerpos de petición (se aplican con middlewares/validar.ts)
 src/sentry.ts           Sentry preparado: solo se inicializa con SENTRY_DSN
 ```

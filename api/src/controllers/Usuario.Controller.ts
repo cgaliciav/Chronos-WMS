@@ -6,7 +6,6 @@ import { AppDataSource } from "../data-source";
 import { Area } from "../entity/Area";
 import { Bodega } from "../entity/Bodega";
 import { EstatusEstado } from "../entity/common/NombreEstatus";
-import { LogTipo } from "../entity/LogGeneral";
 import { Proyecto } from "../entity/Proyecto";
 import { Rol } from "../entity/Rol";
 import { Usuario } from "../entity/Usuario";
@@ -15,26 +14,8 @@ import { AppError } from "../helpers/errorClases";
 import passGenerator from "../helpers/passGenerator";
 import CommonController, { ResultadoTabla } from "./common/Common.Controller";
 import { aplicarFiltros, columnaSegura, construirFiltros, direccionSegura } from "../helpers/filtrosTabla";
-import LogGeneralController from "./LogGeneral.Controller";
 import { logger } from "../helpers/logger";
 import { idSeguro, parametro } from "../helpers/ids";
-
-
-
-// const BusquedaListaSimpleCompleta = async (camposSelect:string[],busqueda:string="")=>{
-
-//   const options:FindManyOptions<Usuario>={
-//     select:camposSelect.map(cs=>cs as (keyof Usuario))
-//   }
-
-//   if(busqueda.length>0)
-//     options.where={nombre:Like(`%${busqueda}%`)}
-
-//   return getRepository(Usuario).find({
-//     select:["id","nombre"],
-//     where:{nombre:Like(`%${busqueda}%`) }
-//   })
-// }
 
 // Filtros de la tabla de usuarios, parametrizados (hallazgo C1). `estatusExtendido` es una columna calculada.
 const ESTATUS_EXTENDIDO = 'if(usuario.estatus="inactivo","inactivo",if(usuario.vencimiento <= current_timestamp() ,"vencido","activo"))';
@@ -93,12 +74,9 @@ class UsuarioController{
       const {pageSize} = pagination;                
       let starts = pageSize*page - pageSize;
 
-      // console.error("OTROS",{campoOrden,direccionOrden,starts})
-      // console.log('*************** FILTERS',filters);
   
       const queryVencimiento = AppDataSource.getRepository(Usuario)
       .createQueryBuilder("usuario")
-      // .select(["usuario.id","usuario.nombre","usuario.correo","usuario.vencimiento","usuario.estatus"])
       .select(["usuario.id"])
       .addSelect(ESTATUS_EXTENDIDO,"estatusExtendido")
       
@@ -311,8 +289,6 @@ class UsuarioController{
       });
 
       if(!usuario.checkIfUnencryptedPasswordIsValid(pa)){
-        // console.error(new Error("El password enviado como actual no coincide con el almacenado en la BD"));      
-        // LogGeneralController.InsertarLog(LogTipo.ERROR,"UsuarioController.cambiarPassword El password enviado como actual no coincide con el almacenado en la BD");
         throw new AppError("El password enviado como actual no coincide con el almacenado en la BD",403);
       }
       usuario.sesionId=si;

@@ -11,7 +11,6 @@ export enum FuncionamientoEstado {
 @Entity()
 export class LogFuncionamiento{
 
-    // sesionId:number;
 
     @PrimaryGeneratedColumn()
     id: number;

@@ -2,7 +2,6 @@ import {Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn, ManyToOne,
 import { numericTransformer } from "../helpers/numericTransformer";
 
 import { InventarioActual } from "./InventarioActual";
-import { Producto } from "./Producto";
 import { Sesion } from "./Sesion";
 import { EstatusEstado } from "./common/NombreEstatus";
 import { Operacion } from "./Operacion";
