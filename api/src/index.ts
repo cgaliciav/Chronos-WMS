@@ -27,8 +27,8 @@ import { logger } from "./helpers/logger";
   const http_server = app.listen(PUERTO_API, "0.0.0.0", () => {
     logger.info(`Express funcionando en el puerto ${PUERTO_API}. http://localhost:${PUERTO_API}/`);
   });
-  app.on("error", (e) => {
-    logger.info("ERROR EXPRESS LISTEN", { e });
+  http_server.on("error", (e) => {
+    logger.error("Error del servidor HTTP:", e);
   });
 
   const cerrarOrdenadamente = async (senal: string) => {

@@ -14,7 +14,7 @@ import { Movimiento } from "../entity/Movimiento";
 import { Sesion } from "../entity/Sesion";
 import { AppError } from "../helpers/errorClases";
 import { andWhereIn, aplicarFiltros, columnaSegura, construirFiltros, direccionSegura } from "../helpers/filtrosTabla";
-import { idSeguro, idsSeguros } from "../helpers/ids";
+import { idSeguro, idsSeguros, parametro } from "../helpers/ids";
 import CommonController from "./common/Common.Controller";
 import GrupoDetalleController from "./GrupoDetalle.Controller";
 import InventarioActualController, {
@@ -416,7 +416,7 @@ class GrupoController {
 
   static obtenerId = (req: Request, res: Response, next: NextFunction) => {
 
-    const { id } = req.params;
+    const id = parametro(req, "id");
 
     CommonController.obtenerIdQuery(funcionQueryId(id))
       .then((registro) => {
@@ -1011,7 +1011,7 @@ class GrupoController {
   // ** habilitar
   static habilitar = (req: Request, res: Response, next: NextFunction) => {
     const { jwtPayload } = res.locals;
-    const { id } = req.params;
+    const id = parametro(req, "id");
     CommonController.habilitar(getRepository(Grupo), id, jwtPayload.si)
       .then((respuesta) => {
         res.json(respuesta);
@@ -1022,7 +1022,7 @@ class GrupoController {
   // ** deshabilitar
   static deshabilitar = (req: Request, res: Response, next: NextFunction) => {
     const { jwtPayload } = res.locals;
-    const { id } = req.params;
+    const id = parametro(req, "id");
     CommonController.deshabilitar(getRepository(Grupo), id, jwtPayload.si)
       .then((respuesta) => {
         res.json(respuesta);
@@ -1033,7 +1033,7 @@ class GrupoController {
   // ** finalizar
   static finalizar = (req: Request, res: Response, next: NextFunction) => {
     const { jwtPayload } = res.locals;
-    const { id } = req.params;
+    const id = parametro(req, "id");
     CommonController.finalizar(getRepository(Grupo), id, jwtPayload.si)
       .then((respuesta) => {
         res.json(respuesta);

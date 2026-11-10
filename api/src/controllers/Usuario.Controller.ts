@@ -16,6 +16,7 @@ import CommonController, { ResultadoTabla } from "./common/Common.Controller";
 import { aplicarFiltros, columnaSegura, construirFiltros, direccionSegura } from "../helpers/filtrosTabla";
 import LogGeneralController from "./LogGeneral.Controller";
 import { logger } from "../helpers/logger";
+import { parametro } from "../helpers/ids";
 
 
 
@@ -158,7 +159,7 @@ class UsuarioController{
   //obtener datos del usuario por ID. solo para administradores
   // incluye todo: areas,bodegas, proyectos
   static obtenerId = (req: Request, res: Response, next:NextFunction) =>{
-    const {id} = req.params;
+    const id = parametro(req, "id");
     CommonController.obtenerId(
       getRepository(Usuario),
       ["areas","bodegas","proyectos","comentarios","roles"],
@@ -349,7 +350,7 @@ class UsuarioController{
   static habilitar = (req: Request, res: Response,next:NextFunction) =>{
     CommonController.habilitar(
       getRepository(Usuario),
-      req.params.id,
+      parametro(req, "id"),
       res.locals.jwtPayload.si
     )
     .then( respuesta => {
@@ -361,7 +362,7 @@ class UsuarioController{
   static deshabilitar = (req: Request, res: Response,next:NextFunction) =>{
     CommonController.deshabilitar(
       getRepository(Usuario),
-      req.params.id,
+      parametro(req, "id"),
       res.locals.jwtPayload.si
     )
     .then( respuesta => {

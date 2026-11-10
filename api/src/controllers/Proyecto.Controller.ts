@@ -3,6 +3,7 @@ import { getRepository } from "typeorm";
 import { Proyecto } from "../entity/Proyecto";
 import CommonController from "./common/Common.Controller";
 import { construirFiltros } from "../helpers/filtrosTabla";
+import { parametro } from "../helpers/ids";
 
 const listaSimple = async()=>(
     await CommonController.listaSimple(
@@ -56,7 +57,7 @@ class ProyectoController{
 
 
     static obtenerId = (req: Request, res: Response,next:NextFunction) =>{
-        const {id} = req.params;
+        const id = parametro(req, "id");
         CommonController.obtenerId( 
             getRepository(Proyecto), 
             ["comentarios"], 
@@ -97,7 +98,7 @@ class ProyectoController{
 
     static habilitar = (req: Request, res: Response,next:NextFunction) =>{
         const {jwtPayload}=res.locals;
-        const {id} = req.params;
+        const id = parametro(req, "id");
         CommonController.habilitar(
             getRepository(Proyecto),
             id,
@@ -111,7 +112,7 @@ class ProyectoController{
 
     static deshabilitar = (req: Request, res: Response,next:NextFunction) =>{
         const {jwtPayload}=res.locals;
-        const {id} = req.params;
+        const id = parametro(req, "id");
         CommonController.deshabilitar(
             getRepository(Proyecto),
             id,

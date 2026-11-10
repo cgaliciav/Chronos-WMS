@@ -4,6 +4,7 @@ import { checkJwt } from "../middlewares/verificarJwt";
 import { checkRole } from "../middlewares/verificarRol";
 import { validarBody } from "../middlewares/validar";
 import { inventarioEditarSchema } from "../esquemas";
+import { soloDigitos } from "../middlewares/rutas";
 
 const router = Router();
 
@@ -17,7 +18,7 @@ const router = Router();
 
 router.delete("/delete",[checkJwt,checkRole(["ADMINISTRADOR","INVENTARIOACTUAL-BORRAR"])], InventarioActualController.borrar);
 
-router.get("/:id([0-9]+)",[checkJwt,checkRole(["ADMINISTRADOR","INVENTARIOACTUAL-DETALLE"])],InventarioActualController.obtenerId)
+router.get("/:id", soloDigitos("id"), [checkJwt,checkRole(["ADMINISTRADOR","INVENTARIOACTUAL-DETALLE"])],InventarioActualController.obtenerId)
 router.put("/edit",[checkJwt,checkRole(["ADMINISTRADOR","INVENTARIOACTUAL-EDITAR"]),validarBody(inventarioEditarSchema)], InventarioActualController.editar);
 
 router.post("/list-catalog-general",[checkJwt,checkRole(["ADMINISTRADOR","INVENTARIOACTUAL-CATALOGOGENERAL"])], InventarioActualController.busquedaCatalogoGeneral);

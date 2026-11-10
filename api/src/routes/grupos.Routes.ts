@@ -6,6 +6,7 @@ import { checkRole } from "../middlewares/verificarRol";
 import { validarBody } from "../middlewares/validar";
 import { actividadCompraSchema, actividadSchema, agregarOperacionSchema, quitarMovimientoSchema } from "../esquemas";
 import { TAMANO_MAXIMO_ARCHIVO } from "../controllers/Archivo.Controller";
+import { soloDigitos } from "../middlewares/rutas";
 // import { conManejoDeErrores } from "../middlewares/manejoErrores";
 
 const router = Router();
@@ -21,11 +22,11 @@ router.post("/list-by-project-antd",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS
 
 router.post("/list-by-group-antd",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-LISTADETALLE"])], GrupoController.listaTablaPorListado);
 
-router.put("/disable/:id([0-9]+)",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-DESHABILITAR"])],GrupoController.deshabilitar)
-router.put("/enable/:id([0-9]+)",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-HABILITAR"])],GrupoController.habilitar)
-router.put("/closure/:id([0-9]+)",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-FINALIZAR"])],GrupoController.finalizar)
+router.put("/disable/:id", soloDigitos("id"), [checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-DESHABILITAR"])],GrupoController.deshabilitar)
+router.put("/enable/:id", soloDigitos("id"), [checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-HABILITAR"])],GrupoController.habilitar)
+router.put("/closure/:id", soloDigitos("id"), [checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-FINALIZAR"])],GrupoController.finalizar)
 
-router.get("/:id([0-9]+)",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-DETALLE"])], GrupoController.obtenerId)
+router.get("/:id", soloDigitos("id"), [checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-DETALLE"])], GrupoController.obtenerId)
 router.put("/edit",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-EDITAR"])],GrupoController.editar)
 router.post("/new",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-NUEVO"])],GrupoController.nuevo)
 router.delete("/remove",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-BORRAR"])],GrupoController.borrar)
