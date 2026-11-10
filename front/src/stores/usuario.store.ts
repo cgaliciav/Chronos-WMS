@@ -4,7 +4,7 @@ import AutorizacionPeticiones from 'services/axios/autorizacion'
 import UsuarioPeticiones from 'services/axios/usuarios'
 import { borrar, borrarToken, obtenerToken } from 'helpers/storage'
 import type { UsuarioActual } from 'types/api'
-import { MARCA_POR_DEFECTO } from 'app/marca'
+import { useMarcaStore } from 'stores/marca.store'
 
 /** Sesión del usuario (sustituye a `redux/user` y sus sagas). */
 export interface EstadoUsuario {
@@ -68,7 +68,7 @@ export const useUsuarioStore = create<EstadoUsuario>()((set, get) => ({
       }
       notification.success({
         title: '¡Bienvenido!',
-        description: `Has entrado correctamente a ${MARCA_POR_DEFECTO.nombreApp}`,
+        description: `Has entrado correctamente a ${useMarcaStore.getState().marca.nombreApp}`,
       })
       return true
     } catch {

@@ -1,9 +1,11 @@
 import { Typography } from 'antd'
-import { MARCA_POR_DEFECTO } from 'app/marca'
+import { useMarcaStore } from 'stores/marca.store'
 
 /** Pie de página común (antes `cleanui/layout/Footer`): crédito del proveedor, aviso de privacidad y soporte. */
 export default function PieDePagina({ centrado = false }: { centrado?: boolean }) {
-  const { creditoProveedor, avisoPrivacidadUrl, soporteCorreo } = MARCA_POR_DEFECTO
+  const { creditoProveedor, avisoPrivacidadUrl, soporteCorreo } = useMarcaStore(
+    estado => estado.marca,
+  )
   return (
     <div style={{ textAlign: centrado ? 'center' : 'left' }}>
       {creditoProveedor.visible && (

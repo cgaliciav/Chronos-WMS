@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, type ComponentType, type ReactNode } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router'
-import { PREFIJO_TITULO } from 'components/Titulo'
+import { useMarcaStore } from 'stores/marca.store'
 import { useUsuarioStore } from 'stores/usuario.store'
 import AuthLayout from './AuthLayout'
 import { RUTA_CAMBIO_PASSWORD } from 'app/auth/rutas'
@@ -29,11 +29,18 @@ export default function RaizLayout() {
   const autorizado = useUsuarioStore(estado => estado.autorizado)
   const cargando = useUsuarioStore(estado => estado.cargando)
   const cambioPasswordPendiente = useUsuarioStore(estado => estado.cambioPasswordPendiente)
+  const nombreCorto = useMarcaStore(estado => estado.marca.nombreCorto)
+  const marcaCargada = useMarcaStore(estado => estado.cargada)
 
   // Título por defecto; efecto de layout para que lo sobrescriba el <Titulo> de la página (efecto normal).
   useLayoutEffect(() => {
-    document.title = PREFIJO_TITULO
-  }, [pathname])
+    document.title = nombreCorto
+  }, [pathname, nombreCorto])
+
+  // Si la marca no se pudo cargar al arrancar (API caído), se reintenta en la siguiente navegación.
+  useEffect(() => {
+    if (!marcaCargada) void useMarcaStore.getState().cargar()
+  }, [pathname, marcaCargada])
 
   useEffect(() => {
     window.scrollTo(0, 0)

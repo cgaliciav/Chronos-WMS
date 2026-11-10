@@ -4,7 +4,7 @@ import { version } from '../../../package.json'
 import Titulo from 'components/Titulo'
 import { limpiarCache } from 'helpers/limpiarCache'
 import { useVersionApi } from 'app/layouts/useVersionApi'
-import { MARCA_POR_DEFECTO } from 'app/marca'
+import { useMarcaStore } from 'stores/marca.store'
 import { useUsuarioStore } from 'stores/usuario.store'
 import { RUTA_CAMBIO_PASSWORD } from './rutas'
 
@@ -19,6 +19,7 @@ export default function LoginPage() {
   const cargando = useUsuarioStore(estado => estado.cargando)
   const navigate = useNavigate()
   const versionApi = useVersionApi()
+  const { textoBienvenida, textoAyudaLogin } = useMarcaStore(estado => estado.marca)
 
   const alEnviar = async ({ email, password }: DatosAcceso) => {
     if (await login(email, password)) {
@@ -32,7 +33,7 @@ export default function LoginPage() {
     <Flex vertical gap={24}>
       <Titulo texto="Acceso" />
       <Typography.Title level={2} style={{ textAlign: 'center', margin: 0 }}>
-        {MARCA_POR_DEFECTO.textoBienvenida}
+        {textoBienvenida}
       </Typography.Title>
       <Card title="Información de acceso">
         <Form<DatosAcceso> layout="vertical" requiredMark={false} onFinish={alEnviar}>
@@ -55,7 +56,7 @@ export default function LoginPage() {
       </Card>
       <Flex vertical align="center" gap={8}>
         <Typography.Text type="secondary" style={{ textAlign: 'center' }}>
-          {MARCA_POR_DEFECTO.textoAyudaLogin}
+          {textoAyudaLogin}
         </Typography.Text>
         <Space>
           <Typography.Text>{`Versión: ${version}`}</Typography.Text>

@@ -1,5 +1,6 @@
 import { Form, Skeleton, Modal, InputNumber, Select } from 'antd'
 import type { Numerico, PrecioTipo } from 'types/api'
+import { formatearImporte, leerImporte, useMonedas } from 'helpers/moneda'
 
 /** Valores del formulario de precio. */
 export interface ValoresFormaPrecio {
@@ -31,6 +32,7 @@ const ModalFormaPrecios = ({
   cerrarModal,
 }: ModalFormaPreciosProps) => {
   const [form] = Form.useForm<ValoresFormaPrecio>()
+  const monedas = useMonedas()
 
   const cargandoForma = guardando === null || guardando === undefined
 
@@ -70,8 +72,8 @@ const ModalFormaPrecios = ({
           >
             <InputNumber
               step={0.01}
-              formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-              parser={value => (value ?? '').replace(/\$\s?|(,*)/g, '')}
+              formatter={formatearImporte}
+              parser={leerImporte}
               placeholder="Precio del producto"
               disabled={guardando || !habilitado}
             />
@@ -89,10 +91,7 @@ const ModalFormaPrecios = ({
             <Select
               placeholder="Selecciona la moneda"
               disabled={guardando || !habilitado}
-              options={[
-                { label: 'MXN', value: 'MXN' },
-                { label: 'USD', value: 'USD' },
-              ]}
+              options={monedas.opciones}
             />
           </Form.Item>
         </Form>
