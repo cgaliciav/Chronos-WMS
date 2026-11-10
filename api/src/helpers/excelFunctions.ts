@@ -1,8 +1,10 @@
 import { Table, Workbook, Worksheet } from "exceljs";
+import { randomInt } from "crypto";
 import { performance } from "perf_hooks";
 import { Brackets, SelectQueryBuilder, In } from "typeorm";
 import { AppDataSource } from "../data-source";
 import { idSeguro } from "./ids";
+import { AppError } from "./errorClases";
 import { aplicarFiltros, columnaSegura, direccionSegura } from "./filtrosTabla";
 import { MovimientoTipoId as T } from "../entity/common/MovimientoTipoId";
 import {
@@ -17,8 +19,25 @@ import { Grupo } from "../entity/Grupo";
 import { Movimiento } from "../entity/Movimiento";
 import { Proyecto } from "../entity/Proyecto";
 import { Usuario } from "../entity/Usuario";
-import sharp from "sharp";
+import sharp, { Sharp } from "sharp";
 import { logger } from "./logger";
+
+/**
+ * Sufijo único del nombre de un reporte: milisegundos + 3 cifras aleatorias. Antes `Math.random() * 1e6`, que podía
+ * repetirse y sobrescribir el reporte de otra persona (hallazgo L11).
+ */
+const idArchivo = () => `${Date.now()}${String(randomInt(1000)).padStart(3, "0")}`;
+
+/** Nombre del proyecto del reporte; 404 si no existe (antes un TypeError al leer `.nombre` de `null`). */
+const nombreProyecto = async (proyectoId: unknown) => {
+  const proyecto = await AppDataSource.getRepository(Proyecto).findOne({
+    where: { id: idSeguro(proyectoId, "proyectoId") },
+    select: { id: true, nombre: true },
+    loadEagerRelations: false,
+  });
+  if (!proyecto) throw new AppError("Proyecto no encontrado", 404);
+  return proyecto.nombre;
+};
 
 function compareStringsIgnoreAccents(str1: string, str2: string): boolean {
   if (!str1 || !str2) {
@@ -396,277 +415,116 @@ function mergeCellsAndInsertData(sheet: Worksheet, rangeXls: string, data: strin
 }
 
 
-const obtenerRenglonesMovimientoProyecto = (
-  resultados: Movimiento[],
-  saltar: number
-) => {
-  return resultados.map((item, idx) => {
-    return [
-      idx + 1 + saltar,
-      "",
-      item.inventarioActual.producto.productoClaves[
-        item.inventarioActual.producto.productoClaves.length - 1
-      ].barras, // clave más reciente
-      item.inventarioActual.producto.titulo, // artículo
-      item.inventarioActual.producto.descripcion.trim(), // descripcion
-      item.inventarioActual.producto.area?.nombre, // area
-      +item.inventarioActual.producto?.productoPrecios[
-        item.inventarioActual.producto.productoPrecios?.findIndex(
-          (pp) => pp.precioTipo.id === 2
-        )
-      ]?.precio * item.cantidad, // DONE total $$$
-      item.operacion?.usuarios?.map((usr) => usr.nombre).join("\n"), //responsables
-      item.operacion?.fecha, //fecha
-    ];
-  });
-};
+// ── Renglones de las tablas (hallazgo L11: antes 5 mapeos y 5 "agregarDatos" casi idénticos) ──────────────────
 
-const obtenerRenglonesMovimientoProyectoFotoGrande = (
-  resultados: Movimiento[],
-  saltar: number
-) => {
-  return resultados.map((item, idx) => {
-    return [
-      idx + 1 + saltar,
-      "",
-      item.inventarioActual.producto.productoClaves[
-        item.inventarioActual.producto.productoClaves.length - 1
-      ].barras, // clave más reciente
-      item.inventarioActual.producto.titulo, // artículo
-      item.inventarioActual.producto.descripcion.trim(), // descripcion
-      +item.inventarioActual.producto?.productoPrecios[
-        item.inventarioActual.producto.productoPrecios?.findIndex(
-          (pp) => pp.precioTipo.id === 2
-        )
-      ]?.precio * item.cantidad, // DONE total $$$
-      item.operacion?.usuarios?.map((usr) => usr.nombre).join("\n"), //responsables
-      item.operacion?.fecha, //fecha
-    ];
-  });
-};
+/** Clave de barras más reciente del producto. */
+const claveReciente = (item: Movimiento) =>
+  item.inventarioActual.producto.productoClaves[item.inventarioActual.producto.productoClaves.length - 1].barras;
 
-const obtenerRenglonesMovimiento = (
-  resultados: Movimiento[],
-  saltar: number
-) => {
-  return resultados.map((item, idx) => {
-    return [
-      idx + 1 + saltar,
-      "",
-      item.inventarioActual.producto.productoClaves[
-        item.inventarioActual.producto.productoClaves.length - 1
-      ].barras, // clave más reciente
-      item.inventarioActual.producto.titulo, // artículo
-      item.inventarioActual.producto.descripcion.trim(), // descripcion
-      item.inventarioActual.producto.area?.nombre, // area
-      item.inventarioActual.bodega?.nombre, // almacen
-      item.sesion?.usuario?.nombre, // almacenista
-      item.operacion?.movimientoTipo?.nombre, // operacion
-      item.operacion?.proyecto?.nombre, // proyecto
-      +item.inventarioActual.producto?.productoPrecios[
-        item.inventarioActual.producto.productoPrecios?.findIndex(
-          (pp) => pp.precioTipo.id === 2
-        )
-      ]?.precio * item.cantidad, // DONE total $$$
-      item.operacion?.usuarios?.map((usr) => usr.nombre).join("\n"), //responsables
-      item.operacion?.fecha, //fecha
+/** Precio original (tipo 2, decisión 13) × cantidad. */
+const totalPrecioOriginal = (item: Movimiento) =>
+  +item.inventarioActual.producto?.productoPrecios[
+    item.inventarioActual.producto.productoPrecios?.findIndex((pp) => pp.precioTipo.id === 2)
+  ]?.precio * item.cantidad;
 
-      // item.grupos[0]?.grupoDetalle?.facturaDetalle?.proveedor?.nombre, //Proveedor
-      // item.grupos[0]?.grupoDetalle?.facturaDetalle?.facturaTipo?.nombre, //TipoFactura
-      // item.grupos[0]?.grupoDetalle?.facturaDetalle?.numero, //Numero Factura
-      // item.grupos[0]?.grupoDetalle?.facturaDetalle?.fechaEmision, //Fecha Factura
+const responsables = (item: Movimiento) => item.operacion?.usuarios?.map((usr) => usr.nombre).join("\n");
 
-      item.operacion?.comentarios?.map((com) => com.comentario).join("\n") +
-      "\n" +
-      item.grupos[0]?.comentarios?.map((com) => com.comentario).join("\n"), // comentarios grupo y movimiento
-    ];
-  });
-};
+/** Comentarios del movimiento y de su grupo. */
+const comentarios = (item: Movimiento) =>
+  item.operacion?.comentarios?.map((com) => com.comentario).join("\n") +
+  "\n" +
+  item.grupos[0]?.comentarios?.map((com) => com.comentario).join("\n");
 
-const obtenerRenglonesMovimientoCompras = (
-  resultados: Movimiento[],
-  saltar: number
-) => {
-  return resultados
+/** Factura en dólares (tipo de factura 4): va en la hoja USD del reporte de compras. */
+const esFacturaUSD = (item: Movimiento) => item.grupos[0]?.grupoDetalle?.facturaDetalle?.facturaTipo?.id === 4;
+
+// Celdas de exceljs (texto, número, fecha o vacío); `any` como los mapeos anteriores.
+type Renglones = (resultados: Movimiento[], saltar: number) => any[][];
+
+/** Reportes por grupo y por proyecto: n.º, foto, clave, artículo, descripción, área, total, responsables, fecha. */
+const obtenerRenglonesMovimientoProyecto: Renglones = (resultados, saltar) =>
+  resultados.map((item, idx) => [
+    idx + 1 + saltar,
+    "",
+    claveReciente(item),
+    item.inventarioActual.producto.titulo,
+    item.inventarioActual.producto.descripcion.trim(),
+    item.inventarioActual.producto.area?.nombre,
+    totalPrecioOriginal(item),
+    responsables(item),
+    item.operacion?.fecha,
+  ]);
+
+/** Igual que `obtenerRenglonesMovimientoProyecto` sin la columna de área (la foto grande ocupa su lugar). */
+const obtenerRenglonesMovimientoProyectoFotoGrande: Renglones = (resultados, saltar) =>
+  obtenerRenglonesMovimientoProyecto(resultados, saltar).map((fila) => fila.filter((_, columna) => columna !== 5));
+
+/** Columnas comunes de los reportes con detalle (préstamos activos y compras). */
+const columnasDetalle = (item: Movimiento, numero: number) => [
+  numero,
+  "",
+  claveReciente(item),
+  item.inventarioActual.producto.titulo,
+  item.inventarioActual.producto.descripcion.trim(),
+  item.inventarioActual.producto.area?.nombre,
+  item.inventarioActual.bodega?.nombre, // almacén
+  item.sesion?.usuario?.nombre, // almacenista
+  item.operacion?.movimientoTipo?.nombre,
+  item.operacion?.proyecto?.nombre,
+  totalPrecioOriginal(item),
+  responsables(item),
+  item.operacion?.fecha,
+];
+
+const obtenerRenglonesMovimiento: Renglones = (resultados, saltar) =>
+  resultados.map((item, idx) => [...columnasDetalle(item, idx + 1 + saltar), comentarios(item)]);
+
+/** Compras de una moneda: las de la otra se omiten, pero el número de renglón cuenta todas (como antes). */
+const obtenerRenglonesCompras = (usd: boolean): Renglones => (resultados, saltar) =>
+  resultados
     .map((item, idx) => {
-      if (item.grupos[0]?.grupoDetalle?.facturaDetalle?.facturaTipo?.id === 4) {
-        return null;
-      }
+      if (esFacturaUSD(item) !== usd) return null;
+      const factura = item.grupos[0]?.grupoDetalle?.facturaDetalle;
       return [
-        idx + 1 + saltar,
-        "",
-        item.inventarioActual.producto.productoClaves[
-          item.inventarioActual.producto.productoClaves.length - 1
-        ].barras, // clave más reciente
-        item.inventarioActual.producto.titulo, // artículo
-        item.inventarioActual.producto.descripcion.trim(), // descripcion
-        item.inventarioActual.producto.area?.nombre, // area
-        item.inventarioActual.bodega?.nombre, // almacen
-        item.sesion?.usuario?.nombre, // almacenista
-        item.operacion?.movimientoTipo?.nombre, // operacion
-        item.operacion?.proyecto?.nombre, // proyecto
-        +item.inventarioActual.producto?.productoPrecios[
-          item.inventarioActual.producto.productoPrecios?.findIndex(
-            (pp) => pp.precioTipo.id === 2
-          )
-        ]?.precio * item.cantidad, // DONE total $$$
-        item.operacion?.usuarios?.map((usr) => usr.nombre).join("\n"), //responsables
-        item.operacion?.fecha, //fecha
-
-        item.grupos[0]?.grupoDetalle?.facturaDetalle?.proveedor?.nombre, //Proveedor
-        item.grupos[0]?.grupoDetalle?.facturaDetalle?.facturaTipo?.nombre, //TipoFactura
-        item.grupos[0]?.grupoDetalle?.facturaDetalle?.numero, //Numero Factura
-        item.grupos[0]?.grupoDetalle?.facturaDetalle?.fechaEmision, //Fecha Factura
-
-        item.operacion?.comentarios?.map((com) => com.comentario).join("\n") +
-        "\n" +
-        item.grupos[0]?.comentarios?.map((com) => com.comentario).join("\n"), // comentarios grupo y movimiento
+        ...columnasDetalle(item, idx + 1 + saltar),
+        factura?.proveedor?.nombre,
+        factura?.facturaTipo?.nombre,
+        factura?.numero,
+        factura?.fechaEmision,
+        comentarios(item),
       ];
     })
-    .filter((it) => it !== null);
-};
+    .filter((it): it is any[] => it !== null);
 
-const obtenerRenglonesMovimientoComprasUSD = (
-  resultados: Movimiento[],
-  saltar: number
-) => {
-  return resultados
-    .map((item, idx) => {
-      if (item.grupos[0]?.grupoDetalle?.facturaDetalle?.facturaTipo?.id !== 4) {
-        return null;
-      }
-      return [
-        idx + 1 + saltar,
-        "",
-        item.inventarioActual.producto.productoClaves[
-          item.inventarioActual.producto.productoClaves.length - 1
-        ].barras, // clave más reciente
-        item.inventarioActual.producto.titulo, // artículo
-        item.inventarioActual.producto.descripcion.trim(), // descripcion
-        item.inventarioActual.producto.area?.nombre, // area
-        item.inventarioActual.bodega?.nombre, // almacen
-        item.sesion?.usuario?.nombre, // almacenista
-        item.operacion?.movimientoTipo?.nombre, // operacion
-        item.operacion?.proyecto?.nombre, // proyecto
-        +item.inventarioActual.producto?.productoPrecios[
-          item.inventarioActual.producto.productoPrecios?.findIndex(
-            (pp) => pp.precioTipo.id === 2
-          )
-        ]?.precio * item.cantidad, // DONE total $$$
-        item.operacion?.usuarios?.map((usr) => usr.nombre).join("\n"), //responsables
-        item.operacion?.fecha, //fecha
+const obtenerRenglonesMovimientoCompras = obtenerRenglonesCompras(false);
+const obtenerRenglonesMovimientoComprasUSD = obtenerRenglonesCompras(true);
 
-        item.grupos[0]?.grupoDetalle?.facturaDetalle?.proveedor?.nombre, //Proveedor
-        item.grupos[0]?.grupoDetalle?.facturaDetalle?.facturaTipo?.nombre, //TipoFactura
-        item.grupos[0]?.grupoDetalle?.facturaDetalle?.numero, //Numero Factura
-        item.grupos[0]?.grupoDetalle?.facturaDetalle?.fechaEmision, //Fecha Factura
-
-        item.operacion?.comentarios?.map((com) => com.comentario).join("\n") +
-        "\n" +
-        item.grupos[0]?.comentarios?.map((com) => com.comentario).join("\n"), // comentarios grupo y movimiento
-      ];
-    })
-    .filter((it) => it !== null);
-};
-
-const agregarDatosRenglonesMovimientoProyecto = async (
+/** Añade a la tabla la página `[saltar, saltar + tomar)` de la consulta. Devuelve si puede haber más. */
+const agregarDatosRenglones = async (
   tbl: Table,
   query: SelectQueryBuilder<Movimiento>,
   saltar: number,
-  tomar: number
+  tomar: number,
+  renglones: Renglones
 ) => {
   const resultados = await query.take(tomar).skip(saltar).getMany();
-
-  // Agregar contenido a la tabla
-
-  obtenerRenglonesMovimientoProyecto(resultados, saltar).map((it, idx) =>
-    tbl.addRow(it, saltar + idx)
-  );
-
+  renglones(resultados, saltar).forEach((fila, idx) => tbl.addRow(fila, saltar + idx));
   tbl.commit();
-
   return resultados.length === tomar;
 };
 
-const agregarDatosRenglonesMovimientoProyectoFotoGrande = async (
+/** Compras: cada moneda en su tabla; la numeración sigue la de la tabla (filas que ya tiene). */
+const agregarDatosRenglonesCompras = async (
   tbl: Table,
   query: SelectQueryBuilder<Movimiento>,
   saltar: number,
-  tomar: number
+  tomar: number,
+  usd: boolean
 ) => {
   const resultados = await query.take(tomar).skip(saltar).getMany();
-
-  // Agregar contenido a la tabla
-
-  obtenerRenglonesMovimientoProyectoFotoGrande(resultados, saltar).map((it, idx) =>
-    tbl.addRow(it, saltar + idx)
-  );
-
-  tbl.commit();
-
-  return resultados.length === tomar;
-};
-
-
-const agregarDatosRenglonesMovimiento = async (
-  tbl: Table,
-  query: SelectQueryBuilder<Movimiento>,
-  saltar: number,
-  tomar: number
-) => {
-  const resultados = await query.take(tomar).skip(saltar).getMany();
-
-  // Agregar contenido a la tabla
-
-  obtenerRenglonesMovimiento(resultados, saltar).map((it, idx) =>
-    tbl.addRow(it, saltar + idx)
-  );
-
-  tbl.commit();
-
-  return resultados.length === tomar;
-};
-
-const agregarDatosRenglonesMovimientoCompras = async (
-  tbl: Table,
-  query: SelectQueryBuilder<Movimiento>,
-  saltar: number,
-  tomar: number
-) => {
-  const resultados = await query.take(tomar).skip(saltar).getMany();
-
-  // Agregar contenido a la tabla
-
   const saltoTabla = tbl.rows?.length ?? saltar;
-  logger.debug('agregarDatosRenglonesMovimientoCompras', { saltoTabla });
-
-  obtenerRenglonesMovimientoCompras(resultados, saltoTabla).map((it, idx) =>
-    tbl.addRow(it)
-  );
-
+  obtenerRenglonesCompras(usd)(resultados, saltoTabla).forEach((fila) => tbl.addRow(fila));
   tbl.commit();
-
-  return resultados.length === tomar;
-};
-
-const agregarDatosRenglonesMovimientoComprasUSD = async (
-  tbl: Table,
-  query: SelectQueryBuilder<Movimiento>,
-  saltar: number,
-  tomar: number
-) => {
-  const resultados = await query.take(tomar).skip(saltar).getMany();
-
-  // Agregar contenido a la tabla
-  const saltoTabla = tbl.rows?.length ?? saltar;
-  logger.debug('agregarDatosRenglonesMovimientoCompras', { saltoTabla });
-
-  obtenerRenglonesMovimientoComprasUSD(resultados, saltoTabla).map((it, idx) =>
-    tbl.addRow(it)
-  );
-
-  tbl.commit();
-
   return resultados.length === tomar;
 };
 
@@ -769,71 +627,40 @@ const agregarTabla = async (
 };
 
 
+/** Tamaño y posición de la foto en los reportes normales y de foto grande. */
+const FOTO_NORMAL = { redimensionar: (s: Sharp) => s.resize(64, 64), tl: { col: 1.15, dy: 3.35 }, ext: 60, alturaFila: 82.5 };
+const FOTO_GRANDE = { redimensionar: (s: Sharp) => s.resize(400, null, { fit: "inside" }), tl: { col: 1.08, dy: 3.1 }, ext: 180, alturaFila: 220.5 };
+
+/** Inserta la foto más reciente de cada artículo de la página `[saltar, saltar + tomar)`. Devuelve si puede haber más. */
 const agregarImagenesMovimiento = async (
   sheet: Worksheet,
   workbook: Workbook,
   query: SelectQueryBuilder<Movimiento>,
   saltar: number,
-  tomar: number
+  tomar: number,
+  foto: typeof FOTO_NORMAL = FOTO_NORMAL
 ) => {
   const articulos = await query.take(tomar).skip(saltar).getMany();
   let rowInc = 0 + saltar;
   for (const item of articulos) {
     if (item.inventarioActual.producto.archivos.length > 0) {
-
-      // GET THE LATEST FILE BASE ON ITS ID
       const itemFile = item.inventarioActual.producto.archivos.sort((a, b) => a.id - b.id).pop();
+      if (!itemFile) continue;
       const file = await AppDataSource.getRepository(Archivo).findOneBy({ id: itemFile.id });
-
-
       if (file == null) continue;
       const idImage = workbook.addImage({
-        buffer: (await sharp(file.data).resize(64, 64).withMetadata().toFormat('jpeg').toBuffer()) as any, // tipos de exceljs vs @types/node 22
+        buffer: (await foto.redimensionar(sharp(file.data)).withMetadata().toFormat("jpeg").toBuffer()) as any, // tipos de exceljs vs @types/node
         extension: "jpeg",
       });
       sheet.addImage(idImage, {
         editAs: "",
-        tl: { col: 1.15, row: rowInc + 3.35 },
-        ext: { width: 60, height: 60 },
+        tl: { col: foto.tl.col, row: rowInc + foto.tl.dy },
+        ext: { width: foto.ext, height: foto.ext },
       });
     }
-    sheet.getRow(rowInc + 4).height = 82.5;
+    sheet.getRow(rowInc + 4).height = foto.alturaFila;
     rowInc++;
   }
-
-  return articulos.length === tomar;
-};
-
-const agregarImagenesMovimientoFotoGrande = async (
-  sheet: Worksheet,
-  workbook: Workbook,
-  query: SelectQueryBuilder<Movimiento>,
-  saltar: number,
-  tomar: number
-) => {
-  const articulos = await query.take(tomar).skip(saltar).getMany();
-  let rowInc = 0 + saltar;
-  for (const item of articulos) {
-    if (item.inventarioActual.producto.archivos.length > 0) {
-      // GET THE LATEST FILE BASE ON ITS ID
-      const itemFile = item.inventarioActual.producto.archivos.sort((a, b) => a.id - b.id).pop();
-      const file = await AppDataSource.getRepository(Archivo).findOneBy({ id: itemFile.id });
-
-      if (file == null) continue;
-      const idImage = workbook.addImage({
-        buffer: (await sharp(file.data).resize(400, null, { fit: 'inside' }).withMetadata().toFormat('jpeg').toBuffer()) as any, // tipos de exceljs vs @types/node 22
-        extension: "jpeg",
-      });
-      sheet.addImage(idImage, {
-        editAs: "",
-        tl: { col: 1.08, row: rowInc + 3.10 },
-        ext: { width: 180, height: 180 },
-      });
-    }
-    sheet.getRow(rowInc + 4).height = 220.5;
-    rowInc++;
-  }
-
   return articulos.length === tomar;
 };
 
@@ -852,6 +679,7 @@ const agregarImagenesMovimientoCompra = async (
     if (item.inventarioActual.producto.archivos.length > 0) {
       // GET THE LATEST FILE BASE ON ITS ID
       const itemFile = item.inventarioActual.producto.archivos.sort((a, b) => a.id - b.id).pop();
+      if (!itemFile) continue;
       const file = await AppDataSource.getRepository(Archivo).findOneBy({ id: itemFile.id });
 
       if (file == null) continue;
@@ -860,7 +688,7 @@ const agregarImagenesMovimientoCompra = async (
         extension: "jpeg",
       });
 
-      if (item.grupos[0]?.grupoDetalle?.facturaDetalle?.facturaTipo?.id === 4) {
+      if (esFacturaUSD(item)) {
         sheetUSD.addImage(idImage, {
           editAs: "",
           tl: { col: 1.15, row: renUSD + 3.35 },
@@ -909,7 +737,7 @@ async function agregarHojaMovimientos(
     { proyectosId, tiposMovimientosId }
   );
 
-  if (usuariosIds?.length > 0) {
+  if ((usuariosIds?.length ?? 0) > 0) {
     qry.andWhere(
       new Brackets((qb) =>
         qb
@@ -918,10 +746,10 @@ async function agregarHojaMovimientos(
       )
     );
   }
-  if (areasId?.length > 0) {
+  if ((areasId?.length ?? 0) > 0) {
     qry.andWhere("area.id in (:...areasId)", { areasId });
   }
-  if (bodegasId?.length > 0) {
+  if ((bodegasId?.length ?? 0) > 0) {
     qry.andWhere("bodega.id in (:...bodegasIds)", { bodegasIds: bodegasId }); // antes :bodegasIds vs bodegasId (hallazgo H11)
   }
 
@@ -963,7 +791,7 @@ async function agregarHojaMovimientos(
   let incRenglones = 0;
 
   while (
-    await agregarDatosRenglonesMovimientoProyecto(tbl, qry, 50 + incRenglones * 50, 50)
+    await agregarDatosRenglones(tbl, qry, 50 + incRenglones * 50, 50, obtenerRenglonesMovimientoProyecto)
   ) {
     logger.debug(
       `agregarDatosRenglones. ${incRenglones} Regs:${50 + incRenglones * 50}-${50 + incRenglones * 50 + 50
@@ -1078,7 +906,7 @@ async function agregarHojaPrestamosActivos(
   let incRenglones = 0;
 
   while (
-    await agregarDatosRenglonesMovimientoProyecto(tbl, qry, 50 + incRenglones * 50, 50)
+    await agregarDatosRenglones(tbl, qry, 50 + incRenglones * 50, 50, obtenerRenglonesMovimientoProyecto)
   ) {
     logger.debug(
       `agregarDatosRenglones. ${incRenglones} Regs:${50 + incRenglones * 50}-${50 + incRenglones * 50 + 50
@@ -1166,7 +994,7 @@ const reporteGeneral = async (body: {
   ${areas.toLocaleUpperCase()} ${usuarios.toLocaleUpperCase()}`;
 
   const nombreReporte = sanitizeFilename(
-    `REPORTE DE CIERRE ${proyecto.nombre.toLocaleUpperCase()} ${areas.toLocaleUpperCase()} ${usuarios.toLocaleUpperCase()}_${Math.trunc(Math.random() * 1000000)}.xlsx`
+    `REPORTE DE CIERRE ${proyecto.nombre.toLocaleUpperCase()} ${areas.toLocaleUpperCase()} ${usuarios.toLocaleUpperCase()}_${idArchivo()}.xlsx`
   );
 
 
@@ -1304,7 +1132,19 @@ const reporteGeneral = async (body: {
   return { path: arch, nombreReporte };
 };
 
-const reportePorGrupo = async (body: any) => {
+/** Variante del reporte por grupo: columnas, renglones, tamaño de foto y sufijo del archivo. */
+interface VarianteGrupo {
+  columnas: columnasExcel[];
+  renglones: Renglones;
+  foto: typeof FOTO_NORMAL;
+  sufijoArchivo: string;
+}
+
+/**
+ * Reporte de un grupo (listado). Antes había dos funciones casi idénticas, normal y de foto grande (hallazgo L11);
+ * ahora la variante decide columnas, renglones y tamaño de la foto.
+ */
+const generarReportePorGrupo = async (body: any, variante: VarianteGrupo) => {
   const {
     grupoNombre,
     movimientoTipoNombre,
@@ -1330,7 +1170,7 @@ const reportePorGrupo = async (body: any) => {
 
 
   const nombreReporte = sanitizeFilename(
-    `${movimientoTipoNombre ?? grupoNombre} ${proyectoNombre ?? ""}_${Math.trunc(Math.random() * 1000000)}.xlsx`
+    `${movimientoTipoNombre ?? grupoNombre} ${proyectoNombre ?? ""}${variante.sufijoArchivo}_${idArchivo()}.xlsx`
   );
 
   logger.debug(
@@ -1343,12 +1183,12 @@ const reportePorGrupo = async (body: any) => {
   workbook.created = new Date();
   const sheet = workbook.addWorksheet(movimientoTipoNombre ?? "REPORTE");
 
-  await configurarHojaExcel(sheet, columnasDetallePorProyecto);
+  await configurarHojaExcel(sheet, variante.columnas);
 
   await agregarTituloHojaExcel(
     sheet,
     workbook,
-    columnasDetallePorProyecto.length,
+    variante.columnas.length,
     `${movimientoTipoNombre ?? grupoNombre.toLocaleUpperCase()} ${proyectoNombre ?? ""}`.toLocaleUpperCase()
   );
 
@@ -1374,15 +1214,15 @@ const reportePorGrupo = async (body: any) => {
 
   const tbl: Table = await agregarTabla(
     sheet,
-    columnasDetallePorProyecto,
+    variante.columnas,
     "A3",
-    obtenerRenglonesMovimientoProyecto(await qry.take(50).getMany(), 0)
+    variante.renglones(await qry.take(50).getMany(), 0)
   );
 
   let incRenglones = 0;
 
   while (
-    await agregarDatosRenglonesMovimientoProyecto(tbl, qry, 50 + incRenglones * 50, 50)
+    await agregarDatosRenglones(tbl, qry, 50 + incRenglones * 50, 50, variante.renglones)
   ) {
     logger.debug(
       `agregarDatosRenglones. ${incRenglones} Regs:${50 + incRenglones * 50}-${50 + incRenglones * 50 + 50
@@ -1400,7 +1240,8 @@ const reportePorGrupo = async (body: any) => {
         workbook,
         qry,
         50 * incImagenes,
-        50
+        50,
+        variante.foto
       )
     ) {
       logger.debug(
@@ -1459,157 +1300,21 @@ const reportePorGrupo = async (body: any) => {
   return { path: arch, nombreReporte };
 };
 
-const reportePorGrupoFotoGrande = async (body: any) => {
-  const {
-    movimientoTipoNombre,
-    conFoto,
-    grupoId,
-    sortField,
-    sortOrder,
-    filters,
-    nombreAlmacenista
-  } = body;
-
-  const t0 = performance.now();
-
-  const gres = await AppDataSource.getRepository(Grupo)
-    .createQueryBuilder("Grupo")
-    .leftJoinAndSelect("Grupo.grupoDetalle", "GrupoDetalle")
-    .leftJoinAndSelect("GrupoDetalle.usuarios", "Usuarios")
-    .leftJoinAndSelect("GrupoDetalle.proyecto", "Proyecto")
-    .where("Grupo.id = :grupoId", { grupoId })
-    .getOne();
-
-  const proyectoNombre = gres?.grupoDetalle?.proyecto?.nombre ?? "SIN PROYECTO";
-
-  const nombreReporte = sanitizeFilename(
-    `${movimientoTipoNombre ?? ""} ${proyectoNombre ?? ""}_BIGPIC_${Math.trunc(Math.random() * 1000000)}.xlsx`
-  );
-
-  logger.debug(
-    `"Iniciando generacion de reporte......${nombreReporte}.........."`
-  );
-
-  const workbook = new Workbook();
-
-  workbook.creator = "Sistema Almacén Exogrid";
-  workbook.created = new Date();
-  const sheet = workbook.addWorksheet(movimientoTipoNombre ?? "REPORTE");
-
-  await configurarHojaExcel(sheet, columnasDetallePorProyectoFotoGrande);
-
-  await agregarTituloHojaExcel(
-    sheet,
-    workbook,
-    columnasDetallePorProyectoFotoGrande.length,
-    `${movimientoTipoNombre ?? ""} ${proyectoNombre ?? ""}`.toLocaleUpperCase()
-  );
-
-
-  const campoOrden: string = columnaSegura(sortField, "grupo.id");
-  let direccion: string = "ASC";
-
-  if (sortOrder !== undefined) {
-    direccion = sortOrder == "descend" ? "DESC" : "ASC";
-  }
-
-  // obtener los datos del usuario que genero el grupo a partir de la sesion del usuario
-
-  const qry = funcionQueryListadoMovimientos().where("grupo.id=:grupoId", {
-    grupoId,
+const reportePorGrupo = (body: any) =>
+  generarReportePorGrupo(body, {
+    columnas: columnasDetallePorProyecto,
+    renglones: obtenerRenglonesMovimientoProyecto,
+    foto: FOTO_NORMAL,
+    sufijoArchivo: "",
   });
-  aplicarFiltros(qry, condicionesWhereAndGrupo(filters));
 
-  qry.orderBy(columnaSegura(campoOrden, "movimiento.id"), direccionSegura(direccion === "DESC" ? "descend" : direccion === "ASC" ? "ascend" : direccion));
-
-  //clonar qry para obtener el total de registros
-  const qryTotal = qry.clone();
-
-  const tbl: Table = await agregarTabla(
-    sheet,
-    columnasDetallePorProyectoFotoGrande,
-    "A3",
-    obtenerRenglonesMovimientoProyectoFotoGrande(await qry.take(50).getMany(), 0)
-  );
-
-  let incRenglones = 0;
-
-  while (
-    await agregarDatosRenglonesMovimientoProyectoFotoGrande(tbl, qry, 50 + incRenglones * 50, 50)
-  ) {
-    logger.debug(
-      `agregarDatosRenglones. ${incRenglones} Regs:${50 + incRenglones * 50}-${50 + incRenglones * 50 + 50
-      }......${nombreReporte}.........`,
-      performance.now() - t0
-    );
-    incRenglones++;
-  }
-
-  if (conFoto) {
-    let incImagenes = 0;
-    while (
-      await agregarImagenesMovimientoFotoGrande(
-        sheet,
-        workbook,
-        qry,
-        50 * incImagenes,
-        50
-      )
-    ) {
-      logger.debug(
-        `agregarDatosRenglones. ${incImagenes}.....${nombreReporte}..........`,
-        performance.now() - t0
-      );
-      incImagenes++;
-    }
-  }
-
-  const totalRows = await qryTotal.getCount();
-  logger.debug(">>>>>>>>>>>>>>>>>>totalRows", totalRows);
-  if (totalRows > 0) {
-
-    const nombreResponsable = gres?.grupoDetalle?.usuarios?.map((it) => it.nombre).join("\r\n") ?? "SIN RESPONSABLE";
-
-    // agregar lineas de separacion
-    mergeCellsAndInsertData(sheet, `F${totalRows + 9}:G${totalRows + 9}`, `___________________________`);
-    mergeCellsAndInsertData(sheet, `C${totalRows + 9}:D${totalRows + 9}`, `___________________________`);
-
-    // agregar titulo de entrega o recepcion
-    if (compareStringsIgnoreAccents(movimientoTipoNombre, 'PRÉSTAMO')
-      || compareStringsIgnoreAccents(movimientoTipoNombre, 'RENTA EXTERNA')
-      || compareStringsIgnoreAccents(movimientoTipoNombre, 'TRANSFERENCIA')
-    ) {
-      mergeCellsAndInsertData(sheet, `F${totalRows + 10}:G${totalRows + 10}`, `RECIBE`);
-      mergeCellsAndInsertData(sheet, `C${totalRows + 10}:D${totalRows + 10}`, `ENTREGA`);
-    } else if (compareStringsIgnoreAccents(movimientoTipoNombre, 'DEVOLUCIÓN')) {
-      mergeCellsAndInsertData(sheet, `F${totalRows + 10}:G${totalRows + 10}`, `ENTREGA`);
-      mergeCellsAndInsertData(sheet, `C${totalRows + 10}:D${totalRows + 10}`, `RECIBE`);
-    } else {
-      mergeCellsAndInsertData(sheet, `F${totalRows + 10}:G${totalRows + 10}`, `RESPONSABLE`);
-      mergeCellsAndInsertData(sheet, `C${totalRows + 10}:D${totalRows + 10}`, `ALMACENISTA`);
-    }
-
-    // agregar nombre del almacenista al final del archivo
-    mergeCellsAndInsertData(sheet, `F${totalRows + 11}:G${totalRows + 11}`, `${nombreResponsable}`);
-    mergeCellsAndInsertData(sheet, `C${totalRows + 11}:D${totalRows + 11}`, `${nombreAlmacenista}`);
-
-  }
-
-
-  const arch = process.env.RUTA_REPORTES + nombreReporte;
-  logger.debug(
-    `"Workbook guardando ......${nombreReporte}......."`,
-    performance.now() - t0
-  );
-  await workbook.xlsx.writeFile(arch);
-
-  logger.debug(
-    `"FIN DE REPORTE ......${nombreReporte}......."`,
-    performance.now() - t0
-  );
-
-  return { path: arch, nombreReporte };
-};
+const reportePorGrupoFotoGrande = (body: any) =>
+  generarReportePorGrupo(body, {
+    columnas: columnasDetallePorProyectoFotoGrande,
+    renglones: obtenerRenglonesMovimientoProyectoFotoGrande,
+    foto: FOTO_GRANDE,
+    sufijoArchivo: "_BIGPIC",
+  });
 
 const reportePorProyecto = async (body: any) => {
   logger.debug(`"Iniciando generacion de reporte......`, { body });
@@ -1632,21 +1337,14 @@ const reportePorProyecto = async (body: any) => {
     filters,
   });
 
-  const proyectoNombre = (
-    await AppDataSource.getRepository(Proyecto).findOne({ where: { id: idSeguro(proyectoId, "proyectoId") }, 
-      select: { id: true, nombre: true },
-      loadEagerRelations: false,
-    })
-  ).nombre;
+  const proyectoNombre = (await nombreProyecto(proyectoId));
 
 
   const areasNombres = areasIds ? (await AppDataSource.getRepository(Area).findBy({ id: In(areasIds) })).map(area => area.nombre).join(' - ') : '';
 
   const t0 = performance.now();
   const nombreReporte = sanitizeFilename(
-    `${movimientoTipoNombre ?? "_"}_${areasNombres}_${proyectoNombre ?? "_"}_${Math.trunc(
-      Math.random() * 1000000
-    )}.xlsx`
+    `${movimientoTipoNombre ?? "_"}_${areasNombres}_${proyectoNombre ?? "_"}_${idArchivo()}.xlsx`
   );
   logger.debug(
     `"Iniciando generacion de reporte......${nombreReporte}.........."${{
@@ -1687,7 +1385,7 @@ const reportePorProyecto = async (body: any) => {
     { proyectoId, tiposMovimineto }
   );
 
-  if (usuariosIds?.length > 0) {
+  if ((usuariosIds?.length ?? 0) > 0) {
     qry.andWhere(
       new Brackets((qb) =>
         qb
@@ -1719,7 +1417,7 @@ const reportePorProyecto = async (body: any) => {
   let incRenglones = 0;
 
   while (
-    await agregarDatosRenglonesMovimientoProyecto(tbl, qry, 50 + incRenglones * 50, 50)
+    await agregarDatosRenglones(tbl, qry, 50 + incRenglones * 50, 50, obtenerRenglonesMovimientoProyecto)
   ) {
     logger.debug(
       `agregarDatosRenglones. ${incRenglones} Regs:${50 + incRenglones * 50}-${50 + incRenglones * 50 + 50
@@ -1783,17 +1481,12 @@ const reportePorProyectoCompras = async (body: any) => {
     filters,
   });
 
-  const proyectoNombre = (
-    await AppDataSource.getRepository(Proyecto).findOne({ where: { id: idSeguro(proyectoId, "proyectoId") }, 
-      select: { id: true, nombre: true },
-      loadEagerRelations: false,
-    })
-  ).nombre;
+  const proyectoNombre = (await nombreProyecto(proyectoId));
 
   const areasNombres = areasIds ? (await AppDataSource.getRepository(Area).findBy({ id: In(areasIds) })).map(area => area.nombre).join(' - ') : '';
 
   const t0 = performance.now();
-  const nameProposal = [movimientoTipoNombre, areasNombres, proyectoNombre, Math.trunc(Math.random() * 1000000)]
+  const nameProposal = [movimientoTipoNombre, areasNombres, proyectoNombre, idArchivo()]
     .filter(item => item !== null && item !== undefined)
     .join('_');
 
@@ -1847,7 +1540,7 @@ const reportePorProyectoCompras = async (body: any) => {
     { proyectoId, tiposMovimineto }
   );
 
-  if (usuariosIds?.length > 0) {
+  if ((usuariosIds?.length ?? 0) > 0) {
     qry.andWhere(
       new Brackets((qb) =>
         qb
@@ -1887,12 +1580,11 @@ const reportePorProyectoCompras = async (body: any) => {
   let incRenglones = 0;
 
   while (
-    await agregarDatosRenglonesMovimientoCompras(
+    await agregarDatosRenglonesCompras(
       tbl,
       qry,
       50 + incRenglones * 50,
-      50
-    )
+      50, false)
   ) {
     logger.debug(
       `agregarDatosRenglones. ${incRenglones} Regs:${50 + incRenglones * 50}-${50 + incRenglones * 50 + 50
@@ -1905,12 +1597,11 @@ const reportePorProyectoCompras = async (body: any) => {
   let incRenglonesUSD = 0;
 
   while (
-    await agregarDatosRenglonesMovimientoComprasUSD(
+    await agregarDatosRenglonesCompras(
       tblUSD,
       qry,
       50 + incRenglones * 50,
-      50
-    )
+      50, true)
   ) {
     logger.debug(
       `agregarDatosRenglones. ${incRenglonesUSD} Regs:${50 + incRenglonesUSD * 50
@@ -1973,18 +1664,11 @@ const reportePorPrestamosRentasActivas = async (body: any) => {
     filters
   } = body;
 
-  const proyectoNombre = proyectoId > 0 ? (
-    await AppDataSource.getRepository(Proyecto).findOne({ where: { id: idSeguro(proyectoId, "proyectoId") }, 
-      select: { id: true, nombre: true },
-      loadEagerRelations: false,
-    })
-  ).nombre : 'Todos';
+  const proyectoNombre = proyectoId > 0 ? (await nombreProyecto(proyectoId)) : 'Todos';
 
   const t0 = performance.now();
   const nombreReporte = sanitizeFilename(
-    `${movimientoTipoNombre ?? "_"}_${proyectoNombre ?? "_"}_${Math.trunc(
-      Math.random() * 1000000
-    )}.xlsx`
+    `${movimientoTipoNombre ?? "_"}_${proyectoNombre ?? "_"}_${idArchivo()}.xlsx`
   );
 
   logger.debug(
@@ -2033,7 +1717,7 @@ const reportePorPrestamosRentasActivas = async (body: any) => {
   let incRenglones = 0;
 
   while (
-    await agregarDatosRenglonesMovimiento(tbl, qry, 50 + incRenglones * 50, 50)
+    await agregarDatosRenglones(tbl, qry, 50 + incRenglones * 50, 50, obtenerRenglonesMovimiento)
   ) {
     logger.debug(
       `agregarDatosRenglones. ${incRenglones} Regs:${50 + incRenglones * 50}-${50 + incRenglones * 50 + 50
