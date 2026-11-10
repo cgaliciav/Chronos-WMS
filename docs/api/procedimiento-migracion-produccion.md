@@ -11,6 +11,8 @@ persona que despliega: **ninguna sesión automatizada ejecuta migraciones contra
 | `1794083852310-Baseline` | Esquema completo al cierre de la fase 2. **Idempotente:** si la tabla `movimiento` ya existe (producción, creada con `synchronize`) solo queda registrada en la tabla `migrations` y no ejecuta nada. | **No** (`down` lanza un error: borraría todas las tablas). |
 | `1794084035404-MovimientoRelacion` | Crea `movimiento_relacion` y la vista `v_movimiento_saldo`; añade `movimiento.fecha`, `movimiento.legado` e `inventario_actual_historico.movimientoId`. Marca **todos** los movimientos existentes con `legado = 1` y rellena su `fecha` con la de su operación (o la de su primer grupo). No crea relaciones para los movimientos históricos (decisión 6, sin backfill). | Sí (`migration:revert`): borra la tabla, la vista y las columnas, **y con ellas las relaciones registradas desde el despliegue**. |
 
+La fase 6 (TypeORM 1.x, v2.82.0) no añade migraciones: el esquema que generan las entidades es el mismo.
+
 La paridad de la baseline se comprobó así: sobre una base creada con `synchronize` con las entidades de la
 fase 2, la baseline no ejecuta nada y el generador no encuentra diferencias. Cada `npm run test:int` vuelve a
 comprobar que las migraciones, aplicadas sobre una base vacía, reproducen exactamente las entidades.

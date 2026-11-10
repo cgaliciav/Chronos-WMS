@@ -54,6 +54,13 @@ los marcados con ⚠.
 - ⚠ Retirados `GET /groups/export-to-supabase/:id` y `GET /current-inventory/export-to-supabase/:id` (el front no los usaba).
 - ⚠ `POST /auth/logout` revoca el token: después, ese token responde 401 ("Sesión terminada").
 
+**Cambios de la fase 6 (v2.82.0, TypeORM 1.x):** la forma de las respuestas no cambia (`formaRespuestas.int.test.ts`).
+- ⚠ `POST /groups/new-details` con `proyectoId` `null` o ausente crea el listado **sin proyecto** (antes quedaba
+  asignado al primer proyecto de la tabla).
+- ⚠ Ids ausentes o no numéricos en el cuerpo de `PUT /item/edit`, `/item-code/*`, `/item-spec/*`, `PUT /user/edit`,
+  los reportes por proyecto y las altas de artículos/listados responden `400 "<campo> inválido"` (antes cargaban la
+  primera fila o respondían 500).
+
 **Cambios de la fase 5 (v2.81.0, Express 5):** compatibles salvo lo marcado.
 - `POST /groups/create-list-from-report-use` y `/create-list-from-report-activity` responden `501` (antes la petición
   se quedaba colgada). `POST /current-inventory/get-activity-inventory` con un id inválido responde `400` (antes colgaba).

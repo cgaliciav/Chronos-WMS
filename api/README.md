@@ -9,7 +9,7 @@ guía para agentes en [`CLAUDE.md`](CLAUDE.md), fallos conocidos en
 
 ### Stack actual
 - Node.js 24 LTS (`.nvmrc`; `engines` ≥ 22), imagen `node:24-alpine` multietapa (`Dockerfile`)
-- MariaDB ≥ 10.11 (driver `mysql2` 3), TypeORM 0.2.45, Express 5, TypeScript 5.9, logs con pino
+- MariaDB ≥ 10.11 (driver `mysql2` 3), TypeORM 1.1 (`src/data-source.ts`), Express 5, TypeScript 5.9, logs con pino
 - Esquema por migraciones (`src/migration/`): `node build/migrar.js show|run|revert` en la imagen;
   procedimiento en [`../docs/api/procedimiento-migracion-produccion.md`](../docs/api/procedimiento-migracion-produccion.md)
 - Scripts: `npm run dev` (ts-node-dev), `npm start` (ts-node), `npm run build` + `npm run prod` (compilado),

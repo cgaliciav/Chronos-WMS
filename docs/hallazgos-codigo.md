@@ -226,6 +226,18 @@ tipo de cuelgue ya no puede repetirse. `npm audit --omit=dev`: sin avisos altos;
 
 Siguen abiertos: M14, L2 (contraseñas por correo), L3, L6, L7, L11, L12 y la sección B (plan 01).
 
+## C quinquies. Estado tras la fase 6 del plan 02 (2026-11-10)
+
+TypeORM 1.1.2: desaparece el aviso crítico de `npm audit`. Al migrar salieron a la luz dos fallos de TypeORM 0.2, ya
+corregidos:
+
+| # | Ubicación | Severidad | Descripción |
+|---|---|---|---|
+| M35 | `GrupoDetalle.Controller.ts` (`crearBaseGrupoDetalle`) | Media | **✅ Corregido (fase 6):** un listado creado con `proyectoId: null` (bajas sin proyecto) quedaba asignado al primer proyecto, porque `findOneOrFail(null)` devolvía la primera fila. |
+| M36 | `ProductoClave`, `ProductoCaracteristica`, `Producto.editar`, `Usuario.editar`, reportes por proyecto, altas | Media | **✅ Corregido (fase 6):** ids del cuerpo sin validar; uno ausente cargaba la primera fila (`findOne(undefined)`). Ahora `idSeguro` → 400. TypeORM 1.x además rechaza `undefined`/`null` en `where`. |
+| L19 | `Common.Controller.ts` (`listaTablaQryAnd`, `ordenPorDefecto = "id"`) | Baja | **Abierto:** `POST /groups/list-antd` sin `sortField` responde 500 (`ER_BAD_FIELD_ERROR`): el orden por defecto `id` no lleva alias en consultas con joins. El front siempre envía `sortField`. |
+
+
 ## D. Resumen por prioridad de corrección (original)
 
 1. **Inmediato (sin esperar los planes):** C4 (añadir `checkJwt` y `path.basename`/`root` en `obtenerReporte`), H1 (restaurar `checkJwt` en `GET /file/*`), C5 (no devolver la contraseña; reactivar el correo), C6 (`DB_SYNCRO=false` en Docker/producción tras verificar paridad del esquema), F1 (rechazar en el interceptor).

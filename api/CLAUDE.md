@@ -1,13 +1,13 @@
 # api/ · guía para agentes
 
 API REST del almacén. **Node 24** (`.nvmrc`, `Dockerfile` multietapa `node:24-alpine`) · **Express 5** ·
-**TypeORM 0.2.45** (`getRepository`, `createConnection`) · **MariaDB** (driver `mysql2` 3) · TypeScript 5.9
+**TypeORM 1.1** (`AppDataSource` de `src/data-source.ts`) · **MariaDB** (driver `mysql2` 3) · TypeScript 5.9
 (no estricto; `tsconfig.estricto.json` aplica `strict` a services, helpers, esquemas, middlewares y migration).
 Arranque: `npm run dev` (ts-node-dev) o `npm start` (ts-node); compilado: `npm run build && npm run prod`.
 Puerto `PORT_ALMACEN_API` (4100 dev). Logs: `logger` de `helpers/logger.ts` (pino), **no `console.*`**.
 Pruebas: `npm run test:unit` (sin BD), `npm run test:int` (MariaDB de `.env.test`, recrea el esquema con las
 migraciones), `npm run typecheck`. Guía completa en `docs/api/pruebas.md`.
-Esquema: **migraciones** (`src/migration/`, `npm run migration:show|run|revert|generate` en desarrollo;
+Esquema: **migraciones** (`src/migration/`, `npm run migration:show|run|revert|generate` en desarrollo, sin CLI de TypeORM;
 `node build/migrar.js show|run|revert` en la imagen); `DB_SYNCRO=false`. Despliegue: `./desplegar.sh pruebas|produccion`.
 Rendimiento: `npm run rendimiento` (`docs/api/rendimiento.md`).
 Versión: `package.json` (`helpers/paquete.ts`), con las reglas de versionado del `CLAUDE.md` raíz (`vX.Y.Z`,
@@ -16,14 +16,14 @@ sufijos `-d` en desarrollo y `-s` en staging); cambios en `CHANGELOG.md`.
 ## Mapa del código
 
 ```
-src/index.ts            bootstrap: dotenv, conectarORM(), crearApp({ registrarPeticiones: true }), listen, señales
+src/index.ts            bootstrap: ./entorno, conectarORM(), crearApp({ registrarPeticiones: true }), listen, señales
 src/app.ts              crearApp(): express + cors + helmet + express.json + rutas + errorMiddlewere (sin listen; lo usan las pruebas);
                         con registrarPeticiones añade pino-http y LogPeticiones (solo index.ts)
 src/migrar.ts           migraciones sin ts-node (node build/migrar.js show|run|revert)
 src/entity/index.ts     ENTIDADES y SUSCRIPTORES explícitos (úsalos en lugar de globs)
 src/test/               env.ts, conexion.ts, seed.ts (SEMILLA), factories.ts, resetDb.ts, *.int.test.ts
-src/conexionORM.ts      opcionesConexion() desde el entorno con listas explícitas (ENTIDADES, MIGRACIONES, SUSCRIPTORES);
-                        aplica el parche de TypeORM y avisa si hay migraciones pendientes. ormconfig.js solo sirve a la CLI
+src/data-source.ts      AppDataSource (TypeORM 1.x) con opcionesDataSource() desde el entorno y listas explícitas (ENTIDADES,
+                        MIGRACIONES, SUSCRIPTORES); conectarORM() la inicializa y avisa si hay migraciones pendientes
 src/migration/          migraciones (baseline idempotente + MovimientoRelacion) e index.ts con la lista MIGRACIONES
 src/services/           MovimientoService (registrar/deshacer/relacionar, transaccional), guardasRelacion,
                         reglas/efectosInventario.ts y reglas/planificarRelaciones.ts (funciones puras)
@@ -37,7 +37,7 @@ src/entity/             entidades TypeORM (ver docs/api/modelo-de-datos.md)
 src/subscriber/         GeneralSubscriber: auditoría automática en LogFuncionamiento usando entity.sesionId
 src/helpers/            errorClases (AppError, con `detalle` para respuestas 409), filtrosTabla (filtros/orden parametrizados),
                         ids (idSeguro), numericTransformer, archivosSeguros, cacheArchivos (escritura atómica y limpieza),
-                        logger (pino), parcheTypeorm (caché de replacePropertyNames, hasta TypeORM 1.x), paquete (versión),
+                        logger (pino), opcionesFind (rutas "a.b" → objeto de relations/select), paquete (versión),
                         validacion, enviarMail (nodemailer), excelFunctions (reportes exceljs, 2 800 líneas), passGenerator
 src/esquemas/           esquemas zod de los cuerpos de petición (se aplican con middlewares/validar.ts)
 src/sentry.ts           Sentry preparado: solo se inicializa con SENTRY_DSN
@@ -62,7 +62,7 @@ Documentación detallada: `docs/api/modelo-de-datos.md`, `docs/api/tipos-de-movi
   vista `v_movimiento_saldo`. Los movimientos anteriores a la fase 3 tienen `legado = true` y no tienen relaciones
   (modo de compatibilidad, `docs/api/modelo-de-datos.md`). `Movimiento.estatus` está `@deprecated` (lo lee el front).
 - Para escribir dentro de una transacción usa el `EntityManager` que recibe el callback de
-  `MovimientoService.enTransaccion` (no `getRepository`), y la primera sentencia debe ser el bloqueo.
+  `MovimientoService.enTransaccion` (no `AppDataSource.getRepository`), y la primera sentencia debe ser el bloqueo.
 - `sesionId` en las entidades **no es columna**: lo lee el suscriptor de auditoría. Siempre asígnalo
   (`registro.sesionId = jwtPayload.si`) antes de `save`.
 - JWT: `{ ui: usuarioId, u: nombre, si: sesionId }`, 12 h, cabecera `auth`. `res.locals.jwtPayload`.
@@ -80,8 +80,13 @@ Documentación detallada: `docs/api/modelo-de-datos.md`, `docs/api/tipos-de-movi
   request en SQL. Para filtros de tablas usa `construirFiltros`/`aplicarFiltros`, para `IN` con arreglos
   `andWhereIn`, para `sortField` `columnaSegura`, y para `MATCH … AGAINST` `textoBusquedaBooleana`
   (todo en `helpers/filtrosTabla.ts`).
-- Ids del body: `idSeguro(x)` / `idsSeguros(xs)` (`helpers/ids.ts`) antes de `findOne`. En TypeORM 0.2,
-  `findOne(undefined)` devuelve la **primera fila**.
+- Ids del body: `idSeguro(x)` / `idsSeguros(xs)` / `idOpcional(x)` (`helpers/ids.ts`) antes de consultar: TypeORM 1.x
+  lanza un error (500) si un `where` lleva `undefined` o `null` (en 0.2 cargaba la primera fila).
+- TypeORM 1.x: `findOneBy({ id })`, `findBy({ id: In(ids) })`, `findOne({ where, relations: { a: { b: true } } })`
+  (`relations`/`select` son objetos; `rutasAObjeto` de `helpers/opcionesFind.ts` convierte listas `"a.b"`).
+  `findOne` y `getOne()` devuelven **`null`** si no hay fila: compara con `== null`, no con `=== undefined`.
+  `findOne` sin `where` lanza error (usa `find({ order, take: 1 })`). `findOne` con relaciones a-muchos hace dos
+  consultas (DISTINCT + datos); en rutas calientes usa QueryBuilder (`middlewares/verificarRol.ts`).
 - Cuerpos de petición nuevos: esquema zod en `src/esquemas/index.ts` + `validarBody(esquema)` en la ruta
   (`.strip()` para descartar campos desconocidos). `CommonController.nuevo/editar` nunca copian
   `id`, `password`, `sesionId` ni `estatus` del body.
@@ -106,7 +111,7 @@ Ver `.env.example`. Imprescindibles: `JWTSECRET`, `SALT_ROUNDS`, `DB_HOST/PORT/U
 `PORT_ALMACEN_API`, rutas de archivos (`RUTA_ARCHIVOS`, `RUTA_REPORTES`, `UPLOADS`, `ARCHIVOS_AUXILIARES`,
 `IMAGENES_IMPORTACION`), `SMTP_*`, `DIAS_CUARENTENA`, `CACHE_ARCHIVOS_DIAS`, `REPORTES_DIAS`, `LOG_NIVEL`
 (o `LOG_CONSOLE_VERBOSE`).
-`ENV_FILE=.env.test npm run migration:show` apunta la CLI de TypeORM a otro archivo de variables.
+`ENV_FILE=.env.test npm run migration:show` apunta `src/migrar.ts` a otro archivo de variables.
 
 ## Decisiones tomadas (`docs/decisiones.md`)
 
