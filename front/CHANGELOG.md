@@ -15,6 +15,17 @@ Los códigos `F<n>` remiten a [`docs/hallazgos-codigo.md`](../docs/hallazgos-cod
 
 Pendiente: fase 7 del plan 01 (pruebas e2e con Playwright, CI y cobertura).
 
+## [4.4.0-d] - 2026-11-10
+
+Plan 03, fase 0: identidad por defecto "Chronos WMS" (no desplegar a producción hasta la fase 5).
+
+### Cambiado
+
+- Nombre, títulos de pestaña, bienvenida, textos del login y pie de página salen de `app/marca.ts`
+  (`MARCA_POR_DEFECTO`, "Chronos WMS"); el soporte del pie pasa a `soporte@exogrid.io`.
+- `index.html` y `manifest.json` neutros (el manifest era de la plantilla Air UI).
+- `sinMarcaDeCliente.test.ts` falla si aparece el nombre de un cliente en `src/`, `index.html` o `public/`.
+
 ## [4.3.0-d] - 2026-11-10
 
 Contraseña temporal con cambio obligatorio (hallazgo L2; necesita el API v2.84 con su migración).

@@ -9,6 +9,24 @@ La versión vive en `package.json` (la devuelve `/auth/version`, y Sentry la usa
 `desplegar.sh` publica una versión `X.Y.Z-d` como `X.Y.Z` y, si ya no lleva sufijo, sube el parche. Contrato con el
 front: [`docs/api/endpoints.md`](../docs/api/endpoints.md). Plan: [`docs/planes/02-api-relacion-movimientos.md`](../docs/planes/02-api-relacion-movimientos.md).
 
+## [2.85.0-d] - Sin publicar
+
+Plan 03, fase 0: identidad por defecto "Chronos WMS". **No desplegar a producción solo**: los usuarios del cliente
+verían "Chronos WMS" hasta que la fase 5 cargue su marca por configuración.
+
+### Cambiado
+
+- Correos con asuntos y cuerpos de "Chronos WMS"; correo de soporte desde `SOPORTE_CORREO` (por defecto
+  `soporte@exogrid.io`); el remitente por defecto (`SMTP_FROM` ausente) ya no lleva el nombre de un cliente. Si el
+  servidor no define `SMTP_FROM`, defínelo antes de desplegar para conservar el remitente verificado.
+- Logo de los reportes: el de Chronos WMS va empaquetado en el código; el logo histórico de `ARCHIVOS_AUXILIARES` se
+  sigue usando si existe (alternativa temporal hasta la fase 5).
+
+### Pruebas
+
+- `sinMarcaDeCliente.test.ts` falla si aparece el nombre de un cliente en `src/`; `reportes.int.test.ts` comprueba el
+  logo por defecto.
+
 ## [2.84.0-d] - Sin publicar
 
 Contraseña temporal con cambio obligatorio (hallazgo L2). **Migración nueva** `1794336939132-PasswordTemporal` (dos

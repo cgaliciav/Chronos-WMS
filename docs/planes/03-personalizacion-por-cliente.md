@@ -131,7 +131,13 @@ clientes nuevos y entornos desechables, la configuración se puede exportar e im
 
 ## 3. Fases
 
-### Fase 0 · Valores por defecto "Chronos WMS" (sin modelo nuevo)
+### Fase 0 · Valores por defecto "Chronos WMS" (sin modelo nuevo) ✅ (hecha el 2026-11-10; API v2.85.0, front v4.4.0)
+
+> **Resultado:** `front/src/app/marca.ts` (no en la raíz de `src`: la guía del front evita nombres que choquen con
+> paquetes npm) y `api/src/recursos/logoReportes.ts` (el PNG va en base64 para que el build no tenga que copiar
+> archivos). Logo y favicon del front ya eran neutros (anillo de la plantilla); siguen pendientes los oficiales.
+> Pruebas-guardia `sinMarcaDeCliente.test.ts` en ambas apps; única excepción, `LOGO_HISTORICO` (paso 3).
+> El correo personal de soporte del pie se sustituyó por `soporte@exogrid.io`.
 
 Cambio rápido e independiente; deja el código sin referencias a Sony/Teleset antes de mover nada a datos.
 
