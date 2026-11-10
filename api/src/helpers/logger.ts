@@ -25,6 +25,9 @@ export const nivelDesdeEntorno = (entorno: NodeJS.ProcessEnv = process.env): Lev
   return "info";
 };
 
+/** Oculta el token de `?auth=` (descargas, imágenes, `GET /notifications/stream`) en las URL que se registran. */
+export const ocultarToken = (url: string) => url.replace(/([?&]auth=)[^&#]*/gi, "$1[oculto]");
+
 export const pinoBase = pino({ level: nivelDesdeEntorno(), base: { app: "almacen-api" } });
 
 const emitir = (nivel: Level) => (...args: unknown[]) => {

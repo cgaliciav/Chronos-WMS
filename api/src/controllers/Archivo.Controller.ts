@@ -9,7 +9,7 @@ import { Archivo } from "../entity/Archivo";
 import { InventarioActual } from "../entity/InventarioActual";
 import { AppError } from "../helpers/errorClases";
 import CommonController from "./common/Common.Controller";
-import { esImagen, extensionSegura, nombreArchivoSeguro } from "../helpers/archivosSeguros";
+import { esImagen, extensionSegura, nombreArchivoSeguro, nombreReporteSeguro } from "../helpers/archivosSeguros";
 import { idSeguro, parametro, parametroOpcional } from "../helpers/ids";
 import { escribirAtomico, olvidarArchivoEnCache, rutaTemporal } from "../helpers/cacheArchivos";
 import { Grupo } from "../entity/Grupo";
@@ -317,7 +317,7 @@ class ArchivoController {
   ) => {
     try {
       // Solo el nombre base, servido desde la carpeta de reportes como raíz (hallazgo C4: recorrido de rutas).
-      const nombreArchivo = nombreArchivoSeguro(parametro(req, "id"));
+      const nombreArchivo = nombreReporteSeguro(parametro(req, "id"));
       const raiz = process.env.RUTA_REPORTES;
       if (!raiz) throw new AppError("RUTA_REPORTES indefinida");
       if (!(await existe(join(raiz, nombreArchivo)))) {

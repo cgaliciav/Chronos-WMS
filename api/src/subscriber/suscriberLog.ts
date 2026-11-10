@@ -16,7 +16,8 @@ const nuevaOperacion = async (dataSource:DataSource,entity:any,funcionamiento:Fu
     if (
       entity.constructor.name == "LogFuncionamiento" ||
       entity.constructor.name == "LogGeneral" ||
-      entity.constructor.name == "LogPeticiones"
+      entity.constructor.name == "LogPeticiones" ||
+      entity.constructor.name == "Notificacion" // la crea el sistema, sin sesión (plan 02 · fase 7)
     )
       // Omitir las funcionamientoes sobre LogOperacion y LogGeneral.
       return;

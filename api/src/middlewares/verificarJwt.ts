@@ -76,13 +76,29 @@ export const checkJwt = async (req: Request, res: Response, next: NextFunction) 
  * cabecera `auth` o en el parámetro de consulta `?auth=`. Si `ARCHIVOS_PUBLICOS=true` (transición
  * hasta que el front envíe el token en las URLs de imagen) deja pasar sin token.
  */
+const tokenDeCabeceraOConsulta = (req: Request) =>
+  (req.headers["auth"] as string | undefined) ?? (typeof req.query.auth === "string" ? req.query.auth : undefined);
+
 export const checkJwtArchivos = async (req: Request, res: Response, next: NextFunction) => {
-  const token = (req.headers["auth"] as string | undefined) ?? (typeof req.query.auth === "string" ? req.query.auth : undefined);
+  const token = tokenDeCabeceraOConsulta(req);
   if (!token && process.env.ARCHIVOS_PUBLICOS === "true") {
     return next();
   }
   try {
     await verificarYRenovar(token, res);
+    next();
+  } catch (error) {
+    next(esErrorDeToken(error) ? new AppError("Token inválido", 401) : error);
+  }
+};
+
+/**
+ * Como `checkJwt`, pero acepta también `?auth=`: para `GET /notifications/stream`, porque `EventSource` del navegador
+ * no puede enviar cabeceras. Sin la excepción de `ARCHIVOS_PUBLICOS`: siempre exige token (plan 02 · fase 7).
+ */
+export const checkJwtConsulta = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await verificarYRenovar(tokenDeCabeceraOConsulta(req), res);
     next();
   } catch (error) {
     next(esErrorDeToken(error) ? new AppError("Token inválido", 401) : error);

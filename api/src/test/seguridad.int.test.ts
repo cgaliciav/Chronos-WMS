@@ -65,7 +65,11 @@ describe("fase 2 · seguridad", () => {
       expect(traversal.status).toBe(404);
       const traversal2 = await api.get("/file/report/..%2Freporte-prueba.xlsx");
       expect([200, 404]).toContain(traversal2.status); // basename → reporte-prueba.xlsx, nunca fuera de RUTA_REPORTES
-      expect((await api.get("/file/report/.env")).status).toBe(404);
+      // Desde la fase 7 un nombre oculto se rechaza (400) sin buscarlo en disco; antes se buscaba "env" (404)
+      expect((await api.get("/file/report/.env")).status).toBe(400);
+      const conEspacios = await api.get("/file/report/reporte%20con%20espacios.xlsx");
+      expect(conEspacios.status).toBe(404); // se busca tal cual (antes "reporte_con_espacios.xlsx")
+      expect(conEspacios.body.message).toBe("El reporte no existe");
     });
 
     it("DELETE /file/:id responde y borra", async () => {

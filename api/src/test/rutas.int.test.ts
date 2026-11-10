@@ -43,8 +43,8 @@ const rutasDeclaradas = (): Ruta[] => {
 /** Sustituye cada parámetro (`:id`, `:id([0-9]+)`, `:id{…}`) por un valor concreto. */
 const concretar = (ruta: string) => ruta.replace(/:(\w+)(\([^)]*\))?/g, ID_INEXISTENTE);
 
-/** Rutas que no se llaman: cerrarían la sesión que usa el resto del recorrido. */
-const OMITIDAS = new Set(["post /auth/logout"]);
+/** Rutas que no se llaman: logout cerraría la sesión del recorrido; stream (SSE) no termina nunca. */
+const OMITIDAS = new Set(["post /auth/logout", "get /notifications/stream"]); // stream: SSE, la conexión no termina
 
 describe("fase 5 · todas las rutas declaradas existen", () => {
   let app: Express;

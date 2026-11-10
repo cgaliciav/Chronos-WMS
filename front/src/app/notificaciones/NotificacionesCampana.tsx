@@ -3,17 +3,23 @@ import { Badge, Button, Empty, List, Popover, Typography } from 'antd'
 import { BellOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router'
 import dayjs from 'dayjs'
+import { esRecursoDelApi, urlRecursoDelApi } from 'services/axios/notificaciones'
 import { notificacionesActivas, useNotificacionesStore } from 'stores/notificaciones.store'
 
-/** Campana con el número de notificaciones sin leer (sustituye a MagicBell, D14). Oculta si no están activas. */
+/**
+ * Campana con el número de notificaciones sin leer (sustituye a MagicBell, D14). Oculta si no están activas.
+ * Recibe las nuevas por SSE (o sondeo cada 60 s) y abre los enlaces del API (reportes) en otra pestaña con el token.
+ */
 export default function NotificacionesCampana() {
-  const { notificaciones, cargando, cargar, marcarLeida } = useNotificacionesStore()
+  const { notificaciones, cargando, cargar, marcarLeida, marcarTodas, conectar } = useNotificacionesStore()
   const noLeidas = useNotificacionesStore(estado => estado.noLeidas())
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (notificacionesActivas()) void cargar()
-  }, [cargar])
+    if (!notificacionesActivas()) return
+    void cargar()
+    return conectar()
+  }, [cargar, conectar])
 
   if (!notificacionesActivas()) return null
 
@@ -28,7 +34,9 @@ export default function NotificacionesCampana() {
           style={{ cursor: 'pointer', opacity: n.leida ? 0.6 : 1 }}
           onClick={() => {
             void marcarLeida(n.id)
-            if (n.url) navigate(n.url)
+            if (!n.url) return
+            if (esRecursoDelApi(n.url)) window.open(urlRecursoDelApi(n.url), '_blank', 'noopener')
+            else navigate(n.url)
           }}
         >
           <List.Item.Meta
@@ -48,7 +56,21 @@ export default function NotificacionesCampana() {
   )
 
   return (
-    <Popover content={lista} title="Notificaciones" trigger="click" placement="bottomRight">
+    <Popover
+      content={lista}
+      title={
+        <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          Notificaciones
+          {noLeidas > 0 && (
+            <Button type="link" size="small" onClick={() => void marcarTodas()}>
+              Marcar todas como leídas
+            </Button>
+          )}
+        </span>
+      }
+      trigger="click"
+      placement="bottomRight"
+    >
       <Badge count={noLeidas} size="small">
         <Button type="text" icon={<BellOutlined />} aria-label="Notificaciones" />
       </Badge>

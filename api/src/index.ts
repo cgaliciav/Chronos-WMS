@@ -5,6 +5,7 @@ import { crearApp } from "./app";
 import { iniciarSentry } from "./sentry";
 import { iniciarLimpiezaCache } from "./helpers/cacheArchivos";
 import { verificarCorreo } from "./helpers/enviarMail";
+import NotificacionService from "./services/NotificacionService";
 
 import { AppDataSource, conectarORM } from "./data-source";
 import { logger } from "./helpers/logger";
@@ -19,6 +20,7 @@ import { logger } from "./helpers/logger";
   await conectarORM();
   iniciarLimpiezaCache(); // caché de archivos (CACHE_ARCHIVOS_DIAS) y reportes (REPORTES_DIAS), hallazgo M17
   void verificarCorreo(); // solo informa en el log; no impide arrancar
+  NotificacionService.iniciarTareas(); // préstamos vencidos (DIAS_CUARENTENA) y retención de 90 días (plan 02 · fase 7)
 
   const app = crearApp({ registrarPeticiones: true });
 

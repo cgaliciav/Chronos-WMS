@@ -378,7 +378,25 @@ los 5 endpoints más usados antes/después → `docs/api/rendimiento.md`.
 
 **Pruebas:** suite completa; `migration:generate` vacío.
 
-### Fase 7 · Sistema de notificaciones propio (sustituye MagicBell)
+### Fase 7 · Sistema de notificaciones propio (sustituye MagicBell) ✅ (hecha el 2026-11-10, v2.83.0)
+
+> **Resultado:** entidad `Notificacion` y migración `1794327605255-Notificacion`, `NotificacionService`
+> (`services/reglas/notificaciones.ts` con las reglas puras), `/notifications` con SSE, reportes que avisan y tarea
+> periódica de vencimientos y retención. Front v4.2.0 (campana con SSE y sondeo). Contrato en `docs/api/endpoints.md`
+> ("Cambios de la fase 7").
+>
+> - **Desviación:** el campo del enlace es `url` y no `enlace`: el front (plan 01, D14) ya lo consumía así.
+> - Las respuestas son las que el front ya esperaba: `GET /notifications` devuelve un arreglo (no `{ results }`).
+> - Avisos de vencimiento: préstamos (3) y rentas externas (11) no legados, a los usuarios de la operación (o a quien
+>   la registró si no tiene), una sola vez por movimiento y usuario (`clave` única). Los legados se excluyen: sin
+>   relaciones su saldo nunca baja y todo el histórico parecería vencido.
+> - Tarea única cada 6 h y al arrancar (vencimientos y retención), con `setInterval` como la limpieza de caché: sin
+>   `node-cron`. La retención borra las leídas creadas hace más de 90 días.
+> - Las pruebas unitarias cubren las reglas puras (textos, destinatarios, SSE) en lugar de un servicio con mocks; el
+>   servicio se prueba contra MariaDB (`notificaciones.int.test.ts`, 7 escenarios).
+> - Al probar el enlace del reporte apareció un fallo previo: `GET /file/report/:nombre` no encontraba los nombres con
+>   espacios o acentos. Corregido con `nombreReporteSeguro`.
+> - El emisor de eventos es del proceso: con varias instancias del API, cada una avisa solo a sus conexiones.
 
 **Objetivo:** avisar a usuarios de eventos del sistema (reporte listo, préstamo vencido, devolución pendiente)
 sin servicio externo. El front lo consume con `NotificacionesCampana` (plan 01).

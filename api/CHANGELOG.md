@@ -9,6 +9,33 @@ La versión vive en `package.json` (la devuelven `GET /` y `/auth/version`, y Se
 `desplegar.sh` publica una versión `X.Y.Z-d` como `X.Y.Z` y, si ya no lleva sufijo, sube el parche. Contrato con el
 front: [`docs/api/endpoints.md`](../docs/api/endpoints.md). Plan: [`docs/planes/02-api-relacion-movimientos.md`](../docs/planes/02-api-relacion-movimientos.md).
 
+## [2.83.0-d] - Sin publicar
+
+Fase 7 del plan 02: notificaciones propias (sustituyen a MagicBell). **Migración nueva** `1794327605255-Notificacion`
+(solo crea la tabla `notificacion`): aplícala con `docs/api/procedimiento-migracion-produccion.md`.
+
+### Añadido
+
+- Recurso `/notifications` (solo token, cada usuario ve las suyas): `GET /notifications?unread=1&page=N` (arreglo, 50
+  por página), `GET /notifications/count` (`{ noLeidas }`), `PUT /notifications/:id/read`,
+  `PUT /notifications/read-all` (`{ actualizadas }`) y `GET /notifications/stream` (Server-Sent Events; acepta el
+  token en `?auth=` porque `EventSource` no envía cabeceras). Contrato en `docs/api/endpoints.md`.
+- Los reportes (`/reports/by-group`, `/by-project`, `/by-project-final`) notifican al solicitante al terminar, con el
+  enlace `/file/report/<nombre>`, o al fallar, con el error (cierra el pendiente de H8). El correo se sigue enviando.
+- Tarea al arrancar y cada 6 h: aviso de préstamos y rentas externas con saldo abierto registrados hace más de
+  `DIAS_CUARENTENA` días (120 por defecto), a los usuarios de la operación, una sola vez por movimiento; y retención:
+  borra las notificaciones leídas de más de 90 días. Los movimientos legados no se avisan.
+
+### Corregido
+
+- `GET /file/report/:nombre` no encontraba los reportes con espacios o acentos en el nombre (casi todos): el nombre se
+  "limpiaba" a `Alta_Proyecto_A.xlsx` y la descarga daba 404, también desde el enlace del correo de reportes de más de
+  8 MiB. Ahora se usa el nombre base tal cual (sin directorios, ocultos ni caracteres de control).
+
+### Seguridad
+
+- El token de `?auth=` ya no aparece en los registros (pino-http y `pasada`).
+
 ## [2.82.0-d] - Sin publicar
 
 Fase 6 del plan 02: TypeORM 1.x. Sin cambios de esquema ni migraciones nuevas.
