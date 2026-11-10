@@ -1,11 +1,8 @@
-import {Entity, ManyToOne, Column, OneToMany, ManyToMany, JoinTable} from "typeorm";
+import { Entity, Column, OneToMany, ManyToMany, JoinTable } from "typeorm";
 import {NombreEstatus} from './common/NombreEstatus'
-import { Movimiento } from "./Movimiento";
 import { Comentario } from "./Comentario";
-import { Grupo } from "./Grupo";
 import { Operacion } from "./Operacion";
 import { GrupoDetalle } from "./GrupoDetalle";
-// import { Factura } from "./FacturaDetalle";
 
 
 @Entity()

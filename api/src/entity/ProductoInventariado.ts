@@ -1,14 +1,10 @@
 import {
   Entity,
   Column,
-  // OneToOne,
-  // JoinColumn,
   CreateDateColumn,
   ManyToOne,
 } from "typeorm";
 import { NombreEstatus } from "./common/NombreEstatus";
-// import { InventarioActual } from "./InventarioActual";
-// import { InventarioDetalle } from "./InventarioDetalle";
 import { Producto } from "./Producto";
 import { Sesion } from "./Sesion";
 
@@ -28,13 +24,6 @@ export class ProductoInventariado extends NombreEstatus {
     default: InventarioEstado.NO_REVISADO,
   })
   validacion: InventarioEstado;
-
-  // @OneToOne(() => Producto, (producto) => producto.productoValidado, {
-  //   eager: true,
-  // })
-  // @JoinColumn()
-  // producto: Producto;
-
 
   @ManyToOne(type => Producto, producto => producto.productoInventarios)
     producto : Producto;

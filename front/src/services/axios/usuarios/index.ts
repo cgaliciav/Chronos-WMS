@@ -26,7 +26,8 @@ export default class UsuarioPeticiones {
     if (Object.keys(parametros).length === 0) {
       return Promise.reject(new Error('objeto vacío · cambiarPasswordUsuario'))
     }
-    return PeticionBase.generalPut(recurso, 'password', parametros)
+    // Desde la API v2.83.5 responde `{ t }`: el token normal tras cambiar una contraseña temporal (L2).
+    return PeticionBase.generalPut<{ t?: string }>(recurso, 'password', parametros)
   }
   static actual = () => PeticionBase.generalGetNoParam<UsuarioActual>(recurso, 'current')
   static obtenerAreas = () =>

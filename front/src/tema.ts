@@ -1,4 +1,5 @@
 import type { ThemeConfig } from 'antd'
+import type { Marca } from 'app/marca'
 
 /**
  * Tema claro de la app para antd 6 (plan 01 D9/D10). Traslada a tokens las variables LESS que usaba el tema de
@@ -72,3 +73,30 @@ export const tema: ThemeConfig = {
  * contiguas (grupos, claves, estados). Se pasa como prop `tag` de `ConfigProvider`.
  */
 export const configuracionTag = { styles: { root: { marginInlineEnd: 8 } } }
+
+/** Tema de la app con los colores, la fuente y el radio de la marca del cliente (plan 03, fase 3). */
+export function temaConMarca(marca: Marca['tema']): ThemeConfig {
+  return {
+    ...tema,
+    token: {
+      ...tema.token,
+      colorPrimary: marca.colorPrimario,
+      colorInfo: marca.colorPrimario,
+      colorLink: marca.colorPrimario,
+      colorLinkHover: marca.colorEnlaceHover,
+      colorLinkActive: marca.colorEnlaceHover,
+      fontFamily: `'${marca.fuente}', sans-serif`,
+      borderRadius: marca.radio,
+    },
+    components: {
+      ...tema.components,
+      Tabs: {
+        ...tema.components?.Tabs,
+        itemHoverColor: marca.colorEnlaceHover,
+        itemActiveColor: marca.colorPrimario,
+        itemSelectedColor: marca.colorPrimario,
+        inkBarColor: marca.colorPrimario,
+      },
+    },
+  }
+}

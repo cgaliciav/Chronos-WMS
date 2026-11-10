@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { Brackets, In } from "typeorm";
+import { Brackets } from "typeorm";
 import { AppDataSource } from "../data-source";
 import { Bodega } from "../entity/Bodega";
 import { InventarioActual, InventarioDisponible } from "../entity/InventarioActual";
@@ -41,8 +41,6 @@ const queryBusqueda = () => {
 
 const queryBusquedaOperacion = () => {
     return (
-        // getRepository(Operacion)
-        // .createQueryBuilder("operacion")
         AppDataSource.getRepository(InventarioActual)
             .createQueryBuilder("inventarioActual")
             .leftJoin("inventarioActual.movimientos", "movimiento")
@@ -92,25 +90,11 @@ const queryBusquedaCatalogo = ({
             ));
         query.andWhere('producto.id IN (' + subquery.getQuery() + ')');
     }
-    // if ((textoBusqueda !== "") && (textoBusqueda ?? false)) {
-    //     query.andWhere(
-    //         new Brackets((qb) =>
-    //             qb
-    //                 .where(
-    //                     `MATCH(producto.titulo) AGAINST ('${textoBusqueda}' IN BOOLEAN MODE)`
-    //                 )
-    //                 .orWhere(
-    //                     `MATCH(producto.descripcion) AGAINST ('${textoBusqueda}' IN BOOLEAN MODE)`
-    //                 )
-    //         )
-    //     );
-    // }
 
     if (con_foto) {
         query.andWhere("archivos.id IS NOT NULL");
     }
 
-    // console.log(query.getQuery());
 
     return query;
 
@@ -136,15 +120,10 @@ const queryBusquedaCodigos = (codigosBusqueda: (number | string)[]) => {
 
 }
 
-// const queryBusquedaBajas = ({ })=>{
-
-// }
-
 const queryBusquedaProyecto = ({
     textoBusqueda,
     areasIds,
     bodegaIds,
-    // estados,
     proyectoId,
     movimientosTipoIds
 }: { textoBusqueda?: string; areasIds?: (number | string)[]; bodegaIds?: (number | string)[]; proyectoId?: number | string; movimientosTipoIds?: (number | string)[] }) => {
@@ -168,9 +147,6 @@ const queryBusquedaProyecto = ({
 
 }
 
-const queryBusquedaFacturas = ({ }) => {
-
-}
 
 const crearBaseInventarioActual = async (cantidad: number | string, bodegaId: number | string, sesionId: number) => {
     const inventarioActual = new InventarioActual();
@@ -226,11 +202,6 @@ const fnQueryId = (id: number | string) => {
 }
 
 class InventarioActualController {
-    // static guardarConHistorico= async(inventarioActual:InventarioActual,sesionId:number)=>{
-    //     inventarioActual.sesionId=sesionId;
-    //     await InventarioActualHistoricoController.guardar(inventarioActual,sesionId);
-    //     return(await getRepository(InventarioActual).save(inventarioActual));
-    // }
 
     static guardarHistorico = async (inventarioActual: InventarioActual, sesionId: number) => {
         return (await InventarioActualHistoricoController.guardar(inventarioActual, sesionId));
@@ -284,7 +255,6 @@ class InventarioActualController {
             .leftJoin("producto.productoPrecios", "productoPrecios")
             .addSelect("productoPrecios.precio")
             .leftJoinAndSelect("productoPrecios.precioTipo", "precioTipo")
-        // .addSelect(["precioTipo.nombre"]);
         if (codigo.length >= 10) {
             qry.where("productoClaves.barras=:codigo", { codigo })
         } else {
@@ -335,8 +305,6 @@ class InventarioActualController {
 
             logger.info("inventario Actual obtenerId", resp)
 
-            // // console.log("Get Inventory By ID", { oldId: id, newId: data[0].id, dataLen: data.length });
-            // console.log("Updated Record", { oldId: id, newId: data.id });
             res.json(resp);
         } catch (error) {
             next(error)
@@ -503,13 +471,12 @@ class InventarioActualController {
         }
     }
 
-    // TODO busqueda Catalogo por factura sistema viejo... y actual?
+    // Pendiente (responde 501): búsqueda del catálogo por factura
     static busquedaCatalogoFacturas = async (req: Request, res: Response, next: NextFunction) => {
         // Pendiente de implementar (búsqueda por factura/proveedor). Antes la petición se quedaba colgada (hallazgo H9).
         next(new AppError("Búsqueda por facturas no implementada", 501));
     }
 
-    // TODO SE PODRÍA HACER QUE TODAS LAS LISTAS SE MUESTREN EN FORMA DE CATALOGO???
 
     // #Factura Original
 

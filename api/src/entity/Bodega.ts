@@ -3,8 +3,6 @@ import {NombreEstatus} from './common/NombreEstatus'
 import { InventarioActual } from "./InventarioActual";
 import { InventarioDetalle } from "./InventarioDetalle";
 
-
-
 @Entity()
 export class Bodega extends NombreEstatus{
 
@@ -16,8 +14,6 @@ export class Bodega extends NombreEstatus{
     @Column()
     cobacha:boolean;
 
-    // @OneToMany(type => InventarioDetalle, inventarioDetalle => inventarioDetalle.producto )
-    // inventarioDetalles:InventarioDetalle[];
 
     @OneToMany(type => InventarioActual, inventarioActual => inventarioActual.bodega )
     inventariosActual:InventarioActual[];

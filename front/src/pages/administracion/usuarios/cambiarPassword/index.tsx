@@ -7,6 +7,7 @@ import Titulo from 'components/Titulo'
 import Tarjeta from 'components/ui/Tarjeta'
 import { useNavigate } from 'react-router'
 import UsuarioPeticiones from 'services/axios/usuarios'
+import { reglaConfirmacion, reglasPasswordNuevo } from 'helpers/reglasPassword'
 import type { ValoresCambiarPassword } from '../../tipos'
 
 const FormItem = Form.Item
@@ -89,36 +90,7 @@ const UsuarioCambiarPassword = () => {
           </Row>
           <Row gutter={15}>
             <Col {...columnaCampo}>
-              <FormItem
-                label="Password nuevo"
-                name="passwordNuevo"
-                rules={[
-                  {
-                    required: true,
-                    message: 'Coloca el password nuevo',
-                  },
-                  {
-                    min: 8,
-                    message: 'Mínimo 8 caracteres',
-                  },
-                  {
-                    max: 20,
-                    message: 'Máximo 20 caracteres',
-                  },
-                  {
-                    pattern: /([A-Z])/g,
-                    message: 'Debe contener al menos una mayúscula',
-                  },
-                  {
-                    pattern: /([a-z])/g,
-                    message: 'Debe contener al menos una minúscula',
-                  },
-                  {
-                    pattern: /([\d])/g,
-                    message: 'Debe contener al menos un número',
-                  },
-                ]}
-              >
+              <FormItem label="Password nuevo" name="passwordNuevo" rules={reglasPasswordNuevo}>
                 <Input.Password placeholder="password nuevo" disabled={!habilitado} />
               </FormItem>
             </Col>
@@ -130,18 +102,8 @@ const UsuarioCambiarPassword = () => {
                 help={ayudaPassNuevoConfirmacion}
                 dependencies={['passwordNuevo']}
                 rules={[
-                  {
-                    required: true,
-                    message: 'Confirma el password nuevo',
-                  },
-                  ({ getFieldValue }) => ({
-                    validator(_regla, value: unknown) {
-                      if (value !== getFieldValue('passwordNuevo')) {
-                        return Promise.reject(new Error('Confirmación y nuevo deben ser iguales'))
-                      }
-                      return Promise.resolve()
-                    },
-                  }),
+                  { required: true, message: 'Confirma el password nuevo' },
+                  reglaConfirmacion,
                 ]}
               >
                 <Input.Password

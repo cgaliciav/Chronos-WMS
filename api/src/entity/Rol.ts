@@ -1,7 +1,6 @@
 import {Entity, Column, ManyToMany, JoinTable, } from "typeorm";
 import {NombreEstatus} from './common/NombreEstatus'
 import { Comentario } from "./Comentario";
-// import { Usuario } from "./Usuario";
 
 @Entity()
 export class Rol extends NombreEstatus {

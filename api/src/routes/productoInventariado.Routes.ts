@@ -1,6 +1,5 @@
 import { Router } from "express";
 
-// import ProductoValidadoController from "../controllers/ProductoValidado.Controller";
 import ProductoInventarioController from "../controllers/ProductoInventariado.Controller";
 import { checkJwt } from "../middlewares/verificarJwt";
 import { checkRole } from "../middlewares/verificarRol";

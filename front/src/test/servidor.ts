@@ -1,6 +1,8 @@
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import type { UsuarioActual } from 'types/api'
+import { MARCA_POR_DEFECTO } from 'app/marca'
+import { REGIONAL_POR_DEFECTO } from 'stores/marca.store'
 
 /** Base de las peticiones en pruebas: jsdom corre en http://localhost:3000 y el API vive en /api/. */
 export const API = 'http://localhost:3000/api'
@@ -18,6 +20,16 @@ export const manejadores = [
   http.post(`${API}/auth/login`, () => HttpResponse.json({ t: 'token-nuevo' })),
   http.post(`${API}/auth/logout`, () => HttpResponse.json({})),
   http.get(`${API}/auth/version`, () => HttpResponse.json({ version: '9.9.9' })),
+  // Marca del cliente (plan 03): por defecto, la de Chronos WMS sin imágenes propias
+  http.get(`${API}/config/public`, () =>
+    HttpResponse.json({
+      marca: MARCA_POR_DEFECTO,
+      regional: REGIONAL_POR_DEFECTO,
+      logoUrl: null,
+      faviconUrl: null,
+      version: 'm1-r1-l0-f0',
+    }),
+  ),
   http.get(`${API}/notifications/count`, () => HttpResponse.json({ noLeidas: 0 })),
   http.get(`${API}/user/current`, ({ request }) =>
     request.headers.get('auth')

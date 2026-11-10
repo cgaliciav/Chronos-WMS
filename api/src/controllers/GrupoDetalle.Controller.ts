@@ -1,5 +1,4 @@
 import { In } from "typeorm";
-import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../data-source";
 import { idOpcional, idSeguro } from "../helpers/ids";
 import { GrupoDetalle } from "../entity/GrupoDetalle";

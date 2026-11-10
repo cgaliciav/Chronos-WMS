@@ -15,7 +15,7 @@ Los códigos `F<n>` remiten a [`docs/hallazgos-codigo.md`](../docs/hallazgos-cod
 
 Pendiente: fase 7 del plan 01 (pruebas e2e con Playwright, CI y cobertura).
 
-## [4.2.3-d] - 2026-11-10
+## [4.7.1-d] - 2026-11-10
 
 Ajustes de estilo: interfaz más compacta y tablas y cuadrículas más legibles.
 
@@ -28,8 +28,9 @@ Ajustes de estilo: interfaz más compacta y tablas y cuadrículas más legibles.
 - **Título de las tablas:** nuevo `components/ui/EncabezadoTabla` (título, total y acciones en una fila, sin los márgenes
   de `h2`/`h3`) en los listados por grupo, las operaciones, los listados por proyecto y administración. El menú
   "Reportes" va junto al total, en vez de flotar con un margen negativo.
-- **Filas alternas** (azul muy claro) en todas las tablas: `src/estilos-globales.css`, que respeta el hover, las filas
-  seleccionadas y la columna ordenada.
+- **Filas alternas** en todas las tablas, con el fondo claro del color principal de la marca
+  (`--ant-color-primary-bg`, plan 03): `src/estilos-globales.css`, que respeta el hover, las filas seleccionadas y la
+  columna ordenada.
 - **Cuadrícula de resultados uniforme** (catálogos y validaciones): imagen cuadrada sin recortar
   (`ImagenesEnCarrusel cuadrada`), descripción de dos líneas con el texto completo en un tooltip, último movimiento en
   una línea, línea de cuarentena reservada y tarjetas que llenan la columna. Todas miden lo mismo.
@@ -38,6 +39,58 @@ Ajustes de estilo: interfaz más compacta y tablas y cuadrículas más legibles.
 
 - `docs/front/baseline/capturar.js`: simula `/notifications` y navega sin `#` (las capturas salían con la página de
   error 500).
+
+## [4.7.0-d] - 2026-11-10
+
+Plan 03, fase 5.
+
+### Añadido
+
+- `/configuracion`: botones **Exportar** (descarga el JSON sin secretos) e **Importar** (aplica uno y recarga la marca y
+  las pestañas).
+
+## [4.6.0-d] - 2026-11-10
+
+Plan 03, fase 4: pantalla de configuración.
+
+### Añadido
+
+- `/configuracion` (menú de Administración, `ADMINISTRADOR` o `CONFIGURACION-EDITAR`) con pestañas Marca, Correo,
+  Reportes y Regional: nombre, textos, soporte, crédito, colores (selector), fuente, logo y favicon con vista previa;
+  servidor SMTP con contraseña solo de escritura, remitente, plantillas con la lista de variables y "Enviar correo de
+  prueba"; logo de los reportes; monedas, idioma y zona horaria. Si otra persona guardó antes se avisa y se recarga;
+  los campos que el API rechaza se marcan en el formulario.
+
+## [4.5.0-d] - 2026-11-10
+
+Plan 03, fase 3: la marca del cliente llega del API (`GET /config/public`, API v2.86+).
+
+### Añadido
+
+- Nombre, logo, favicon, colores, fuente, textos del login, soporte y crédito del pie salen de la configuración del
+  cliente, sin rebuild: basta recargar. Con el API caído se usa la marca de Chronos WMS y se reintenta al navegar.
+- Moneda por defecto, lista de monedas y formato de importes desde la configuración regional.
+
+## [4.4.0-d] - 2026-11-10
+
+Plan 03, fase 0: identidad por defecto "Chronos WMS" (no desplegar a producción hasta la fase 5).
+
+### Cambiado
+
+- Nombre, títulos de pestaña, bienvenida, textos del login y pie de página salen de `app/marca.ts`
+  (`MARCA_POR_DEFECTO`, "Chronos WMS"); el soporte del pie pasa a `soporte@exogrid.io`.
+- `index.html` y `manifest.json` neutros (el manifest era de la plantilla Air UI).
+- `sinMarcaDeCliente.test.ts` falla si aparece el nombre de un cliente en `src/`, `index.html` o `public/`.
+
+## [4.3.0-d] - 2026-11-10
+
+Contraseña temporal con cambio obligatorio (hallazgo L2; necesita el API v2.84 con su migración).
+
+### Añadido
+
+- Quien entra con la contraseña temporal que le llegó por correo va a `/auth/cambiar-password` y no ve otra página hasta
+  elegir la suya (también al recargar: `GET /user/current` lo indica). Al guardarla, el API entrega el token normal.
+- Las reglas de la contraseña nueva se comparten con la pantalla de "Cambiar password" (`helpers/reglasPassword.ts`).
 
 ## [4.2.2-d] - 2026-11-10
 

@@ -4,6 +4,7 @@ import AutorizacionPeticiones from 'services/axios/autorizacion'
 import UsuarioPeticiones from 'services/axios/usuarios'
 import { borrar, borrarToken, obtenerToken } from 'helpers/storage'
 import type { UsuarioActual } from 'types/api'
+import { useMarcaStore } from 'stores/marca.store'
 
 /** Sesión del usuario (sustituye a `redux/user` y sus sagas). */
 export interface EstadoUsuario {
@@ -15,16 +16,27 @@ export interface EstadoUsuario {
   permisos: string[]
   autorizado: boolean
   cargando: boolean
+  /** Entró con una contraseña temporal: hasta cambiarla solo se muestra `/auth/cambiar-password` (L2). */
+  cambioPasswordPendiente: boolean
   /** Inicia sesión y carga la cuenta; devuelve `true` si todo fue bien. */
   login: (correo: string, contrasena: string) => Promise<boolean>
   cargarCuentaActual: () => Promise<void>
+  /** Tras cambiar la contraseña temporal: quita la marca y recarga la cuenta. */
+  completarCambioPassword: () => Promise<void>
   /** Cierra la sesión: borra token, última ruta visitada y permisos (corrige F4). */
   logout: () => Promise<void>
 }
 
 type DatosSesion = Pick<
   EstadoUsuario,
-  'id' | 'nombre' | 'correo' | 'avatar' | 'permisos' | 'autorizado' | 'cargando'
+  | 'id'
+  | 'nombre'
+  | 'correo'
+  | 'avatar'
+  | 'permisos'
+  | 'autorizado'
+  | 'cargando'
+  | 'cambioPasswordPendiente'
 >
 
 export const SESION_VACIA: DatosSesion = {
@@ -35,6 +47,7 @@ export const SESION_VACIA: DatosSesion = {
   permisos: [],
   autorizado: false,
   cargando: false,
+  cambioPasswordPendiente: false,
 }
 
 export const useUsuarioStore = create<EstadoUsuario>()((set, get) => ({
@@ -46,12 +59,16 @@ export const useUsuarioStore = create<EstadoUsuario>()((set, get) => ({
   login: async (correo, contrasena) => {
     set({ cargando: true })
     try {
-      await AutorizacionPeticiones.login(correo, contrasena)
+      const { cambiarPassword } = await AutorizacionPeticiones.login(correo, contrasena)
       await get().cargarCuentaActual()
       if (!get().autorizado) return false
+      if (cambiarPassword) {
+        set({ cambioPasswordPendiente: true })
+        return true
+      }
       notification.success({
         title: '¡Bienvenido!',
-        description: 'Has entrado correctamente al Almacén de Sony México',
+        description: `Has entrado correctamente a ${useMarcaStore.getState().marca.nombreApp}`,
       })
       return true
     } catch {
@@ -78,6 +95,7 @@ export const useUsuarioStore = create<EstadoUsuario>()((set, get) => ({
           avatar: cuenta.avatar ?? '',
           permisos: [...cuenta.roles],
           autorizado: true,
+          cambioPasswordPendiente: cuenta.cambiarPassword === true,
         })
       }
     } catch {
@@ -85,6 +103,11 @@ export const useUsuarioStore = create<EstadoUsuario>()((set, get) => ({
     } finally {
       set({ cargando: false })
     }
+  },
+
+  completarCambioPassword: async () => {
+    set({ cambioPasswordPendiente: false })
+    await get().cargarCuentaActual()
   },
 
   logout: async () => {

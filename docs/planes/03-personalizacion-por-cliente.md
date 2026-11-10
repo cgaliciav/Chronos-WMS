@@ -131,7 +131,13 @@ clientes nuevos y entornos desechables, la configuración se puede exportar e im
 
 ## 3. Fases
 
-### Fase 0 · Valores por defecto "Chronos WMS" (sin modelo nuevo)
+### Fase 0 · Valores por defecto "Chronos WMS" (sin modelo nuevo) ✅ (hecha el 2026-11-10; API v2.85.0, front v4.4.0)
+
+> **Resultado:** `front/src/app/marca.ts` (no en la raíz de `src`: la guía del front evita nombres que choquen con
+> paquetes npm) y `api/src/recursos/logoReportes.ts` (el PNG va en base64 para que el build no tenga que copiar
+> archivos). Logo y favicon del front ya eran neutros (anillo de la plantilla); siguen pendientes los oficiales.
+> Pruebas-guardia `sinMarcaDeCliente.test.ts` en ambas apps; única excepción, `LOGO_HISTORICO` (paso 3).
+> El correo personal de soporte del pie se sustituyó por `soporte@exogrid.io`.
 
 Cambio rápido e independiente; deja el código sin referencias a Sony/Teleset antes de mover nada a datos.
 
@@ -148,7 +154,14 @@ Cambio rápido e independiente; deja el código sin referencias a Sony/Teleset a
 **Aceptación:** `grep -riE "sony|teleset" front/src front/index.html front/public api/src` sin resultados (salvo la
 alternativa temporal documentada del paso 3); suites verdes; checklist de humo 0.x y login.
 
-### Fase 1 · API: modelo, servicio y endpoints de configuración
+### Fase 1 · API: modelo, servicio y endpoints de configuración ✅ (hecha el 2026-11-10, API v2.86.0)
+
+> **Resultado y desviaciones:** `valor` es `simple-json` (texto) y no `json`: MariaDB guarda `json` como LONGTEXT y el
+> generador de migraciones vería diferencias en cada `test:int`. SVG se **rechaza** (no se sanea) e ICO también (sharp
+> no lo lee): se aceptan PNG/JPEG/WebP. `PUT` recibe `{ version, valor }`. La plantilla `passwordPerdido` no se incluye
+> (el flujo de contraseña perdida es la regeneración temporal de L2) y se añade la variable `{{horas}}`. La migración
+> congela los JSON por defecto (una migración publicada no cambia si cambia el código). La auditoría enmascara
+> secretos (M40). El rol se recrea con id fijo en `seed.ts`.
 
 1. Entidad `Configuracion` + migración (`npm run migration:generate -- Configuracion`) que crea la tabla e **inserta
    las secciones con los valores por defecto** de Chronos WMS (idempotente).
@@ -168,7 +181,14 @@ alternativa temporal documentada del paso 3); suites verdes; checklist de humo 0
 **Aceptación:** `npm test` y `npm run typecheck` verdes; la migración reproduce la entidad (`test:int`);
 `GET /config/public` responde con "Chronos WMS" en una BD recién migrada.
 
-### Fase 2 · API: correo y reportes desde la configuración
+### Fase 2 · API: correo y reportes desde la configuración ✅ (hecha el 2026-11-10, API v2.87.0)
+
+> **Resultado y desviaciones:** `CorreoService` + reglas puras en `services/reglas/correo.ts`; `EnviarMail` queda como
+> fachada. La cabecera de Postmark se conserva **solo** en el transporte `entorno` (`SMTP_*`), que es el que usa hoy
+> producción: quitarla antes de cargar la configuración de Sony (fase 5) podría cortar sus envíos; en `bd` va en
+> `cabeceras`. El logo histórico de `ARCHIVOS_AUXILIARES` sigue como segunda opción hasta la fase 5 (el paso 4 lo
+> retiraba ya; se deja para no cambiar los reportes de Sony antes de cargar su marca). `.env.test` define
+> `SMTP_ANULAR`: las pruebas nunca escriben a un servidor real.
 
 1. `enviarMail.ts` → `services/CorreoService.ts`: transporte construido desde `correo.transporte` (o `SMTP_ANULAR`,
    o `SMTP_*` como respaldo) y **recreado cuando cambia la `version`**; sin cabecera de Postmark fija (va en
@@ -185,7 +205,11 @@ alternativa temporal documentada del paso 3); suites verdes; checklist de humo 0
 al cambiar la plantilla por `PUT /config/correo`, el siguiente correo la usa sin reiniciar; el Excel lleva el logo
 configurado.
 
-### Fase 3 · Front: aplicar la marca
+### Fase 3 · Front: aplicar la marca ✅ (hecha el 2026-11-10, front v4.5.0)
+
+> **Resultado:** `stores/marca.store.ts` (carga antes del primer render y reintenta al navegar si el API falla),
+> `temaConMarca` en `tema.ts`, `helpers/moneda.ts`, `services/axios/configuracion`. `MARCA_POR_DEFECTO` queda como
+> respaldo (y como manejador por defecto de MSW en las pruebas).
 
 1. `services/axios/configuracion` (clase sobre `PeticionBase`) y `stores/marca.store.ts` (§2.5).
 2. `index.tsx` espera la marca antes de renderizar; `ConfigProvider` combina `tema.ts` con `marca.tema`.
@@ -197,7 +221,11 @@ configurado.
 **Aceptación:** cambiando la fila `marca` en la BD y recargando, el login, el menú, el pie, la pestaña y los colores
 muestran la nueva marca sin rebuild; con el API apagado el login muestra "Chronos WMS" y el error de conexión.
 
-### Fase 4 · Front: pantalla de configuración
+### Fase 4 · Front: pantalla de configuración ✅ (hecha el 2026-11-10, front v4.6.0)
+
+> **Resultado:** `pages/administracion/configuracion` (página + una pestaña por sección + `useSeccion` para versión,
+> 409 y errores por campo del 400 + `SubirImagen`). Tras guardar se recarga la marca: el cambio se ve al momento, no
+> solo al recargar. Checklist de humo, sección 11.
 
 1. Ruta `/configuracion` (lazy, en `router.tsx` e `inventario-rutas.md`) con pestañas Marca, Correo, Reportes y
    Regional; formularios `Form.useForm` con la misma validación que el esquema zod del API (mensajes del 400).
@@ -210,7 +238,14 @@ muestran la nueva marca sin rebuild; con el API apagado el login muestra "Chrono
 **Aceptación:** un administrador cambia nombre, logo, colores, plantillas y SMTP desde la pantalla; el cambio se ve
 al recargar (marca) o en el siguiente correo/reporte, sin redesplegar; un usuario sin el rol recibe `/auth/401`.
 
-### Fase 5 · Despliegue, Sony como primer cliente configurado y alta de clientes
+### Fase 5 · Despliegue, Sony como primer cliente configurado y alta de clientes ✅ (código y procedimiento hechos el 2026-11-10; API v2.88.0, front v4.7.0)
+
+> **Resultado:** exportar/importar (API y botones en `/configuracion`); `infra/clientes/sony/configuracion.json`
+> (validado por `test:int`) con la marca y los asuntos históricos; staging con `SMTP_ANULAR=mailpit:2525` (mailpit escucha
+> en 2525, no 1025), `CONFIG_CLAVE` propia y verificación del transporte; procedimiento en
+> `procedimiento-migracion-produccion.md`. Se retiró el logo histórico de los reportes. **Pendiente (lo hace una
+> persona):** ensayar en staging y ejecutar el procedimiento en producción. Al hacerlo apareció que
+> `update-staging.sh` leía la versión de `GET /` (cambiado por L3): corregido.
 
 1. Exportar/importar configuración: `GET /config/export` (sin secretos) y `POST /config/import` (admin), para
    clonar la configuración entre entornos y dar de alta clientes.

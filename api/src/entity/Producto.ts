@@ -18,12 +18,9 @@ import { ProductoClave } from "./ProductoClave";
 import { Comentario } from "./Comentario";
 import { ProductoPrecio } from "./ProductoPrecio";
 
-import { EstatusEstado } from "./common/NombreEstatus";
 import { InventarioActual } from "./InventarioActual";
 import { ProductoValidado } from "./ProductoValidado";
 import { ProductoInventariado } from "./ProductoInventariado";
-
-
 
 @Entity()
 export class Producto {

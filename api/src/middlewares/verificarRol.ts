@@ -21,19 +21,12 @@ export const checkRole =
     try {
       // cargamos roles, areas, bodegas y proyectos relacionadas con el usuario.
       const user = await usuarioCon(jwtPayload.ui, ["roles"]);
-      // console.log("**********USUARIO ROLES",user.roles);
-      // console.log("**********ROLES",roles);
       if (user.roles.some((r) => roles.indexOf(r.codigoRol) >= 0)) {
         const { areas, bodegas, proyectos } = await usuarioCon(jwtPayload.ui, ["areas", "bodegas", "proyectos"]);
 
         res.locals.usuarioAreas = areas.map((area) => area.id);
         res.locals.usuarioBodegas = bodegas.map((bodega) => bodega.id);
         res.locals.usuarioProyectos = proyectos.map((proyecto) => proyecto.id);
-        // console.log("checkRole >>>>>>>>>>>>>>>>>>> ",jwtPayload,{
-        //   areas:res.locals.usuarioAreas,
-        //   bodegas:res.locals.usuarioBodegas,
-        //   proyectos:res.locals.usuarioProyectos
-        // });
 
         next();
       } else {

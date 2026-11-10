@@ -9,6 +9,127 @@ La versión vive en `package.json` (la devuelve `/auth/version`, y Sentry la usa
 `desplegar.sh` publica una versión `X.Y.Z-d` como `X.Y.Z` y, si ya no lleva sufijo, sube el parche. Contrato con el
 front: [`docs/api/endpoints.md`](../docs/api/endpoints.md). Plan: [`docs/planes/02-api-relacion-movimientos.md`](../docs/planes/02-api-relacion-movimientos.md).
 
+## [2.88.0-d] - Sin publicar
+
+Plan 03, fase 5: exportar/importar la configuración y retirada del logo histórico. Procedimiento de despliegue en
+`docs/api/procedimiento-migracion-produccion.md` ("Plan 03"); configuración de Sony lista en `infra/clientes/sony/`.
+
+### Añadido
+
+- `GET /config/export` (sin secretos, imágenes en base64) y `POST /config/import` (todo o nada en la validación;
+  conserva la contraseña SMTP del destino), para copiar la configuración entre entornos y dar de alta clientes.
+
+### Cambiado
+
+- Los reportes ya no buscan el logo histórico en `ARCHIVOS_AUXILIARES`: el de cada cliente se carga por configuración
+  (el de Sony, con la importación del procedimiento). La prueba-guardia ya no tiene excepciones.
+- Las imágenes de marca se aceptan por su contenido (PNG, JPEG o WebP), no por el tipo MIME declarado.
+
+### Corregido
+
+- Staging: `update-staging.sh` leía la versión de `GET /`, que desde v2.83.3 ya no la devuelve (L3): ahora usa
+  `/auth/version`. Además fija `SMTP_ANULAR=mailpit:2525`, genera su `CONFIG_CLAVE` y se detiene si el correo no va
+  a mailpit.
+
+## [2.87.0-d] - Sin publicar
+
+Plan 03, fase 2: correo y logo de reportes desde la configuración. Variable nueva `SMTP_ANULAR`.
+
+### Añadido
+
+- Los correos usan el remitente (`"nombre" <correo>`) y las plantillas de la sección `correo` (con `{{variables}}`;
+  sin plantilla propia, las del producto) y el nombre de la marca, sin reiniciar al cambiarlos.
+- Transporte SMTP: `SMTP_ANULAR` (`host:puerto`, staging y desarrollo) gana sobre todo y no lleva credenciales; si no,
+  el de la configuración (contraseña descifrada con `CONFIG_CLAVE`); si no, las variables `SMTP_*` de siempre. Al
+  arrancar se registra cuál se usa (`bd`, `anulado` o `entorno`).
+- `POST /config/correo/prueba`: correo de prueba al usuario que lo pide (502 con el error SMTP si falla).
+- El logo de los reportes sale de `reportes.logoId`; sin él, el histórico de `ARCHIVOS_AUXILIARES` (temporal) o el de
+  Chronos WMS.
+
+## [2.86.0-d] - Sin publicar
+
+Plan 03, fase 1: configuración por cliente servida por el API. **Migración nueva** `1794338006363-Configuracion`
+(tabla `configuracion` con los valores por defecto y rol `CONFIGURACION-EDITAR`). Variable nueva `CONFIG_CLAVE`.
+
+### Añadido
+
+- Recurso `/config` (contrato en `docs/api/endpoints.md`): `GET /config/public` y `/config/public/logo|favicon` sin
+  token (lo que muestra el login, con `ETag`); `GET /config`, `PUT /config/:seccion` (`{ version, valor }`, 400 por
+  esquema, 409 si otra persona guardó antes) y subida de logo, favicon y logo de reportes, con `ADMINISTRADOR` o
+  `CONFIGURACION-EDITAR`.
+- La contraseña SMTP se guarda cifrada (AES-256-GCM con `CONFIG_CLAVE`, 32 bytes en base64) y nunca sale en una
+  respuesta (`tieneContrasena`). Sin `CONFIG_CLAVE`, guardar una contraseña responde 400.
+- Si una sección falta o no valida se usan los valores por defecto de Chronos WMS (la app no deja de arrancar).
+
+### Seguridad
+
+- La auditoría (`LogFuncionamiento`) enmascara `password` y `contrasena*`: el hash bcrypt del usuario se registraba al
+  guardar una contraseña.
+
+## [2.85.0-d] - Sin publicar
+
+Plan 03, fase 0: identidad por defecto "Chronos WMS". **No desplegar a producción solo**: los usuarios del cliente
+verían "Chronos WMS" hasta que la fase 5 cargue su marca por configuración.
+
+### Cambiado
+
+- Correos con asuntos y cuerpos de "Chronos WMS"; correo de soporte desde `SOPORTE_CORREO` (por defecto
+  `soporte@exogrid.io`); el remitente por defecto (`SMTP_FROM` ausente) ya no lleva el nombre de un cliente. Si el
+  servidor no define `SMTP_FROM`, defínelo antes de desplegar para conservar el remitente verificado.
+- Logo de los reportes: el de Chronos WMS va empaquetado en el código; el logo histórico de `ARCHIVOS_AUXILIARES` se
+  sigue usando si existe (alternativa temporal hasta la fase 5).
+
+### Pruebas
+
+- `sinMarcaDeCliente.test.ts` falla si aparece el nombre de un cliente en `src/`; `reportes.int.test.ts` comprueba el
+  logo por defecto.
+
+## [2.84.0-d] - Sin publicar
+
+Contraseña temporal con cambio obligatorio (hallazgo L2). **Migración nueva** `1794336939132-PasswordTemporal` (dos
+columnas en `usuario`); el front necesita v4.3.0 para el cambio obligatorio.
+
+### Añadido
+
+- Al dar de alta un usuario o regenerarle la contraseña (`PUT /user/renewpassword`), la contraseña que se envía por
+  correo es **temporal**: vence a las `HORAS_PASSWORD_TEMPORAL` horas (72 por defecto) y hay que cambiarla al entrar.
+- `POST /auth/login` con una contraseña temporal responde `{ t, cambiarPassword: true }`. Ese token (`cp`) solo admite
+  `PUT /user/password`, `GET /user/current` y `POST /auth/logout`; el resto responde 403 con `cambiarPassword: true`.
+  Con la temporal vencida, 401.
+- `PUT /user/password` exige una contraseña nueva distinta de la actual, quita la marca y responde `{ t }` (también en
+  la cabecera `t`): el token normal de la misma sesión.
+- `GET /user/current` incluye `cambiarPassword: true` mientras el cambio está pendiente.
+
+### Cambiado
+
+- Los correos de alta y de contraseña nueva avisan de que es temporal, cuándo vence y que se pedirá cambiarla.
+- Las cuentas existentes no cambian (sin contraseña temporal) hasta que el administrador les regenere la contraseña.
+
+## [2.83.4-d] - Sin publicar
+
+Limpieza de código (hallazgos L6, L7 y L11). Sin cambios de contrato ni migraciones.
+
+### Cambiado
+
+- ≈ 1 000 líneas menos de código muerto: imports y variables sin uso (`noUnusedLocals` limpio fuera de las pruebas),
+  funciones que nadie llamaba (`reporteGeneral2`, `reporteMaquillajeGeneral` y sus consultas, tres consultas de
+  `Grupo.Controller`, `queryBusquedaFacturas`) y ≈ 370 líneas de código comentado.
+- `excelFunctions.ts`: de 2 739 a 1 808 líneas. Un solo mapeo de renglones por tipo de reporte, una función de fotos
+  con el tamaño como parámetro y un solo reporte por grupo con variante normal o de foto grande. Entra en
+  `tsconfig.estricto.json`. Los 7 reportes salen idénticos (`reportes.int.test.ts`).
+- Los TODO obsoletos se quitan; los pendientes reales dicen que responden 501.
+
+### Corregido
+
+- Los nombres de los reportes usan un sufijo único (milisegundos + aleatorio); antes `Math.random() * 1e6` podía
+  repetirse y sobrescribir el reporte de otra persona.
+- Un reporte de un proyecto inexistente responde 404 (antes un `TypeError`).
+
+### Pruebas
+
+- `reportes.int.test.ts`: caracterización de los 7 reportes Excel (hojas, celdas, celdas combinadas, imágenes y alturas
+  de fila).
+
 ## [2.83.3-d] - Sin publicar
 
 Fallos abiertos de `docs/hallazgos-codigo.md` y dependencias. Sin migraciones.

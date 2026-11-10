@@ -10,10 +10,11 @@ import * as Sentry from '@sentry/react'
 import './helpers/fechas'
 import { RegistrarFeedback } from './helpers/feedback'
 import { router } from './router'
-import { configuracionTag, tema } from './tema'
+import { configuracionTag, temaConMarca } from './tema'
 import { iniciarSentry } from './sentry'
 import { useUsuarioStore } from './stores/usuario.store'
 import { iniciarDeteccionViewport } from './stores/ui.store'
+import { useMarcaStore } from './stores/marca.store'
 
 iniciarSentry()
 iniciarDeteccionViewport()
@@ -35,16 +36,31 @@ function ErrorGeneral() {
   )
 }
 
-const raiz = document.getElementById('root')
-if (!raiz) throw new Error('No existe el elemento #root en index.html')
-
-createRoot(raiz).render(
-  <Sentry.ErrorBoundary fallback={<ErrorGeneral />}>
-    <ConfigProvider locale={esES} theme={tema} tag={configuracionTag}>
+/** ConfigProvider con el tema de la marca del cliente (cambia si se recarga la marca). */
+function Aplicacion() {
+  const temaMarca = useMarcaStore(estado => estado.marca.tema)
+  return (
+    <ConfigProvider locale={esES} theme={temaConMarca(temaMarca)} tag={configuracionTag}>
       <App>
         <RegistrarFeedback />
         <RouterProvider router={router} />
       </App>
     </ConfigProvider>
-  </Sentry.ErrorBoundary>,
-)
+  )
+}
+
+const raiz = document.getElementById('root')
+if (!raiz) throw new Error('No existe el elemento #root en index.html')
+
+// La marca (GET /config/public) se carga antes del primer render; mientras, se ve el cargador de index.html. Si el
+// API falla, la app arranca con la marca por defecto de Chronos WMS (plan 03, fase 3).
+void useMarcaStore
+  .getState()
+  .cargar()
+  .finally(() => {
+    createRoot(raiz).render(
+      <Sentry.ErrorBoundary fallback={<ErrorGeneral />}>
+        <Aplicacion />
+      </Sentry.ErrorBoundary>,
+    )
+  })

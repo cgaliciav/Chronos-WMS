@@ -10,11 +10,6 @@ const router = Router();
 
 //Get all users
 
-//Lista de InventarioActuals de un producto.
-// router.get("/list",[checkJwt], InventarioActualController.lista);
-// router.post("/list-catalog",[checkJwt], InventarioActualController.listaCatalogo);
-// router.post("/list-catalog-by-code",[checkJwt], InventarioActualController.listaCatalogoPorCodigo);
-// router.post("/list-catalog-deregister",[checkJwt], InventarioActualController.listaCatalogoBajas);
 
 router.delete("/delete",[checkJwt,checkRole(["ADMINISTRADOR","INVENTARIOACTUAL-BORRAR"])], InventarioActualController.borrar);
 
@@ -28,7 +23,5 @@ router.post("/list-catalog-project",[checkJwt,checkRole(["ADMINISTRADOR","INVENT
 router.post("/list-catalog-invoices",[checkJwt,checkRole(["ADMINISTRADOR","INVENTARIOACTUAL-CATALOGOFACTURAS"])], InventarioActualController.busquedaCatalogoFacturas);
 
 router.post("/get-activity-inventory",[checkJwt,checkRole(["ADMINISTRADOR","INVENTARIOACTUAL-LISTADOMOVIMIENTOSINVENTARIO"])], InventarioActualController.obtenerMovimientosInventario);
-
-
 
 export default router;

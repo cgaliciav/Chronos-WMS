@@ -1,6 +1,5 @@
-import {Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable, ManyToOne} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
 import { numericTransformer } from "../helpers/numericTransformer";
-import { Producto } from "./Producto";
 import { PrecioTipo } from "./PrecioTipo";
 import { Operacion } from "./Operacion";
 

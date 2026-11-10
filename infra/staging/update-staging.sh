@@ -72,7 +72,8 @@ fijar_version() { # directorio versión → como npm version --no-git-tag-versio
     mv "$f.tmp" "$f"
   done
 }
-api_version() { { vm_ssh "curl -s --max-time 5 http://localhost:34400/" 2>/dev/null || true; } | sed -n 's/.*"version":"\([^"]*\)".*/\1/p'; }
+# /auth/version: desde la API v2.83.3 `GET /` ya no devuelve la versión (hallazgo L3); /auth/version existe en todas.
+api_version() { { vm_ssh "curl -s --max-time 5 http://localhost:34400/auth/version" 2>/dev/null || true; } | sed -n 's/.*"version":"\([^"]*\)".*/\1/p'; }
 record() { # componente versión ref imagen migraciones snapshot
   local line; line="$(date '+%F %T')"$'\t'"$1"$'\t'"$2"$'\t'"$3"$'\t'"$4"$'\t'"$5"$'\t'"$6"$'\t'"$(id -un)"
   printf '%s\n' "$line" | vm_ssh "cat >> $DEPLOY_LOG"
@@ -232,6 +233,8 @@ deploy_api() {
   fi
 
   step "API · arrancando $TAG"
+  # Clave propia para la configuración cifrada (plan 03); VMs aprovisionadas antes de que existiera no la tienen.
+  vm_ssh "cd $R && (grep -q '^CONFIG_CLAVE=' .env || echo \"CONFIG_CLAVE=\$(openssl rand -base64 32)\" >> .env)"
   since=$(vm_ssh "date -u +%Y-%m-%dT%H:%M:%SZ")
   [[ "$prev" != "$TAG" ]] && env_set BACKEND_IMAGE_PREV "$prev"
   env_set BACKEND_IMAGE "$TAG"
@@ -246,6 +249,13 @@ deploy_api() {
   if vm_ssh "docker logs --since $since $C_BACKEND 2>&1 | grep -E 'migraciones pendientes|DB_SYNCRO=true'"; then
     warn "El backend reporta un problema de esquema (ver arriba)"
   fi
+  # Plan 03 §2.4: los datos son de producción; el correo DEBE ir a mailpit (transporte "anulado").
+  local transporte; transporte=$(vm_ssh "docker logs --since $since $C_BACKEND 2>&1 | grep -oE 'Correo: transporte (anulado|bd|entorno)' | tail -1" || true)
+  case "$transporte" in
+    *anulado) ok "Correo: transporte anulado (mailpit)" ;;
+    *bd|*entorno) die "El correo de staging NO va a mailpit ($transporte). Revisa SMTP_ANULAR en docker-compose.staging.yml" ;;
+    *) warn "No se pudo comprobar el transporte de correo (versión del API sin ese registro)" ;;
+  esac
   record api "v$version" "$LABEL" "$TAG" "$migs" "$snap"
 
   # Limpieza: conservar solo la imagen en uso, la anterior y la de producción.

@@ -54,6 +54,8 @@ export interface Usuario {
 export interface UsuarioActual extends Omit<Usuario, 'roles'> {
   roles: string[]
   avatar?: string
+  /** Solo con contraseña temporal: hay que cambiarla antes de usar el sistema (API v2.83.5, hallazgo L2). */
+  cambiarPassword?: boolean
 }
 
 export type Area = NombreEstatus
@@ -186,6 +188,8 @@ export interface ParametrosTabla {
 /** `POST /auth/login`. */
 export interface RespuestaLogin {
   t: string
+  /** La contraseña usada es temporal: el token solo sirve para cambiarla (`PUT /user/password`). */
+  cambiarPassword?: boolean
 }
 
 /** `GET /auth/version`. */

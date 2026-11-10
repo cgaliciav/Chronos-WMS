@@ -11,5 +11,6 @@
 .ant-table-tbody
   > tr.ant-table-row:nth-child(even of .ant-table-row):not(:hover):not(.ant-table-row-selected)
   > td:not(.ant-table-column-sort) {
-  background: #eef2fb; /* azul muy claro: distinto de la cabecera (#f0f2f4) y del hover (#e4e9f0) */
+  /* Fondo claro del color principal de la marca (plan 03); #eef2fb si antd no expone la variable. */
+  background: var(--ant-color-primary-bg, #eef2fb);
 }

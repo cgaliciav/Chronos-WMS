@@ -10,7 +10,7 @@ import { idSeguro } from "../helpers/ids";
 
 const autogenerarCodigo=async()=>{
 
-    // TODO (fase 3): dos llamadas concurrentes pueden generar el mismo código; la restricción UNIQUE de `barras` lo detecta.
+    // Nota: dos llamadas concurrentes pueden generar el mismo código; la restricción UNIQUE de `barras` lo detecta.
     const [lastreg]=await AppDataSource.getRepository(ProductoClave).find({order:{id:"DESC"}, take:1})
     const autoCodigo=((lastreg?.id ?? 0)+5000).toString();
     return {
@@ -114,27 +114,6 @@ class ProductoClaveController{
             next(error)
         }
     }
-
-    // static borrar = async (req: Request, res: Response, next:NextFunction) =>{
-    //     const {jwtPayload}=res.locals;
-    //     try{
-
-    //         res.json();
-
-    //     }catch (error) {
-    //         next(error)
-    //     }
-    // }
-    
-
-    // static editar = async (req: Request, res: Response, next:NextFunction) =>{
-    //     const {jwtPayload}=res.locals;
-    //     try{
-    //         res.json();
-    //     }catch (error) {
-    //         next(error)
-    //     }
-    // }
 
 }
 

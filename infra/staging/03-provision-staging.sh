@@ -97,6 +97,7 @@ if [ ! -f .env ]; then
     echo "DB_ROOT_PASSWORD=\$(openssl rand -hex 24)"
     echo "DB_PASSWORD=\$(openssl rand -hex 24)"
     echo "JWTSECRET=\$(openssl rand -hex 32)"
+    echo "CONFIG_CLAVE=\$(openssl rand -base64 32)"
     echo "BACKEND_IMAGE=$BACKEND_IMAGE"
   } > .env
   echo "Generado $R/.env (chmod 600)"

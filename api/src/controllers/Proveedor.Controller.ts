@@ -29,7 +29,6 @@ class ProveedorController{
                 AppDataSource.getRepository(Proveedor),
                 ["id","nombre"],
                 busqueda);
-            // console.log("ProveedorController->listaSimpleCompletaDinamica<<<<<<<<<<<<<",resp)
             res.json(resp);
         } catch (error) { 
           next (error);

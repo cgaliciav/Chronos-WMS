@@ -58,6 +58,12 @@ services:
       SMTP_USER: staging
       SMTP_PASS: staging
       SMTP_FROM: staging@telesetalmacen.local
+      # Plan 03 §2.4: TODO el correo va a mailpit aunque la configuración restaurada de producción (tabla
+      # `configuracion`) tenga el SMTP real; gana sobre la BD y no envía credenciales. update-staging.sh lo comprueba.
+      SMTP_ANULAR: mailpit:2525
+      # Clave propia de staging para la contraseña SMTP de la configuración (la de producción no se copia: la
+      # contraseña restaurada no se puede descifrar aquí, y no hace falta porque gana SMTP_ANULAR).
+      CONFIG_CLAVE: ${CONFIG_CLAVE:-}
     volumes:
       - ./exogrid:/code/exogrid
     ports:
