@@ -24,6 +24,52 @@ del usuario. `ADMIN` = `ADMINISTRADOR` (siempre incluido salvo que se indique). 
 - Token sin firma válida o ausente → `401`; registro inexistente → `404 REGISTRO NO ENCONTRADO`.
 - Las columnas `numeric` (`cantidad`, `cantidadAlmacen`, precios, totales) llegan como **número** en el JSON (antes string `"5.0000"`).
 
+**Cambios de la fase 3 del plan 02 (coordinar con el front, plan 01):** todos son compatibles hacia atrás salvo
+los marcados con ⚠.
+- `PUT /groups/activity` y `PUT /groups/activity-add-transaction` aceptan dos campos opcionales:
+  - `relaciones: [{ origenId, cantidad }]`: a qué salidas (préstamo 3, renta 11, transferencia destino 12 o compra 15
+    del mismo artículo y proyecto) se aplica una devolución (4), transferencia origen (7) o baja (5/13/16); para un 12,
+    a qué transferencia origen (7). La suma debe ser igual a `cantidad` y cada `cantidad ≤ saldo` del origen; si no → 400.
+  - `strict: true`: si no se envían `relaciones` y hay más de una salida candidata responde
+    `409 { code, message, candidatas: [{ movimientoId, movimientoTipoId, proyectoId, fecha, cantidad, saldo }] }`.
+  - Sin estos campos (front actual) el API reparte por **FIFO** (la salida más antigua primero).
+  - Movimientos anteriores a la fase 3 (`legado`): si no hay salidas nuevas que cubran la cantidad, se acepta contra
+    el saldo calculado con la heurística anterior y se registra un aviso en `LogGeneral` (modo de compatibilidad).
+- ⚠ Una devolución o baja en un proyecto distinto al de la salida responde **400** (antes 401) con el mismo mensaje
+  ("El movimiento no pertenece al proyecto seleccionado …"). Una cantidad mayor que el saldo pendiente del proyecto → 400.
+- ⚠ `DELETE /groups/activity`: `409 { derivados: [{ movimientoId, cantidad, tipo }] }` si el movimiento es origen de
+  otros (deshaga primero los derivados); `409` si después hay una compra o baja del mismo artículo, o si es una compra o
+  baja que no es el último movimiento. Ahora se puede deshacer un préstamo o devolución que no sea el último.
+- `PUT /groups/activity`, `/activity-purchase` y `/activity-add-transaction` son **transaccionales**: o se guarda todo
+  (inventario, histórico, operación, movimiento, relaciones, grupo) o nada. Dos operaciones simultáneas sobre el mismo
+  artículo se serializan. `activity-purchase` valida el tipo antes de crear el producto.
+- ⚠ `PUT /groups/activity-add-transaction`: 400 si el movimiento ya tiene operación o si el tipo es de alta/compra.
+- Respuesta de `PUT /groups/activity*`: el movimiento incluye `fecha`, `legado` y `relacionesComoDerivado: [{ id, origen: { id }, cantidad, tipo, fecha }]`.
+- `GET /activity/:id` añade `fecha`, `relacionesComoDerivado`, `relacionesComoOrigen` y `saldoPendiente`
+  (`null` si no es una salida o es legado). ⚠ Un id inexistente responde 404 (antes 200 vacío).
+- Nuevos: `GET /activity/:id/chain` y `GET /activity/open-by-inventory/:inventarioActualId?proyectoId=` (abajo).
+- `POST /groups/active-activity-list`: una fila por **salida abierta** (antes una por producto) con `saldoPendiente`.
+- ⚠ `PUT /groups/edit-details`, `/groups/edit-purchase` y `/transaction/edit` responden `409 { movimientos }` si
+  cambiarían el proyecto de operaciones que ya tienen relaciones.
+- ⚠ Retirados `GET /groups/export-to-supabase/:id` y `GET /current-inventory/export-to-supabase/:id` (el front no los usaba).
+- ⚠ `POST /auth/logout` revoca el token: después, ese token responde 401 ("Sesión terminada").
+
+**Cambios del 2026-11-08 (decisiones 11-13):**
+- ⚠ `PUT /groups/activity`, `/activity-purchase` y `/activity-add-transaction` responden 400 si el tipo de la operación
+  no es el del listado ("El listado X es de … : solo admite movimientos de ese tipo"). Los listados antiguos de tipo 5
+  admiten 13 y 16; las listas libres (sin detalle) no restringen.
+- ⚠ `POST /groups/new-details` y `PUT /groups/edit-details` rechazan los tipos 5 (usar 13 o 16), 6, 9 y 10. Un listado
+  antiguo de tipo 5 puede editarse conservando el 5 (sus líneas mantienen su tipo). `edit-details` solo cambia el tipo
+  si las líneas lo admiten (13 ↔ 16 cambia todas las líneas); si no, 400 sin modificar nada.
+- ⚠ Las operaciones de tipo 6, 9 y 10 se rechazan con 400.
+- `POST /groups/list-by-group-antd`: `movimientoTipoId` admite un número o un arreglo (el front de bajas envía `[13, 16, 5]`).
+- Los artículos nuevos (`PUT /groups/activity-purchase`) solo guardan el precio original (tipo 2) en `productoPrecios`.
+
+**Retirado el 2026-11-08 (decisión 10):** el inventario físico por grupos nunca se terminó ni se usó. Se eliminan
+`POST /groups/new-inventory`, `PUT /groups/edit-inventory`, `POST /groups/inventory-todo-list` y
+`POST /groups/inventory-done-list` (ahora 404), y en el front la página huérfana `7.inventario/nuevo` y sus métodos de
+servicio. La tabla `inventario_detalle` se conserva para los grupos antiguos que la referencien.
+
 Contrato de listados `*/list-antd` y `*/list-by-*`: body `{ sortField, sortOrder, pagination:{current,pageSize}, filters }`
 → `{ results, filtered, pagination:{ current, pageSize, total, totalItems } }`
 (`CommonController.listaTabla*`).
@@ -32,7 +78,7 @@ Contrato de listados `*/list-antd` y `*/list-by-*`: body `{ sortField, sortOrder
 | Método | Ruta | Roles | Controlador |
 |---|---|---|---|
 | POST | `/auth/login` | — | `Auth.login` body `{c, p, ip}` → `{t}` (JWT 12 h con `{ui,u,si}`) |
-| POST | `/auth/logout` | jwt | `Auth.logout` (marca `Sesion.fechaFin`) |
+| POST | `/auth/logout` | jwt | `Auth.logout` (marca `Sesion.fechaFin`; `checkJwt` rechaza después ese token) |
 | GET | `/auth/version`, `/` | — | nombre y versión del paquete |
 
 ## Movimientos (`/activity`)
@@ -40,8 +86,10 @@ Contrato de listados `*/list-antd` y `*/list-by-*`: body `{ sortField, sortOrder
 |---|---|---|---|
 | GET | `/activity/prior-activity/:id` | MOVIMIENTO-ULTIMOMOVIMIENTO | `Movimiento.obtenerUltimoMovimiento` (`:id` = inventarioActualId) |
 | GET | `/activity/get-group/:id` | MOVIMIENTO-OBTENERGRUPO | `Movimiento.obtenerGrupo` (corregido en fase 2) |
-| GET | `/activity/:id` | MOVIMIENTO-DETALLE | `Movimiento.obtenerId` |
+| GET | `/activity/:id` | MOVIMIENTO-DETALLE | `Movimiento.obtenerId` (+ `fecha`, relaciones, `saldoPendiente`; 404 si no existe) |
 | GET | `/activity/history-by-current-inventory/:id` | MOVIMIENTO-HISTORIAL | `Movimiento.obtenerHistorialMovimiento` |
+| GET | `/activity/:id/chain` | MOVIMIENTO-DETALLE | `MovimientoService.cadena` → `{ movimiento, relacionesComoDerivado: [{ id, origen, cantidad, tipo, fecha }], relacionesComoOrigen: [{ id, derivado, cantidad, tipo, fecha }], saldoPendiente }` |
+| GET | `/activity/open-by-inventory/:inventarioActualId?proyectoId=` | MOVIMIENTO-HISTORIAL | `MovimientoService.abiertosPorInventario` → `[{ movimientoId, movimientoTipoId, movimientoTipo, proyectoId, proyecto, fecha, cantidad, aplicado, saldo }]` (salidas con saldo > 0, FIFO; sin legados) |
 
 ## Grupos / listados (`/groups`)
 | Método | Ruta | Roles | Controlador |
@@ -56,18 +104,15 @@ Contrato de listados `*/list-antd` y `*/list-by-*`: body `{ sortField, sortOrder
 | DELETE | `/groups/remove` | GRUPOS-BORRAR | `Grupo.borrar` body `{grupoId}` (solo vacío) |
 | POST | `/groups/new-details` | GRUPOS-NUEVODETALLE | grupo con `GrupoDetalle` (`proyectoId, movimientoTipoId, usuariosIds, nombre`) |
 | POST | `/groups/new-purchase` | GRUPOS-NUEVOCOMPRA | grupo de compra con `FacturaDetalle` |
-| POST | `/groups/new-inventory` | GRUPOS-NUEVOINVENTARIO | grupo de inventario (`fechaInicio, fechaFin, bodegaId`) con un movimiento por inventario activo |
-| PUT | `/groups/edit-details` · `/edit-purchase` · `/edit-inventory` | GRUPOS-EDITARDETALLE · -EDITARCOMPRA · -EDITARINVENTARIO | edita cabecera y propaga proyecto/usuarios a las operaciones |
+| PUT | `/groups/edit-details` · `/edit-purchase` | GRUPOS-EDITARDETALLE · -EDITARCOMPRA | edita cabecera y propaga proyecto/usuarios a las operaciones |
 | POST | `/groups/activity-list-by-group` | GRUPOS-LISTAMOVIMIENTOS | movimientos de un grupo (`filters.grupos_id`) |
-| POST | `/groups/active-activity-list` | GRUPOS-LISTAMOVIMIENTOSACTIVOS | préstamos/rentas pendientes (`proyectoId, usuariosIds`) |
-| POST | `/groups/inventory-todo-list` · `/inventory-done-list` | GRUPOS-LISTAINVENTARIOPENDIENTE · -LISTAINVENTARIOHECHO | pendientes/hechos de un inventario |
-| PUT | `/groups/activity` | GRUPOS-MOVIMIENTONUEVO | **registra operación** sobre un artículo existente: `{codigo, cantidad, movimientoTipoId?, proyectoId, usuariosIds, grupoId}` → `Movimiento.guardar` / `guardarConOperacion` |
-| PUT | `/groups/activity-purchase` | GRUPOS-MOVIMIENTONUEVOCOMPRA | crea producto + inventario + movimiento (tipos 15 compra, 14/1/2 alta) |
-| PUT | `/groups/activity-add-transaction` | GRUPOS-MOVIMIENTOAGREGAROPERACION | añade operación a un movimiento sin operación `{movimientoId, movimientoTipoId, proyectoId, usuariosIds}` |
-| DELETE | `/groups/activity` | GRUPOS-QUITARMOVIMIENTO | deshace un movimiento `{movimientoId}` |
+| POST | `/groups/active-activity-list` | GRUPOS-LISTAMOVIMIENTOSACTIVOS | salidas con saldo pendiente según `v_movimiento_saldo` (+ heurística anterior para inventarios legados); cada fila trae `saldoPendiente` (`proyectoId, usuariosIds, areasIds`) |
+| PUT | `/groups/activity` | GRUPOS-MOVIMIENTONUEVO | **registra operación** sobre un artículo existente: `{codigo, cantidad, movimientoTipoId?, proyectoId, usuariosIds, grupoId, relaciones?, strict?}` → `MovimientoService.registrarOperacion` (sin tipo: línea de listado, `Movimiento.guardar`) |
+| PUT | `/groups/activity-purchase` | GRUPOS-MOVIMIENTONUEVOCOMPRA | crea producto + inventario + movimiento en una transacción (tipos 15 compra, 14/1/2 alta) |
+| PUT | `/groups/activity-add-transaction` | GRUPOS-MOVIMIENTOAGREGAROPERACION | añade operación a un movimiento sin operación `{movimientoId, movimientoTipoId, proyectoId, usuariosIds, relaciones?, strict?}` |
+| DELETE | `/groups/activity` | GRUPOS-QUITARMOVIMIENTO | deshace un movimiento `{movimientoId}` → `MovimientoService.deshacer` (409 si es origen de otros) |
 | POST | `/groups/create-list-from-{group,catalog,catalog-codes,catalog-deregister,catalog-projects,catalog-invoices,active-activity-list,report-use,report-activity}` | GRUPOS-CREARLISTADE* | crea un grupo libre copiando movimientos de otra fuente |
 | POST | `/groups/similar-names-count` | jwt | `{nombre}` → `{conteo}` |
-| GET | `/groups/export-to-supabase/:id` | ADMIN | exportador legado (código mayormente comentado) |
 
 ## Inventario actual (`/current-inventory`)
 | Método | Ruta | Roles | Nota |
@@ -77,12 +122,11 @@ Contrato de listados `*/list-antd` y `*/list-by-*`: body `{ sortField, sortOrder
 | DELETE | `/current-inventory/delete` | INVENTARIOACTUAL-BORRAR | |
 | POST | `/current-inventory/list-catalog-{general,codes,deregister,project,invoices}` | INVENTARIOACTUAL-CATALOGO* | búsquedas de catálogo (`invoices` → 501) |
 | POST | `/current-inventory/get-activity-inventory` | INVENTARIOACTUAL-LISTADOMOVIMIENTOSINVENTARIO | body `{ inventarioActualId }` |
-| GET | `/current-inventory/export-to-supabase/:id` | ADMIN | legado |
 
 ## Operaciones (`/transaction`)
 | Método | Ruta | Roles |
 |---|---|---|
-| PUT | `/transaction/edit` | OPERACION-EDITAR (`operacionId, tipoMovimientoId, proyectoId, usuariosIds`; solo permite 13↔16) |
+| PUT | `/transaction/edit` | OPERACION-EDITAR (`operacionId, tipoMovimientoId, proyectoId, usuariosIds`; solo permite 13↔16; 409 si cambia el proyecto de una operación con relaciones) |
 | POST / DELETE | `/transaction/file` | OPERACION-ARCHIVOSUBIR / -ARCHIVOBORRAR |
 | PUT / DELETE | `/transaction/comment` | OPERACION-COMENTARIONUEVO / -COMENTARIOBORRAR |
 

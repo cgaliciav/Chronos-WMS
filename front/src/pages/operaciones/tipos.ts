@@ -171,6 +171,8 @@ export interface ValoresConfiguracionGrupo {
   fechaInicio?: Dayjs
   fechaFin?: Dayjs
   usuariosResponsables?: ValorEtiquetado[]
+  /** 13 BAJA JUSTIFICADA o 16 BAJA INJUSTIFICADA (solo con `mostrarTipoBaja`). */
+  tipoBaja?: 13 | 16
 }
 
 export interface FormaConfiguracionGrupoProps {
@@ -186,6 +188,8 @@ export interface FormaConfiguracionGrupoProps {
   mostrarFechaInicial?: boolean
   mostrarFechaFinal?: boolean
   mostrarBodega?: boolean
+  /** Elegir si el listado de bajas es justificado (13) o injustificado (16); decisión 11. */
+  mostrarTipoBaja?: boolean
   botonTexto?: ReactNode
   /** Por defecto `'Fecha Inicio'`. */
   fechaInicialTexto?: ReactNode

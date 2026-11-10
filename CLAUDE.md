@@ -16,9 +16,10 @@ No hay `node_modules` ni base de datos en este repositorio; cada app se instala 
 - **Idioma:** código, comentarios, commits y documentación en **español** (los identificadores ya lo
   están: `Movimiento`, `InventarioActual`, `guardarConOperacion`). Las rutas HTTP están en inglés
   (`/groups`, `/current-inventory`); no las renombres sin coordinar con el front.
-- **No cambies el esquema de base de datos a la ligera.** El API corre con `synchronize: true`; cualquier
-  cambio en `api/src/entity` altera la BD de producción al arrancar. Sigue `docs/planes/02-api-relacion-movimientos.md`
-  (migraciones) antes de tocar entidades.
+- **No cambies el esquema de base de datos a la ligera.** Desde la fase 3 del plan 02 el esquema lo cambian las
+  migraciones (`api/src/migration/`, `DB_SYNCRO=false`): todo cambio en `api/src/entity` necesita su migración
+  (`npm run migration:generate -- Nombre`) y `npm run test:int` falla si falta. En producción las aplica una persona
+  siguiendo `docs/api/procedimiento-migracion-produccion.md`.
 - **Tipos de movimiento** (`movimiento_tipo`) tienen ids fijos y semántica propia: consulta
   `docs/api/tipos-de-movimiento.md` antes de tocar cualquier `switch` o comparación con 3, 4, 15…
 - **Columnas `numeric`** llegan como `string` desde el driver. Convierte con `Number()` antes de operar.
@@ -33,7 +34,7 @@ No hay `node_modules` ni base de datos en este repositorio; cada app se instala 
 - `docs/hallazgos-codigo.md`: fallos conocidos con archivo:línea y severidad. Si corriges uno, márcalo ahí.
 - `docs/planes/01-front-actualizacion-antd.md`: plan por fases para Vite + React 19 + antd 6 y retirar Clean UI.
 - `docs/planes/02-api-relacion-movimientos.md`: plan por fases para la relación origen→derivado entre
-  movimientos, transacciones, migraciones y limpieza.
+  movimientos, transacciones, migraciones y limpieza. Fases 0-4 hechas; la siguiente es la 5 (dependencias de runtime: Express 5, jsonwebtoken 9, multer 2, sharp…).
 
 ## Flujo de trabajo esperado
 

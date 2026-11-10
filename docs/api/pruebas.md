@@ -7,7 +7,8 @@ Dos suites de Jest (`api/jest.config.js`):
 | `unit` | `src/**/*.test.ts` (excepto `*.int.test.ts`) | No | `npm run test:unit` |
 | `integration` | `src/**/*.int.test.ts` | Sí (MariaDB de `.env.test`) | `npm run test:int` |
 
-`npm test` ejecuta ambas. `npm run typecheck` ejecuta `tsc --noEmit`.
+`npm test` ejecuta ambas. `npm run typecheck` ejecuta `tsc --noEmit` y `tsc -p tsconfig.estricto.json` (strict
+progresivo). Las suites pasan con Node 22 y Node 24.
 
 ## Base de datos de pruebas
 
@@ -31,8 +32,9 @@ mariadb -uroot -e "CREATE DATABASE IF NOT EXISTS almacen_test CHARACTER SET utf8
 ```
 y ajusta `DB_PORT` si tu servidor no escucha en 3307 (`DB_PORT=3306 npm run test:int`).
 
-`npm run test:int` ejecuta primero `src/test/resetDb.ts`, que **borra y recrea el esquema**
-(`dropSchema` + `synchronize`) y siembra el catálogo mínimo (`src/test/seed.ts`): los 17 tipos de
+`npm run test:int` ejecuta primero `src/test/resetDb.ts`, que **borra el esquema y lo recrea ejecutando las
+migraciones** (`dropSchema` + `runMigrations`; desde la fase 3 ya no se usa `synchronize`), **falla si las
+migraciones no reproducen exactamente las entidades** (el mismo cálculo que `migration:generate`) y siembra el catálogo mínimo (`src/test/seed.ts`): los 17 tipos de
 movimiento con sus ids de producción, roles `ADMINISTRADOR` / `GRUPOS-MOVIMIENTONUEVO` /
 `GRUPOS-LISTADETALLE`, usuarios `admin@pruebas.local` (`Admin123!`) y `operador@pruebas.local`
 (`Operador123!`), sus sesiones (ids 1 y 2), área, bodega, tres proyectos (A, B y uno externo),
@@ -46,8 +48,12 @@ Los ids fijos están en `SEMILLA`.
 | Archivo | Qué cubre |
 |---|---|
 | `src/test/humo.int.test.ts` | arranque, login, token, roles |
-| `src/test/caracterizacion.int.test.ts` | escenarios de negocio (compra, alta, préstamo, devolución, deshacer, concurrencia, listados, edición, IP). Los `it.failing` documentan lo que corrige la fase 3 |
-| `src/test/seguridad.int.test.ts` | fase 2: archivos con token y sin recorrido de rutas, contraseñas, rate limit, inyección en filtros/orden/búsquedas, validación zod, promesas esperadas, 501 |
+| `src/test/caracterizacion.int.test.ts` | escenarios de negocio (compra, alta, préstamo, devolución, deshacer, concurrencia, listados, edición, IP). Desde la fase 3 deshacer el penúltimo y la concurrencia se comprueban en estricto |
+| `src/test/relaciones.int.test.ts` | fase 3: relaciones origen→derivado, saldos, FIFO, `strict`, transferencias, deshacer con derivados, compras/bajas, modo de compatibilidad con legados, listado de pendientes, atomicidad, edición de proyecto |
+| `src/test/parcheTypeorm.int.test.ts` | fase 4: el parche de rendimiento de TypeORM genera exactamente el mismo SQL que la implementación original |
+| `src/test/rendimiento.ts` (`npm run rendimiento`) | no es una prueba: medición con autocannon, ver `docs/api/rendimiento.md` |
+| `src/services/reglas/*.test.ts`, `src/services/resolverRelaciones.test.ts`, `src/helpers/cacheArchivos.test.ts` | unitarias de los efectos sobre el inventario (17 tipos, 100 % de ramas), del planificador de relaciones con datos simulados y del caché de archivos |
+| `src/test/seguridad.int.test.ts` | fase 2: archivos con token y sin recorrido de rutas, contraseñas, rate limit, inyección en filtros/orden/búsquedas, validación zod, promesas esperadas, 501; fase 3: revocación del token al cerrar sesión |
 | `src/helpers/*.test.ts`, `src/esquemas/index.test.ts`, `src/middlewares/manejoErrores.test.ts` | unitarias de los helpers de seguridad y validación |
 
 ## Escribir pruebas

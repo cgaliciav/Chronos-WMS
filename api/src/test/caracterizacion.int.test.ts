@@ -101,7 +101,7 @@ describe("caracterización: operaciones de almacén", () => {
     expect(movimientos.map((m) => m.estatus)).toEqual(["inactivo", "inactivo", "activo"]);
   });
 
-  // 4
+  // 4 — fase 3: 400 (antes 401, que no es un error de autorización); el mensaje se conserva
   it("una DEVOLUCIÓN en un proyecto distinto al del préstamo se rechaza", async () => {
     const { codigo, inventarioActualId } = await crearArticulo(api, { grupoId: grupoAltaId, cantidad: 1, movimientoTipoId: 14 });
     expect((await registrarOperacion(api, { codigo, cantidad: 1, movimientoTipoId: 3, grupoId: grupoPrestamoAId })).status).toBe(200);
@@ -109,7 +109,7 @@ describe("caracterización: operaciones de almacén", () => {
     const res = await registrarOperacion(api, {
       codigo, cantidad: 1, movimientoTipoId: 4, grupoId: grupoDevolucionBId, proyectoId: SEMILLA.proyectoBId,
     });
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(400);
     expect(res.body.message).toMatch(/no pertenece al proyecto/);
     expect((await inventarioDe(inventarioActualId)).cantidad).toBe(0);
   });
@@ -145,8 +145,8 @@ describe("caracterización: operaciones de almacén", () => {
     expect(movimientos[0].estatus).toBe("activo"); // el alta vuelve a ser el movimiento activo
   });
 
-  // 6b
-  it.failing("deshacer el PENÚLTIMO movimiento debería dejar el inventario coherente (hoy restaura la instantánea equivocada)", async () => {
+  // 6b — corregido en la fase 3: las salidas se deshacen con su efecto inverso (hallazgo H17)
+  it("deshacer el PENÚLTIMO movimiento deja el inventario coherente", async () => {
     const { codigo, inventarioActualId } = await crearArticulo(api, { grupoId: grupoAltaId, cantidad: 5, movimientoTipoId: 14 });
     const prestamo1 = await registrarOperacion(api, { codigo, cantidad: 1, movimientoTipoId: 3, grupoId: grupoPrestamoAId });
     const prestamo2 = await registrarOperacion(api, { codigo, cantidad: 2, movimientoTipoId: 3, grupoId: grupoPrestamoAId });
@@ -157,12 +157,12 @@ describe("caracterización: operaciones de almacén", () => {
     await api.delete("/groups/activity").send({ movimientoId: prestamo1.body.id });
     await esperarHasta(() => movimientosDe(inventarioActualId), (m) => m.length === 2);
     const inv = await esperarHasta(() => inventarioDe(inventarioActualId), (i) => i.cantidad !== 2);
-    // Correcto: 5 - 2 (el préstamo que sigue vigente) = 3. Hoy devuelve 4 (instantánea previa al préstamo 2).
+    // 5 - 2 (el préstamo que sigue vigente) = 3. Antes devolvía 4 (instantánea previa al préstamo 2).
     expect(inv.cantidad).toBe(3);
   });
 
-  // 7
-  it("dos PRÉSTAMOS concurrentes sobre una sola unidad: se documenta la carrera (sin transacciones)", async () => {
+  // 7 — corregido en la fase 3: transacción + SELECT … FOR UPDATE (hallazgo C7)
+  it("cuatro PRÉSTAMOS concurrentes sobre una sola unidad: exactamente uno tiene éxito", async () => {
     const { codigo, inventarioActualId } = await crearArticulo(api, { grupoId: grupoAltaId, cantidad: 1, movimientoTipoId: 14 });
     const intentos = await Promise.all(
       Array.from({ length: 4 }, () => registrarOperacion(api, { codigo, cantidad: 1, movimientoTipoId: 3, grupoId: grupoPrestamoAId }))
@@ -171,14 +171,10 @@ describe("caracterización: operaciones de almacén", () => {
     const exitos = estados.filter((s) => s === 200).length;
     const inv = await inventarioDe(inventarioActualId);
     const activos = (await movimientosDe(inventarioActualId)).filter((m) => m.estatus === "activo").length;
-    const coherente = exitos === 1 && inv.cantidad === 0 && activos === 1;
-    if (!coherente) {
-      console.warn("CARRERA OBSERVADA (hallazgo C7):", { estados, exitos, cantidad: inv.cantidad, activos });
-    }
-    // Comportamiento esperado tras la fase 3 (transacciones + bloqueo): exactamente un éxito, cantidad 0 y un
-    // solo movimiento activo. Hoy solo se documenta; la aserción estricta se activa en la fase 3.
-    expect(exitos).toBeGreaterThanOrEqual(1);
-    expect(inv.cantidad).toBeGreaterThanOrEqual(0);
+    expect(exitos).toBe(1);
+    expect(estados.filter((s) => s === 400)).toHaveLength(3);
+    expect(inv.cantidad).toBe(0);
+    expect(activos).toBe(1);
   });
 
   // 8

@@ -32,11 +32,9 @@ router.delete("/remove",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-BORRAR"])],
 
 router.post("/new-details",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-NUEVODETALLE"])],GrupoController.nuevoConDetalle)
 router.post("/new-purchase",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-NUEVOCOMPRA"])],GrupoController.nuevoConCompra)
-router.post("/new-inventory",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-NUEVOINVENTARIO"])],GrupoController.nuevoConInventario)
 
 router.put("/edit-details",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-EDITARDETALLE"])],GrupoController.editarConDetalle)
 router.put("/edit-purchase",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-EDITARCOMPRA"])],GrupoController.editarConCompra)
-router.put("/edit-inventory",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-EDITARINVENTARIO"])],GrupoController.editarConInventario)
 
 
 
@@ -44,8 +42,6 @@ router.put("/edit-inventory",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-EDITAR
 router.post("/activity-list-by-group",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-LISTAMOVIMIENTOS"])],GrupoController.listaTablaMovimientosPorGrupo)
 router.post("/active-activity-list",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-LISTAMOVIMIENTOSACTIVOS"])],GrupoController.listaTablaPendientesActivos)
 
-router.post("/inventory-todo-list",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-LISTAINVENTARIOPENDIENTE"])],GrupoController.obtenerListadoInventarioPendiente)
-router.post("/inventory-done-list",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-LISTAINVENTARIOHECHO"])],GrupoController.obtenerInventariosHechos)
 
 // router.post("/file",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-ARCHIVOSUBIR"])],upload.single('file'),GrupoController.agregarArchivo) // esta peticion tiene que ser post por requerimiento del componente.
 // router.delete("/file",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-ARCHIVOBORRAR"])],GrupoController.quitarArchivo)
@@ -72,6 +68,5 @@ router.post("/create-list-from-report-activity",[checkJwt,checkRole(["ADMINISTRA
 router.post("/similar-names-count",[checkJwt],GrupoController.obtenerCanteoNombresSimilares)
 
 
-router.get("/export-to-supabase/:id([0-9]+)",[checkJwt,checkRole(["ADMINISTRADOR"])], GrupoController.export2supabase)
 
 export default router;

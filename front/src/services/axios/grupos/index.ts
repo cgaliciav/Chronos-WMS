@@ -1,7 +1,6 @@
 import { PeticionBase } from '..'
 import type {
   Grupo,
-  InventarioActual,
   Movimiento,
   ParametrosTabla,
   ResultadoTabla,
@@ -37,14 +36,10 @@ export default class GrupoPeticiones {
     PeticionBase.generalPost<Grupo>(recurso, 'new-purchase', parametros)
   static nuevoConDetalles = (parametros: Parametros = {}) =>
     PeticionBase.generalPost<Grupo>(recurso, 'new-details', parametros)
-  static nuevoConInventario = (parametros: Parametros = {}) =>
-    PeticionBase.generalPost<Grupo>(recurso, 'new-inventory', parametros)
   static editarConDetalle = (parametros: Parametros = {}) =>
     PeticionBase.generalPut(recurso, 'edit-details', parametros)
   static editarConCompra = (parametros: Parametros = {}) =>
     PeticionBase.generalPut(recurso, 'edit-purchase', parametros)
-  static editarconInventario = (parametros: Parametros = {}) =>
-    PeticionBase.generalPut(recurso, 'edit-inventory', parametros)
   static movimientosPorGrupo = (parametros: ParametrosTabla = {}) =>
     PeticionBase.generalPost<ResultadoTabla<Movimiento>>(
       recurso,
@@ -55,18 +50,6 @@ export default class GrupoPeticiones {
     PeticionBase.generalPost<ResultadoTabla<Movimiento>>(
       recurso,
       'active-activity-list',
-      parametros,
-    )
-  static inventarioPendiente = (parametros: ParametrosTabla = {}) =>
-    PeticionBase.generalPost<ResultadoTabla<InventarioActual>>(
-      recurso,
-      'inventory-todo-list',
-      parametros,
-    )
-  static inventarioHecho = (parametros: ParametrosTabla = {}) =>
-    PeticionBase.generalPost<ResultadoTabla<InventarioActual>>(
-      recurso,
-      'inventory-done-list',
       parametros,
     )
   static agregarMovimiento = (parametros: Parametros = {}) =>

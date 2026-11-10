@@ -17,14 +17,19 @@ const BajasNuevo = () => {
   const navigate = useNavigate()
 
   const handleFinish = async (values: ValoresConfiguracionGrupo) => {
-    const { nombre, proyectoInterno: proyectoId, usuariosResponsables: usuariosIds = [] } = values
+    const {
+      nombre,
+      proyectoInterno: proyectoId,
+      tipoBaja,
+      usuariosResponsables: usuariosIds = [],
+    } = values
     setGuardando(true)
 
     try {
       const resp = await GrupoPeticiones.nuevoConDetalles({
         nombre,
         proyectoId,
-        movimientoTipoId: 5, // baja
+        movimientoTipoId: tipoBaja, // 13 BAJA JUSTIFICADA o 16 BAJA INJUSTIFICADA (el tipo 5 ya no se acepta)
         usuariosIds: usuariosIds.map(idDeEtiquetado),
       })
       if (resp !== undefined) {
@@ -51,6 +56,7 @@ const BajasNuevo = () => {
           guardando={guardando}
           mostrarProyectosInternos
           mostrarUsuarios
+          mostrarTipoBaja
           valoresIniciales={{ nombre: dayjs().format('x') }}
           botonTexto="Crear baja"
           prefijoMovimiento="B"

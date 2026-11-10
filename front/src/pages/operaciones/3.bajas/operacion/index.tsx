@@ -135,13 +135,15 @@ const BajasOperacion = () => {
   const handleFinish = async (valores: ValoresBusquedaPDBP) => {
     const proyectoId = grupo.grupoDetalle?.proyecto?.id
     const usuariosIds = (grupo.grupoDetalle?.usuarios ?? []).map(usr => usr.id)
+    const movimientoTipoId = grupo.grupoDetalle?.movimientoTipo.id
     setCargando(true)
 
     try {
       await GrupoPeticiones.agregarMovimiento({
         codigo: valores.clave,
         cantidad: 1,
-        movimientoTipoId: valores.tipoBaja, // baja
+        // Las líneas son del tipo del listado (13 o 16). Solo los listados antiguos de BAJA* (5) eligen por línea.
+        movimientoTipoId: movimientoTipoId === 5 ? Number(valores.tipoBaja) : movimientoTipoId,
         proyectoId,
         usuariosIds,
         grupoId: grupo.id,
@@ -256,7 +258,7 @@ const BajasOperacion = () => {
           guardando={cargando}
           handleFinish={handleFinish}
           habilitado={estatusGrupo !== 'inactivo'}
-          mostrarBajas
+          mostrarBajas={grupoDetalle?.movimientoTipo.id === 5}
         />
 
         <TablaOperaciones

@@ -17,6 +17,17 @@ describe("esquemas zod", () => {
     expect(actividadSchema.safeParse({ codigo: "12", cantidad: 1, grupoId: 1 }).success).toBe(false);
   });
 
+  it("actividad acepta relaciones { origenId, cantidad } y strict booleano", () => {
+    const r = actividadSchema.parse({
+      codigo: "1234567890", cantidad: 3, movimientoTipoId: 4, grupoId: 1,
+      relaciones: [{ origenId: "10", cantidad: "2", extra: 1 }, { origenId: 11, cantidad: 1 }], strict: true,
+    });
+    expect(r.relaciones).toEqual([{ origenId: 10, cantidad: 2 }, { origenId: 11, cantidad: 1 }]);
+    expect(r.strict).toBe(true);
+    expect(actividadSchema.safeParse({ codigo: "1234567890", cantidad: 1, grupoId: 1, strict: "false" }).success).toBe(false);
+    expect(actividadSchema.safeParse({ codigo: "1234567890", cantidad: 1, grupoId: 1, relaciones: [{ origenId: 1, cantidad: 0 }] }).success).toBe(false);
+  });
+
   it("usuario nuevo no acepta password ni estatus ni id del cliente", () => {
     const r = usuarioNuevoSchema.parse({
       nombre: "Ana",

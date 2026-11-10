@@ -2,10 +2,13 @@
 
 | Documento | Contenido |
 |---|---|
-| [`api/modelo-de-datos.md`](api/modelo-de-datos.md) | Entidades TypeORM, diagrama ER, convenciones y cómo se encadenan hoy los movimientos |
+| [`api/modelo-de-datos.md`](api/modelo-de-datos.md) | Entidades TypeORM, diagrama ER, convenciones y la relación origen→derivado entre movimientos |
 | [`api/tipos-de-movimiento.md`](api/tipos-de-movimiento.md) | Los 17 tipos de movimiento, su efecto sobre el inventario y su clasificación |
 | [`api/pruebas.md`](api/pruebas.md) | Cómo ejecutar y escribir las pruebas unitarias e integración del API |
-| [`api/endpoints.md`](api/endpoints.md) | Catálogo de rutas HTTP con roles y controladores |
+| [`api/endpoints.md`](api/endpoints.md) | Catálogo de rutas HTTP con roles y controladores (y cambios de contrato por fase) |
+| [`api/rendimiento.md`](api/rendimiento.md) | Medición de rendimiento (autocannon) antes y después de la fase 4 y qué se optimizó |
+| [`api/procedimiento-migracion-produccion.md`](api/procedimiento-migracion-produccion.md) | Cómo respaldar, aplicar, verificar y revertir las migraciones en producción |
+| [`../infra/staging/README.md`](../infra/staging/README.md) | Staging local (VM réplica de producción): crearla, refrescar datos y actualizarla con `update-staging.sh` |
 | [`front/arquitectura.md`](front/arquitectura.md) | Stack, estructura, flujo de autenticación y convenciones del front |
 | [`front/inventario-rutas.md`](front/inventario-rutas.md) | Las rutas del front con componente, roles (menú vs ACL), endpoints y rutas críticas |
 | [`front/checklist-humo.md`](front/checklist-humo.md) | Verificaciones manuales de las 10 rutas críticas, a pasar al cerrar cada fase del plan 01 |

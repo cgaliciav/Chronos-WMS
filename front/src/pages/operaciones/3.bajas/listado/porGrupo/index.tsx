@@ -12,6 +12,10 @@ import { obtenerPropsBusquedaInput } from 'pages/componentes/filtrosTablas'
 import TablaListados from 'pages/operaciones/componentes/tablaListados'
 import type { Grupo } from 'types/api'
 
+// Listados de bajas: 13 justificada, 16 injustificada y 5 (BAJA*, listados antiguos). Constante fuera del
+// componente para que la referencia no cambie en cada render (TablaListados la usa como dependencia).
+const TIPOS_LISTADO_BAJAS = [13, 16, 5]
+
 const BajasListado = () => {
   const [conteoRefresh, setConteoRefresh] = useState(0)
 
@@ -100,7 +104,7 @@ const BajasListado = () => {
         <TablaListados
           columns={columns}
           fnPeticion={GrupoPeticiones.listadoPorGrupo}
-          movimientoTipoId={5}
+          movimientoTipoId={TIPOS_LISTADO_BAJAS}
           titulo="Bajas"
           conteoRefresh={conteoRefresh}
         />

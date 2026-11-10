@@ -21,7 +21,7 @@ estilos o layout, compara capturas con `docs/front/baseline/capturar.js` (acepta
 ```
 src/pages/administracion/   usuarios, proyectos, proveedores, areas, bodegas
 src/pages/catalogos/        búsquedas (general, por códigos, bajas, por proyecto, por facturas, validaciones, inventario visual), articulos/
-src/pages/operaciones/      1.prestamos 2.devoluciones 3.bajas 4.compras 5.altas 6.rentaExterna 7.inventario 8.previo movimiento/ componentes/
+src/pages/operaciones/      1.prestamos 2.devoluciones 3.bajas 4.compras 5.altas 6.rentaExterna 8.previo movimiento/ componentes/
 src/pages/reportes/         por-usuario, de-cierre
 src/pages/componentes/      modales/formularios compartidos (precios, claves, características, archivos, comentarios, imágenes)
 src/pages/*/tipos.ts        tipos locales de cada área (complementan types/api.ts)

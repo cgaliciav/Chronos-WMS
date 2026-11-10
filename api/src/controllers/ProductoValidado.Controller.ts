@@ -4,6 +4,7 @@ import { EstatusEstado } from "../entity/common/NombreEstatus";
 import { Producto } from "../entity/Producto";
 import { ProductoValidado, ValidacionEstado } from "../entity/ProductoValidado";
 import { idSeguro } from "../helpers/ids";
+import { logger } from "../helpers/logger";
 
 export default class ProductoValidadoController {
   static guardar = async (
@@ -17,7 +18,7 @@ export default class ProductoValidadoController {
       .innerJoinAndSelect("productoValidado.producto", "producto")
       .where("producto.id = :productoId", { productoId })
       .getOne();
-    console.log({ productoValidado, productoId, validacion });
+    logger.info({ productoValidado, productoId, validacion });
     if (productoValidado === undefined) {
       productoValidado = new ProductoValidado();
       productoValidado.estatus = EstatusEstado.ACTIVO;
@@ -27,7 +28,7 @@ export default class ProductoValidadoController {
     productoValidado.sesionId = sesionId;
     productoValidado.nombre = `${productoId}>>>${nombre_comentario}`;
 
-    console.log({ productoValidado });
+    logger.info({ productoValidado });
 
     return await getRepository(ProductoValidado).save(productoValidado);
   };
@@ -37,7 +38,7 @@ export default class ProductoValidadoController {
     res: Response,
     next: NextFunction
   ) => {
-    console.log("VALIDAR",{body:req.body});
+    logger.info("VALIDAR",{body:req.body});
     const { productoId, nombre: nombre_comentario = "" } = req.body;
     const { jwtPayload } = res.locals;
     try {
@@ -60,7 +61,7 @@ export default class ProductoValidadoController {
   ) => {
     const { productoId, nombre: nombre_comentario = "" } = req.body;
     const { jwtPayload } = res.locals;
-    console.log("INVALIDAR", { body: req.body });
+    logger.info("INVALIDAR", { body: req.body });
     try {
       const respuesta = await ProductoValidadoController.guardar(
         productoId,
@@ -79,7 +80,7 @@ export default class ProductoValidadoController {
     res: Response,
     next: NextFunction
   ) => {
-    console.log("NOREVISADO", { body: req.body });
+    logger.info("NOREVISADO", { body: req.body });
     const { productoId, nombre: nombre_comentario = "" } = req.body;
     const { jwtPayload } = res.locals;
     try {

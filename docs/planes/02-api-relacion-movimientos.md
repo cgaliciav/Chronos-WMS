@@ -191,7 +191,36 @@ produce consulta parametrizada), `path.basename` en reportes (`..%2F` → 404), 
 rechazan con 400); integración: `GET /file/:id` sin token → 401; login registra `req.ip`; `renewpassword`
 no incluye `c` en la respuesta. Las de caracterización siguen verdes (10 cambia a propósito).
 
-### Fase 3 · Nuevo modelo: `MovimientoRelacion`, fecha, histórico ligado, migraciones
+### Fase 3 · Nuevo modelo: `MovimientoRelacion`, fecha, histórico ligado, migraciones ✅ (hecha el 2026-11-07)
+
+> **Resultado:** criterios de aceptación cumplidos (suite unitaria y de integración en verde, `DB_SYNCRO=false` en
+> todos los entornos, procedimiento en `docs/api/procedimiento-migracion-produccion.md`). Código en
+> `api/src/migration/`, `api/src/services/` (`MovimientoService`, `reglas/efectosInventario.ts`,
+> `reglas/planificarRelaciones.ts`, `guardasRelacion.ts`) y `api/src/entity/` (`MovimientoRelacion`,
+> `common/MovimientoTipoId.ts`). Pruebas en `src/test/relaciones.int.test.ts`, `src/services/*.test.ts` y
+> `src/services/reglas/*.test.ts` (no en `src/services/__tests__/`, para seguir la convención de la fase 0).
+> Contrato con el front: `docs/api/endpoints.md` ("Cambios de la fase 3").
+>
+> **Desviaciones respecto de lo escrito abajo (decididas al implementar):**
+> - Columna `movimiento.legado` (no prevista): la migración marca con `1` todo lo existente. Sin ella no se puede
+>   distinguir una salida antigua (sin relaciones porque no hubo backfill) de una nueva sin devoluciones, y la regla 8
+>   necesita esa distinción. La vista y el listado de pendientes excluyen los legados; el modo de compatibilidad usa
+>   la heurística anterior solo sobre ellos (y sobre la parte no relacionada de los regresos nuevos).
+> - La **COMPRA (15) es origen** (`TIPOS_ORIGEN = [3, 11, 12, 15]`): el artículo comprado queda en el proyecto
+>   (`cantidad 0`) hasta su primera devolución, como ya asumía `aceptarDevolucionBaja`. Sin esto, la primera
+>   devolución de cada compra caería siempre en el modo de compatibilidad.
+> - `deshacer` no restaura siempre la instantánea: salidas, regresos y altas se revierten con su **efecto inverso**
+>   (restaurar la instantánea de un movimiento que no es el último sigue siendo incorrecto); compras y bajas, que fijan
+>   valores absolutos, restauran su instantánea ligada y solo si son el último movimiento.
+> - Baseline: la migración inicial contiene el esquema completo pero es **idempotente** (no hace nada si `movimiento`
+>   existe). Así sirve para crear la BD de pruebas y queda vacía en producción. La paridad se verificó una vez y cada
+>   `npm run test:int` comprueba que las migraciones reproducen las entidades.
+> - El 401 por "proyecto distinto" pasa a 400 (el front solo muestra el mensaje).
+> - Añadido: 409 al cambiar el proyecto de operaciones ya relacionadas (`edit-details`, `edit-purchase`,
+>   `/transaction/edit`), y alta de artículos (`activity-purchase`) transaccional (M10).
+> - Pendientes heredados de la fase 2 también resueltos: revocación de sesión en `checkJwt` (H16) y limpieza/escritura
+>   atómica del caché de archivos (M17).
+> - Se encontró y corrigió que `api/.env.test` nunca se había versionado (el `.gitignore` raíz lo excluía).
 
 1. **Migraciones en vez de `synchronize`**: `src/migration/`, scripts `migration:generate`/`migration:run`
    (TypeORM 0.2: `ts-node ./node_modules/typeorm/cli.js migration:generate -n …`); `DB_SYNCRO=false` en
@@ -236,7 +265,32 @@ no incluye `c` en la respuesta. Las de caracterización siguen verdes (10 cambia
 **Aceptación:** suite verde; `DB_SYNCRO=false` en todos los entornos; `docs/api/procedimiento-migracion-produccion.md`
 (respaldo `mariadb-dump`, `migration:run`, verificación con consultas de control, rollback con `migration:revert`).
 
-### Fase 4 · Limpieza y optimización del código
+### Fase 4 · Limpieza y optimización del código ✅ (hecha el 2026-11-08)
+
+> **Resultado:** suite completa en verde con Node 22 y Node 24, `npm run typecheck` (normal + estricto) y
+> `npm run build` sin errores; rendimiento antes/después en `docs/api/rendimiento.md` (los listados triplican las
+> peticiones por segundo). Commits `api: fase 4 del plan 02, paso N`.
+>
+> **Desviaciones y pendientes:**
+> - **Paso 4 (asyncHandler):** no se hizo; el propio plan admite resolverlo con Express 5 en la fase 5, que pasa las
+>   promesas rechazadas a `next` por sí solo. Hacerlo dos veces no aporta.
+> - **Paso 5 (eager):** no se quitaron las relaciones `eager`: los listados y `GET /activity/:id` usan QueryBuilder
+>   (que no las carga) y el detalle hace 4 consultas (objetivo < 10). Quitarlas cambiaría el JSON que usa el front.
+>   La mejora real vino de un **parche de caché** sobre `QueryBuilder.replacePropertyNames` de TypeORM 0.2
+>   (`helpers/parcheTypeorm.ts`, con prueba de equivalencia del SQL; se retira en la fase 6) y de no repetir el COUNT.
+> - **`pino-http`** escribe el log por petición; `LogPeticiones` lo alimenta un middleware propio
+>   (`middlewares/registrarPeticiones.ts`), no pino-http.
+> - **Paso 2:** además se pasó a `mysql2` 3 (el driver real ya no es el abandonado `mysql`) y a `class-validator` 0.15,
+>   ambos críticos en `npm audit`. `package.json` usa `overrides` para que `typeorm` 0.2 acepte `mysql2` 3.
+>   **`npm audit --omit=dev` no queda sin críticos:** queda `typeorm` 0.2 (solo se corrige con TypeORM 1.x, fase 6).
+> - **Paso 3 (front):** el tipo legado 5 que envía `3.bajas/nuevo` sigue pendiente de revisar con el propietario.
+> - **Paso 7:** `strict` progresivo con `tsconfig.estricto.json` (services, helpers salvo `excelFunctions`, esquemas,
+>   middlewares, migration). `useDefineForClassFields: false` es obligatorio con ES2022 y TypeORM.
+> - **Paso 8:** `desplegar.sh pruebas|produccion` unifica los dos scripts y se detiene si hay migraciones pendientes;
+>   en la imagen las migraciones se aplican con `node build/migrar.js` (no hay ts-node). La imagen no se pudo
+>   construir en el entorno de desarrollo (sin Docker); se simularon sus dos etapas. **Primer despliegue:** el
+>   volumen `exogrid` debe pertenecer al uid 1000 (el script lo ajusta con `sudo chown`).
+> - Fuera del plan, a petición del propietario: se retiró el inventario físico por grupos (decisión 10).
 
 1. Borrar `src/entity-old/`, `src/excel.ts`, código Supabase (`obtenerGenerarArchivo*Supabase`,
    `export2Supabase`, `convert*`), imports muertos (`setSourceMapRange`, `isJSDocReadonlyTag`, `register`,
@@ -248,7 +302,8 @@ no incluye `c` en la respuesta. Las de caracterización siguen verdes (10 cambia
    `request`, `request-promise`, `request-stats`, `@types/request*`, `randomstring`, `file-type`, `moment`,
    `lodash`, `password-generator`; declarar `dotenv` (M19); `body-parser` → `express.json()`. Script `test`.
 3. Magic numbers → `MovimientoTipoId` en todo `src`. Front: coordinar la corrección de los tipos que envía
-   (`7.inventario/nuevo` envía 15, `3.bajas/nuevo` envía 5; hallazgo L18/F6) **revisándolo con el propietario**.
+   (`3.bajas/nuevo` envía 5; hallazgo L18/F6) **revisándolo con el propietario**. (`7.inventario/nuevo`, que enviaba 15,
+   se eliminó con el inventario físico: decisión 10.)
 4. Unificar controladores en `async/await` + `asyncHandler` (o Express 5 en fase 5).
 5. Quitar `eager: true` de relaciones pesadas y cargar explícitamente; medir con `maxQueryExecutionTime`
    (objetivo: `GET /activity/:id` < 10 consultas).
@@ -345,7 +400,10 @@ F7 puede adelantarse tras F3 si el front la necesita antes.
 
 ## 7. Puntos a revisar sobre la marcha con el propietario
 
-- `nuevoConInventario` toma inventarios de **todas** las bodegas aunque el grupo tiene `bodegaId` (fase 2, paso 9).
-- El front envía tipo 15 (COMPRA) al crear un inventario y el tipo legado 5 en bajas (fase 4, paso 3).
-- Tipos 6, 9 y 10 no tienen efecto en inventario hoy.
-- Duración del JWT (hoy 12 h sin renovación efectiva; se unifica a 12 h en fase 2).
+- ~~`nuevoConInventario` toma inventarios de **todas** las bodegas~~ → resuelto: el inventario físico por grupos se
+  eliminó el 2026-11-08 (decisión 10).
+- ~~El front envía tipo 15 al crear un inventario y el tipo legado 5 en bajas~~ → resuelto: listados del tipo que
+  contienen, bajas 13/16 (decisiones 10 y 11).
+- ~~Tipos 6, 9 y 10 sin efecto~~ → no son movimientos; el API los rechaza (decisión 12).
+- ~~Depreciación (M5)~~ → no se implementa; solo precio original (decisión 13).
+- ~~Duración del JWT~~ → se mantiene 12 h renovable en cada petición (decisión 14).

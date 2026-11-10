@@ -192,11 +192,10 @@ Mismos 7 métodos estándar: `listadoSimple` → `GET /R/list-names`, `listado` 
 | `obtenerId` | `GET /groups/:id` | |
 | `nuevo` / `editar` | `POST /groups/new` / `PUT /groups/edit` | `editar` sin uso |
 | `quitar` | `DELETE /groups/remove` | |
-| `nuevoConCompra` / `nuevoConDetalles` / `nuevoConInventario` | `POST /groups/new-purchase` / `new-details` / `new-inventory` | `nuevoConInventario` sin uso en el front (su única página, `operaciones/7.inventario/nuevo`, se borró al cerrar la fase 6) |
-| `editarConDetalle` / `editarConCompra` / `editarconInventario` | `PUT /groups/edit-details` / `edit-purchase` / `edit-inventory` | solo `editarConCompra` en uso |
+| `nuevoConCompra` / `nuevoConDetalles` | `POST /groups/new-purchase` / `new-details` | `new-inventory` se retiró del API y del front (decisión 10) |
+| `editarConDetalle` / `editarConCompra` | `PUT /groups/edit-details` / `edit-purchase` | solo `editarConCompra` en uso; `edit-inventory` retirado (decisión 10) |
 | `movimientosPorGrupo` | `POST /groups/activity-list-by-group` | |
 | `movimientosActivosProyecto` | `POST /groups/active-activity-list` | |
-| `inventarioPendiente` / `inventarioHecho` | `POST /groups/inventory-todo-list` / `inventory-done-list` | sin uso |
 | `agregarMovimiento` | `PUT /groups/activity` | |
 | `agregarMovimientoCompra` | `PUT /groups/activity-purchase` | compras y altas (`formaAC.js`) |
 | `agregarOperacionAMovimiento` | `PUT /groups/activity-add-transaction` | sin uso |

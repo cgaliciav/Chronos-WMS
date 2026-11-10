@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Form, Button, Select, Input, Spin, Row, Col, DatePicker, Typography } from 'antd'
+import { Form, Button, Select, Input, Spin, Row, Col, DatePicker, Typography, Radio } from 'antd'
 import { mapeoOpciones, normalizeAndFilterOptions } from 'helpers/funcionesExtras'
 import type { ElementoListado } from 'services/axios'
 import UsuarioPeticiones from 'services/axios/usuarios'
@@ -49,6 +49,7 @@ const FormaConfiguracionGrupo = ({
   mostrarFechaInicial,
   mostrarFechaFinal,
   mostrarBodega,
+  mostrarTipoBaja,
   botonTexto,
   fechaInicialTexto,
   textoNombre,
@@ -430,6 +431,25 @@ const FormaConfiguracionGrupo = ({
             </Col>
           )}
         </Row>
+
+        {mostrarTipoBaja ? (
+          // Un listado de bajas es de un solo tipo y todas sus líneas lo comparten (decisión 11)
+          <Form.Item
+            label="Tipo de baja"
+            name="tipoBaja"
+            rules={[
+              {
+                required: true,
+                message: 'Indica si las bajas del listado son justificadas o injustificadas',
+              },
+            ]}
+          >
+            <Radio.Group disabled={!habilitado}>
+              <Radio.Button value={13}>Justificada</Radio.Button>
+              <Radio.Button value={16}>Injustificada</Radio.Button>
+            </Radio.Group>
+          </Form.Item>
+        ) : null}
 
         {mostrarUsuarios ? (
           <Form.Item
