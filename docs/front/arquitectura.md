@@ -32,7 +32,7 @@ app/
   menu/             menuItems.ts (menú con roles e iconos), useMenuItems.tsx (filtro por permisos, selección, migas)
   auth/             ACL.tsx (roles, redirect, defaultRedirect), LoginPage.tsx
   errors/           ErrorPage.tsx (401/404/500/503), ErrorBoundary.tsx
-  notificaciones/   NotificacionesCampana.tsx (solo con VITE_NOTIFICACIONES=on)
+  notificaciones/   NotificacionesCampana.tsx (solo con VITE_NOTIFICACIONES=on; SSE /notifications/stream o sondeo cada 60 s)
 stores/             usuario.store.ts, ui.store.ts, notificaciones.store.ts
 services/axios/     apiClient (interceptores: token, renovación, error → notifica y rechaza), conToken(url), PeticionBase<T>,
                     21 servicios por recurso (incluido notificaciones)

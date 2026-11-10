@@ -54,6 +54,14 @@ los marcados con ⚠.
 - ⚠ Retirados `GET /groups/export-to-supabase/:id` y `GET /current-inventory/export-to-supabase/:id` (el front no los usaba).
 - ⚠ `POST /auth/logout` revoca el token: después, ese token responde 401 ("Sesión terminada").
 
+**Cambios de la fase 7 (v2.83.0, notificaciones):**
+- Nuevo recurso `/notifications` (sección "Notificaciones"). Requiere la migración `Notificacion`.
+- `POST /reports/by-group`, `/by-project` y `/by-project-final` responden igual (`{ message }`, el texto menciona el
+  aviso) y al terminar crean una notificación `tipo: "reporte"` con `url: "/file/report/<nombre>"` o, si fallan, con
+  el error.
+- `GET /file/report/:nombre` busca el nombre tal cual (con espacios y acentos; antes daba 404). Un nombre oculto
+  (`.env`) responde 400.
+
 **Cambios de la fase 6 (v2.82.0, TypeORM 1.x):** la forma de las respuestas no cambia (`formaRespuestas.int.test.ts`).
 - ⚠ `POST /groups/new-details` con `proyectoId` `null` o ausente crea el listado **sin proyecto** (antes quedaba
   asignado al primer proyecto de la tabla).
@@ -175,6 +183,24 @@ Patrón común (`CommonController`): `GET /list-names` (`*-LISTASIMPLE`), `POST 
 | PUT | `/item-price/edit` | PRODUCTOPRECIO-EDITAR |
 | POST | `/item-review/approve` · `/refuse` · `/no-review` | VALIDACIONES (ProductoValidado) |
 | POST / GET | `/item-balance/in-balance` · `/out-balance` · `/no-review` · `/:id` | VALIDACIONES (ProductoInventariado) |
+
+## Notificaciones (`/notifications`)
+
+Solo `checkJwt` (sin rol): cada usuario ve y marca únicamente las suyas. Notificación:
+`{ id, usuarioId, titulo, mensaje|null, tipo: "reporte"|"prestamo"|"sistema", url|null, leida, fecha, fechaLectura|null }`.
+`url` es una ruta del front (`/prestamos/operacion?uid=3`) o un recurso del API que empieza por `/file/` (el front lo
+abre con `?auth=`).
+
+| Método | Ruta | Respuesta |
+|---|---|---|
+| GET | `/notifications?unread=1&page=N` | Arreglo, de la más reciente a la más antigua, 50 por página. `unread=1`: solo no leídas. |
+| GET | `/notifications/count` | `{ noLeidas }` |
+| PUT | `/notifications/:id/read` | La notificación con `leida: true` y `fechaLectura`. 404 si no existe o es de otro usuario. Idempotente. |
+| PUT | `/notifications/read-all` | `{ actualizadas }` |
+| GET | `/notifications/stream` | Server-Sent Events (`text/event-stream`). Token en la cabecera `auth` o en `?auth=`. Envía `retry: 10000`, `event: conteo` (`{ noLeidas }`) al conectar y cuando cambia, `event: notificacion` (la notificación) con cada nueva, y un comentario de latido cada 25 s. |
+
+Productores: reportes (al terminar o fallar) y la tarea periódica de vencimientos (préstamos y rentas externas no
+legados con saldo abierto de más de `DIAS_CUARENTENA` días, una vez por movimiento y usuario).
 
 ## Reportes (`/reports`)
 | Método | Ruta | Roles | Nota |

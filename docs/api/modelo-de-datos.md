@@ -109,6 +109,7 @@ erDiagram
 | `LogGeneral` | | Errores capturados por `errorMiddlewere`. |
 | `LogPeticiones` | | Métricas por petición HTTP (`request-stats`). |
 | `Parametros` | | Pares llave/valor de configuración. |
+| `Notificacion` | `notificacion` | Aviso para un usuario (fase 7): `titulo`, `mensaje`, `tipo` (`reporte`, `prestamo`, `sistema`), `url`, `leida`, `fecha`, `fechaLectura`. `clave` (única por usuario, no se expone) evita repetir el aviso de vencimiento de un movimiento. Sin `sesionId`: la auditoría la omite. |
 
 ## Cómo se encadenan los movimientos (fase 3 del plan 02)
 

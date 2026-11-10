@@ -24,12 +24,13 @@ src/entity/index.ts     ENTIDADES y SUSCRIPTORES explícitos (úsalos en lugar d
 src/test/               env.ts, conexion.ts, seed.ts (SEMILLA), factories.ts, resetDb.ts, *.int.test.ts
 src/data-source.ts      AppDataSource (TypeORM 1.x) con opcionesDataSource() desde el entorno y listas explícitas (ENTIDADES,
                         MIGRACIONES, SUSCRIPTORES); conectarORM() la inicializa y avisa si hay migraciones pendientes
-src/migration/          migraciones (baseline idempotente + MovimientoRelacion) e index.ts con la lista MIGRACIONES
+src/migration/          migraciones (baseline idempotente, MovimientoRelacion, Notificacion) e index.ts con la lista MIGRACIONES
 src/services/           MovimientoService (registrar/deshacer/relacionar, transaccional), guardasRelacion,
-                        reglas/efectosInventario.ts y reglas/planificarRelaciones.ts (funciones puras)
+                        NotificacionService (crear/listar/marcar, emisor para SSE, vencimientos y retención cada 6 h),
+                        reglas/efectosInventario.ts, reglas/planificarRelaciones.ts y reglas/notificaciones.ts (puras)
 src/routes/*.Routes.ts  un router por recurso; cada ruta lleva [checkJwt, checkRole([...])]; los ids numéricos usan
                         `"/x/:id", soloDigitos("id")` (middlewares/rutas.ts): Express 5 no admite `:id([0-9]+)`
-src/middlewares/        verificarJwt (cabecera `auth`), verificarRol (roles + áreas/bodegas/proyectos en res.locals), manejoErrores (AppError → JSON {code,message}), pasada (log)
+src/middlewares/        verificarJwt (cabecera `auth`; checkJwtArchivos y checkJwtConsulta aceptan `?auth=`), verificarRol (roles + áreas/bodegas/proyectos en res.locals), manejoErrores (AppError → JSON {code,message}), pasada (log)
 src/controllers/        clases con métodos estáticos (req,res,next); parsean, llaman a servicios o hacen CRUD y responden.
                         Los movimientos ya pasan por src/services; el resto de la lógica sigue en controladores
 src/controllers/common/Common.Controller.ts  CRUD genérico: listaTabla(Qry/And), nuevo, editar, habilitar/deshabilitar/finalizar, comentarios, archivos
@@ -92,7 +93,10 @@ Documentación detallada: `docs/api/modelo-de-datos.md`, `docs/api/tipos-de-movi
   `id`, `password`, `sesionId` ni `estatus` del body.
 - Las columnas `numeric` ya exponen `number` gracias a `numericTransformer`; al declarar una nueva columna
   `numeric` añade el transformer.
-- Rutas que sirve el navegador sin cabeceras (`<img>`, descargas) usan `checkJwtArchivos` (acepta `?auth=`).
+- Rutas que sirve el navegador sin cabeceras (`<img>`, descargas) usan `checkJwtArchivos` (acepta `?auth=`);
+  `GET /notifications/stream` (EventSource) usa `checkJwtConsulta` (igual, pero sin la excepción de `ARCHIVOS_PUBLICOS`).
+- Para avisar a un usuario: `NotificacionService.crear(usuarioId, { titulo, mensaje, tipo, url, clave })` (`clave` evita
+  repetir un aviso). Las tareas en segundo plano (reportes) no deben rechazar: captura y notifica el error.
 - Usa `MovimientoTipoId` y las clases `TIPOS_*` (`src/entity/common/MovimientoTipoId.ts`) en vez de números
   (`docs/api/tipos-de-movimiento.md`). Desde la fase 4 no quedan números de tipo en `src` (salvo pruebas).
 - Al cambiar una entidad: `npm run migration:generate -- NombreDelCambio`, revisa el archivo, añádelo a

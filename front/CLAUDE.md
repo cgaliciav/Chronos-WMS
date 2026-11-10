@@ -79,7 +79,7 @@ puntual o CSS Modules.
 
 ## Variables de entorno
 
-`VITE_API_URL` (por defecto `/api/`), `VITE_SENTRY_DSN` (fase 3), `VITE_NOTIFICACIONES` (la campana solo aparece con `on`, cuando el API tenga `/notifications`, D14).
+`VITE_API_URL` (por defecto `/api/`), `VITE_SENTRY_DSN` (fase 3), `VITE_NOTIFICACIONES` (la campana solo aparece con `on`; el API tiene `/notifications` desde v2.83: SSE con sondeo cada 60 s de respaldo, D14).
 
 ## Qué no hacer
 
