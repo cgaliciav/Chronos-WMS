@@ -183,7 +183,7 @@ const FormaConfiguracionGrupo = ({
           <Row>
             <Col {...formItemLayout.labelCol}>
               <Row justify="end">
-                <Typography.Text style={{ marginRight: '0.5rem' }}>Area :</Typography.Text>
+                <Typography.Text style={{ marginRight: '0.25rem' }}>Area :</Typography.Text>
               </Row>
             </Col>
             <Col {...formItemLayout.wrapperCol}>
@@ -201,7 +201,7 @@ const FormaConfiguracionGrupo = ({
                 }}
                 style={{
                   width: '100%',
-                  marginBottom: '2rem',
+                  marginBottom: '1rem',
                 }}
               />
             </Col>
@@ -379,7 +379,7 @@ const FormaConfiguracionGrupo = ({
                 type="primary"
                 ghost
                 htmlType="button"
-                style={{ marginRight: 8 }}
+                style={{ marginRight: 4 }}
                 disabled={!habilitadoInterno}
                 loading={!habilitadoInterno}
                 onClick={async () => {
@@ -483,7 +483,7 @@ const FormaConfiguracionGrupo = ({
           <Button
             type="primary"
             htmlType="submit"
-            style={{ marginRight: 8 }}
+            style={{ marginRight: 4 }}
             disabled={!habilitado}
             loading={guardando}
           >

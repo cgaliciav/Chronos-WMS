@@ -44,7 +44,7 @@ const UltimoArticuloAgregado = ({ movimiento = movimientoVacio }: UltimoArticulo
               movimiento.id === 0 || !inventarioActual || !producto ? (
                 <Empty description="Sin información" />
               ) : (
-                <Row gutter={{ xs: 4, sm: 8, md: 12, lg: 24, xl: 24 }}>
+                <Row gutter={{ xs: 2, sm: 4, md: 6, lg: 12, xl: 12 }}>
                   <Col xl={8} xxl={8} lg={12} md={12} sm={24} xs={24}>
                     <ImagenesEnCarrusel
                       archivos={archivos}

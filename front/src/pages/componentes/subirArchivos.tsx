@@ -122,7 +122,7 @@ const SubirArchivos = ({
         >
           <div>
             <PlusOutlined />
-            <div style={{ marginTop: 8 }}>Subir</div>
+            <div style={{ marginTop: 4 }}>Subir</div>
           </div>
         </Upload>
       </Row>

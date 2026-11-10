@@ -159,7 +159,7 @@ const EditarArticuloDetalle = () => {
             defaultActiveKey="detalles"
             activeKey={currentKey}
             onChange={setCurrentKey}
-            style={{ margin: '8px' }}
+            style={{ margin: '4px' }}
             items={[
               {
                 key: 'detalles',

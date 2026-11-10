@@ -1,6 +1,6 @@
 import type { MouseEvent } from 'react'
 import { useNavigate } from 'react-router'
-import { Col, Row, Card, Typography, Divider } from 'antd'
+import { Col, Row, Card, Typography } from 'antd'
 import { EyeOutlined } from '@ant-design/icons'
 import ImagenesEnCarrusel from 'pages/componentes/imagenesEnCarrusel'
 import type { InventarioCatalogo, ProductoCatalogo } from '../../tipos'
@@ -25,9 +25,12 @@ const TarjetaProductoValidacion = ({ id, producto }: InventarioCatalogo) => {
 
   return (
     <>
+      {/* Imagen cuadrada, descripción de dos líneas y `height: 100%`: tarjetas del mismo tamaño en la cuadrícula. */}
       <Card
         hoverable
-        cover={<ImagenesEnCarrusel archivos={archivos} rutaEnApi="file/review/" />}
+        style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}
+        styles={{ body: { flex: 1 } }}
+        cover={<ImagenesEnCarrusel archivos={archivos} rutaEnApi="file/review/" cuadrada />}
         title={
           <Row>
             <Col xs={17} sm={19} xl={20}>
@@ -43,12 +46,14 @@ const TarjetaProductoValidacion = ({ id, producto }: InventarioCatalogo) => {
         }
         actions={[<EyeOutlined key="ver" onClick={onClick} />]}
       >
-        <Paragraph ellipsis={{ rows: 2, expandable: true, symbol: 'ver más' }}>
+        <Paragraph
+          ellipsis={{ rows: 2, tooltip: descripcion }}
+          style={{ minHeight: `${2 * 1.5715}em` }}
+        >
           {descripcion}
         </Paragraph>
         <Row />
       </Card>
-      <Divider />
     </>
   )
 }

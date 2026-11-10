@@ -59,7 +59,7 @@ const FormaBusquedaGeneral = ({ handleFinish, cargando }: FormaBusquedaProps<Bus
 
   return (
     <Form onFinish={handleFinish} form={form} layout="vertical" initialValues={{ bodegas: [1] }}>
-      <Row gutter={6}>
+      <Row gutter={3}>
         <Col {...colLayoutA}>
           <Form.Item label="Búsqueda" name="textoBusqueda">
             <Input placeholder="Texto de búsqueda " disabled={!habilitadoInterno || cargando} />

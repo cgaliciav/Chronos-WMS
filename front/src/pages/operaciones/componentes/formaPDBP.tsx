@@ -39,7 +39,7 @@ const FormaBusquedaPDBP = ({
 
   return (
     <Form onFinish={manejoFinish} form={form} layout="horizontal">
-      <Row gutter={6}>
+      <Row gutter={3}>
         <Col {...colLayoutA}>
           <Form.Item label="Clave" name="clave">
             <Input placeholder="Ingresa un código" disabled={disable} />

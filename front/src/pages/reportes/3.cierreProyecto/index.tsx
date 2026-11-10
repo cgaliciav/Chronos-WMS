@@ -135,7 +135,7 @@ const ReporteDeCierre = () => {
       <Encabezado>Reporte de Cierre</Encabezado>
       <Tarjeta>
         <Form onFinish={handleFinish} form={form} layout="horizontal">
-          <Row gutter={6}>
+          <Row gutter={3}>
             <Col {...colLayoutB}>
               <Form.Item
                 label="Proyecto"
@@ -178,7 +178,7 @@ const ReporteDeCierre = () => {
               </Form.Item>
             </Col>
           </Row>
-          <Row gutter={6}>
+          <Row gutter={3}>
             <Col {...colLayoutA}>
               <Form.Item label="Areas" name="areasId">
                 <Select

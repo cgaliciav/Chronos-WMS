@@ -24,7 +24,7 @@ export default function Comentario({
   style,
 }: ComentarioProps) {
   return (
-    <Flex gap={12} align="flex-start" style={{ padding: '12px 0', ...style }}>
+    <Flex gap={6} align="flex-start" style={{ padding: '6px 0', ...style }}>
       {avatar ?? <Avatar size="small" icon={<UserOutlined />} />}
       <Flex vertical gap={4} style={{ flex: 1, minWidth: 0 }}>
         <Space size={8} wrap>

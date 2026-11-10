@@ -34,9 +34,18 @@ export const tema: ThemeConfig = {
     // Fuente y radios de la plantilla (Mukta, esquinas de 2 px como antd 4).
     fontFamily: "'Mukta', sans-serif",
     borderRadius: 2,
+    // Espaciado compacto: antd deriva todos los márgenes y rellenos (padding*, margin*) de `sizeUnit` (4 por defecto).
+    // Con 2 quedan a la mitad. No cambia la altura de los controles (`controlHeight`).
+    sizeUnit: 2,
   },
   components: {
-    Layout: { bodyBg: 'transparent', headerBg: 'transparent', footerBg: 'transparent' },
+    // Cabecera de 48 px (antd: 64); `Logo` usa la misma altura para alinearse con ella.
+    Layout: {
+      bodyBg: 'transparent',
+      headerBg: 'transparent',
+      footerBg: 'transparent',
+      headerHeight: 48,
+    },
     Table: {
       headerBg: gris1,
       headerColor: gris6,
@@ -50,6 +59,9 @@ export const tema: ThemeConfig = {
       itemSelectedColor: azul,
       inkBarColor: azul,
     },
+    // Menú lateral compacto: 34 px por elemento (32 + 2) en vez de 44 (40 + 4 de antd); el espacio libre alrededor del
+    // texto (~22 px) queda en la mitad.
+    Menu: { itemHeight: 32, itemMarginBlock: 2 },
     Input: { addonBg: gris1 },
     Form: { labelColor: gris6, labelRequiredMarkColor: '#f5222e' },
   },

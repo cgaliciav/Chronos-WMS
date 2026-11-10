@@ -24,7 +24,16 @@ const CatalogoResultados = ({
     `${range[0]}-${range[1]} de ${total} totales`
 
   const tarjetas = data.map(item => (
-    <Col xl={8} xxl={6} lg={8} md={12} sm={24} xs={24} key={`catdiv-${item.id}`}>
+    <Col
+      xl={8}
+      xxl={6}
+      lg={8}
+      md={12}
+      sm={24}
+      xs={24}
+      key={`catdiv-${item.id}`}
+      style={{ display: 'flex' }}
+    >
       <TarjetaProducto key={`cat-${item.id}`} {...item} inventory={inventory} />
     </Col>
   ))
@@ -50,7 +59,7 @@ const CatalogoResultados = ({
         {data?.length === 0 ? (
           <Empty />
         ) : (
-          <Row gutter={{ xs: 4, sm: 4, md: 6, lg: 12, xl: 12 }}>{tarjetas}</Row>
+          <Row gutter={[{ xs: 2, sm: 2, md: 3, lg: 6, xl: 6 }, 12]}>{tarjetas}</Row>
         )}
       </Spin>
 

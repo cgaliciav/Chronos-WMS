@@ -18,11 +18,11 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         <Logo />
       </Layout.Header>
       <Layout.Content>
-        <Flex vertical align="center" style={{ padding: '7vh 16px 0' }}>
+        <Flex vertical align="center" style={{ padding: '3.5vh 8px 0' }}>
           <div style={{ width: '100%', maxWidth: 512 }}>{children}</div>
         </Flex>
       </Layout.Content>
-      <Layout.Footer style={{ background: 'transparent', padding: '48px 16px' }}>
+      <Layout.Footer style={{ background: 'transparent', padding: '24px 8px' }}>
         <PieDePagina centrado />
       </Layout.Footer>
     </Layout>

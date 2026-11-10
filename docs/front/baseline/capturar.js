@@ -35,6 +35,8 @@ function respuestaSimulada(url, method) {
   if (p === '/auth/login') return { t: 'token-prueba' }
   if (p === '/auth/version') return { version: 'simulado' }
   if (p === '/user/current') return usuario
+  if (p === '/notifications/' || p === '/notifications') return [] // la campana espera una lista (v4.2)
+  if (p === '/notifications/count') return { noLeidas: 0 }
   if (/antd|list-by|activity/.test(p) && method !== 'GET') return tabla
   if (/antd/.test(p)) return tabla
   if (/list-names|get-|list|names|catalog/.test(p)) return []
@@ -74,7 +76,9 @@ const rutas = [
       r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(respuestaSimulada(req.url(), req.method())) })
     })
     await context.route(/magicbell/, r => r.abort())
-    await page.goto(`${base}/#${ruta}`)
+    // El SSE de notificaciones no se simula: la campana pasa a sondeo.
+    await context.route(/\/api\/notifications\/stream/, r => r.abort())
+    await page.goto(`${base}${ruta}`) // rutas sin # desde v4.1
     await page.waitForTimeout(externo ? 6000 : 3500)
     await page.screenshot({ path: path.join(outDir, `${nombre}.png`) })
     informe.push({ nombre, ruta, url: page.url().replace(base, ''), errores: [...new Set(errores)], peticiones: [...peticiones] })

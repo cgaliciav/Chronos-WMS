@@ -5,7 +5,7 @@ export const NOMBRE_APP = 'Sony Almacén México'
 /** Logo + nombre de la aplicación. Con `soloIcono` (menú colapsado) muestra solo la imagen. */
 export default function Logo({ soloIcono = false }: { soloIcono?: boolean }) {
   return (
-    <Flex align="center" gap={8} style={{ height: 64, padding: '0 20px', overflow: 'hidden' }}>
+    <Flex align="center" gap={8} style={{ height: 48, padding: '0 10px', overflow: 'hidden' }}>
       <img
         src="/resources/images/logo.svg"
         alt={NOMBRE_APP}

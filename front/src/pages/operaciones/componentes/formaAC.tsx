@@ -151,7 +151,7 @@ const FormaNuevoItemAC = ({
       <Spin spinning={guardando}>
         <Tabs
           activeKey={`${current}`}
-          style={{ margin: '8px' }}
+          style={{ margin: '4px' }}
           tabBarStyle={{ display: 'none' }}
           items={[
             {

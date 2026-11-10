@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Table, Row, Col, Typography } from 'antd'
+import { Table } from 'antd'
 import type { TableColumnsType, TableProps } from 'antd'
 import type { PaginacionAntd, ParametrosTabla } from 'types/api'
 import type { PeticionListado } from '../tipos'
+import EncabezadoTabla from 'components/ui/EncabezadoTabla'
 
 /** Paginación local: `total`/`totalItems` faltan hasta la primera respuesta del API. */
 type EstadoPaginacion = Pick<PaginacionAntd, 'current' | 'pageSize'> &
@@ -64,23 +65,7 @@ const TablaGeneral = <T extends { id: number }>({
   }
 
   const colocarHeader = () => (
-    <Row>
-      <Col span={8}>
-        <Typography.Title level={2} ellipsis>
-          {titulo}
-        </Typography.Title>
-      </Col>
-      <Col span={8}>
-        <Row justify="end" />
-      </Col>
-      <Col span={8}>
-        <Row justify="center">
-          <h3>{`TOTAL: ${pagination.total || '-'}${
-            pagination.total !== pagination.totalItems ? ' *filtrado' : ''
-          } `}</h3>
-        </Row>
-      </Col>
-    </Row>
+    <EncabezadoTabla titulo={titulo} total={pagination.total} totalItems={pagination.totalItems} />
   )
 
   const handleTableChange: TableProps<T>['onChange'] = (paginacion, filtros, sorter) => {

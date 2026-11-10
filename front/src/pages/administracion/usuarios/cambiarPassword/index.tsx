@@ -71,7 +71,7 @@ const UsuarioCambiarPassword = () => {
           menos una minúscula, una mayúscula y un número
         </Typography.Paragraph>
         <Form form={form} layout="vertical" onFinish={handleFinish}>
-          <Row gutter={30}>
+          <Row gutter={15}>
             <Col {...columnaCampo}>
               <FormItem
                 label="Password actual"
@@ -87,7 +87,7 @@ const UsuarioCambiarPassword = () => {
               </FormItem>
             </Col>
           </Row>
-          <Row gutter={30}>
+          <Row gutter={15}>
             <Col {...columnaCampo}>
               <FormItem
                 label="Password nuevo"

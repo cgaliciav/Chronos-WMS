@@ -80,7 +80,7 @@ const FormaInventario = ({ handleFinish, cargando = false }: FormaInventarioProp
 
   return (
     <Form onFinish={handleFinish} form={form} layout="vertical">
-      <Row gutter={6}>
+      <Row gutter={3}>
         <Col {...colLayoutA}>
           <Form.Item
             label="Areas"

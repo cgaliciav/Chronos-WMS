@@ -69,7 +69,7 @@ const FormaBusquedaPorFactura = ({
 
   return (
     <Form onFinish={handleFinish} form={form} layout="vertical">
-      <Row gutter={6}>
+      <Row gutter={3}>
         <Col {...colLayoutA}>
           <Form.Item label="# de Factura" name="textoBusqueda">
             <Input placeholder="# de Factura" disabled={!habilitadoInterno || cargando} />

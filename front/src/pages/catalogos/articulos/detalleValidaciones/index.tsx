@@ -65,7 +65,7 @@ const ArticuloDetalle = () => {
       <Tarjeta>
         <Spin spinning={cargando}>
           {inventarioActual && producto ? (
-            <Row gutter={{ xs: 4, sm: 8, md: 12, lg: 24, xl: 24 }}>
+            <Row gutter={{ xs: 2, sm: 4, md: 6, lg: 12, xl: 12 }}>
               <Col xl={6} xxl={6} lg={8} md={8} sm={24} xs={24}>
                 <ImagenesEnCarrusel
                   archivos={producto.archivos}

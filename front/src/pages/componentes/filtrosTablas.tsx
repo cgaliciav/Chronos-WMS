@@ -15,7 +15,7 @@ const obtenerPropsBusquedaInput = (): PropsFiltroColumna => {
   let searchInput: InputRef | null = null
   return {
     filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
-      <div style={{ padding: 8 }}>
+      <div style={{ padding: 4 }}>
         <Input
           ref={node => {
             searchInput = node
@@ -23,7 +23,7 @@ const obtenerPropsBusquedaInput = (): PropsFiltroColumna => {
           value={selectedKeys[0] === undefined ? undefined : String(selectedKeys[0])}
           onChange={e => setSelectedKeys(e.target.value ? [e.target.value] : [])}
           onPressEnter={() => confirm()}
-          style={{ width: 188, marginBottom: 8, display: 'block' }}
+          style={{ width: 188, marginBottom: 4, display: 'block' }}
         />
         <Space>
           <Button
