@@ -6,15 +6,14 @@
  * En desarrollo: npx ts-node src/migrar.ts <orden>. Usa las variables DB_* del entorno (y .env fuera de producción).
  * Procedimiento completo: docs/api/procedimiento-migracion-produccion.md.
  */
+import "./entorno"; // primero: carga .env antes de que otros módulos lean process.env (M34)
 import "reflect-metadata";
-import * as dotenv from "dotenv";
 import { createConnection } from "typeorm";
 import { opcionesConexion } from "./conexionORM";
 
 const orden = process.argv[2];
 
 (async () => {
-  if (process.env.NODE_ENV !== "production") dotenv.config({ path: process.env.ENV_FILE ?? ".env", quiet: true });
   if (!["show", "run", "revert"].includes(orden)) {
     console.error("Uso: node build/migrar.js show|run|revert");
     process.exit(2);

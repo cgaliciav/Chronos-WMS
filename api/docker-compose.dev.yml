@@ -1,0 +1,35 @@
+# Servicios de apoyo para desarrollo local (BD con datos persistentes + correo atrapado).
+#   docker compose -f docker-compose.dev.yml up -d --wait
+#   docker compose -f docker-compose.dev.yml down        # conserva los datos
+#   docker compose -f docker-compose.dev.yml down -v     # borra la BD de desarrollo
+# Mailpit atrapa todo el correo del API: UI en http://localhost:8025
+services:
+  mariadb:
+    image: mariadb:10.11
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: almacen_dev
+      MARIADB_USER: almacen_dev
+      MARIADB_PASSWORD: almacen_dev
+    ports:
+      - "127.0.0.1:3306:3306"
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - almacen_dev_db:/var/lib/mysql
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+
+volumes:
+  almacen_dev_db:
