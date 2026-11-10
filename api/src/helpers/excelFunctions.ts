@@ -1,5 +1,7 @@
 import { Table, Workbook, Worksheet } from "exceljs";
 import { randomInt } from "crypto";
+import { readFile } from "fs/promises";
+import { LOGO_REPORTES_POR_DEFECTO } from "../recursos/logoReportes";
 import { performance } from "perf_hooks";
 import { Brackets, SelectQueryBuilder, In } from "typeorm";
 import { AppDataSource } from "../data-source";
@@ -37,6 +39,21 @@ const nombreProyecto = async (proyectoId: unknown) => {
   });
   if (!proyecto) throw new AppError("Proyecto no encontrado", 404);
   return proyecto.nombre;
+};
+
+/**
+ * Logo de los reportes. Alternativa temporal (plan 03, fase 0, paso 3; se retira en la fase 5): si existe el logo
+ * histórico del cliente en `ARCHIVOS_AUXILIARES`, se sigue usando para no cambiar sus reportes antes de cargar su
+ * marca por configuración. Si no, el de Chronos WMS empaquetado en el código.
+ */
+const LOGO_HISTORICO = "sony-tv-logo.jpg";
+const logoReportes = async (): Promise<{ buffer: any; extension: "jpeg" | "png" }> => {
+  const historico = `${process.env.ARCHIVOS_AUXILIARES ?? ""}${LOGO_HISTORICO}`;
+  try {
+    return { buffer: await readFile(historico), extension: "jpeg" };
+  } catch {
+    return { buffer: LOGO_REPORTES_POR_DEFECTO, extension: "png" }; // tipos de exceljs vs @types/node
+  }
 };
 
 function compareStringsIgnoreAccents(str1: string, str2: string): boolean {
@@ -581,10 +598,7 @@ const agregarTituloHojaExcel = async (
     cell.font = font12;
     cell.value = titulo;
 
-    const img = workbook.addImage({
-      filename: process.env.ARCHIVOS_AUXILIARES + "sony-tv-logo.jpg",
-      extension: "jpeg",
-    });
+    const img = workbook.addImage(await logoReportes());
 
     sheet.addImage(img, {
       editAs: "absolute",
