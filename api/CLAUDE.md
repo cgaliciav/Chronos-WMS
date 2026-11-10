@@ -1,6 +1,6 @@
 # api/ · guía para agentes
 
-API REST del almacén. **Node 24** (`.nvmrc`, `Dockerfile` multietapa `node:24-alpine`) · **Express 4** ·
+API REST del almacén. **Node 24** (`.nvmrc`, `Dockerfile` multietapa `node:24-alpine`) · **Express 5** ·
 **TypeORM 0.2.45** (`getRepository`, `createConnection`) · **MariaDB** (driver `mysql2` 3) · TypeScript 5.9
 (no estricto; `tsconfig.estricto.json` aplica `strict` a services, helpers, esquemas, middlewares y migration).
 Arranque: `npm run dev` (ts-node-dev) o `npm start` (ts-node); compilado: `npm run build && npm run prod`.
@@ -11,7 +11,7 @@ Esquema: **migraciones** (`src/migration/`, `npm run migration:show|run|revert|g
 `node build/migrar.js show|run|revert` en la imagen); `DB_SYNCRO=false`. Despliegue: `./desplegar.sh pruebas|produccion`.
 Rendimiento: `npm run rendimiento` (`docs/api/rendimiento.md`).
 Versión: `package.json` (`helpers/paquete.ts`), con las reglas de versionado del `CLAUDE.md` raíz (`vX.Y.Z`,
-sufijos `-d` en desarrollo y `-s` en staging).
+sufijos `-d` en desarrollo y `-s` en staging); cambios en `CHANGELOG.md`.
 
 ## Mapa del código
 
@@ -27,7 +27,8 @@ src/conexionORM.ts      opcionesConexion() desde el entorno con listas explícit
 src/migration/          migraciones (baseline idempotente + MovimientoRelacion) e index.ts con la lista MIGRACIONES
 src/services/           MovimientoService (registrar/deshacer/relacionar, transaccional), guardasRelacion,
                         reglas/efectosInventario.ts y reglas/planificarRelaciones.ts (funciones puras)
-src/routes/*.Routes.ts  un router por recurso; cada ruta lleva [checkJwt, checkRole([...])]
+src/routes/*.Routes.ts  un router por recurso; cada ruta lleva [checkJwt, checkRole([...])]; los ids numéricos usan
+                        `"/x/:id", soloDigitos("id")` (middlewares/rutas.ts): Express 5 no admite `:id([0-9]+)`
 src/middlewares/        verificarJwt (cabecera `auth`), verificarRol (roles + áreas/bodegas/proyectos en res.locals), manejoErrores (AppError → JSON {code,message}), pasada (log)
 src/controllers/        clases con métodos estáticos (req,res,next); parsean, llaman a servicios o hacen CRUD y responden.
                         Los movimientos ya pasan por src/services; el resto de la lógica sigue en controladores
@@ -70,7 +71,11 @@ Documentación detallada: `docs/api/modelo-de-datos.md`, `docs/api/tipos-de-movi
 ## Convenciones al escribir código aquí
 
 - Métodos de controlador `static nombre = async (req, res, next) => { try { … res.json(x) } catch (e) { next(e) } }`.
-  **Siempre `await`** las promesas (varios fallos actuales son promesas sueltas) y **siempre responde**.
+  **Siempre `await`** las promesas y **siempre responde**. Con Express 5 una promesa rechazada del manejador llega sola
+  a `errorMiddlewere`, pero una promesa suelta (sin `await`) sigue perdiéndose.
+- Parámetros de ruta con `parametro(req, "id")` (`helpers/ids.ts`): Express 5 los tipa `string | string[]`.
+  `req.body` siempre es un objeto (`app.ts` pone `{}` si no hubo cuerpo). `req.query` usa el parser simple de Express 5
+  (sin objetos anidados).
 - Consultas con QueryBuilder **parametrizadas** (`:param`, `IN (:...ids)`); nunca interpoles valores del
   request en SQL. Para filtros de tablas usa `construirFiltros`/`aplicarFiltros`, para `IN` con arreglos
   `andWhereIn`, para `sortField` `columnaSegura`, y para `MATCH … AGAINST` `textoBusquedaBooleana`

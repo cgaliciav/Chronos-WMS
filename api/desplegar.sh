@@ -42,8 +42,15 @@ if ! git diff --quiet -- package.json; then
 fi
 
 version_actual=$(jq -r '.version' package.json)
-IFS='.' read -r major minor patch <<< "$version_actual"
-version_nueva="$major.$minor.$((patch + 1))"
+# Reglas de versionado (CLAUDE.md raíz): el repo guarda X.Y.Z o X.Y.Z-d (desarrollo). Una versión de desarrollo se
+# publica tal cual sin el sufijo (2.81.0-d → 2.81.0); una ya publicada sube el parche (2.81.0 → 2.81.1).
+if [[ "$version_actual" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(-[ds])?$ ]]; then
+  major=${BASH_REMATCH[1]}; minor=${BASH_REMATCH[2]}; patch=${BASH_REMATCH[3]}
+  if [[ -n "${BASH_REMATCH[4]}" ]]; then version_nueva="$major.$minor.$patch"; else version_nueva="$major.$minor.$((patch + 1))"; fi
+else
+  echo "Error: la versión '$version_actual' de package.json no sigue X.Y.Z ni X.Y.Z-d" >&2
+  exit 1
+fi
 echo "Versión: $version_actual → $version_nueva ($ENTORNO)"
 jq --arg v "$version_nueva" '.version = $v' package.json > package.json.tmp && mv package.json.tmp package.json
 

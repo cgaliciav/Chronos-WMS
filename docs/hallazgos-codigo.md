@@ -78,7 +78,7 @@ fase se corrige cada uno.
 | M19 | `package.json` + `src/index.ts:1` | Configuración | **✅ Corregido (fase 2):** `dotenv` declarado. `dotenv` se importa pero **no está declarado**: se resuelve porque `typeorm@0.2` depende de él. TypeORM ≥ 0.3 lo elimina → la app no arranca. |
 | M20 **[verificado]** | `deploy.sh:52` | Configuración | **✅ Corregido (fase 2):** espacio añadido. Falta un espacio: `--exclude ".git/"--rsync-path="sudo rsync"` → `.git/` se copia al servidor y no se usa `sudo rsync`. Ambos scripts hacen `git commit`+`git tag` antes de desplegar y nunca `push`; `docker kill` con `set -e` aborta si el contenedor no existe. |
 | M21 | `Dockerfile:3,8-11,30-33`; `deploy.sh:69` | Configuración | **✅ Corregido (fase 4):** imagen multietapa (`WORKDIR /app`, datos en `/code/exogrid`, usuario no root) y `desplegar.sh` monta el volumen en `/code/exogrid` en ambos entornos. `WORKDIR /code_test` pero rutas/`VOLUME` en `/code/exogrid`; el deploy de pruebas monta `-v ./exogrid:/code_test/exogrid` → archivos/reportes en el FS efímero. Producción corre `ts-node ./src/index.ts` (compila en cada arranque), `npm install` con devDeps, `node:14.21` (EOL). |
-| M22 | `helpers/enviarMail.ts:6-17,29-46,152-154` | Lógica | `headers` no es opción de transporte (se ignora); `transporter.verify()` hace red al importar; `enviarCorreoHTML` envía `text` (HTML crudo como texto). |
+| M22 | `helpers/enviarMail.ts:6-17,29-46,152-154` | Lógica | **✅ Corregido (fase 5):** cabecera como valor por defecto del mensaje, verificación SMTP al arrancar (`verificarCorreo`) y `correoHTML` envía `html`. `headers` no es opción de transporte (se ignora); `transporter.verify()` hace red al importar; `enviarCorreoHTML` envía `text` (HTML crudo como texto). |
 | M23 **[verificado]** | `Grupo.Controller.ts:159,162`; `Reportes.Controller.ts:146` | Lógica | **✅ Corregido (fase 2):** `construirFiltros` con expresiones regulares correctas. `condicionesWhereAndPrestamosActivos`: `if (key.indexOf("nombre") || key.indexOf("correo"))` es verdadero para cualquier llave que no empiece por la palabra (−1 es truthy) → todo filtro se trata como LIKE y se le hace `.pop()`. Selección de tipo de reporte por magic id (`includes(15)`). |
 | M24 | `src/index.ts:116-128` | Lógica | **✅ Corregido (fase 2):** solo SIGTERM/SIGINT. Handler `process.on("exit", async …)` llama a `process.exit(0)` dentro del propio `exit` (recursivo) y los `await` no se ejecutan en `exit`. |
 | M25 | `src/middlewares/pasada.ts:8` | Lógica | **✅ Corregido (fase 2):** corregido. `headers["x-forwarded-for'"]` con comilla extra. |
@@ -99,11 +99,11 @@ fase se corrige cada uno.
 | L2 | `helpers/enviarMail.ts:93,105,116` | Contraseñas enviadas en claro por correo. |
 | L3 | `Auth.Controller.ts:84-88`; `routes/index.ts:68` | `/` y `/auth/version` exponen nombre y versión sin autenticación. |
 | L4 | `Archivo.Controller.ts:159-163` | **✅ Corregido (fase 2):** 15 MiB coherente en mensaje y `multer.limits`. Límite 16 000 000 bytes vs mensaje "15MB"; se valida después de que multer escribió el temporal; multer sin `limits`. |
-| L5 | `Archivo.Controller.ts:35-117`; `InventarioActual.Controller.ts:389-576,806-842`; `Grupo.Controller.ts:513-880` | Código Supabase muerto/comentado (≈ 600 líneas): `obtenerGenerarArchivo*Supabase`, `export2Supabase`, `convertAviability/…`, `convertMovementType/InvoiceType`. |
+| L5 | `Archivo.Controller.ts:35-117`; `InventarioActual.Controller.ts:389-576,806-842`; `Grupo.Controller.ts:513-880` | **✅ Corregido (fase 4):** código borrado. Código Supabase muerto/comentado (≈ 600 líneas): `obtenerGenerarArchivo*Supabase`, `export2Supabase`, `convertAviability/…`, `convertMovementType/InvoiceType`. |
 | L6 | `InventarioActual.Controller.ts:123-176,196-198,228-231,762-767` | ≈ 55 líneas de consulta heredada comentada; `queryBusquedaFacturas` vacío. |
 | L7 | `Reportes.Controller.ts:6,19,39-62,97-108,…` | Import `Movimiento` sin uso, 5 bloques MagicBell comentados, funciones vacías, `jwtPayload.ui` sin efecto (211). |
 | L8 | `LogPeticiones.Controllers.ts` (0 bytes), `LogOperacion.Controller.ts` | **✅ Corregido (fase 4):** archivos borrados. Archivos vacíos/sin referencia; nombre en plural. |
-| L9 | `src/entity-old/*` (20 archivos) + `Grupo.Controller.ts:32` | Esquema heredado `teleset_almacen_200414`; único uso: import sin usar `Movimientos`. |
+| L9 | `src/entity-old/*` (20 archivos) + `Grupo.Controller.ts:32` | **✅ Corregido (fase 4):** código borrado. Esquema heredado `teleset_almacen_200414`; único uso: import sin usar `Movimientos`. |
 | L10 | `Movimiento.Controller.ts:3`; `Grupo.Controller.ts:10`; `manejoErrores.ts:2`; `entity/ProductoCaracteristica.ts:2`; `Usuario.Controller.ts:3`; `enviarMail.ts:1` | **✅ Corregido (fase 2):** imports muertos eliminados en Movimiento, Grupo, manejoErrores, Usuario. Imports sin uso: `setSourceMapRange`, `isJSDocReadonlyTag` (de `typescript`), `register` (ts-node), `indexOf`/`filter`/`method` (lodash). |
 | L11 | `helpers/excelFunctions.ts` (2 810 líneas) | `reporteGeneral2`, `reporteMaquillajeGeneral` sin uso (hardcode `area.id=1`); pares casi duplicados `reportePorGrupo`/`…FotoGrande`, `reportePorProyecto`/`…Compras`; 5 variantes de `obtenerRenglonesMovimiento*`; nombres de archivo con `Math.random()`. |
 | L12 | `Proyecto.Controller.ts:35-49` | `listaSimpleExterna/Interna` cargan todos los proyectos y filtran en JS. |
@@ -214,6 +214,15 @@ fase 5). Rendimiento medido en `docs/api/rendimiento.md`.
 
 Siguen abiertos: M14, M22, L11 (`excelFunctions.ts`, fuera del
 `strict` progresivo) y toda la sección B (plan 01).
+
+## C quater. Estado tras la fase 5 del plan 02 (2026-11-10)
+
+Corregidos en la fase 5: **M22** (correo) y tres manejadores que nunca respondían, encontrados por el nuevo recorrido
+de rutas (`create-list-from-report-use`, `create-list-from-report-activity` → 501; `get-activity-inventory` con id
+inválido → 400). Con Express 5 cualquier promesa rechazada de un manejador llega al manejador de errores, así que ese
+tipo de cuelgue ya no puede repetirse. `npm audit --omit=dev`: sin avisos altos; queda `typeorm` 0.2 (crítico, fase 6).
+
+Siguen abiertos: M14, L2 (contraseñas por correo), L3, L6, L7, L11, L12 y la sección B (plan 01).
 
 ## D. Resumen por prioridad de corrección (original)
 
