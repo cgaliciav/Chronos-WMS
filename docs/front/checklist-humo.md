@@ -19,10 +19,11 @@ la fase 7, este documento es la red de seguridad. Inventario completo de rutas, 
 
 | # | Verificación |
 |---|---|
-| 0.1 | `#/` sin sesión redirige a `#/auth/login`; con sesión redirige a `#/catalogo/general` (o `#/catalogo/validaciones` si el usuario tiene `VALIDACIONES`). |
+| 0.0 | Un enlace antiguo `/#/catalogo/general` se convierte en `/catalogo/general`; recargar (F5) cualquier página la vuelve a mostrar (no 404). |
+| 0.1 | `/` sin sesión redirige a `/auth/login`; con sesión redirige a `/catalogo/general` (o `/catalogo/validaciones` si el usuario tiene `VALIDACIONES`). |
 | 0.2 | El menú lateral muestra solo las entradas permitidas por los roles del usuario; colapsar/expandir funciona y el estado se conserva al recargar. |
 | 0.3 | Recargar (F5) en una ruta interna mantiene la sesión (`GET /user/current` responde 200) y la misma ruta. |
-| 0.4 | Un usuario sin rol entra por URL a una ruta protegida (p. ej. `#/compras/nuevo`) → `#/auth/401`. Una ruta inexistente → `#/auth/404`. |
+| 0.4 | Un usuario sin rol entra por URL a una ruta protegida (p. ej. `/compras/nuevo`) → `/auth/401`. Una ruta inexistente → `/auth/404`. |
 | 0.5 | Cerrar sesión borra `localStorage.t`, vuelve al login y, tras volver a entrar con otro usuario, el menú refleja **sus** permisos (no los del anterior; hallazgo F4). |
 
 ## 1. `/auth/login`
@@ -41,7 +42,7 @@ la fase 7, este documento es la red de seguridad. Inventario completo de rutas, 
 | 2.1 | Título "Catálogo General"; se cargan los selectores de Áreas, Almacenes y Estado. |
 | 2.2 | Buscar un texto conocido llena la tabla (petición `list-antd` 200) con paginación y total correctos. |
 | 2.3 | Cambiar de página, ordenar una columna y filtrar vuelve a consultar el API con `sortField/sortOrder/pagination/filters`. |
-| 2.4 | Abrir el detalle de un artículo navega a `#/articulos/detalle?…` y muestra sus datos e imágenes (miniaturas cargan). |
+| 2.4 | Abrir el detalle de un artículo navega a `/articulos/detalle?…` y muestra sus datos e imágenes (miniaturas cargan). |
 
 ## 3. `/catalogo/por-codigos`
 
@@ -57,7 +58,7 @@ la fase 7, este documento es la red de seguridad. Inventario completo de rutas, 
 |---|---|
 | 4.1 | Título "Nuevo listado de préstamo"; los selectores (proyecto, usuario/solicitante, etc.) cargan sus opciones. |
 | 4.2 | Enviar con campos obligatorios vacíos muestra validación y **no** llama al API. |
-| 4.3 | Enviar completo → petición de alta del grupo 200 y navegación a `#/prestamos/operacion?uid=<id>`. |
+| 4.3 | Enviar completo → petición de alta del grupo 200 y navegación a `/prestamos/operacion?uid=<id>`. |
 | 4.4 | Si el API responde error (p. ej. 400/500), se muestra la notificación y **no** se navega (desde la fase 3, con el interceptor corregido; hallazgo F1). |
 
 ## 5. `/prestamos/operacion?uid=<id>`
@@ -76,7 +77,7 @@ la fase 7, este documento es la red de seguridad. Inventario completo de rutas, 
 |---|---|
 | 6.1 | Título "Nuevo listado de devolución"; los selectores cargan. |
 | 6.2 | Validación de obligatorios sin llamar al API. |
-| 6.3 | Envío correcto → navega a `#/devoluciones/operacion?uid=<id>`; ahí agregar un artículo prestado lo devuelve (aparece en la tabla). |
+| 6.3 | Envío correcto → navega a `/devoluciones/operacion?uid=<id>`; ahí agregar un artículo prestado lo devuelve (aparece en la tabla). |
 | 6.4 | Error del API → notificación, sin navegación. |
 
 ## 7. `/compras/nuevo`
@@ -85,7 +86,7 @@ la fase 7, este documento es la red de seguridad. Inventario completo de rutas, 
 |---|---|
 | 7.1 | Título "Nuevo listado de compras"; selectores (proveedor, proyecto, bodega…) cargan. |
 | 7.2 | Campos de fecha (factura) abren el `DatePicker` y guardan la fecha correcta (sin desfase de día; vigilar en la fase 4, moment → dayjs). |
-| 7.3 | Envío correcto → navega a `#/compras/operacion?uid=<id>`. |
+| 7.3 | Envío correcto → navega a `/compras/operacion?uid=<id>`. |
 | 7.4 | Error del API → notificación, sin navegación. |
 
 ## 8. `/compras/operacion?uid=<id>`
@@ -95,14 +96,14 @@ la fase 7, este documento es la red de seguridad. Inventario completo de rutas, 
 | 8.1 | Cabecera del grupo y tabla de movimientos cargan. |
 | 8.2 | El asistente de alta de artículo (`formaAC`: pasos con "Siguiente"/"Terminar") permite capturar un artículo nuevo con precios, claves y características y lo agrega a la tabla. |
 | 8.3 | Subir un archivo (factura) con `Upload` envía la cabecera `auth` y el archivo aparece en el modal de Archivos. |
-| 8.4 | Editar el grupo (`#/compras/editar`) y volver conserva los cambios. |
+| 8.4 | Editar el grupo (`/compras/editar`) y volver conserva los cambios. |
 
 ## 9. `/bajas/nuevo`
 
 | # | Verificación |
 |---|---|
 | 9.1 | Título "Nuevo listado de bajas"; selectores cargan. |
-| 9.2 | Envío correcto → navega a `#/bajas/operacion?uid=<id>`; agregar un artículo lo da de baja (desaparece del catálogo general, aparece en `#/catalogo/bajas`). |
+| 9.2 | Envío correcto → navega a `/bajas/operacion?uid=<id>`; agregar un artículo lo da de baja (desaparece del catálogo general, aparece en `/catalogo/bajas`). |
 | 9.3 | Registrar en la nota del resultado qué `movimiento_tipo` envía el front (hallazgo F6: hoy 5, legado). |
 
 ## 10. `/movimientos/detalle?…`

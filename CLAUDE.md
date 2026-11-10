@@ -56,6 +56,8 @@ grande que incluya la versión.
 - `docs/planes/01-front-actualizacion-antd.md`: plan por fases para Vite + React 19 + antd 6 y retirar Clean UI.
 - `docs/planes/02-api-relacion-movimientos.md`: plan por fases para la relación origen→derivado entre
   movimientos, transacciones, migraciones y limpieza. Fases 0-5 hechas; la siguiente es la 6 (TypeORM 1.x).
+- `docs/planes/03-personalizacion-por-cliente.md`: marca y configuración por cliente servidas por el API y editables desde
+  el front (correo, logo del Excel); "Sony" pasa a "Chronos WMS". Sin empezar; la fase 0 es independiente.
 
 ## Flujo de trabajo esperado
 

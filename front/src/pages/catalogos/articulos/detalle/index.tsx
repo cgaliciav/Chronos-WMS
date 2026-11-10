@@ -1,5 +1,5 @@
 import { useEffect, useState, type MouseEvent } from 'react'
-import { useLocation } from 'react-router'
+import { useLocation, Link } from 'react-router'
 import { Col, Divider, Row, Skeleton, Spin, Tabs, Tag } from 'antd'
 import QueryString from 'query-string'
 import ACL from 'app/auth/ACL'
@@ -81,9 +81,9 @@ const ArticuloDetalle = () => {
                 <Divider dashed />
                 <Row justify="center">
                   <ACL roles={['ARTICULOS-EDITAR', 'ADMINISTRADOR']}>
-                    <a href={`#/articulos/editar/detalle?uid=${id}`}>
+                    <Link to={`/articulos/editar/detalle?uid=${id}`}>
                       <Tag color="orange">Editar Artículo</Tag>
-                    </a>
+                    </Link>
                   </ACL>
                 </Row>
                 <Divider plain />

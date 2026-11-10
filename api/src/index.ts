@@ -1,4 +1,4 @@
-import * as dotenv from "dotenv";
+import "./entorno"; // primero: carga .env antes de que otros módulos lean process.env (M34)
 import "reflect-metadata";
 
 import { conectarORM } from "./conexionORM";
@@ -12,7 +12,6 @@ import { logger } from "./helpers/logger";
 
 (async () => {
   logger.info("******PROCESO EN", process.env.NODE_ENV);
-  if (process.env.NODE_ENV !== "production") dotenv.config({ quiet: true });
   if (!process.env.JWTSECRET || process.env.JWTSECRET.length < 32) {
     logger.error("JWTSECRET debe existir y tener al menos 32 caracteres. Abortando.");
     process.exit(1);

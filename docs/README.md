@@ -18,5 +18,6 @@
 | [`hallazgos-codigo.md`](hallazgos-codigo.md) | Fallos encontrados (API y front) con severidad, archivo:línea y evidencia |
 | [`planes/01-front-actualizacion-antd.md`](planes/01-front-actualizacion-antd.md) | Plan por fases: Vite 8 + TypeScript, React 19, React Router 8, Zustand, antd 6, retirar Clean UI, pruebas |
 | [`planes/02-api-relacion-movimientos.md`](planes/02-api-relacion-movimientos.md) | Plan por fases: relación origen→derivado entre movimientos, transacciones, migraciones, limpieza, actualización de dependencias, notificaciones propias, pruebas |
+| [`planes/03-personalizacion-por-cliente.md`](planes/03-personalizacion-por-cliente.md) | Plan por fases: marca y configuración por cliente servidas por el API (tabla `configuracion`, correo y logo de Excel configurables desde el front), "Sony" → "Chronos WMS" |
 
 Guías para agentes: [`/CLAUDE.md`](../CLAUDE.md), [`/api/CLAUDE.md`](../api/CLAUDE.md), [`/front/CLAUDE.md`](../front/CLAUDE.md).

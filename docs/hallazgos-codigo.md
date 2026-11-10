@@ -91,6 +91,8 @@ fase se corrige cada uno.
 | M32 | `Operacion.Controller.ts:84-91` | Errores | **✅ Corregido (fase 2):** carga `operacionDetalle` si no viene. `quitar` borra `operacion.operacionDetalle` aunque la relación no esté cargada (`undefined`). |
 | M33 **[verificado con prueba]** | `Grupo.Controller.ts:998,1050` | Lógica | **✅ Corregido (fase 2):** orden por defecto `movimiento.id`. `listaTablaPendientesActivos` sin `sortField` usa `orderBy("id")` → `ER_BAD_FIELD_ERROR: Unknown column 'id' in 'ORDER BY'` (500) por la subconsulta de paginación con joins. El front siempre envía `sortField`, por eso no se nota. |
 
+| M34 **[verificado al ejecutar, 2026-11-10]** | `src/index.ts:1,14`; `src/migrar.ts:10,17` | Configuración | **✅ Corregido (2026-11-10):** nuevo `src/entorno.ts`, primer import de `index.ts` y `migrar.ts` (prueba `src/entorno.test.ts`). `dotenv.config()` se llamaba dentro del cuerpo de `index.ts`, después de evaluar los imports, pero varios módulos leen `process.env` al cargarse: `helpers/enviarMail.ts` creaba el transporte SMTP sin `SMTP_HOST` y caía en `smtp.postmarkapp.com` (en desarrollo, intento de envío real a Postmark); `helpers/logger.ts` ignoraba `LOG_NIVEL`; las rutas con `multer({ dest: process.env.UPLOADS })` guardaban en memoria en vez de en `UPLOADS`. En producción no afecta (las variables vienen del contenedor). |
+
 ### A.4 Bajos
 
 | # | Ubicación | Descripción |

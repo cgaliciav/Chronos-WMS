@@ -11,6 +11,7 @@ import GrupoPeticiones from 'services/axios/grupos'
 import { obtenerPropsBusquedaInput } from 'pages/componentes/filtrosTablas'
 import TablaListados from 'pages/operaciones/componentes/tablaListados'
 import type { Grupo } from 'types/api'
+import { Link } from 'react-router'
 
 const ComprasListado = () => {
   const [conteoRefresh, setConteoRefresh] = useState(0)
@@ -63,16 +64,16 @@ const ComprasListado = () => {
         <span>
           <Tooltip title="Ver listado">
             <Tag color="blue">
-              <a href={`#/compras/operacion?uid=${id}`}>
+              <Link to={`/compras/operacion?uid=${id}`}>
                 <EditOutlined />
-              </a>
+              </Link>
             </Tag>
           </Tooltip>
           <Tooltip title="Editar factura">
             <Tag color="green">
-              <a href={`#/compras/editar?uid=${id}`}>
+              <Link to={`/compras/editar?uid=${id}`}>
                 <EditOutlined />
-              </a>
+              </Link>
             </Tag>
           </Tooltip>
           {/* `list-by-group-antd` añade `fecha` y `movimientosTotales` al grupo. */}

@@ -22,7 +22,7 @@ export interface ParametrosCatalogo extends ParametrosTabla {
   bodegaIds?: Id[] | null
   estados?: string[] | null
   proyectoId?: Id | Id[] | null
-  movimientosTipoIds?: Id | Id[] | null
+  movimientosTipoIds?: Id[] | null
   codigosBusqueda?: string
   con_foto?: boolean
 }

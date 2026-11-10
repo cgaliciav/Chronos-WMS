@@ -15,6 +15,34 @@ Los códigos `F<n>` remiten a [`docs/hallazgos-codigo.md`](../docs/hallazgos-cod
 
 Pendiente: fase 7 del plan 01 (pruebas e2e con Playwright, CI y cobertura).
 
+## [4.1.0-d] - 2026-11-10
+
+### Cambios que rompen
+
+- **Rutas sin `#`**: `createBrowserRouter` en lugar de `createHashRouter` (`/catalogo/general`, antes
+  `/#/catalogo/general`; revisa D5). El servidor debe devolver `index.html` en cualquier ruta: **antes de desplegar**,
+  montar [`nginx.conf`](nginx.conf) en el contenedor `frontend` (pasos en `docs/front/arquitectura.md`, sección
+  Despliegue). `deploy.sh` y `deploy-production.sh` se detienen si el servidor aún no lo tiene. Staging lo aplica solo.
+
+### Cambiado
+
+- Los enlaces antiguos con `#/` (marcadores, historial) se convierten a la ruta nueva al cargar
+  (`helpers/enlacesHash.ts`, con prueba).
+- Los enlaces de las tablas (editar, operación, detalle) usan `<Link>` del router: navegan sin recargar la página.
+- Imágenes de `public/resources` con ruta absoluta (`/resources/…`) para que carguen en rutas anidadas.
+
+## [4.0.1-d] - 2026-11-10
+
+### Corregido
+
+- **Catálogo por proyecto** (`/catalogo/por-proyecto`): la búsqueda fallaba con «movimientosTipoIds debe ser un
+  arreglo». El `Select` de operación es simple y enviaba un id suelto; desde la fase 2 del plan 02 el API exige un
+  arreglo. Ahora se envía `[id]` (`4.porProyecto/parametros.ts`, con prueba).
+- Catálogo por proyecto: al cambiar de página o de tamaño de página no se enviaba la operación y el API devolvía la
+  tabla vacía; las tres llamadas usan ahora los mismos parámetros.
+- `npm run dev`: el proxy de Vite quita el prefijo `/api`, igual que el nginx de producción (antes todas las llamadas
+  daban 404 en desarrollo).
+
 ## [4.0.0] - 2026-11-09
 
 Reescritura técnica completa del front (plan 01, fases 0-6). Las pantallas, rutas y permisos son los mismos,
@@ -48,7 +76,7 @@ pero cambian la plataforma de compilación, las dependencias y el despliegue; po
 ### Cambiado
 
 - React 16.13 → **19.3**; antd 4.2 → **6.7** e `@ant-design/icons` 6 (tema en tokens, `src/tema.ts`);
-  `react-router-dom` 5 → **`react-router` 8** con `createHashRouter` y rutas *lazy* (se mantiene el *hash routing*).
+  `react-router-dom` 5 → **`react-router` 8** con `createHashRouter` y rutas _lazy_ (se mantiene el _hash routing_).
 - moment → **dayjs** (locale `es-mx`, `helpers/fechas.ts`) (D8).
 - `<Helmet>` → `<Titulo>` sobre el `<title>` nativo de React 19 (D12); interfaz solo en `es-MX`, sin `react-intl` (D11).
 - API de antd sin componentes ni props obsoletos: 0 avisos en la consola de desarrollo en las 67 rutas (F12).

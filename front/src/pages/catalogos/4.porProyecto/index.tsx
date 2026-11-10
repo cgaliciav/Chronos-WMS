@@ -14,6 +14,7 @@ import type {
   ParametrosCatalogo,
 } from '../tipos'
 import FormaBusquedaPorProyecto from './componentes/forma'
+import { parametrosBusquedaProyecto } from './parametros'
 
 const CatalogoGeneral = () => {
   const [cargando, setCargando] = useState(false)
@@ -56,13 +57,7 @@ const CatalogoGeneral = () => {
     }
 
     setPagination({ ...tempPaginacion })
-    buscar({
-      pagination: tempPaginacion,
-      textoBusqueda: busqueda.textoBusqueda === null ? '' : busqueda.textoBusqueda,
-      areasIds: busqueda.areas,
-      bodegaIds: busqueda.bodegas,
-      proyectoId: busqueda.proyecto,
-    })
+    buscar(parametrosBusquedaProyecto(busqueda, tempPaginacion))
   }
 
   const onShowSizeChange = (_actual: number, paginaTamanio: number) => {
@@ -75,13 +70,7 @@ const CatalogoGeneral = () => {
       ...restPagination,
     }
     setPagination({ ...tempPaginacion })
-    buscar({
-      pagination: tempPaginacion,
-      textoBusqueda: busqueda.textoBusqueda === null ? '' : busqueda.textoBusqueda,
-      areasIds: busqueda.areas,
-      bodegaIds: busqueda.bodegas,
-      proyectoId: busqueda.proyecto,
-    })
+    buscar(parametrosBusquedaProyecto(busqueda, tempPaginacion))
   }
 
   useEffect(() => {
@@ -109,14 +98,7 @@ const CatalogoGeneral = () => {
       return
     }
 
-    buscar({
-      pagination,
-      textoBusqueda: busqueda.textoBusqueda === null ? '' : busqueda.textoBusqueda,
-      areasIds: areas,
-      bodegaIds: bodegas,
-      proyectoId: proyecto,
-      movimientosTipoIds: tipoMovimiento,
-    })
+    buscar(parametrosBusquedaProyecto(busqueda, pagination))
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [busqueda])

@@ -40,6 +40,7 @@ vm_rsync -aH --delete --partial --info=progress2 "$CACHE_DIR/exogrid/" "$R/exogr
 info "front-www/"
 vm_rsync -a --delete "$CACHE_DIR/front-www/" "$R/front-www/"
 vm_rsync -a "$STAGING_DIR/docker-compose.staging.yml" "$R/docker-compose.yml"
+vm_rsync -a "$STAGING_DIR/../../front/nginx.conf" "$R/front-nginx.conf"
 vm_rsync -a "$STAGING_DIR/nginx-staging.conf" "$STAGING_DIR/block-smtp.sh" "/tmp/"
 ok "Archivos copiados"
 

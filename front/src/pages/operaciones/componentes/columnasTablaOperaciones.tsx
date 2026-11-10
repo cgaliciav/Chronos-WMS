@@ -4,6 +4,7 @@ import { apiURLBase, conToken } from 'services/axios'
 import { obtenerPropsBusquedaInput } from 'pages/componentes/filtrosTablas'
 import type { Archivo, ProductoClave } from 'types/api'
 import type { ColumnaOperacion, FnQuitarMovimiento, MovimientoOperacion } from '../tipos'
+import { Link } from 'react-router'
 
 export type { ColumnaOperacion, ColumnasOperacion, FnQuitarMovimiento } from '../tipos'
 
@@ -35,7 +36,7 @@ const ColumnasOperaciones: ColumnasOperacionesComunes = {
       let ruta
       if (archivos && archivos.length > 0)
         ruta = conToken(`${apiURLBase}/file/thumbnail/${archivos[0].id}`)
-      else ruta = 'resources/images/no-photo-available.svg'
+      else ruta = '/resources/images/no-photo-available.svg'
       return (
         <a
           style={{
@@ -138,22 +139,22 @@ const ColumnasOperaciones: ColumnasOperacionesComunes = {
     render: (movimientoId: number, record: MovimientoOperacion) => (
       <span>
         <Tag color="blue">
-          <a href={`#/movimientos/detalle?uid=${movimientoId}`}>
+          <Link to={`/movimientos/detalle?uid=${movimientoId}`}>
             <EyeOutlined />
-          </a>
+          </Link>
         </Tag>
 
         <Tag>
-          <a href={`#/articulos/detalle?uid=${record.inventarioActual?.id}`}>
+          <Link to={`/articulos/detalle?uid=${record.inventarioActual?.id}`}>
             <EyeOutlined />
-          </a>
+          </Link>
         </Tag>
 
         {editarPrecio && (
           <Tag color="green">
-            <a href={`#/articulos/editar/detalle?uid=${record.inventarioActual?.id}&p=precios`}>
+            <Link to={`/articulos/editar/detalle?uid=${record.inventarioActual?.id}&p=precios`}>
               <DollarOutlined />
-            </a>
+            </Link>
           </Tag>
         )}
 

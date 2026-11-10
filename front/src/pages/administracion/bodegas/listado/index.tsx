@@ -13,6 +13,7 @@ import {
 } from '../../../componentes/filtrosTablas'
 import TablaGeneral from '../../componentes/tablaGeneral'
 import AccionesTablaBodegas from '../componentes/accionesTablaBodegas'
+import { Link } from 'react-router'
 
 const columns: TableColumnsType<BodegaAdmin> = [
   {
@@ -69,9 +70,9 @@ const columns: TableColumnsType<BodegaAdmin> = [
       <span>
         <Tooltip title="Editar almacén">
           <Tag color="blue">
-            <a href={`#/bodegas/editar?uid=${id}`}>
+            <Link to={`/bodegas/editar?uid=${id}`}>
               <EditOutlined />
-            </a>
+            </Link>
           </Tag>
         </Tooltip>
         <Popconfirm

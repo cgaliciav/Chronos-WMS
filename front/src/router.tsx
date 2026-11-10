@@ -1,14 +1,16 @@
 import { lazy, Suspense, type ComponentType } from 'react'
-import { createHashRouter, Navigate, type RouteObject } from 'react-router'
+import { createBrowserRouter, Navigate, type RouteObject } from 'react-router'
 import { Spin } from 'antd'
 import RaizLayout from 'app/layouts/RaizLayout'
 import ErrorPage from 'app/errors/ErrorPage'
 import { useUsuarioStore } from 'stores/usuario.store'
+import { convertirEnlaceHash } from 'helpers/enlacesHash'
 
 type Cargador = () => Promise<{ default: ComponentType }>
 
 /**
- * Rutas de la aplicación (hash routing: los enlaces `#/catalogo/general` siguen funcionando). Inventario con
+ * Rutas de la aplicación (history API: `/catalogo/general`; los enlaces antiguos `/#/catalogo/general` se convierten al
+ * cargar, ver `helpers/enlacesHash`). El servidor debe devolver `index.html` en cualquier ruta (`front/nginx.conf`). Inventario con
  * roles y endpoints en `docs/front/inventario-rutas.md`.
  */
 export const RUTAS: Array<[ruta: string, cargar: Cargador]> = [
@@ -130,5 +132,7 @@ export const rutas: RouteObject[] = [
   },
 ]
 
+convertirEnlaceHash() // antes de crear el router: lee la URL inicial
+
 /** Router de la app; `router.navigate(url)` sirve para navegar fuera de componentes. */
-export const router = createHashRouter(rutas)
+export const router = createBrowserRouter(rutas)

@@ -26,7 +26,7 @@ function ErrorGeneral() {
       title="Error"
       subTitle="Ups... hubo un error en la aplicación. Vuelve a entrar o comunícate con tu administrador."
       extra={
-        <Button type="primary" href="#/">
+        <Button type="primary" href="/">
           Inicio
         </Button>
       }

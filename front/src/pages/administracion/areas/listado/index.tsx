@@ -13,6 +13,7 @@ import {
 } from '../../../componentes/filtrosTablas'
 import TablaGeneral from '../../componentes/tablaGeneral'
 import AccionesTablaAreas from '../componentes/accionesTablaAreas'
+import { Link } from 'react-router'
 
 const columns: TableColumnsType<Area> = [
   {
@@ -69,9 +70,9 @@ const columns: TableColumnsType<Area> = [
       <span>
         <Tooltip title="Editar area">
           <Tag color="blue">
-            <a href={`#/areas/editar?uid=${id}`}>
+            <Link to={`/areas/editar?uid=${id}`}>
               <EditOutlined />
-            </a>
+            </Link>
           </Tag>
         </Tooltip>
         <Popconfirm

@@ -25,7 +25,7 @@ const ImagenesEnCarrusel = ({
     <div className={styles.carousel}>
       <Carousel>
         {archivos.length === 0 ? (
-          <img alt="" src="resources/images/no-photo-available.svg" />
+          <img alt="" src="/resources/images/no-photo-available.svg" />
         ) : (
           archivos.map(arch => {
             const source = new URL(`${arch.id}`, new URL(rutaEnApi, apiURLBase))
