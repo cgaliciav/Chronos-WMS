@@ -39,7 +39,7 @@ while (($#)); do
 done
 ((DO_API || DO_FRONT)) || die "--api-only y --front-only se excluyen"
 
-require_cmds ssh rsync git curl flock
+require_cmds ssh rsync git curl flock jq
 R="$STAGING_DIR_REMOTE"
 C_BACKEND="teleset-almacen_backend_1"
 DEPLOY_LOG="$R/deploys.log"   # historial en la VM (TSV)
@@ -52,6 +52,26 @@ compose() { vm_ssh "cd $R && docker-compose $*"; }
 backend_up() { compose rm -sf backend >/dev/null && compose up -d backend; }
 env_get() { vm_ssh "grep -m1 '^$1=' $R/.env | cut -d= -f2-" || true; }
 env_set() { vm_ssh "cd $R && if grep -q '^$1=' .env; then sed -i 's|^$1=.*|$1=$2|' .env; else echo '$1=$2' >> .env; fi"; }
+# ---------- Versionado (CLAUDE.md raíz) ----------
+# Formato vX.Y.Z; en staging la versión termina en -s. El repo guarda X.Y.Z (producción) o X.Y.Z-d (desarrollo):
+# se toma la base X.Y.Z y se publica X.Y.Z-s reescribiendo package.json y package-lock.json SOLO en la copia que se
+# construye (el árbol de trabajo no cambia). Cualquier otro formato detiene el despliegue.
+version_staging() { # package.json → X.Y.Z-s
+  local v base
+  v=$(jq -r '.version // empty' "$1")
+  base=${v%-[ds]}
+  [[ "$base" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] \
+    || die "La versión '$v' de $1 no sigue X.Y.Z, X.Y.Z-d ni X.Y.Z-s (reglas de versionado del CLAUDE.md raíz)"
+  echo "$base-s"
+}
+fijar_version() { # directorio versión → como npm version --no-git-tag-version, en la copia
+  local f
+  for f in "$1/package.json" "$1/package-lock.json"; do
+    [[ -f "$f" ]] || continue
+    jq --arg v "$2" '.version = $v | if .packages[""] then .packages[""].version = $v else . end' "$f" > "$f.tmp"
+    mv "$f.tmp" "$f"
+  done
+}
 api_version() { { vm_ssh "curl -s --max-time 5 http://localhost:34400/" 2>/dev/null || true; } | sed -n 's/.*"version":"\([^"]*\)".*/\1/p'; }
 record() { # componente versión ref imagen migraciones snapshot
   local line; line="$(date '+%F %T')"$'\t'"$1"$'\t'"$2"$'\t'"$3"$'\t'"$4"$'\t'"$5"$'\t'"$6"$'\t'"$(id -un)"
@@ -72,7 +92,7 @@ wait_backend() { # espera a que GET / responda 200 (máx. ~5 min)
 if [[ "$MODE" == "status" ]]; then
   step "Staging en $(vm_ip)"
   img=$(env_get BACKEND_IMAGE)
-  info "Imagen backend: $img (API responde versión $(api_version || echo '?'))"
+  info "Imagen backend: $img (API responde v$(api_version || echo '?'))"
   info "Front: $(vm_ssh "cat $R/front.version 2>/dev/null" || echo 'build de producción (sin registro)')"
   if vm_ssh "docker run --rm --entrypoint test $img -f build/migrar.js" 2>/dev/null; then
     step "Migraciones (imagen $img)"
@@ -112,14 +132,14 @@ if [[ "$MODE" == "rollback" ]]; then
     env_set BACKEND_IMAGE "$BACKEND_IMAGE"
     backend_up
     wait_backend || { vm_ssh "docker logs --tail 80 $C_BACKEND" || true; die "El backend no respondió"; }
-    record api "$(api_version)" prod "$BACKEND_IMAGE" - -
+    record api "v$(api_version)" prod "$BACKEND_IMAGE" - -   # versión de producción: sin sufijo
     ok "API de producción en staging"
   fi
   if ((DO_FRONT)); then
     step "Front → build de producción (caché)"
     vm_rsync -a --delete "$CACHE_DIR/front-www/" "$R/front-www/"
     vm_ssh "rm -f $R/front.version"
-    record front prod prod - - -
+    record front prod prod - - -   # build de producción de la caché
     ok "Front de producción en staging"
   fi
   smoke_tests || warn "Smoke tests con fallos"
@@ -151,13 +171,16 @@ info "Desplegando $LABEL en staging ($(vm_ip))"
 deploy_api() {
   local TAG="almacen-backend:staging-$sha" prev pending snap="-" migs="-" since version_src
   prev=$(env_get BACKEND_IMAGE)
-  version_src=$(sed -n 's/^ *"version": *"\([^"]*\)".*/\1/p' "$SRC_ROOT/api/package.json" | head -1)
+  version_src=$(version_staging "$SRC_ROOT/api/package.json")
 
-  step "API · copiando código a la VM"
-  vm_rsync -a --delete --exclude node_modules --exclude build --exclude '.env*' --exclude .git \
-    --exclude '*.sh' --exclude deploy_history "$SRC_ROOT/api/" "$R/api-src/"
+  step "API · copiando código a la VM (v$version_src)"
+  mkdir -p "$SRC/api"
+  rsync -a --delete --exclude node_modules --exclude build --exclude '.env*' --exclude .git \
+    --exclude '*.sh' --exclude deploy_history "$SRC_ROOT/api/" "$SRC/api/"
+  fijar_version "$SRC/api" "$version_src"
+  vm_rsync -a --delete "$SRC/api/" "$R/api-src/"
 
-  step "API · construyendo $TAG en la VM (versión $version_src)"
+  step "API · construyendo $TAG en la VM (v$version_src)"
   vm_ssh "cd $R/api-src && docker build -q -t $TAG ." >/dev/null
   ok "Imagen $TAG lista (imagen actual: $prev)"
 
@@ -215,12 +238,12 @@ deploy_api() {
     die "El backend no respondió. Volver a la imagen anterior: ssh a la VM, BACKEND_IMAGE=$prev en $R/.env, docker-compose rm -sf backend && docker-compose up -d backend (o ./update-staging.sh --rollback)"
   fi
   local version; version=$(api_version)
-  if [[ "$version" == "$version_src" ]]; then ok "API arriba: versión $version"
-  else warn "El API responde versión '$version' (se esperaba $version_src)"; fi
+  if [[ "$version" == "$version_src" ]]; then ok "API arriba: v$version"
+  else warn "El API responde '$version' (se esperaba v$version_src)"; fi
   if vm_ssh "docker logs --since $since $C_BACKEND 2>&1 | grep -E 'migraciones pendientes|DB_SYNCRO=true'"; then
     warn "El backend reporta un problema de esquema (ver arriba)"
   fi
-  record api "$version" "$LABEL" "$TAG" "$migs" "$snap"
+  record api "v$version" "$LABEL" "$TAG" "$migs" "$snap"
 
   # Limpieza: conservar solo la imagen en uso, la anterior y la de producción.
   local prod_img; prod_img=$(sed -n 's/^BACKEND_IMAGE=//p' "$CACHE_DIR/manifest.env")
@@ -253,6 +276,9 @@ deploy_front() {
     # .env* fuera: el build usa solo las variables de abajo (los valores por defecto del código para lo demás).
     rsync -a --delete --exclude node_modules --exclude build --exclude '.env*' --exclude '*.tsbuildinfo' \
       "$SRC_ROOT/front/" "$SRC/front/"
+    local fv_staging; fv_staging=$(version_staging "$SRC_ROOT/front/package.json")
+    fijar_version "$SRC/front" "$fv_staging"
+    info "Versión del front en staging: v$fv_staging"
     rm -rf "$out"
     docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp \
       -e npm_config_cache=/cache/npm -e YARN_CACHE_FOLDER=/cache/yarn \
@@ -265,8 +291,9 @@ deploy_front() {
 
   step "Front · publicando en la VM"
   vm_rsync -a --delete "$out/" "$R/front-www/"
-  printf '%s %s\n' "$LABEL" "$(date '+%F %T')" | vm_ssh "cat > $R/front.version"
-  record front "$(sed -n 's/^ *"version": *"\([^"]*\)".*/\1/p' "$SRC_ROOT/front/package.json" | head -1)" "$LABEL" - - -
+  local fv; fv="v$(jq -r .version "$SRC/front/package.json")"   # la del build publicado (copia con sufijo -s)
+  printf '%s %s %s\n' "$fv" "$LABEL" "$(date '+%F %T')" | vm_ssh "cat > $R/front.version"
+  record front "$fv" "$LABEL" - - -
   ok "Front desplegado: http://$(vm_ip)/"
 }
 

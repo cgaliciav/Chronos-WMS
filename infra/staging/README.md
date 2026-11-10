@@ -64,6 +64,14 @@ despliegue a producción sobre una copia real de sus datos.
 Otras opciones: `--no-snapshot`, `--snapshot` (snapshot aunque no haya migraciones), `--skip-front-build`
 (publica el último build de la caché), `-y` (sin confirmaciones).
 
+**Versionado.** El script aplica las reglas del [`CLAUDE.md` raíz](../../CLAUDE.md): en staging la versión de cada app
+termina en **`-s`**. Toma la base `X.Y.Z` del `package.json` del código desplegado (que puede traer `X.Y.Z` o
+`X.Y.Z-d`) y construye con `X.Y.Z-s`, reescribiendo `package.json` y `package-lock.json` **solo en la copia** que se
+construye (`~/staging-cache/src/{api,front}`); tu árbol de trabajo y el repo no cambian. Cualquier otro formato
+(`4.0`, `v4.0.0`, `4.0.0-rc.1`…) detiene el despliegue. Así, `GET /api/` responde p. ej. `2.80.0-s`, el front muestra
+`4.0.0-s` (y Sentry recibe `chronos-wms-front@4.0.0-s`), y `deploys.log`, `front.version` y `--status` las anotan
+como `vX.Y.Z-s`. `--rollback` vuelve a la versión de producción, que no lleva sufijo.
+
 Qué hace con el **API**:
 
 1. Copia `api/` a la VM (`~/teleset-almacen/api-src`) y construye `almacen-backend:staging-<sha>` con el
@@ -74,7 +82,7 @@ Qué hace con el **API**:
    con el snapshot en lugar del respaldo `mariadb-dump` (el dump de 24 GB tarda ~30 min; el snapshot, segundos).
 3. Ajusta el dueño de `exogrid/` a 1000:1000 si hace falta (la imagen corre como `node`).
 4. Cambia `BACKEND_IMAGE` en `~/teleset-almacen/.env` (guarda la anterior en `BACKEND_IMAGE_PREV`), levanta el
-   backend, espera a `GET /`, compara la versión con `api/package.json` y busca en el log avisos de
+   backend, espera a `GET /`, comprueba que responde la versión `X.Y.Z-s` esperada y busca en el log avisos de
    «migraciones pendientes» o `DB_SYNCRO=true`.
 5. Borra las imágenes `staging-*` viejas (conserva la actual, la anterior y la de producción).
 
