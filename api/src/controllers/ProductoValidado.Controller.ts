@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { EstatusEstado } from "../entity/common/NombreEstatus";
 import { Producto } from "../entity/Producto";
 import { ProductoValidado, ValidacionEstado } from "../entity/ProductoValidado";
@@ -13,16 +13,16 @@ export default class ProductoValidadoController {
     validacion: ValidacionEstado,
     sesionId: number,
   ) => {
-    let productoValidado = await getRepository(ProductoValidado)
+    let productoValidado = await AppDataSource.getRepository(ProductoValidado)
       .createQueryBuilder("productoValidado")
       .innerJoinAndSelect("productoValidado.producto", "producto")
       .where("producto.id = :productoId", { productoId })
       .getOne();
     logger.info({ productoValidado, productoId, validacion });
-    if (productoValidado === undefined) {
+    if (productoValidado == null) {
       productoValidado = new ProductoValidado();
       productoValidado.estatus = EstatusEstado.ACTIVO;
-      productoValidado.producto = await getRepository(Producto).findOneOrFail(idSeguro(productoId, "productoId"));
+      productoValidado.producto = await AppDataSource.getRepository(Producto).findOneByOrFail({ id: idSeguro(productoId, "productoId") });
     }
     productoValidado.validacion = validacion;
     productoValidado.sesionId = sesionId;
@@ -30,7 +30,7 @@ export default class ProductoValidadoController {
 
     logger.info({ productoValidado });
 
-    return await getRepository(ProductoValidado).save(productoValidado);
+    return await AppDataSource.getRepository(ProductoValidado).save(productoValidado);
   };
 
   static Validar = async (

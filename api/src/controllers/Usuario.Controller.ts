@@ -1,7 +1,8 @@
+import { In } from "typeorm";
 import { validate } from "class-validator";
 import { OPCIONES_VALIDACION } from "../helpers/validacion";
 import { NextFunction, Request, Response } from "express";
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { Area } from "../entity/Area";
 import { Bodega } from "../entity/Bodega";
 import { EstatusEstado } from "../entity/common/NombreEstatus";
@@ -16,7 +17,7 @@ import CommonController, { ResultadoTabla } from "./common/Common.Controller";
 import { aplicarFiltros, columnaSegura, construirFiltros, direccionSegura } from "../helpers/filtrosTabla";
 import LogGeneralController from "./LogGeneral.Controller";
 import { logger } from "../helpers/logger";
-import { parametro } from "../helpers/ids";
+import { idSeguro, parametro } from "../helpers/ids";
 
 
 
@@ -49,7 +50,7 @@ class UsuarioController{
   static listaSimple = async (req: Request, res: Response,next:NextFunction) =>{
     try {
       res.json(await CommonController.listaSimpleGenerica(
-        getRepository(Usuario),
+        AppDataSource.getRepository(Usuario),
         ["id","nombre"]
       )); 
     } catch (error) {
@@ -62,7 +63,7 @@ class UsuarioController{
     const {busqueda}= req.body;
     try {
       res.json(await CommonController.BusquedaListaSimpleCompleta(
-        getRepository(Usuario),
+        AppDataSource.getRepository(Usuario),
         ["id","nombre"],
         busqueda) 
         );
@@ -74,7 +75,7 @@ class UsuarioController{
   static listaSimpleCompleto = async (req: Request, res: Response,next:NextFunction) =>{
     try{
       res.json( await CommonController.BusquedaListaSimpleCompleta(
-        getRepository(Usuario),
+        AppDataSource.getRepository(Usuario),
         ["id","nombre"]) 
         );
     }catch(error){
@@ -95,7 +96,7 @@ class UsuarioController{
       // console.error("OTROS",{campoOrden,direccionOrden,starts})
       // console.log('*************** FILTERS',filters);
   
-      const queryVencimiento = getRepository(Usuario)
+      const queryVencimiento = AppDataSource.getRepository(Usuario)
       .createQueryBuilder("usuario")
       // .select(["usuario.id","usuario.nombre","usuario.correo","usuario.vencimiento","usuario.estatus"])
       .select(["usuario.id"])
@@ -110,11 +111,11 @@ class UsuarioController{
         .getRawMany();
 
 
-      const queryResult = await getRepository(Usuario)
-        .findByIds(
-          queryVencimientoResult.map(qvr=>qvr.usuario_id),
-          {relations:["roles","areas","bodegas","proyectos"],}
-        ); 
+      const queryResult = await AppDataSource.getRepository(Usuario)
+        .find({
+          where: { id: In(queryVencimientoResult.map(qvr=>qvr.usuario_id)) },
+          relations:{ roles: true, areas: true, bodegas: true, proyectos: true },
+        }); 
 
       // Se regresa el objeto con la estructura de Usuario agregando de 'estatusExtendido'
       const respuesta:ResultadoTabla={
@@ -127,7 +128,7 @@ class UsuarioController{
           current:page,
           pageSize,
           total:filtered,
-          totalItems:await getRepository(Usuario).count()
+          totalItems:await AppDataSource.getRepository(Usuario).count()
         }
 
       } 
@@ -145,7 +146,7 @@ class UsuarioController{
     const {jwtPayload}=res.locals;
     logger.info(`actual>>>>> ${jwtPayload.u}`);
     CommonController.obtenerId(
-      getRepository(Usuario),
+      AppDataSource.getRepository(Usuario),
       ["roles"],
       jwtPayload.ui
     )
@@ -161,7 +162,7 @@ class UsuarioController{
   static obtenerId = (req: Request, res: Response, next:NextFunction) =>{
     const id = parametro(req, "id");
     CommonController.obtenerId(
-      getRepository(Usuario),
+      AppDataSource.getRepository(Usuario),
       ["areas","bodegas","proyectos","comentarios","roles"],
       id
     )
@@ -174,7 +175,7 @@ class UsuarioController{
   static obtenerAreas = async (req: Request, res: Response,next:NextFunction) => {
     const { ui } = res.locals.jwtPayload;
     try {
-      const usuarioAreas = await getRepository(Usuario)
+      const usuarioAreas = await AppDataSource.getRepository(Usuario)
         .createQueryBuilder("usuario")
         .leftJoinAndSelect("usuario.areas", "areas")
         .where("usuario.id = :ui", { ui })
@@ -189,7 +190,7 @@ class UsuarioController{
   static obtenerBodegas = async (req: Request, res: Response,next:NextFunction) => {
     let { ui } = res.locals.jwtPayload;
     try {
-      const usuarioBodegas = await getRepository(Usuario)
+      const usuarioBodegas = await AppDataSource.getRepository(Usuario)
         .createQueryBuilder("usuario")
         .leftJoinAndSelect("usuario.bodegas", "bodegas")
         .where("usuario.id = :ui", { ui })
@@ -204,7 +205,7 @@ class UsuarioController{
   static obtenerProyectos = async (req: Request, res: Response,next:NextFunction) => {
     let { ui } = res.locals.jwtPayload;
     try {
-      const usuarioProyectos = await getRepository(Usuario)
+      const usuarioProyectos = await AppDataSource.getRepository(Usuario)
         .createQueryBuilder("usuario")
         .leftJoinAndSelect("usuario.proyectos", "proyectos")
         .where("usuario.id = :ui", { ui })
@@ -233,13 +234,13 @@ class UsuarioController{
       usuario.vencimiento = new Date(vencimiento);
       usuario.password = password;
       usuario.hashPassword();
-      usuario.roles = await getRepository(Rol).findByIds(rolesIds);
-      usuario.proyectos = await getRepository(Proyecto).findByIds(proyectosIds);
-      usuario.bodegas = await getRepository(Bodega).findByIds(bodegasIds);
-      usuario.areas = await getRepository(Area).findByIds(areasIds);
+      usuario.roles = await AppDataSource.getRepository(Rol).findBy({ id: In(rolesIds) });
+      usuario.proyectos = await AppDataSource.getRepository(Proyecto).findBy({ id: In(proyectosIds) });
+      usuario.bodegas = await AppDataSource.getRepository(Bodega).findBy({ id: In(bodegasIds) });
+      usuario.areas = await AppDataSource.getRepository(Area).findBy({ id: In(areasIds) });
   
       const usuarioCreado=await CommonController.nuevo(
-        getRepository(Usuario),
+        AppDataSource.getRepository(Usuario),
         usuario,
         body,
         res.locals.jwtPayload.si
@@ -269,14 +270,14 @@ class UsuarioController{
       bodegasIds, 
       areasIds } = req.body;
     try {
-      const usuario:Usuario=await getRepository(Usuario).findOneOrFail(id,);
+      const usuario:Usuario=await AppDataSource.getRepository(Usuario).findOneByOrFail({ id: idSeguro(id) });
       usuario.nombre= nombre;
       usuario.correo= correo;
-      usuario.roles = await getRepository(Rol).findByIds(rolesIds);
+      usuario.roles = await AppDataSource.getRepository(Rol).findBy({ id: In(rolesIds) });
       usuario.vencimiento = new Date(vencimiento);
-      usuario.proyectos = await getRepository(Proyecto).findByIds(proyectosIds);
-      usuario.bodegas = await getRepository(Bodega).findByIds(bodegasIds);
-      usuario.areas = await getRepository(Area).findByIds(areasIds);
+      usuario.proyectos = await AppDataSource.getRepository(Proyecto).findBy({ id: In(proyectosIds) });
+      usuario.bodegas = await AppDataSource.getRepository(Bodega).findBy({ id: In(bodegasIds) });
+      usuario.areas = await AppDataSource.getRepository(Area).findBy({ id: In(areasIds) });
       usuario.sesionId = si;
 
       const error = await validate(usuario, OPCIONES_VALIDACION);
@@ -284,7 +285,7 @@ class UsuarioController{
         const errorMap = error.map(obj=>obj.property);
         throw new AppError(`Error de validación en: ${errorMap.join(", ")}`,400);
       }
-      await getRepository(Usuario).save(usuario);
+      await AppDataSource.getRepository(Usuario).save(usuario);
       res.json();
     } catch (error) {
       next(error)
@@ -300,8 +301,8 @@ class UsuarioController{
       if(!passGenerator.esPasswordValido(pn)){
         throw new AppError("Nuevo password inválido",406);
       }
-      const usuario = await getRepository(Usuario).findOneOrFail({ 
-        select: ["id", "nombre", "correo", "password", "vencimiento", "estatus"], 
+      const usuario = await AppDataSource.getRepository(Usuario).findOneOrFail({ 
+        select: { id: true, nombre: true, correo: true, password: true, vencimiento: true, estatus: true }, 
         where: { id: ui } ,
       });
 
@@ -313,7 +314,7 @@ class UsuarioController{
       usuario.sesionId=si;
       usuario.password=pn;
       usuario.hashPassword();
-      await getRepository(Usuario).save(usuario)
+      await AppDataSource.getRepository(Usuario).save(usuario)
       res.json();
 
     } catch (error) {
@@ -330,15 +331,15 @@ class UsuarioController{
       if (typeof email !== "string" || email.length === 0) {
         throw new AppError("Correo requerido", 400);
       }
-      const usuario = await getRepository(Usuario).findOneOrFail({
-        select: ["id", "nombre", "correo", "password", "vencimiento", "estatus"],
+      const usuario = await AppDataSource.getRepository(Usuario).findOneOrFail({
+        select: { id: true, nombre: true, correo: true, password: true, vencimiento: true, estatus: true },
         where: { correo: email },
       });
       const password = passGenerator.generarPassword();
       usuario.sesionId = si;
       usuario.password = password;
       usuario.hashPassword();
-      await getRepository(Usuario).save(usuario);
+      await AppDataSource.getRepository(Usuario).save(usuario);
       EnviarMail.correoNuevoPassword(usuario.correo, password);
       res.json({ correo: usuario.correo, enviado: true });
     } catch (error) {
@@ -349,7 +350,7 @@ class UsuarioController{
   // solo para administradores
   static habilitar = (req: Request, res: Response,next:NextFunction) =>{
     CommonController.habilitar(
-      getRepository(Usuario),
+      AppDataSource.getRepository(Usuario),
       parametro(req, "id"),
       res.locals.jwtPayload.si
     )
@@ -361,7 +362,7 @@ class UsuarioController{
 
   static deshabilitar = (req: Request, res: Response,next:NextFunction) =>{
     CommonController.deshabilitar(
-      getRepository(Usuario),
+      AppDataSource.getRepository(Usuario),
       parametro(req, "id"),
       res.locals.jwtPayload.si
     )
@@ -377,7 +378,7 @@ class UsuarioController{
     const {jwtPayload}=res.locals;
     const {id,comentario} = req.body;
     CommonController.agregarComentario(
-      getRepository(Usuario),
+      AppDataSource.getRepository(Usuario),
       id,
       jwtPayload.si,
       comentario
@@ -393,7 +394,7 @@ class UsuarioController{
     const {jwtPayload}=res.locals;
     const {id,idComentario} = req.body;
     CommonController.quitarComentario(
-      getRepository(Usuario),
+      AppDataSource.getRepository(Usuario),
       id,
       jwtPayload.si,
       idComentario

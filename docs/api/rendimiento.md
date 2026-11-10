@@ -1,4 +1,4 @@
-# Rendimiento del API (plan 02 · fase 4)
+# Rendimiento del API (plan 02 · fases 4 y 6)
 
 ## Cómo se mide
 
@@ -26,6 +26,24 @@ en todas las mediciones.
 
 "Antes" = commit `b63add4` (cierre de la fase 3). "Después" = cierre de la fase 4.
 
+### Fase 6: TypeORM 1.1.2 sin el parche
+
+Mismo procedimiento y máquina, ya con Express 5 (fase 5). Las mismas consultas por petición que con TypeORM 0.2.
+
+| Endpoint | Node 22 | Node 24 | Consultas |
+|---|---|---|---|
+| `POST /groups/list-antd` | 107 · p50 90 · p99 143 | 143 · p50 67 · p99 108 | 5 |
+| `POST /groups/activity-list-by-group` | 90 · p50 109 · p99 163 | 114 · p50 85 · p99 143 | 6 |
+| `POST /groups/active-activity-list` | 90 · p50 109 · p99 164 | 119 · p50 82 · p99 130 | 6 |
+| `GET /activity/:id` | 249 · p50 39 · p99 69 | 304 · p50 32 · p99 52 | 4 |
+| `POST /current-inventory/list-catalog-general` | 430 · p50 22 · p99 44 | 552 · p50 17 · p99 27 | 4 |
+
+Sin el parche, TypeORM 1.x iguala o supera a TypeORM 0.2 con el parche (Node 22 tras la fase 5: list-antd 82-84,
+catálogo 390-407 req/s). La primera medición dio 2 consultas más en todos los endpoints: con TypeORM 1.x,
+`findOne` con relaciones a-muchos añade `LIMIT 1` y una consulta `SELECT DISTINCT` previa, y `checkRole` hace dos
+`findOne` así en cada petición. Pasó a QueryBuilder (una consulta cada una). El contador de `rendimiento.ts` puede
+sumar alguna consulta de auditoría asíncrona de la siembra; el valor fiable es el de una petición aislada.
+
 ## Qué se encontró y qué se cambió
 
 1. **CPU en TypeORM, no en la BD.** Una petición aislada de un listado tardaba ~30 ms, pero con 10 conexiones la
@@ -35,7 +53,7 @@ en todas las mediciones.
    regular con todas ellas. Los listados tienen 20-30 joins.
    → `api/src/helpers/parcheTypeorm.ts` guarda ese mapa y esa expresión por metadatos y prefijo. El SQL generado es
    idéntico (`src/test/parcheTypeorm.int.test.ts` compara todas las consultas de 10 endpoints con y sin parche).
-   Se retira al pasar a TypeORM 1.x (fase 6), que ya construye la expresión una sola vez.
+   **Retirado en la fase 6** (TypeORM 1.x no tiene ese coste; ver la tabla de la fase 6).
 2. **COUNT repetido.** Los listados contaban dos veces aunque no hubiera filtros (total y filtrado). Ahora el segundo
    `COUNT` solo se ejecuta si hay filtros.
 3. **Driver `mysql2`** en lugar de `mysql` (paso 2) y **Node 24** (paso 8) aportan el resto.

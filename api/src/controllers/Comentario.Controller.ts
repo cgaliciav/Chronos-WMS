@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { Comentario } from "../entity/Comentario";
 import { Sesion } from "../entity/Sesion";
 import { AppError } from "../helpers/errorClases";
@@ -15,19 +15,19 @@ class ComentarioController{
         const comentario = new Comentario();
         comentario.comentario=comentarioStr;
         comentario.sesionId=sesionId;
-        comentario.sesion=await getRepository(Sesion).findOneOrFail(sesionId);
+        comentario.sesion=await AppDataSource.getRepository(Sesion).findOneByOrFail({ id: sesionId });
 
         // console.log("comentario",comentario);
 
         return (
-            await getRepository(Comentario).save(comentario)
+            await AppDataSource.getRepository(Comentario).save(comentario)
         )
     }
 
     static quitar = async (comentario:Comentario,sesionId:number) => {
         // const archivo = await getRepository(Archivo).findOneOrFail(archivoId);
         comentario.sesionId = sesionId;
-        return (await getRepository(Comentario).remove(comentario));
+        return (await AppDataSource.getRepository(Comentario).remove(comentario));
     }
 
 
@@ -40,7 +40,7 @@ class ComentarioController{
                 throw new AppError("El comentario no puede estar vacío", 400);
             }
             const repo = repositorioDeRelacion(relacion);
-            const repoItem:any=await repo.findOneOrFail(idSeguro(id),{relations:["comentarios"]});
+            const repoItem:any=await repo.findOneOrFail({ where: { id: idSeguro(id) }, relations:{ comentarios: true }});
             repoItem.sesionId=jwtPayload.si;
             const comentarioResultado=await ComentarioController.guardar(comentario,jwtPayload.si);
 
@@ -59,7 +59,7 @@ class ComentarioController{
         try {
             const repo = repositorioDeRelacion(relacion);
             const idComentario = idSeguro(comentarioId, "comentarioId");
-            const repoItem:any=await repo.findOneOrFail(idSeguro(id),{relations:["comentarios"]});
+            const repoItem:any=await repo.findOneOrFail({ where: { id: idSeguro(id) }, relations:{ comentarios: true }});
             // Solo se borra un comentario que pertenezca al registro (hallazgo M8: IDOR y comparación número/string)
             if (!repoItem.comentarios.some((c: Comentario) => c.id === idComentario)) {
                 throw new AppError("El comentario no pertenece al registro", 404);
@@ -69,7 +69,7 @@ class ComentarioController{
             await repo.save(repoItem);
 
             await ComentarioController.quitar(
-                await getRepository(Comentario).findOneOrFail(idComentario), 
+                await AppDataSource.getRepository(Comentario).findOneByOrFail({ id: idComentario }), 
                 jwtPayload.si
             );
             res.json();

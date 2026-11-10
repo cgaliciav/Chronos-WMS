@@ -3,7 +3,7 @@
  */
 import "./env";
 import { Express } from "express";
-import { getConnection } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { crearApp } from "../app";
 import { cerrarPruebas, conectarPruebas } from "./conexion";
 import { clienteAdmin, crearArticulo, crearGrupoCompra, crearGrupoDetalle, inventarioDe, movimientosDe, registrarOperacion } from "./factories";
@@ -13,7 +13,7 @@ const A = SEMILLA.proyectoAId;
 const B = SEMILLA.proyectoBId;
 
 const relacionesDe = async (derivadoId: number) =>
-  (await getConnection().query("SELECT origenId, cantidad, tipo FROM movimiento_relacion WHERE derivadoId = ? ORDER BY id", [derivadoId])).map(
+  (await AppDataSource.query("SELECT origenId, cantidad, tipo FROM movimiento_relacion WHERE derivadoId = ? ORDER BY id", [derivadoId])).map(
     (r: any) => ({ origenId: Number(r.origenId), cantidad: Number(r.cantidad), tipo: r.tipo })
   );
 
@@ -129,7 +129,7 @@ describe("fase 3 · relación entre movimientos", () => {
     expect(await inventarioDe(inventarioActualId)).toMatchObject({ cantidad: 3, cantidadAlmacen: 3, disponible: "disponible" });
     const movimientos = await movimientosDe(inventarioActualId);
     expect(movimientos.map((m) => [m.operacion.movimientoTipo.id, m.estatus])).toEqual([[14, "activo"]]);
-    const historico = await getConnection().query("SELECT COUNT(*) AS n FROM inventario_actual_historico WHERE idOriginal = ?", [inventarioActualId]);
+    const historico = await AppDataSource.query("SELECT COUNT(*) AS n FROM inventario_actual_historico WHERE idOriginal = ?", [inventarioActualId]);
     expect(Number(historico[0].n)).toBe(1); // solo la instantánea del alta: las de los movimientos deshechos se borran
   });
 
@@ -165,7 +165,7 @@ describe("fase 3 · relación entre movimientos", () => {
     const { codigo, inventarioActualId } = await articulo(2);
     const prestamo = await operar(codigo, 3, 2);
     // Simula un movimiento anterior a la fase 3: marcado como legado por la migración y sin relaciones.
-    await getConnection().query("UPDATE movimiento SET legado = 1 WHERE inventarioActualId = ?", [inventarioActualId]);
+    await AppDataSource.query("UPDATE movimiento SET legado = 1 WHERE inventarioActualId = ?", [inventarioActualId]);
     expect((await api.get(`/activity/open-by-inventory/${inventarioActualId}`)).body).toEqual([]);
 
     const devolucion = await operar(codigo, 4, 1);
@@ -178,7 +178,7 @@ describe("fase 3 · relación entre movimientos", () => {
     // El aviso se escribe en LogGeneral sin esperar a la respuesta: se sondea.
     let registrado = false;
     for (let intento = 0; intento < 40 && !registrado; intento++) {
-      const avisos = await getConnection().query(
+      const avisos = await AppDataSource.query(
         "SELECT data FROM log_general WHERE tipo = 'advertencia' AND mensaje LIKE 'Modo de compatibilidad%' ORDER BY id DESC LIMIT 5"
       );
       registrado = avisos.some((a: any) => JSON.parse(a.data).movimientoId === devolucion.body.id);
@@ -274,7 +274,7 @@ describe("fase 3 · relación entre movimientos", () => {
     it("un inventario solo con movimientos legados se lista con la heurística anterior (saldoPendiente null)", async () => {
       const { codigo, inventarioActualId } = await articulo(1);
       const prestamo = await operar(codigo, 3, 1);
-      await getConnection().query("UPDATE movimiento SET legado = 1 WHERE inventarioActualId = ?", [inventarioActualId]);
+      await AppDataSource.query("UPDATE movimiento SET legado = 1 WHERE inventarioActualId = ?", [inventarioActualId]);
       expect((await listar()).find((m) => m.id === prestamo.body.id)).toEqual(expect.objectContaining({ saldoPendiente: null }));
     });
 

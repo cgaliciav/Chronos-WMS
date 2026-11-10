@@ -1,5 +1,7 @@
+import { In } from "typeorm";
 import { Request, Response, NextFunction } from "express";
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
+import { idOpcional, idSeguro } from "../helpers/ids";
 import { GrupoDetalle } from "../entity/GrupoDetalle";
 import { MovimientoTipo } from "../entity/MovimientoTipo";
 import { Proyecto } from "../entity/Proyecto";
@@ -32,19 +34,20 @@ const crearBaseGrupoDetalle = async (
   exigirTipoDeListadoValido(movimientoTipoId);
   const grupoDetalle = new GrupoDetalle();
 
-  if (proyectoId !== undefined) {
-    grupoDetalle.proyecto = await getRepository(Proyecto).findOneOrFail(
-      proyectoId
-    );
+  // Sin proyecto (null o ausente) el listado queda sin proyecto. Con TypeORM 0.2, findOneOrFail(null) devolvía el
+  // PRIMER proyecto y el listado quedaba asignado a él en silencio (plan 02 · fase 6).
+  const idProyecto = idOpcional(proyectoId, "proyectoId");
+  if (idProyecto !== undefined) {
+    grupoDetalle.proyecto = await AppDataSource.getRepository(Proyecto).findOneByOrFail({ id: idProyecto });
   }
 
   if (usuariosIds !== undefined) {
-    grupoDetalle.usuarios = await getRepository(Usuario).findByIds(usuariosIds);
+    grupoDetalle.usuarios = await AppDataSource.getRepository(Usuario).findBy({ id: In(usuariosIds) });
   }
 
-  grupoDetalle.movimientoTipo = await getRepository(
+  grupoDetalle.movimientoTipo = await AppDataSource.getRepository(
     MovimientoTipo
-  ).findOneOrFail(movimientoTipoId);
+  ).findOneByOrFail({ id: idSeguro(movimientoTipoId, "movimientoTipoId") });
   grupoDetalle.sesionId = sesionId;
 
   return grupoDetalle;
@@ -64,7 +67,7 @@ class GrupoDetalleController {
       usuariosIds,
       sesionId
     );
-    return await getRepository(GrupoDetalle).save(grupoDetalle);
+    return await AppDataSource.getRepository(GrupoDetalle).save(grupoDetalle);
   };
 
   // guardarFactura  -- basico con proyecto, tipoMovimiento, y usuarios
@@ -97,7 +100,7 @@ class GrupoDetalleController {
       facturaTipoId,
       sesionId
     );
-    return await getRepository(GrupoDetalle).save(grupoDetalle);
+    return await AppDataSource.getRepository(GrupoDetalle).save(grupoDetalle);
   };
 
   static editar = async (
@@ -110,14 +113,14 @@ class GrupoDetalleController {
     //al editar tipoMovimiento o proyecto, hay que editar todos los movimientos asociados. --->> se hace en GrupoController
     exigirTipoDeListadoValido(movimientoTipoId, grupoDetalle.movimientoTipo?.id);
     grupoDetalle.sesionId = sesionId;
-    grupoDetalle.movimientoTipo = await getRepository(
+    grupoDetalle.movimientoTipo = await AppDataSource.getRepository(
       MovimientoTipo
-    ).findOneOrFail(movimientoTipoId);
-    grupoDetalle.proyecto = await getRepository(Proyecto).findOneOrFail(
-      proyectoId
+    ).findOneByOrFail({ id: idSeguro(movimientoTipoId, "movimientoTipoId") });
+    grupoDetalle.proyecto = await AppDataSource.getRepository(Proyecto).findOneByOrFail(
+      { id: idSeguro(proyectoId, "proyectoId") }
     );
-    grupoDetalle.usuarios = await getRepository(Usuario).findByIds(usuariosIds);
-    return await getRepository(GrupoDetalle).save(grupoDetalle);
+    grupoDetalle.usuarios = await AppDataSource.getRepository(Usuario).findBy({ id: In(usuariosIds) });
+    return await AppDataSource.getRepository(GrupoDetalle).save(grupoDetalle);
   };
 
   // editarFactura
@@ -136,10 +139,10 @@ class GrupoDetalleController {
   ) => {
     //al editar proyecto, hay que editar todos los movimientos asociados. --->> se hace en GrupoController
     grupoDetalle.sesionId = sesionId;
-    grupoDetalle.proyecto = await getRepository(Proyecto).findOneOrFail(
-      proyectoId
+    grupoDetalle.proyecto = await AppDataSource.getRepository(Proyecto).findOneByOrFail(
+      { id: idSeguro(proyectoId, "proyectoId") }
     );
-    grupoDetalle.usuarios = await getRepository(Usuario).findByIds(usuariosIds ?? []);
+    grupoDetalle.usuarios = await AppDataSource.getRepository(Usuario).findBy({ id: In(usuariosIds ?? []) });
     await FacturaDetalleController.editar(
       grupoDetalle.facturaDetalle,
       numero,
@@ -152,13 +155,13 @@ class GrupoDetalleController {
       sesionId
     );
 
-    return await getRepository(GrupoDetalle).save(grupoDetalle);
+    return await AppDataSource.getRepository(GrupoDetalle).save(grupoDetalle);
   };
 
   static quitar = async (grupoDetalle: GrupoDetalle, sesionId: number) => {
     //borrar
     grupoDetalle.sesionId = sesionId;
-    const grupoDetalleRemovido = await getRepository(GrupoDetalle).remove(
+    const grupoDetalleRemovido = await AppDataSource.getRepository(GrupoDetalle).remove(
       grupoDetalle
     );
     if (

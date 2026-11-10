@@ -348,7 +348,25 @@ los 5 endpoints más usados antes/después → `docs/api/rendimiento.md`.
 **Pruebas:** suite completa + humo de subida de archivo (`POST /item/file`) y Excel (`/reports/*`) +
 `rutas.int.test.ts` que recorre todas las rutas con token admin esperando ≠ 404 (detecta la nueva sintaxis de Express 5).
 
-### Fase 6 · TypeORM 0.2 → 1.x
+### Fase 6 · TypeORM 0.2 → 1.x ✅ (hecha el 2026-11-10, v2.82.0)
+
+> **Resultado:** TypeORM 1.1.2 y `reflect-metadata` 0.2; suites verdes con Node 22 y 24, `typecheck`, `build` y
+> `migration:generate` vacío. Sin cambios de esquema. Detalle en `api/CHANGELOG.md` y `docs/api/endpoints.md`
+> ("Cambios de la fase 6").
+>
+> - Red de seguridad previa: `formaRespuestas.int.test.ts` grabó con 0.2 la forma del JSON de 30 endpoints; no cambió.
+> - Los reemplazos mecánicos (≈ 400 llamadas) se hicieron con un codemod sobre el AST; `relations`/`select` de los
+>   helpers genéricos se convierten con `helpers/opcionesFind.ts`.
+> - **Desviación:** el suscriptor usa `event.dataSource` y no `event.manager`: escribe la auditoría sin `await`, y con
+>   el `manager` de la transacción escribiría después de que esta liberara su conexión.
+> - **Desviación:** sin CLI de TypeORM; `npm run migration:show|run|revert` usan `src/migrar.ts` y
+>   `migration:generate` sigue en `src/test/generarMigracion.ts` (listas explícitas, sin `-d`).
+> - TypeORM 1.x cambia el `ON DELETE` por defecto del lado inverso de un `@ManyToMany`: `Movimiento.grupos` lo fija
+>   en `NO ACTION` para conservar la FK de producción (si no, habría hecho falta una migración).
+> - `findOne` devuelve `null` (no `undefined`) y rechaza `undefined`/`null` en `where`: se revisaron las comparaciones
+>   estrictas y se validan con `idSeguro` los ids del cuerpo. Apareció un fallo real (listado sin proyecto asignado
+>   al primer proyecto).
+> - Parche de rendimiento retirado; `checkRole` pasa a QueryBuilder para no duplicar consultas.
 
 1. `src/data-source.ts` con `new DataSource({...})`; `AppDataSource.initialize()` en `index.ts`; borrar
    `conexionORM.ts`/`ormconfig.js`/`createConnections`.

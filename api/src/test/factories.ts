@@ -1,7 +1,7 @@
 import * as jwt from "jsonwebtoken";
 import supertest from "supertest";
 import { Express } from "express";
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { InventarioActual } from "../entity/InventarioActual";
 import { Movimiento } from "../entity/Movimiento";
 import { SEMILLA } from "./seed";
@@ -114,12 +114,12 @@ export const registrarOperacion = (
 
 /** Lee el inventario directamente de la BD con los numéricos convertidos. */
 export const inventarioDe = async (inventarioActualId: number) => {
-  const inv = await getRepository(InventarioActual).findOneOrFail(inventarioActualId, { loadEagerRelations: false });
+  const inv = await AppDataSource.getRepository(InventarioActual).findOneOrFail({ where: { id: inventarioActualId },  loadEagerRelations: false });
   return { ...inv, cantidad: Number(inv.cantidad), cantidadAlmacen: Number(inv.cantidadAlmacen) };
 };
 
 export const movimientosDe = async (inventarioActualId: number) =>
-  getRepository(Movimiento)
+  AppDataSource.getRepository(Movimiento)
     .createQueryBuilder("m")
     .leftJoinAndSelect("m.operacion", "o")
     .leftJoinAndSelect("o.movimientoTipo", "t")

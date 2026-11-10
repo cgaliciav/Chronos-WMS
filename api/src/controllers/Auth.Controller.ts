@@ -1,7 +1,7 @@
 
 import { NextFunction, Request, Response } from "express";
 import { firmarToken, olvidarSesion } from "../middlewares/verificarJwt";
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { Sesion } from "../entity/Sesion";
 import { Usuario } from "../entity/Usuario";
 import { AppError } from "../helpers/errorClases";
@@ -9,13 +9,13 @@ import { nombrePaquete as name, versionPaquete as version } from "../helpers/paq
 // import config from "../config/config";
 
 const terminarSesion = async(sesionId:number) =>{
-  const sesion = await getRepository(Sesion).findOneOrFail(sesionId);
+  const sesion = await AppDataSource.getRepository(Sesion).findOneByOrFail({ id: sesionId });
   
   
 
   if(sesion.fechaFin===undefined || sesion.fechaFin===null ){
     sesion.fechaFin = new Date();
-    await getRepository(Sesion).save(sesion);
+    await AppDataSource.getRepository(Sesion).save(sesion);
   }
   olvidarSesion(sesionId); // el token deja de valer de inmediato (checkJwt consulta fechaFin)
 
@@ -33,8 +33,8 @@ class AuthController {
         throw new AppError("Email o password inválidos",400);
       }
 
-      usuario = await getRepository(Usuario).findOneOrFail({
-        select:["id","nombre","correo","vencimiento","estatus","password"], 
+      usuario = await AppDataSource.getRepository(Usuario).findOneOrFail({
+        select:{ id: true, nombre: true, correo: true, vencimiento: true, estatus: true, password: true }, 
         where: { correo: c },
         loadEagerRelations:false, 
         // cache:true,
@@ -53,7 +53,7 @@ class AuthController {
       
       sesion.IP = (req.ip ?? "desconocida").slice(0, 50);
 
-      await getRepository(Sesion).save(sesion);
+      await AppDataSource.getRepository(Sesion).save(sesion);
 
       const t = firmarToken({ ui: usuario.id, u: usuario.nombre, si: sesion.id });
 

@@ -1,9 +1,10 @@
+import { In } from "typeorm";
 import { join } from "path";
 import { NextFunction, Request, Response } from "express";
 import { readFileSync } from "fs";
 import { access, rename } from "fs/promises";
 import sharp from 'sharp';
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { Archivo } from "../entity/Archivo";
 import { InventarioActual } from "../entity/InventarioActual";
 import { AppError } from "../helpers/errorClases";
@@ -24,7 +25,7 @@ export const repositorioDeRelacion = (relacion: unknown) => {
   if (typeof relacion !== "string" || !RELACIONES_PERMITIDAS[relacion]) {
     throw new AppError(`Relación no permitida: ${String(relacion)}`, 400);
   }
-  return getRepository(RELACIONES_PERMITIDAS[relacion]);
+  return AppDataSource.getRepository(RELACIONES_PERMITIDAS[relacion]);
 };
 
 /** 15 MiB (antes el límite era 16 000 000 bytes y el mensaje decía 15 MB; hallazgo L4). Lo usa también multer. */
@@ -48,7 +49,7 @@ interface ResponseFile {
  * extensión derivada del tipo MIME, nunca con el nombre que subió el usuario (hallazgo H2: recorrido de rutas).
  */
 const obtenerGenerarArchivo = async (archivoId: number | string): Promise<string> => {
-  const archivo = await getRepository(Archivo).findOneOrFail(idSeguro(archivoId, "archivoId"));
+  const archivo = await AppDataSource.getRepository(Archivo).findOneByOrFail({ id: idSeguro(archivoId, "archivoId") });
   const RUTA_ARCHIVO = process.env.RUTA_ARCHIVOS;
   if (RUTA_ARCHIVO === undefined) throw new AppError("RUTA ARCHIVO indefinida");
 
@@ -61,7 +62,7 @@ const obtenerGenerarArchivo = async (archivoId: number | string): Promise<string
 
 /** Las miniaturas solo se generan para imágenes; otros tipos respondían 500 desde sharp (hallazgo M17). */
 const asegurarImagen = async (archivoId: number | string) => {
-  const archivo = await getRepository(Archivo).findOne(idSeguro(archivoId, "archivoId"), { select: ["id", "tipoMIME"] });
+  const archivo = await AppDataSource.getRepository(Archivo).findOne({ where: { id: idSeguro(archivoId, "archivoId") },  select: { id: true, tipoMIME: true } });
   if (!archivo || !esImagen(archivo.tipoMIME)) {
     throw new AppError("El archivo no es una imagen", 400);
   }
@@ -108,7 +109,7 @@ class ArchivoController {
     } else {
       archivo.data = file.buffer;
     }
-    await getRepository(Archivo).save(archivo);
+    await AppDataSource.getRepository(Archivo).save(archivo);
 
     const rf: ResponseFile = respuestaArchivo(archivo);
 
@@ -123,7 +124,7 @@ class ArchivoController {
     // const archivo = await getRepository(Archivo).findOneOrFail(archivoId);
     archivo.sesionId = sesionId;
     const id = archivo.id;
-    const quitado = await getRepository(Archivo).remove(archivo);
+    const quitado = await AppDataSource.getRepository(Archivo).remove(archivo);
     await olvidarArchivoEnCache(process.env.RUTA_ARCHIVOS, id); // no dejar copias en disco de un archivo borrado
     return quitado;
   };
@@ -132,7 +133,7 @@ class ArchivoController {
     const archivoId = idSeguro(parametroOpcional(req, "id") ?? req.body?.archivoId, "archivoId");
     const { jwtPayload } = res.locals;
     try {
-      await ArchivoController.quitar(await getRepository(Archivo).findOneOrFail(archivoId), jwtPayload.si);
+      await ArchivoController.quitar(await AppDataSource.getRepository(Archivo).findOneByOrFail({ id: archivoId }), jwtPayload.si);
       res.json();
     } catch (error) {
       next(error);
@@ -236,7 +237,7 @@ class ArchivoController {
 
   static obtenerIdsPorInventarioId = async (id: number | string) => {
     // const id = parametro(req, "id");
-    const inventarioActual = await getRepository(InventarioActual)
+    const inventarioActual = await AppDataSource.getRepository(InventarioActual)
       .createQueryBuilder("inventarioActual")
       .innerJoin("inventarioActual.producto", "producto")
       .leftJoin("producto.archivos", "archivos")
@@ -244,7 +245,7 @@ class ArchivoController {
       .where("inventarioActual.id = :id", { id })
       .getOne();
     // findOneOrFail(id,{relations:["producto"]})
-    if (inventarioActual === undefined)
+    if (inventarioActual == null)
       throw new AppError("Inventario acutal indefinidos");
 
     return inventarioActual.producto.archivos;
@@ -259,7 +260,7 @@ class ArchivoController {
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
 
     try {
-      const archivos = await getRepository(Archivo).findByIds(ids);
+      const archivos = await AppDataSource.getRepository(Archivo).findBy({ id: In(ids) });
       const respuestaArchivos: ResponseFile[] = archivos.map(respuestaArchivo);
       res.json(respuestaArchivos);
     } catch (error) {

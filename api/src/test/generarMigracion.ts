@@ -1,13 +1,12 @@
 // Genera el SQL que falta para que la BD de pruebas coincida con las entidades (lo mismo que
-// `typeorm migration:generate`, pero con la lista explícita de entidades y sin depender de ormconfig.js).
+// `typeorm migration:generate`, pero con la lista explícita de entidades y sin depender de la CLI de TypeORM).
 // Uso: npx ts-node src/test/generarMigracion.ts Nombre [--vaciar]
 //   --vaciar  borra el esquema antes (para generar la baseline completa).
 // Escribe src/migration/<timestamp>-<Nombre>.ts y no ejecuta nada.
 import "./env";
-import { createConnection } from "typeorm";
 import { writeFileSync } from "fs";
 import { resolve } from "path";
-import { opcionesConexionPruebas } from "./conexion";
+import { fuentePruebas } from "./conexion";
 import { MIGRACIONES } from "../migration";
 
 const escapar = (sql: string) => sql.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
@@ -16,9 +15,7 @@ const escapar = (sql: string) => sql.replace(/\\/g, "\\\\").replace(/`/g, "\\`")
   const nombre = process.argv[2];
   if (!nombre || !/^[A-Z][A-Za-z0-9]+$/.test(nombre)) throw new Error("Indica un nombre en PascalCase");
   const vaciar = process.argv.includes("--vaciar");
-  const conexion = await createConnection(
-    opcionesConexionPruebas({ name: "generar", dropSchema: vaciar, subscribers: [], migrations: vaciar ? [] : MIGRACIONES } as any)
-  );
+  const conexion = await fuentePruebas({ dropSchema: vaciar, subscribers: [], migrations: vaciar ? [] : MIGRACIONES }).initialize();
   try {
     if (!vaciar) await conexion.runMigrations({ transaction: "each" });
     const { upQueries, downQueries } = await conexion.driver.createSchemaBuilder().log();
@@ -47,7 +44,7 @@ ${downQueries.reverse().map(linea).join("\n")}
     writeFileSync(archivo, contenido);
     console.log(`Escrita ${archivo} (${upQueries.length} sentencias).`);
   } finally {
-    await conexion.close();
+    await conexion.destroy();
   }
 })().catch((e) => {
   console.error(e);

@@ -9,6 +9,46 @@ La versión vive en `package.json` (la devuelven `GET /` y `/auth/version`, y Se
 `desplegar.sh` publica una versión `X.Y.Z-d` como `X.Y.Z` y, si ya no lleva sufijo, sube el parche. Contrato con el
 front: [`docs/api/endpoints.md`](../docs/api/endpoints.md). Plan: [`docs/planes/02-api-relacion-movimientos.md`](../docs/planes/02-api-relacion-movimientos.md).
 
+## [2.82.0-d] - Sin publicar
+
+Fase 6 del plan 02: TypeORM 1.x. Sin cambios de esquema ni migraciones nuevas.
+
+### Cambiado
+
+- **TypeORM 1.1.2** (antes 0.2.45) y `reflect-metadata` 0.2. `src/data-source.ts` (`AppDataSource`, `conectarORM`)
+  sustituye a `conexionORM.ts` y `ormconfig.js`; desaparecen `getRepository`/`getConnection`/`getManager` globales.
+  Consultas con `findOneBy`/`findBy`/`In`, y `relations`/`select` como objetos (`helpers/opcionesFind.ts` convierte las
+  listas de los helpers genéricos).
+- `npm run migration:show|run|revert` usan `src/migrar.ts` (el mismo código que `node build/migrar.js` en la imagen);
+  ya no se usa la CLI de TypeORM.
+- Se retira el parche de rendimiento de TypeORM 0.2 (`helpers/parcheTypeorm.ts`): TypeORM 1.x ya no tiene ese coste
+  y los listados van igual o más rápido sin él (`docs/api/rendimiento.md`).
+- `checkRole` carga roles y áreas con QueryBuilder: con TypeORM 1.x, `findOne` con relaciones a-muchos hace dos
+  consultas en lugar de una.
+- `Movimiento.grupos` declara `onDelete/onUpdate: "NO ACTION"`: es la FK que ya existe en producción; TypeORM 1.x
+  usaría `CASCADE` por defecto en el lado inverso de un `@ManyToMany`.
+- `engines.node`: `^22.13.0 || >=24.11.0` (lo exige TypeORM 1.x).
+
+### Corregido
+
+- `POST /groups/new-details` con `proyectoId: null` (bajas sin proyecto) asignaba el listado al **primer proyecto**:
+  `findOneOrFail(null)` de TypeORM 0.2 devolvía la primera fila. Ahora el listado queda sin proyecto.
+- Ids ausentes o inválidos en el cuerpo de `item/edit`, `item-code/*`, `item-spec/*`, `user/edit`, los reportes por
+  proyecto y las altas (tipo de producto, área, bodega, proveedor, tipo de factura, tipo de movimiento) responden
+  `400 "<campo> inválido"`. Con TypeORM 0.2 un id ausente cargaba la primera fila de la tabla.
+- La auditoría usa `event.dataSource` (el registro se escribe sin esperar a la transacción que lo dispara).
+
+### Seguridad
+
+- `npm audit --omit=dev`: desaparece el aviso crítico de `typeorm` 0.2. Quedan dos transitivos moderado/bajo
+  (`uuid` 8 de exceljs y `diff` del ts-node que typeorm 1.1.2 declara como dependencia).
+
+### Pruebas
+
+- `formaRespuestas.int.test.ts`: instantánea de las claves y tipos del JSON de 30 endpoints (detalles, listados y
+  escrituras de movimientos) grabada con TypeORM 0.2; la migración la conserva sin cambios.
+- Suites verdes en Node 22 y 24; `migration:generate` no encuentra diferencias.
+
 ## [2.81.0-d] - Sin publicar
 
 Fase 5 del plan 02: dependencias de runtime.

@@ -1,6 +1,7 @@
+import { In } from "typeorm";
 import { Request, Response, application, NextFunction } from "express";
 import CommonController from "./common/Common.Controller";
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { Operacion } from "../entity/Operacion";
 import { MovimientoTipo } from "../entity/MovimientoTipo";
 import { Proyecto } from "../entity/Proyecto";
@@ -18,14 +19,14 @@ const crearBaseOperacion = async (
   sesionId: number
 ) => {
   const operacion = new Operacion();
-  operacion.movimientoTipo = await getRepository(MovimientoTipo).findOneOrFail(idSeguro(tipoMovimientoId, "movimientoTipoId"));
+  operacion.movimientoTipo = await AppDataSource.getRepository(MovimientoTipo).findOneByOrFail({ id: idSeguro(tipoMovimientoId, "movimientoTipoId") });
   const proyecto = idOpcional(proyectoId, "proyectoId");
   if (proyecto !== undefined) {
-    operacion.proyecto = await getRepository(Proyecto).findOneOrFail(proyecto);
+    operacion.proyecto = await AppDataSource.getRepository(Proyecto).findOneByOrFail({ id: proyecto });
   }
   const usuarios = idsSeguros(usuariosIds, "usuariosIds");
   if (usuarios !== undefined) {
-    operacion.usuarios = await getRepository(Usuario).findByIds(usuarios);
+    operacion.usuarios = await AppDataSource.getRepository(Usuario).findBy({ id: In(usuarios) });
   }
   operacion.sesionId = sesionId;
   return operacion;
@@ -38,7 +39,7 @@ class OperacionController {
     usuariosIds: (number | string)[] | undefined,
     sesionId: number
   ) => {
-    return await getRepository(Operacion).save(
+    return await AppDataSource.getRepository(Operacion).save(
       await crearBaseOperacion(
         tipoMovimientoId,
         proyectoId,
@@ -72,7 +73,7 @@ class OperacionController {
       moneda,
     );
 
-    return await getRepository(Operacion).save(operacion);
+    return await AppDataSource.getRepository(Operacion).save(operacion);
   };
 
   // quitar --> quitar la operacion
@@ -81,8 +82,8 @@ class OperacionController {
     const detalle =
       operacion.operacionDetalle !== undefined
         ? operacion.operacionDetalle
-        : (await getRepository(Operacion).findOne(operacion.id, { relations: ["operacionDetalle"], loadEagerRelations: false }))?.operacionDetalle;
-    const operacionQuitada = await getRepository(Operacion).remove(operacion);
+        : (await AppDataSource.getRepository(Operacion).findOne({ where: { id: operacion.id },  relations: { operacionDetalle: true }, loadEagerRelations: false }))?.operacionDetalle;
+    const operacionQuitada = await AppDataSource.getRepository(Operacion).remove(operacion);
     await OperacionDetalleController.quitar(detalle, sesionId);
     return operacionQuitada;
   };
@@ -95,8 +96,8 @@ class OperacionController {
     usuariosIds: (number | string)[],
     sesionId: number
   ) => {
-    operacion.proyecto = await getRepository(Proyecto).findOneOrFail(
-      proyectoId
+    operacion.proyecto = await AppDataSource.getRepository(Proyecto).findOneByOrFail(
+      { id: idSeguro(proyectoId, "proyectoId") }
     );
 
     //SOLO SE PUEDE CAMBIAR DE BAJA JUSTIFICADA A BAJA INJUSTIFICADA
@@ -104,9 +105,9 @@ class OperacionController {
       (operacion.movimientoTipo.id === T.BAJA_JUSTIFICADA && Number(tipoMovimientoId) === T.BAJA_INJUSTIFICADA) ||
       (operacion.movimientoTipo.id === T.BAJA_INJUSTIFICADA && Number(tipoMovimientoId) === T.BAJA_JUSTIFICADA)
     ) {
-      operacion.movimientoTipo = await getRepository(
+      operacion.movimientoTipo = await AppDataSource.getRepository(
         MovimientoTipo
-      ).findOneOrFail(tipoMovimientoId);
+      ).findOneByOrFail({ id: idSeguro(tipoMovimientoId, "movimientoTipoId") });
     } else if (operacion.movimientoTipo.id != tipoMovimientoId) {
       throw new AppError(
         "No se puede cambiar el tipo de operacion de un movimiento",
@@ -114,8 +115,8 @@ class OperacionController {
       );
     }
     operacion.sesionId = sesionId;
-    operacion.usuarios = await getRepository(Usuario).findByIds(usuariosIds);
-    return await getRepository(Operacion).save(operacion);
+    operacion.usuarios = await AppDataSource.getRepository(Usuario).findBy({ id: In(usuariosIds) });
+    return await AppDataSource.getRepository(Operacion).save(operacion);
     
   };
 
@@ -126,8 +127,8 @@ class OperacionController {
     try {
       await exigirProyectoEditable({ operacionId: idSeguro(operacionId, "operacionId") }, proyectoId);
       await OperacionController.modificar(
-        await getRepository(Operacion).findOneOrFail(operacionId, {
-          relations: ["movimientoTipo", "proyecto", "usuarios"],
+        await AppDataSource.getRepository(Operacion).findOneOrFail({ where: { id: operacionId }, 
+          relations: { movimientoTipo: true, proyecto: true, usuarios: true },
         }),
         tipoMovimientoId,
         proyectoId,
@@ -149,7 +150,7 @@ class OperacionController {
     const { jwtPayload } = res.locals;
     const { id, comentario } = req.body;
     CommonController.agregarComentario(
-      getRepository(Operacion),
+      AppDataSource.getRepository(Operacion),
       id,
       jwtPayload.si,
       comentario
@@ -169,7 +170,7 @@ class OperacionController {
     const { jwtPayload } = res.locals;
     const { id, idComentario } = req.body;
     CommonController.quitarComentario(
-      getRepository(Operacion),
+      AppDataSource.getRepository(Operacion),
       id,
       jwtPayload.si,
       idComentario
@@ -192,7 +193,7 @@ class OperacionController {
     try {
       res.json(
         await CommonController.agregarArchivo(
-          getRepository(Operacion),
+          AppDataSource.getRepository(Operacion),
           id,
           jwtPayload.si,
           file
@@ -213,7 +214,7 @@ class OperacionController {
     const { jwtPayload } = res.locals;
     try {
       await CommonController.quitarArchivo(
-        getRepository(Operacion),
+        AppDataSource.getRepository(Operacion),
         id,
         jwtPayload.si,
         archivoId

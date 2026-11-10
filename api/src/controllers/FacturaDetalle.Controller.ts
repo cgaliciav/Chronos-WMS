@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { getRepository, getTreeRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
+import { idSeguro } from "../helpers/ids";
 import { FacturaDetalle } from "../entity/FacturaDetalle";
 import { FacturaTipo } from "../entity/FacturaTipo";
 import { Proveedor } from "../entity/Proveedor";
@@ -14,20 +15,20 @@ class FacturaDetalleController{
             facturaDetalle.fechaEmision=new Date(fechaEmision);
             facturaDetalle.total=+total;
             facturaDetalle.impuestos=+impuestos;
-            facturaDetalle.facturaTipo=await getRepository(FacturaTipo).findOneOrFail(facturaTipoId);
+            facturaDetalle.facturaTipo=await AppDataSource.getRepository(FacturaTipo).findOneByOrFail({ id: idSeguro(facturaTipoId, "facturaTipoId") });
             facturaDetalle.montoIngresado=+montoIngresado;
-            facturaDetalle.proveedor=await getRepository(Proveedor).findOneOrFail(proveedorId);
+            facturaDetalle.proveedor=await AppDataSource.getRepository(Proveedor).findOneByOrFail({ id: idSeguro(proveedorId, "proveedorId") });
             facturaDetalle.sesionId=sesionId;
 
             return( 
-                await getRepository(FacturaDetalle).save(facturaDetalle)
+                await AppDataSource.getRepository(FacturaDetalle).save(facturaDetalle)
             )
     }
 
     // quitar
     static quitar=async(facturaDetalle:FacturaDetalle,sesionId:number)=>{
         facturaDetalle.sesionId=sesionId;
-        return(await getRepository(FacturaDetalle).remove(facturaDetalle));
+        return(await AppDataSource.getRepository(FacturaDetalle).remove(facturaDetalle));
     }
 
     // editar
@@ -38,13 +39,13 @@ class FacturaDetalleController{
             facturaDetalle.fechaEmision=new Date(fechaEmision);
             facturaDetalle.total=+total;
             facturaDetalle.impuestos=+impuestos;
-            facturaDetalle.facturaTipo=await getRepository(FacturaTipo).findOneOrFail(facturaTipoId);
+            facturaDetalle.facturaTipo=await AppDataSource.getRepository(FacturaTipo).findOneByOrFail({ id: idSeguro(facturaTipoId, "facturaTipoId") });
             facturaDetalle.montoIngresado=+montoIngresado;
-            facturaDetalle.proveedor=await getRepository(Proveedor).findOneOrFail(proveedorId);
+            facturaDetalle.proveedor=await AppDataSource.getRepository(Proveedor).findOneByOrFail({ id: idSeguro(proveedorId, "proveedorId") });
             facturaDetalle.sesionId=sesionId;
 
             return( 
-                await getRepository(FacturaDetalle).save(facturaDetalle)
+                await AppDataSource.getRepository(FacturaDetalle).save(facturaDetalle)
             )
     }
 

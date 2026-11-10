@@ -48,7 +48,9 @@ export class Movimiento {
     @JoinColumn()
     operacion:Operacion;
 
-    @ManyToMany(()=>Grupo, grupo=> grupo.movimientos)
+    // NO ACTION explícito: es la FK que creó TypeORM 0.2 (producción). TypeORM 1.x usaría CASCADE por defecto en el
+    // lado inverso, y borrar un movimiento lo quitaría de sus listados en silencio (plan 02 · fase 6).
+    @ManyToMany(()=>Grupo, grupo=> grupo.movimientos, { onDelete: "NO ACTION", onUpdate: "NO ACTION" })
     grupos:Grupo[];
 
     /** Relaciones en las que este movimiento es la salida (origen). */

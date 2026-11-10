@@ -1,6 +1,7 @@
 import { validate } from "class-validator";
 import { OPCIONES_VALIDACION } from "../../helpers/validacion";
-import { FindManyOptions, getRepository, Like, Repository, SelectQueryBuilder } from "typeorm";
+import { FindManyOptions, Like, Repository, SelectQueryBuilder } from "typeorm";
+import { AppDataSource } from "../../data-source";
 import { Archivo } from "../../entity/Archivo";
 import { Area } from "../../entity/Area";
 import { Bodega } from "../../entity/Bodega";
@@ -14,6 +15,7 @@ import { Sesion } from "../../entity/Sesion";
 import { Usuario } from "../../entity/Usuario";
 import { AppError } from "../../helpers/errorClases";
 import { aplicarFiltros, columnaSegura, direccionSegura, FiltrosSql } from "../../helpers/filtrosTabla";
+import { rutasAObjeto } from "../../helpers/opcionesFind";
 import { idSeguro } from "../../helpers/ids";
 import ArchivoController from "../Archivo.Controller";
 
@@ -65,7 +67,7 @@ export default class {
     estatus: EstatusEstado = EstatusEstado.ACTIVO
   ): Promise<T[]> => {
     const options: FindManyOptions<T> = {
-      select: campos.map((c) => c as keyof T),
+      select: rutasAObjeto(campos) as FindManyOptions<T>["select"],
       where: { estatus } as any, // antes filtraba por una columna inexistente `st` (hallazgo M27)
     };
     return await repo.find(options);
@@ -77,7 +79,7 @@ export default class {
     busqueda: string = ""
   ): Promise<T[]> => {
     const options: FindManyOptions<T> = {
-      select: camposSelect.map((cs) => cs as keyof T),
+      select: rutasAObjeto(camposSelect) as FindManyOptions<T>["select"],
     };
     if (busqueda.length > 0) options.where = { nombre: Like(`%${busqueda}%`) } as any; // Like() va parametrizado
     return await repo.find(options);
@@ -85,7 +87,7 @@ export default class {
 
   static listaSimple = (repo: Repository<any>, campos: string[], estatus: EstatusEstado = EstatusEstado.ACTIVO) =>
     repo.find({
-      select: campos,
+      select: rutasAObjeto(campos),
       where: { estatus },
       order: { id: "DESC" },
     });
@@ -146,8 +148,8 @@ export default class {
   static obtenerIdQuery = (fnQuery: SelectQueryBuilder<any>) => fnQuery.getOne();
 
   static obtenerId = (repo: Repository<any>, relaciones: string[], id: number | string) =>
-    repo.findOneOrFail(idSeguro(id), {
-      relations: relaciones,
+    repo.findOneOrFail({ where: { id: idSeguro(id) }, 
+      relations: rutasAObjeto(relaciones),
       loadEagerRelations: false,
     });
 
@@ -165,7 +167,7 @@ export default class {
   };
 
   static editar = async (repo: Repository<any>, body: any, sesionId: number, camposPermitidos?: string[]) => {
-    const registro = await repo.findOneOrFail(idSeguro(body?.id));
+    const registro = await repo.findOneByOrFail({ id: idSeguro(body?.id) });
     return this.editarConRegistro(repo, registro, body, sesionId, camposPermitidos);
   };
 
@@ -211,14 +213,14 @@ export default class {
       .getOne();
 
   static agregarComentario = async (repo: Repository<any>, idRepo: number | string, sesionId: number, comentario: string) => {
-    const sesion = await getRepository(Sesion).findOneOrFail(idSeguro(sesionId, "sesionId"));
+    const sesion = await AppDataSource.getRepository(Sesion).findOneByOrFail({ id: idSeguro(sesionId, "sesionId") });
     const comen = new Comentario();
     comen.comentario = comentario;
     comen.sesion = sesion;
     comen.sesionId = sesionId;
     const [registro, comentarioGuardado] = await Promise.all([
-      repo.findOneOrFail(idSeguro(idRepo), { relations: ["comentarios"] }),
-      getRepository(Comentario).save(comen),
+      repo.findOneOrFail({ where: { id: idSeguro(idRepo) },  relations: { comentarios: true } }),
+      AppDataSource.getRepository(Comentario).save(comen),
     ]);
     registro.sesionId = sesionId;
     registro.comentarios.push(comentarioGuardado);
@@ -228,7 +230,7 @@ export default class {
 
   static quitarComentario = async (repo: Repository<any>, idRepo: number | string, sesionId: number, idComen: number | string) => {
     const comentarioId = idSeguro(idComen, "idComentario");
-    const registro = await repo.findOneOrFail(idSeguro(idRepo), { relations: ["comentarios"] });
+    const registro = await repo.findOneOrFail({ where: { id: idSeguro(idRepo) },  relations: { comentarios: true } });
     // Solo se puede quitar un comentario que pertenezca al registro (IDOR, hallazgo M8)
     if (!registro.comentarios.some((c: Comentario) => c.id === comentarioId)) {
       throw new AppError("El comentario no pertenece al registro", 404);
@@ -236,16 +238,16 @@ export default class {
     registro.sesionId = sesionId;
     registro.comentarios = registro.comentarios.filter((c: Comentario) => c.id !== comentarioId);
     const guardado = await repo.save(registro);
-    const com = await getRepository(Comentario).findOne(comentarioId);
-    if (com !== undefined) {
+    const com = await AppDataSource.getRepository(Comentario).findOneBy({ id: comentarioId });
+    if (com != null) {
       com.sesionId = sesionId;
-      await getRepository(Comentario).remove(com);
+      await AppDataSource.getRepository(Comentario).remove(com);
     }
     return this.conComentarios(repo, guardado.id);
   };
 
   static agregarArchivo = async (repo: Repository<any>, idRepo: number | string, sesionId: number, file: any) => {
-    const repoItem = await repo.findOneOrFail(idSeguro(idRepo), { relations: ["archivos"] });
+    const repoItem = await repo.findOneOrFail({ where: { id: idSeguro(idRepo) },  relations: { archivos: true } });
     repoItem.sesionId = sesionId;
     const archivoResultado = await ArchivoController.guardar(file, sesionId);
 
@@ -257,7 +259,7 @@ export default class {
 
   static quitarArchivo = async (repo: Repository<any>, idRepo: number | string, sesionId: number, fileId: number | string) => {
     const archivoId = idSeguro(fileId, "archivoId");
-    const repoItem = await repo.findOneOrFail(idSeguro(idRepo), { relations: ["archivos"] });
+    const repoItem = await repo.findOneOrFail({ where: { id: idSeguro(idRepo) },  relations: { archivos: true } });
     // Solo se puede quitar un archivo que pertenezca al registro (IDOR, hallazgo M8)
     if (!repoItem.archivos.some((a: Archivo) => a.id === archivoId)) {
       throw new AppError("El archivo no pertenece al registro", 404);
@@ -265,7 +267,7 @@ export default class {
     repoItem.sesionId = sesionId;
     repoItem.archivos = repoItem.archivos.filter((arch: Archivo) => arch.id !== archivoId);
     await repo.save(repoItem);
-    await ArchivoController.quitar(await getRepository(Archivo).findOneOrFail(archivoId), sesionId);
+    await ArchivoController.quitar(await AppDataSource.getRepository(Archivo).findOneByOrFail({ id: archivoId }), sesionId);
   };
 }
 

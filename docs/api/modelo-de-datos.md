@@ -1,10 +1,10 @@
 # Modelo de datos del API (`api/src/entity`)
 
-Base de datos: MariaDB. ORM: TypeORM 0.2. Desde la fase 3 del plan 02 el esquema lo cambian las
+Base de datos: MariaDB. ORM: TypeORM 1.1 (`api/src/data-source.ts`). Desde la fase 3 del plan 02 el esquema lo cambian las
 **migraciones** de `api/src/migration/` (`DB_SYNCRO=false`; procedimiento en
 [`procedimiento-migracion-produccion.md`](procedimiento-migracion-produccion.md)). Todas las entidades viven en `api/src/entity/`.
 Las entidades en `api/src/entity-old/` pertenecen al sistema anterior y no se cargan en
-la conexión (`ormconfig.js` solo incluye `src/entity/**/*.ts`).
+la conexión (`AppDataSource` usa la lista `ENTIDADES` de `src/entity/index.ts`).
 
 ## Convenciones
 

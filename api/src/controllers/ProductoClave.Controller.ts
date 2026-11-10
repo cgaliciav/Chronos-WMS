@@ -1,7 +1,8 @@
 
 
 import { NextFunction, Request, Response } from "express";
-import { getRepository, EntityManager, getManager } from "typeorm";
+import { EntityManager } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { Producto } from "../entity/Producto";
 import { ProductoClave } from "../entity/ProductoClave";
 import { AppError } from "../helpers/errorClases";
@@ -10,7 +11,7 @@ import { idSeguro } from "../helpers/ids";
 const autogenerarCodigo=async()=>{
 
     // TODO (fase 3): dos llamadas concurrentes pueden generar el mismo código; la restricción UNIQUE de `barras` lo detecta.
-    const lastreg=await getRepository(ProductoClave).findOne({order:{id:"DESC"}})
+    const [lastreg]=await AppDataSource.getRepository(ProductoClave).find({order:{id:"DESC"}, take:1})
     const autoCodigo=((lastreg?.id ?? 0)+5000).toString();
     return {
         barras: autoCodigo.padStart(10, "0"),
@@ -24,7 +25,7 @@ class ProductoClaveController{
     // XXX NO SE DEBEN BORRAR NI EDITAR CODIGOS ASIGNADOS.
 
     
-    static guardar=async (productoCodigos:{barras:string,barrasTipo:string}[],sesionId:number,manager:EntityManager=getManager())=>{
+    static guardar=async (productoCodigos:{barras:string,barrasTipo:string}[],sesionId:number,manager:EntityManager=AppDataSource.manager)=>{
         const pc=productoCodigos.map(ppcc => {
             const ppccNuevo=new ProductoClave();
             ppccNuevo.barras=ppcc.barras;
@@ -47,7 +48,7 @@ class ProductoClaveController{
             if(code.length===0){
                 throw new AppError("El codigo del producto no puede estar vacío",401);
             }
-            const producto=await getRepository(Producto).findOneOrFail(productoId,{relations:["productoClaves"],loadEagerRelations:false});
+            const producto=await AppDataSource.getRepository(Producto).findOneOrFail({ where: { id: idSeguro(productoId, "productoId") }, relations:{ productoClaves: true },loadEagerRelations:false});
             const clavesNuevas = await ProductoClaveController.guardar([{barras:code,barrasTipo:productoCodigo.barrasTipo}],jwtPayload.si);
             const {productoClaves} = producto;
             for (const claveNueva of clavesNuevas) {
@@ -55,7 +56,7 @@ class ProductoClaveController{
             }
             
             producto.sesionId=jwtPayload.si;
-            await getRepository(Producto).save(producto);
+            await AppDataSource.getRepository(Producto).save(producto);
 
             res.json();
         } catch (error) {
@@ -67,7 +68,7 @@ class ProductoClaveController{
         const {productoId}=req.body;
         const {jwtPayload}=res.locals;
         try {
-            const producto=await getRepository(Producto).findOneOrFail(productoId,{relations:["productoClaves"],loadEagerRelations:false});
+            const producto=await AppDataSource.getRepository(Producto).findOneOrFail({ where: { id: idSeguro(productoId, "productoId") }, relations:{ productoClaves: true },loadEagerRelations:false});
             const codigoAutogenerado=await autogenerarCodigo();
 
             const clavesNuevas = await ProductoClaveController.guardar( [codigoAutogenerado], jwtPayload.si);            
@@ -77,7 +78,7 @@ class ProductoClaveController{
             }
 
             producto.sesionId=jwtPayload.si;
-            await getRepository(Producto).save(producto);
+            await AppDataSource.getRepository(Producto).save(producto);
             res.json(codigoAutogenerado);
         } catch (error) {
             next(error)
@@ -90,7 +91,7 @@ class ProductoClaveController{
         try{
 
             const claveId = idSeguro(productoClaveId, "productoClaveId");
-            const producto=await getRepository(Producto).findOneOrFail(idSeguro(productoId, "productoId"),{relations:["productoClaves"],loadEagerRelations:false});
+            const producto=await AppDataSource.getRepository(Producto).findOneOrFail({ where: { id: idSeguro(productoId, "productoId") }, relations:{ productoClaves: true },loadEagerRelations:false});
             
             const {productoClaves}=producto;
             if(!productoClaves.some(pc=>pc.id===claveId)){
@@ -101,12 +102,12 @@ class ProductoClaveController{
             }
             producto.productoClaves=productoClaves.filter(pc=>pc.id!==claveId);
 
-            const productoClavePorRemover = await getRepository(ProductoClave).findOneOrFail(claveId);
+            const productoClavePorRemover = await AppDataSource.getRepository(ProductoClave).findOneByOrFail({ id: claveId });
             productoClavePorRemover.sesionId=jwtPayload.si;
-            await getRepository(ProductoClave).remove( productoClavePorRemover );
+            await AppDataSource.getRepository(ProductoClave).remove( productoClavePorRemover );
             
             producto.sesionId=jwtPayload.si;
-            await getRepository(Producto).save(producto);
+            await AppDataSource.getRepository(Producto).save(producto);
             res.json();
 
         }catch (error) {

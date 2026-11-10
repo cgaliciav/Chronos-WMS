@@ -1,7 +1,8 @@
 
 
 import { Request, Response, NextFunction } from "express";
-import { getRepository, EntityManager, getManager } from "typeorm";
+import { EntityManager } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { AppError } from "../helpers/errorClases";
 import { idSeguro } from "../helpers/ids";
 import { Producto } from "../entity/Producto";
@@ -12,7 +13,7 @@ import { logger } from "../helpers/logger";
 
 class ProductoCaracteristicaController{
     
-    static guardar=async(productoCaracteristicas:{llave:string,valor:string}[],sesionId:number,manager:EntityManager=getManager())=>{
+    static guardar=async(productoCaracteristicas:{llave:string,valor:string}[],sesionId:number,manager:EntityManager=AppDataSource.manager)=>{
         const pc=productoCaracteristicas.map(ppcc => {
             const ppccNuevo=new ProductoCaracteristica();
             ppccNuevo.llave=ppcc.llave;
@@ -39,7 +40,7 @@ class ProductoCaracteristicaController{
     static quitar=async (productoCaracteristicas:ProductoCaracteristica[],sesionId:number)=>{
         productoCaracteristicas.forEach(pc=>{ pc.sesionId=sesionId});
         return(
-            await getRepository(ProductoCaracteristica).remove(productoCaracteristicas)
+            await AppDataSource.getRepository(ProductoCaracteristica).remove(productoCaracteristicas)
         )
     }
 
@@ -56,7 +57,7 @@ class ProductoCaracteristicaController{
         productoCaracteristicas.llave=productoCaracteristicasNuevo.llave;
         productoCaracteristicas.valor=productoCaracteristicasNuevo.valor;
         return(
-            await getRepository(ProductoCaracteristica).save(productoCaracteristicas)
+            await AppDataSource.getRepository(ProductoCaracteristica).save(productoCaracteristicas)
         )
     }
 
@@ -65,7 +66,7 @@ class ProductoCaracteristicaController{
         const {jwtPayload}=res.locals;
         try {
             logger.info("nuevo Producto Característica", {productoId,productoCaracteristicasNuevo});
-            const producto=await getRepository(Producto).findOneOrFail(productoId,{relations:["productoCaracteristicas"],loadEagerRelations:false});
+            const producto=await AppDataSource.getRepository(Producto).findOneOrFail({ where: { id: idSeguro(productoId, "productoId") }, relations:{ productoCaracteristicas: true },loadEagerRelations:false});
             const nuevasCaracteristicas=await ProductoCaracteristicaController.guardar(productoCaracteristicasNuevo,jwtPayload.si);
             const {productoCaracteristicas}= producto;
             for (const caracteristicas of nuevasCaracteristicas) {
@@ -75,7 +76,7 @@ class ProductoCaracteristicaController{
             
             // producto.productoCaracteristicas.concat(nuevasCaracteristicas);
             producto.sesionId=jwtPayload.si;
-            await getRepository(Producto).save(producto);
+            await AppDataSource.getRepository(Producto).save(producto);
             res.json();
         } catch (error) {
             next(error)
@@ -88,19 +89,19 @@ class ProductoCaracteristicaController{
         try{
 
             const caracteristicaId = idSeguro(productoCaracteristicasId, "productoCaracteristicasId");
-            const producto=await getRepository(Producto).findOneOrFail(idSeguro(productoId, "productoId"),{relations:["productoCaracteristicas"],loadEagerRelations:false});
+            const producto=await AppDataSource.getRepository(Producto).findOneOrFail({ where: { id: idSeguro(productoId, "productoId") }, relations:{ productoCaracteristicas: true },loadEagerRelations:false});
             if(!producto.productoCaracteristicas.some(pc=>pc.id===caracteristicaId)){
                 throw new AppError("La característica no pertenece al producto",404); // hallazgo M8
             }
             producto.productoCaracteristicas=producto.productoCaracteristicas.filter(pc=>pc.id!==caracteristicaId);
             
             await ProductoCaracteristicaController.quitar(
-                [await getRepository(ProductoCaracteristica).findOneOrFail(caracteristicaId)],
+                [await AppDataSource.getRepository(ProductoCaracteristica).findOneByOrFail({ id: caracteristicaId })],
                 jwtPayload.si
             )
 
             producto.sesionId=jwtPayload.si;
-            await getRepository(Producto).save(producto);
+            await AppDataSource.getRepository(Producto).save(producto);
             res.json();
 
         }catch (error) {
@@ -114,7 +115,7 @@ class ProductoCaracteristicaController{
         try{
             logger.info("editar Producto Característica", {productoCaracteristicasId,productoCaracteristicas});
             await ProductoCaracteristicaController.modificar(
-                await getRepository(ProductoCaracteristica).findOneOrFail(productoCaracteristicasId),
+                await AppDataSource.getRepository(ProductoCaracteristica).findOneByOrFail({ id: idSeguro(productoCaracteristicasId, "productoCaracteristicasId") }),
                 productoCaracteristicas,
                 jwtPayload.si
             )

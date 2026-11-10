@@ -1,10 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import {
-  Brackets,
-  getConnection,
-  getRepository,
-  SelectQueryBuilder,
-} from "typeorm";
+import { Brackets, SelectQueryBuilder } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { Grupo } from "../entity/Grupo";
 import {
   InventarioActual,
@@ -34,7 +30,7 @@ import { autogenerarCodigo } from "./ProductoClave.Controller";
 const condicionesWhereAnd = (filters: any) => construirFiltros(filters, { textuales: /nombre|barras|titulo/, fechas: /fecha/ });
 
 const funcionQueryListado = () => {
-  return getRepository(Grupo)
+  return AppDataSource.getRepository(Grupo)
     .createQueryBuilder("grupo")
     .leftJoinAndSelect("grupo.sesion", "sesion")
     .leftJoinAndSelect("sesion.usuario", "usuario")
@@ -60,7 +56,7 @@ const funcionQueryListado = () => {
 const funcionQueryListadoPorTipoMovimiento = (
   movimientoTipoId: number | string
 ) => {
-  return getRepository(Grupo)
+  return AppDataSource.getRepository(Grupo)
     .createQueryBuilder("grupo")
     .leftJoinAndSelect("grupo.sesion", "sesion")
     .leftJoinAndSelect("sesion.usuario", "usuario")
@@ -84,7 +80,7 @@ const condicionesWhereAndPrestamosActivos = (filters: any) =>
 
 const funcionQueryId = (id: number | string) => {
   return (
-    getRepository(Grupo)
+    AppDataSource.getRepository(Grupo)
       .createQueryBuilder("grupo")
       // .leftJoinAndSelect("grupo.movimientos","movimientos")
       .leftJoinAndSelect("grupo.sesion", "sesionGrupo")
@@ -124,7 +120,7 @@ const funcionQueryId = (id: number | string) => {
 const obtenerMovimientosConInventarioActual = async (
   grupoId: number | string
 ) =>
-  await getRepository(Movimiento)
+  await AppDataSource.getRepository(Movimiento)
     .createQueryBuilder("movimientos")
     .innerJoinAndSelect("movimientos.grupos", "grupos")
     .leftJoinAndSelect("movimientos.inventarioActual", "inventarioActual")
@@ -135,7 +131,7 @@ const obtenerMovimientosConOperacionConInventarioActual = async (
   grupoId: number | string
 ) =>
 
-  getRepository(Grupo)
+  AppDataSource.getRepository(Grupo)
     .createQueryBuilder("grupo")
     .leftJoinAndSelect("grupo.movimientos", "movimientos")
     .leftJoinAndSelect("movimientos.operacion", "operacionMovimientos")
@@ -172,7 +168,7 @@ const obtenerMovimientosConOperacionConInventarioActual = async (
 const obtenerMovimientosConOperacionDeGrupo = async (
   grupoId: number | string
 ) =>
-  await getRepository(Movimiento)
+  await AppDataSource.getRepository(Movimiento)
     .createQueryBuilder("movimientos")
     .innerJoinAndSelect("movimientos.grupos", "grupos")
     .leftJoinAndSelect("movimientos.operacion", "operacion")
@@ -211,7 +207,7 @@ const funcionQueryListadoPrestamosPendientes = (
   };
 
   const nuevos = aplicarFiltrosComunes(
-    getConnection()
+    AppDataSource
       .createQueryBuilder()
       .select("v.movimientoId")
       .from("v_movimiento_saldo", "v")
@@ -225,7 +221,7 @@ const funcionQueryListadoPrestamosPendientes = (
   );
 
   const rankeados = aplicarFiltrosComunes(
-    getConnection()
+    AppDataSource
       .createQueryBuilder()
       .select("m.id", "movimientoId")
       .addSelect("ROW_NUMBER() OVER (PARTITION BY p.id ORDER BY o.fecha DESC)", "rn")
@@ -240,7 +236,7 @@ const funcionQueryListadoPrestamosPendientes = (
                       WHERE mn.inventarioActualId = ia.id AND mn.legado = 0 AND onn.movimientoTipoId IN (${TIPOS_ORIGEN.join(", ")}))`
       )
   );
-  const legados = getConnection()
+  const legados = AppDataSource
     .createQueryBuilder()
     .select("rk.movimientoId")
     .from("(" + rankeados.getQuery() + ")", "rk")
@@ -254,7 +250,7 @@ const funcionQueryListadoPrestamosPendientes = (
 /** Añade `saldoPendiente` (null para movimientos legados) a cada movimiento de un listado. */
 const conSaldoPendiente = async (movimientos: Movimiento[]) => {
   if (movimientos.length === 0) return movimientos;
-  const filas = await getConnection().query(
+  const filas = await AppDataSource.query(
     "SELECT movimientoId, saldo, legado FROM v_movimiento_saldo WHERE movimientoId IN (?)",
     [movimientos.map((m) => m.id)]
   );
@@ -263,7 +259,7 @@ const conSaldoPendiente = async (movimientos: Movimiento[]) => {
 };
 
 const funcionQueryListadoMovimientos = () => {
-  const builder = getRepository(Movimiento)
+  const builder = AppDataSource.getRepository(Movimiento)
     .createQueryBuilder("movimiento")
     .leftJoinAndSelect("movimiento.sesion", "sesionMovimiento")
     .leftJoinAndSelect("sesionMovimiento.usuario", "usuario")
@@ -299,12 +295,12 @@ async function crearNuevoGrupoConMovimientosDeMovimientos(
   movimientosOrigen: Movimiento[],
   sesionId: number
 ) {
-  const sesion = await getRepository(Sesion).findOneOrFail(sesionId);
+  const sesion = await AppDataSource.getRepository(Sesion).findOneByOrFail({ id: sesionId });
   const nuevoGrupo = new Grupo();
   nuevoGrupo.nombre = nombreNuevoGrupo;
   nuevoGrupo.sesion = sesion;
   nuevoGrupo.sesionId = sesionId;
-  nuevoGrupo.movimientos = await getRepository(Movimiento).save(
+  nuevoGrupo.movimientos = await AppDataSource.getRepository(Movimiento).save(
     movimientosOrigen.map((mov) => {
       const nuevoMov = new Movimiento();
       nuevoMov.cantidad = mov.cantidad;
@@ -314,7 +310,7 @@ async function crearNuevoGrupoConMovimientosDeMovimientos(
       return nuevoMov;
     })
   );
-  await getRepository(Grupo).save(nuevoGrupo);
+  await AppDataSource.getRepository(Grupo).save(nuevoGrupo);
   return {
     id: nuevoGrupo.id,
     nombre: nuevoGrupo.nombre,
@@ -327,12 +323,12 @@ async function crearNuevoGrupoConMovimientosDeInventariosActual(
   inventariosActual: InventarioActual[],
   sesionId: number
 ) {
-  const sesion = await getRepository(Sesion).findOneOrFail(sesionId);
+  const sesion = await AppDataSource.getRepository(Sesion).findOneByOrFail({ id: sesionId });
   const nuevoGrupo = new Grupo();
   nuevoGrupo.nombre = nombreNuevoGrupo;
   nuevoGrupo.sesion = sesion;
   nuevoGrupo.sesionId = sesionId;
-  nuevoGrupo.movimientos = await getRepository(Movimiento).save(
+  nuevoGrupo.movimientos = await AppDataSource.getRepository(Movimiento).save(
     inventariosActual.map((inv) => {
       const nuevoMov = new Movimiento();
       nuevoMov.cantidad = inv.cantidad;
@@ -342,7 +338,7 @@ async function crearNuevoGrupoConMovimientosDeInventariosActual(
       return nuevoMov;
     })
   );
-  await getRepository(Grupo).save(nuevoGrupo);
+  await AppDataSource.getRepository(Grupo).save(nuevoGrupo);
   return {
     id: nuevoGrupo.id,
     nombre: nuevoGrupo.nombre,
@@ -351,10 +347,10 @@ async function crearNuevoGrupoConMovimientosDeInventariosActual(
 }
 
 class GrupoController {
-  static quitar = async (grupo: Grupo | undefined, sesionId: number) => {
-    if (grupo === undefined) throw new AppError("Grupo no definido");
+  static quitar = async (grupo: Grupo | null | undefined, sesionId: number) => {
+    if (grupo == null) throw new AppError("Grupo no definido");
     grupo.sesionId = sesionId;
-    const grupoRemovido = await getRepository(Grupo).remove(grupo);
+    const grupoRemovido = await AppDataSource.getRepository(Grupo).remove(grupo);
 
     await GrupoDetalleController.quitar(grupo.grupoDetalle, sesionId);
 
@@ -786,8 +782,8 @@ class GrupoController {
   static nuevo = async (req: Request, res: Response, next: NextFunction) => {
     const { jwtPayload } = res.locals;
     const grupo = new Grupo();
-    grupo.sesion = await getRepository(Sesion).findOneOrFail(jwtPayload.si);
-    CommonController.nuevo(getRepository(Grupo), grupo, req.body, jwtPayload.si)
+    grupo.sesion = await AppDataSource.getRepository(Sesion).findOneByOrFail({ id: jwtPayload.si });
+    CommonController.nuevo(AppDataSource.getRepository(Grupo), grupo, req.body, jwtPayload.si)
       .then((respuesta) => {
         res.json(respuesta);
       })
@@ -811,10 +807,10 @@ class GrupoController {
         usuariosIds,
         jwtPayload.si
       );
-      grupo.sesion = await getRepository(Sesion).findOneOrFail(jwtPayload.si);
+      grupo.sesion = await AppDataSource.getRepository(Sesion).findOneByOrFail({ id: jwtPayload.si });
       res.json(
         await CommonController.nuevo(
-          getRepository(Grupo),
+          AppDataSource.getRepository(Grupo),
           grupo,
           body,
           jwtPayload.si
@@ -848,7 +844,7 @@ class GrupoController {
 
     try {
       const grupo = new Grupo();
-      grupo.sesion = await getRepository(Sesion).findOneOrFail(jwtPayload.si);
+      grupo.sesion = await AppDataSource.getRepository(Sesion).findOneByOrFail({ id: jwtPayload.si });
       grupo.grupoDetalle = await GrupoDetalleController.guardarFactura(
         proyectoId,
         movimientoTipoId,
@@ -864,7 +860,7 @@ class GrupoController {
       );
       res.json(
         await CommonController.nuevo(
-          getRepository(Grupo),
+          AppDataSource.getRepository(Grupo),
           grupo,
           body,
           jwtPayload.si
@@ -880,7 +876,7 @@ class GrupoController {
     const { grupoId } = req.body;
     const { jwtPayload } = res.locals;
     try {
-      const movimientosGrupo = await getRepository(Movimiento)
+      const movimientosGrupo = await AppDataSource.getRepository(Movimiento)
         .createQueryBuilder("movimiento")
         .leftJoin("movimiento.grupos", "grupos")
         .where("grupos.id=:grupoId", { grupoId })
@@ -902,7 +898,7 @@ class GrupoController {
   //  **editar
   static editar = (req: Request, res: Response, next: NextFunction) => {
     const { jwtPayload } = res.locals;
-    CommonController.editar(getRepository(Grupo), req.body, jwtPayload.si)
+    CommonController.editar(AppDataSource.getRepository(Grupo), req.body, jwtPayload.si)
       .then((respuesta) => {
         res.json(respuesta);
       })
@@ -930,10 +926,10 @@ class GrupoController {
     const { jwtPayload } = res.locals;
     try {
       const grupo = await funcionQueryId(grupoId).getOne();
-      if (grupo === undefined) throw new AppError("Grupo ID no encontrado");
+      if (grupo == null) throw new AppError("Grupo ID no encontrado");
       await exigirProyectoEditable({ grupoId }, proyectoId); // antes de modificar nada (plan 02 fase 3)
       const resp = await CommonController.editar(
-        getRepository(Grupo),
+        AppDataSource.getRepository(Grupo),
         { nombre: numero, id: grupoId },
         jwtPayload.si
       );
@@ -972,7 +968,7 @@ class GrupoController {
     const { jwtPayload } = res.locals;
     try {
       const grupo = await funcionQueryId(grupoId).getOne();
-      if (grupo === undefined) throw new AppError("Grupo ID no encontrado");
+      if (grupo == null) throw new AppError("Grupo ID no encontrado");
       await exigirProyectoEditable({ grupoId }, proyectoId); // antes de modificar nada (plan 02 fase 3)
 
       // Todas las líneas son del tipo del listado (decisión 11). Se valida ANTES de modificar nada: el tipo solo
@@ -1012,7 +1008,7 @@ class GrupoController {
   static habilitar = (req: Request, res: Response, next: NextFunction) => {
     const { jwtPayload } = res.locals;
     const id = parametro(req, "id");
-    CommonController.habilitar(getRepository(Grupo), id, jwtPayload.si)
+    CommonController.habilitar(AppDataSource.getRepository(Grupo), id, jwtPayload.si)
       .then((respuesta) => {
         res.json(respuesta);
       })
@@ -1023,7 +1019,7 @@ class GrupoController {
   static deshabilitar = (req: Request, res: Response, next: NextFunction) => {
     const { jwtPayload } = res.locals;
     const id = parametro(req, "id");
-    CommonController.deshabilitar(getRepository(Grupo), id, jwtPayload.si)
+    CommonController.deshabilitar(AppDataSource.getRepository(Grupo), id, jwtPayload.si)
       .then((respuesta) => {
         res.json(respuesta);
       })
@@ -1034,7 +1030,7 @@ class GrupoController {
   static finalizar = (req: Request, res: Response, next: NextFunction) => {
     const { jwtPayload } = res.locals;
     const id = parametro(req, "id");
-    CommonController.finalizar(getRepository(Grupo), id, jwtPayload.si)
+    CommonController.finalizar(AppDataSource.getRepository(Grupo), id, jwtPayload.si)
       .then((respuesta) => {
         res.json(respuesta);
       })
@@ -1049,7 +1045,7 @@ class GrupoController {
     const { jwtPayload } = res.locals;
     const { id, comentario } = req.body;
     CommonController.agregarComentario(
-      getRepository(Grupo),
+      AppDataSource.getRepository(Grupo),
       id,
       jwtPayload.si,
       comentario
@@ -1069,7 +1065,7 @@ class GrupoController {
     const { jwtPayload } = res.locals;
     const { id, idComentario } = req.body;
     CommonController.quitarComentario(
-      getRepository(Grupo),
+      AppDataSource.getRepository(Grupo),
       id,
       jwtPayload.si,
       idComentario
@@ -1092,7 +1088,7 @@ class GrupoController {
     try {
       res.json(
         await CommonController.agregarArchivo(
-          getRepository(Grupo),
+          AppDataSource.getRepository(Grupo),
           id,
           jwtPayload.si,
           file
@@ -1113,7 +1109,7 @@ class GrupoController {
     const { jwtPayload } = res.locals;
     try {
       await CommonController.quitarArchivo(
-        getRepository(Grupo),
+        AppDataSource.getRepository(Grupo),
         id,
         jwtPayload.si,
         archivoId
@@ -1154,8 +1150,8 @@ class GrupoController {
           inventarioActual,
           jwtPayload.si
         );
-        await getRepository(Grupo).findOneOrFail(idSeguro(grupoId, "grupoId"), { select: ["id"], loadEagerRelations: false });
-        await getConnection().createQueryBuilder().relation(Grupo, "movimientos").of(grupoId).add(movimiento.id);
+        await AppDataSource.getRepository(Grupo).findOneOrFail({ where: { id: idSeguro(grupoId, "grupoId") },  select: { id: true }, loadEagerRelations: false });
+        await AppDataSource.createQueryBuilder().relation(Grupo, "movimientos").of(grupoId).add(movimiento.id);
       } else if (MovimientoService.esTipoDeEntrada(movimientoTipoId)) {
         throw new AppError(
           "No se pueden realizar operaciones de creacion de artículos en este listado",
@@ -1264,7 +1260,7 @@ class GrupoController {
       if (MovimientoService.esTipoDeEntrada(movimientoTipoId)) {
         throw new AppError("No se pueden realizar operaciones de creacion de artículos en este listado", 400);
       }
-      const movimiento = await getRepository(Movimiento).findOneOrFail(idSeguro(movimientoId, "movimientoId"), { loadEagerRelations: false, relations: ["inventarioActual"] });
+      const movimiento = await AppDataSource.getRepository(Movimiento).findOneOrFail({ where: { id: idSeguro(movimientoId, "movimientoId") },  loadEagerRelations: false, relations: { inventarioActual: true } });
       res.json(
         await MovimientoService.registrarOperacion({
           tipo: movimientoTipoId,
@@ -1308,7 +1304,7 @@ class GrupoController {
   ) => {
     const { nombre } = req.body;
     try {
-      const qry = getRepository(Grupo)
+      const qry = AppDataSource.getRepository(Grupo)
         .createQueryBuilder("grupo")
         .where("grupo.nombre like :nombre", { nombre: `${nombre}%` })
         .getCount();

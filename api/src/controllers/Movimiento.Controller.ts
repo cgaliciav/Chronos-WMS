@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { InventarioActual } from "../entity/InventarioActual";
 import { Movimiento } from "../entity/Movimiento";
 import { Sesion } from "../entity/Sesion";
@@ -21,12 +21,12 @@ const crearBaseMovimiento = async (
   movimiento.cantidad = cantidad;
   movimiento.inventarioActual = inventarioActual;
   movimiento.sesionId = sesionId;
-  movimiento.sesion = await getRepository(Sesion).findOneOrFail(sesionId);
+  movimiento.sesion = await AppDataSource.getRepository(Sesion).findOneByOrFail({ id: sesionId });
   return movimiento;
 };
 
 const funcionQueryId = (id: number | string) => {
-  return getRepository(Movimiento)
+  return AppDataSource.getRepository(Movimiento)
     .createQueryBuilder("movimiento")
     .leftJoinAndSelect("movimiento.inventarioActual", "inventarioActual")
     .leftJoinAndSelect("movimiento.operacion", "operacion")
@@ -88,7 +88,7 @@ class MovimientoController {
     inventarioActual: InventarioActual,
     sesionId: number
   ) => {
-    return await getRepository(Movimiento).save(
+    return await AppDataSource.getRepository(Movimiento).save(
       await crearBaseMovimiento(cantidad, inventarioActual, sesionId)
     );
   };
@@ -136,7 +136,7 @@ class MovimientoController {
     // const {jwtPayload}=res.locals;
     try {
       res.json(
-        await getRepository(Movimiento)
+        await AppDataSource.getRepository(Movimiento)
           .createQueryBuilder("movimiento")
           .leftJoin("movimiento.inventarioActual", "inventarioActual")
           .leftJoinAndSelect("movimiento.operacion", "operacion")
@@ -163,7 +163,7 @@ class MovimientoController {
     // const {jwtPayload}=res.locals;
     try {
       res.json(
-        await getRepository(Movimiento)
+        await AppDataSource.getRepository(Movimiento)
           .createQueryBuilder("movimiento")
           .leftJoinAndSelect("movimiento.inventarioActual", "inventarioActual")
           .leftJoinAndSelect("movimiento.operacion", "operacion")
@@ -192,8 +192,8 @@ class MovimientoController {
 
     // const {jwtPayload}=res.locals;
     try {
-      const movimiento: Movimiento | undefined = await CommonController.obtenerIdQuery(funcionQueryId(id));
-      if (movimiento === undefined) throw new AppError(`No existe el movimiento ${id}`, 404);
+      const movimiento: Movimiento | null = await CommonController.obtenerIdQuery(funcionQueryId(id));
+      if (movimiento == null) throw new AppError(`No existe el movimiento ${id}`, 404);
       res.json({ ...movimiento, saldoPendiente: await MovimientoService.saldoPendiente(movimiento.id) });
     } catch (error) {
       next(error);
@@ -209,7 +209,7 @@ class MovimientoController {
     // const {jwtPayload}=res.locals;
     try {
       res.json(
-        await getRepository(Movimiento)
+        await AppDataSource.getRepository(Movimiento)
           .createQueryBuilder("movimiento")
           .leftJoinAndSelect("movimiento.grupos", "grupos")
           .leftJoinAndSelect("grupos.grupoDetalle", "grupoDetalle")

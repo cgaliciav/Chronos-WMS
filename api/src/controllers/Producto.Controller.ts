@@ -1,5 +1,7 @@
 import { NextFunction, Request, Response } from "express";
-import { EntityManager, getManager, getRepository } from "typeorm";
+import { EntityManager } from "typeorm";
+import { AppDataSource } from "../data-source";
+import { idSeguro } from "../helpers/ids";
 import { Area } from "../entity/Area";
 import { Producto } from "../entity/Producto";
 import { ProductoTipo } from "../entity/ProductoTipo";
@@ -18,7 +20,7 @@ const crearBaseProducto = async (
   productoCodigos: { barras: string; barrasTipo: string }[],
   sesionId: number,
   moneda: string = "MXP",
-  manager: EntityManager = getManager(),
+  manager: EntityManager = AppDataSource.manager,
 ) => {
   const producto = new Producto();
   producto.descripcion = descripcion;
@@ -43,13 +45,13 @@ const crearBaseProducto = async (
     moneda,
     manager,
   );
-  producto.productoTipo = await getRepository(ProductoTipo).findOneOrFail(
-    productoTipoId
+  producto.productoTipo = await AppDataSource.getRepository(ProductoTipo).findOneByOrFail(
+    { id: idSeguro(productoTipoId, "productoTipoId") }
   );
   producto.sesionId = sesionId;
   producto.titulo = titulo;
   producto.archivos = [];
-  producto.area = await getRepository(Area).findOneOrFail(areaId);
+  producto.area = await AppDataSource.getRepository(Area).findOneByOrFail({ id: idSeguro(areaId, "areaId") });
 
   return producto;
 };
@@ -66,7 +68,7 @@ class ProductoController {
     productoCodigos: { barras: string; barrasTipo: string }[],
     sesionId: number,
     moneda: string = "MXP",
-    manager: EntityManager = getManager(),
+    manager: EntityManager = AppDataSource.manager,
   ) => {
     return await manager.save(
       await crearBaseProducto(
@@ -94,7 +96,7 @@ class ProductoController {
     );
     //NO SE DEBEN BORRAR NI CLAVES NI PRECIOS YA DADOS DE ALTA.
 
-    return getRepository(Producto).remove(producto);
+    return AppDataSource.getRepository(Producto).remove(producto);
   };
 
   // AGREGAR COMENTARIO
@@ -106,7 +108,7 @@ class ProductoController {
     const { jwtPayload } = res.locals;
     const { id, comentario } = req.body;
     CommonController.agregarComentario(
-      getRepository(Producto),
+      AppDataSource.getRepository(Producto),
       id,
       jwtPayload.si,
       comentario
@@ -126,7 +128,7 @@ class ProductoController {
     const { jwtPayload } = res.locals;
     const { id, idComentario } = req.body;
     CommonController.quitarComentario(
-      getRepository(Producto),
+      AppDataSource.getRepository(Producto),
       id,
       jwtPayload.si,
       idComentario
@@ -149,7 +151,7 @@ class ProductoController {
     try {
       res.json(
         await CommonController.agregarArchivo(
-          getRepository(Producto),
+          AppDataSource.getRepository(Producto),
           id,
           jwtPayload.si,
           file
@@ -170,7 +172,7 @@ class ProductoController {
     const { jwtPayload } = res.locals;
     try {
       await CommonController.quitarArchivo(
-        getRepository(Producto),
+        AppDataSource.getRepository(Producto),
         id,
         jwtPayload.si,
         archivoId
@@ -186,16 +188,16 @@ class ProductoController {
     const { areaId, productoTipoId, productoId, ...body } = req.body;
     const { jwtPayload } = res.locals;
     try {
-      const producto = await getRepository(Producto).findOneOrFail(productoId, {
-        relations: ["area", "productoTipo"],
+      const producto = await AppDataSource.getRepository(Producto).findOneOrFail({ where: { id: idSeguro(productoId, "productoId") }, 
+        relations: { area: true, productoTipo: true },
         loadEagerRelations: false,
       });
-      producto.area = await getRepository(Area).findOneOrFail(areaId);
-      producto.productoTipo = await getRepository(ProductoTipo).findOneOrFail(
-        productoTipoId
+      producto.area = await AppDataSource.getRepository(Area).findOneByOrFail({ id: idSeguro(areaId, "areaId") });
+      producto.productoTipo = await AppDataSource.getRepository(ProductoTipo).findOneByOrFail(
+        { id: idSeguro(productoTipoId, "productoTipoId") }
       );
       const resp = await CommonController.editarConRegistro(
-        getRepository(Producto),
+        AppDataSource.getRepository(Producto),
         producto,
         body,
         jwtPayload.si

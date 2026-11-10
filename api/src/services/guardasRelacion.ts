@@ -3,7 +3,7 @@
  * Regla 1: un derivado y su origen comparten proyecto. Cambiar el proyecto de una operación ya relacionada
  * rompería esa regla y los saldos por proyecto, así que se rechaza con 409 antes de modificar nada.
  */
-import { getConnection } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { AppError } from "../helpers/errorClases";
 import { idOpcional } from "../helpers/ids";
 
@@ -22,7 +22,7 @@ export const exigirProyectoEditable = async (filtro: { grupoId?: number | string
   const por = filtro.grupoId !== undefined ? "grupo" : "operacion";
   const id = idOpcional(por === "grupo" ? filtro.grupoId : filtro.operacionId, por === "grupo" ? "grupoId" : "operacionId");
   if (id === undefined) return;
-  const filas = await getConnection().query(consulta(por), [id, proyecto]);
+  const filas = await AppDataSource.query(consulta(por), [id, proyecto]);
   if (filas.length > 0) {
     throw new AppError(
       "No se puede cambiar el proyecto: hay movimientos relacionados con otros (préstamos con devoluciones, etc.). Deshaga primero esas operaciones.",

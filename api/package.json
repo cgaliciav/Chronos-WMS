@@ -1,6 +1,6 @@
 {
   "name": "almacen-api",
-  "version": "2.81.0-d",
+  "version": "2.82.0-d",
   "description": "Proyecto de Almacen para Sony Mexico usando TypeORM, Express, Multer, Sharp...etc",
   "devDependencies": {
     "@types/cors": "^2.8.19",
@@ -35,10 +35,10 @@
     "nodemailer": "^10.5.0",
     "pino": "^10.4.0",
     "pino-http": "^11.0.0",
-    "reflect-metadata": "^0.1.13",
+    "reflect-metadata": "^0.2.2",
     "sharp": "^0.35.5",
     "tslib": "^2.9.1",
-    "typeorm": "^0.2.41",
+    "typeorm": "^1.1.2",
     "zod": "^4.6.7"
   },
   "scripts": {
@@ -46,10 +46,9 @@
     "dev": "ts-node-dev --respawn ./src/index.ts",
     "start": "ts-node ./src/index.ts",
     "prod": "node ./build/index.js",
-    "typeorm": "ts-node ./node_modules/typeorm/cli.js",
-    "migration:show": "ts-node ./node_modules/typeorm/cli.js migration:show",
-    "migration:run": "ts-node ./node_modules/typeorm/cli.js migration:run",
-    "migration:revert": "ts-node ./node_modules/typeorm/cli.js migration:revert",
+    "migration:show": "ts-node src/migrar.ts show",
+    "migration:run": "ts-node src/migrar.ts run",
+    "migration:revert": "ts-node src/migrar.ts revert",
     "migration:generate": "ts-node src/test/generarMigracion.ts",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.estricto.json",
     "test": "npm run test:unit && npm run test:int",
@@ -71,12 +70,7 @@
     "url": "https://gitlab.com/exo-almacen/alamcen-api/issues"
   },
   "homepage": "https://gitlab.com/exo-almacen/alamcen-api.git#readme",
-  "overrides": {
-    "typeorm": {
-      "mysql2": "$mysql2"
-    }
-  },
   "engines": {
-    "node": ">=22"
+    "node": "^22.13.0 || >=24.11.0"
   }
 }

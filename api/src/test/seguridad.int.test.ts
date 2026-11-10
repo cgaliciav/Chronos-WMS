@@ -4,7 +4,7 @@ import { Express } from "express";
 import { mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
 import supertest from "supertest";
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { crearApp } from "../app";
 import { Usuario } from "../entity/Usuario";
 import { cerrarPruebas, conectarPruebas } from "./conexion";
@@ -93,7 +93,7 @@ describe("fase 2 · seguridad", () => {
         password: "Pwned123!", estatus: "inactivo", id: 999,
       });
       expect(res.status).toBe(200);
-      const creado = await getRepository(Usuario).findOneOrFail({ where: { correo }, select: ["id", "password", "estatus"] });
+      const creado = await AppDataSource.getRepository(Usuario).findOneOrFail({ where: { correo }, select: { id: true, password: true, estatus: true } });
       expect(creado.estatus).toBe("activo");
       expect(creado.id).not.toBe(999);
       expect(creado.checkIfUnencryptedPasswordIsValid("Pwned123!")).toBe(false);
@@ -239,7 +239,7 @@ describe("fase 2 · seguridad", () => {
         total: 100, impuestos: 16, montoIngresado: 100, proveedorId: SEMILLA.proveedorId, facturaTipoId: SEMILLA.facturaTipoId,
       });
       expect(res.status).toBe(200);
-      const movimientos = await getRepository("Movimiento" as any)
+      const movimientos = await AppDataSource.getRepository("Movimiento" as any)
         .createQueryBuilder("m")
         .leftJoinAndSelect("m.operacion", "o")
         .leftJoinAndSelect("o.proyecto", "p")

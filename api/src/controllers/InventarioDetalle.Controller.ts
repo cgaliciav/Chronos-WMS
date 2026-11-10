@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { InventarioDetalle } from "../entity/InventarioDetalle";
 
 // Solo se conserva `quitar`: lo usa GrupoDetalleController al borrar grupos de inventario antiguos.
@@ -10,7 +10,7 @@ class InventarioDetalleController{
     // quitar
     static quitar=async(inventarioDetalle:InventarioDetalle,sesionId:number)=>{
         inventarioDetalle.sesionId=sesionId;
-        return (await getRepository(InventarioDetalle).remove(inventarioDetalle));
+        return (await AppDataSource.getRepository(InventarioDetalle).remove(inventarioDetalle));
     }
 
 

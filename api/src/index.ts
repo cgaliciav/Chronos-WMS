@@ -1,13 +1,12 @@
 import "./entorno"; // primero: carga .env antes de que otros módulos lean process.env (M34)
 import "reflect-metadata";
 
-import { conectarORM } from "./conexionORM";
 import { crearApp } from "./app";
 import { iniciarSentry } from "./sentry";
 import { iniciarLimpiezaCache } from "./helpers/cacheArchivos";
 import { verificarCorreo } from "./helpers/enviarMail";
 
-import { getConnection } from "typeorm";
+import { AppDataSource, conectarORM } from "./data-source";
 import { logger } from "./helpers/logger";
 
 (async () => {
@@ -49,9 +48,8 @@ import { logger } from "./helpers/logger";
 })();
 
 async function closeDatabaseConnection() {
-  const connection = getConnection();
-  if (connection.isConnected) {
-    await connection.close();
+  if (AppDataSource.isInitialized) {
+    await AppDataSource.destroy();
     logger.info("Conexión a la base de datos cerrada");
   }
 }

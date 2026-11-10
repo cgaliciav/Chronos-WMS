@@ -1,4 +1,4 @@
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { OperacionDetalle } from "../entity/OperacionDetalle";
 
 class OperacionDetalleController {
@@ -14,7 +14,7 @@ class OperacionDetalleController {
     operacionDetalle.sesionId = sesionId;
     operacionDetalle.moneda = moneda;
 
-    return await getRepository(OperacionDetalle).save(operacionDetalle);
+    return await AppDataSource.getRepository(OperacionDetalle).save(operacionDetalle);
   };
 
   static quitar = async (
@@ -23,7 +23,7 @@ class OperacionDetalleController {
   ) => {
     if (operacionDetalle !== undefined && operacionDetalle !== null) {
       operacionDetalle.sesionId = sesionId;
-      await getRepository(OperacionDetalle).remove(operacionDetalle);
+      await AppDataSource.getRepository(OperacionDetalle).remove(operacionDetalle);
     }
   };
 }
