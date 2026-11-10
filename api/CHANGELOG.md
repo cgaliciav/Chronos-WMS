@@ -9,6 +9,27 @@ La versión vive en `package.json` (la devuelve `/auth/version`, y Sentry la usa
 `desplegar.sh` publica una versión `X.Y.Z-d` como `X.Y.Z` y, si ya no lleva sufijo, sube el parche. Contrato con el
 front: [`docs/api/endpoints.md`](../docs/api/endpoints.md). Plan: [`docs/planes/02-api-relacion-movimientos.md`](../docs/planes/02-api-relacion-movimientos.md).
 
+## [2.84.0-d] - Sin publicar
+
+Contraseña temporal con cambio obligatorio (hallazgo L2). **Migración nueva** `1794336939132-PasswordTemporal` (dos
+columnas en `usuario`); el front necesita v4.3.0 para el cambio obligatorio.
+
+### Añadido
+
+- Al dar de alta un usuario o regenerarle la contraseña (`PUT /user/renewpassword`), la contraseña que se envía por
+  correo es **temporal**: vence a las `HORAS_PASSWORD_TEMPORAL` horas (72 por defecto) y hay que cambiarla al entrar.
+- `POST /auth/login` con una contraseña temporal responde `{ t, cambiarPassword: true }`. Ese token (`cp`) solo admite
+  `PUT /user/password`, `GET /user/current` y `POST /auth/logout`; el resto responde 403 con `cambiarPassword: true`.
+  Con la temporal vencida, 401.
+- `PUT /user/password` exige una contraseña nueva distinta de la actual, quita la marca y responde `{ t }` (también en
+  la cabecera `t`): el token normal de la misma sesión.
+- `GET /user/current` incluye `cambiarPassword: true` mientras el cambio está pendiente.
+
+### Cambiado
+
+- Los correos de alta y de contraseña nueva avisan de que es temporal, cuándo vence y que se pedirá cambiarla.
+- Las cuentas existentes no cambian (sin contraseña temporal) hasta que el administrador les regenere la contraseña.
+
 ## [2.83.4-d] - Sin publicar
 
 Limpieza de código (hallazgos L6, L7 y L11). Sin cambios de contrato ni migraciones.

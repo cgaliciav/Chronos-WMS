@@ -12,6 +12,8 @@ import { Usuario } from "../entity/Usuario";
 import EnviarMail from "../helpers/enviarMail";
 import { AppError } from "../helpers/errorClases";
 import passGenerator from "../helpers/passGenerator";
+import { asignarPasswordDefinitiva, asignarPasswordTemporal } from "../services/PasswordService";
+import { firmarToken } from "../middlewares/verificarJwt";
 import CommonController, { ResultadoTabla } from "./common/Common.Controller";
 import { aplicarFiltros, columnaSegura, construirFiltros, direccionSegura } from "../helpers/filtrosTabla";
 import { logger } from "../helpers/logger";
@@ -134,7 +136,8 @@ class UsuarioController{
     )
     .then(usuario=>{
       const {roles,...usuarioSinRoles}=usuario;
-      res.json({ ...usuarioSinRoles,roles:roles.map(r=>r.codigoRol) });
+      // `cambiarPassword` solo aparece con contraseña temporal: el front lleva al usuario a cambiarla (L2).
+      res.json({ ...usuarioSinRoles,roles:roles.map(r=>r.codigoRol), ...(jwtPayload.cp ? { cambiarPassword: true } : {}) });
     })
     .catch(error=> next(error));
   }
@@ -212,10 +215,9 @@ class UsuarioController{
       ...body } = req.body;
     try {
       const usuario = new Usuario();
-      const password:string=passGenerator.generarPassword();
       usuario.vencimiento = new Date(vencimiento);
-      usuario.password = password;
-      usuario.hashPassword();
+      // Temporal: el usuario debe cambiarla al entrar por primera vez (hallazgo L2)
+      const password = asignarPasswordTemporal(usuario);
       usuario.roles = await AppDataSource.getRepository(Rol).findBy({ id: In(rolesIds) });
       usuario.proyectos = await AppDataSource.getRepository(Proyecto).findBy({ id: In(proyectosIds) });
       usuario.bodegas = await AppDataSource.getRepository(Bodega).findBy({ id: In(bodegasIds) });
@@ -274,28 +276,36 @@ class UsuarioController{
     }
   }
 
+  /**
+   * `PUT /user/password` `{ pa, pn }`: el usuario cambia su propia contraseña. También es el único paso permitido con
+   * una contraseña temporal: al cambiarla se quita la marca y se entrega un token normal (misma sesión) en el cuerpo
+   * (`{ t }`) y en la cabecera `t`.
+   */
   static cambiarPassword = async (req: Request, res: Response, next:NextFunction) => {
-    //El usuario solo puede editar su propio perfil.
-    let { pa,pn } = req.body;
-    let { ui,si } = res.locals.jwtPayload;
+    const { pa, pn } = req.body;
+    const { ui, u, si } = res.locals.jwtPayload;
 
     try {
-      if(!passGenerator.esPasswordValido(pn)){
+      if (typeof pn !== "string" || !passGenerator.esPasswordValido(pn)) {
         throw new AppError("Nuevo password inválido",406);
+      }
+      if (pn === pa) {
+        throw new AppError("La contraseña nueva debe ser distinta de la actual", 406);
       }
       const usuario = await AppDataSource.getRepository(Usuario).findOneOrFail({ 
         select: { id: true, nombre: true, correo: true, password: true, vencimiento: true, estatus: true }, 
         where: { id: ui } ,
       });
 
-      if(!usuario.checkIfUnencryptedPasswordIsValid(pa)){
+      if(typeof pa !== "string" || !usuario.checkIfUnencryptedPasswordIsValid(pa)){
         throw new AppError("El password enviado como actual no coincide con el almacenado en la BD",403);
       }
       usuario.sesionId=si;
-      usuario.password=pn;
-      usuario.hashPassword();
+      asignarPasswordDefinitiva(usuario, pn);
       await AppDataSource.getRepository(Usuario).save(usuario)
-      res.json();
+      const t = firmarToken({ ui, u, si });
+      res.setHeader("t", t);
+      res.json({ t });
 
     } catch (error) {
       next(error)
@@ -315,10 +325,8 @@ class UsuarioController{
         select: { id: true, nombre: true, correo: true, password: true, vencimiento: true, estatus: true },
         where: { correo: email },
       });
-      const password = passGenerator.generarPassword();
       usuario.sesionId = si;
-      usuario.password = password;
-      usuario.hashPassword();
+      const password = asignarPasswordTemporal(usuario); // temporal: debe cambiarla al entrar (hallazgo L2)
       await AppDataSource.getRepository(Usuario).save(usuario);
       EnviarMail.correoNuevoPassword(usuario.correo, password);
       res.json({ correo: usuario.correo, enviado: true });

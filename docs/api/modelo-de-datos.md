@@ -102,7 +102,7 @@ erDiagram
 | `Area` | `area` | Departamento/área dueña de productos. Limita lo que ve cada usuario. |
 | `Proyecto` | `proyecto` | Producción/proyecto al que se prestan artículos. `esExterno` para rentas externas. |
 | `Proveedor` / `FacturaTipo` | | Catálogos de compras. |
-| `Usuario`, `Rol`, `Sesion` | | Usuario con roles (códigos `ADMINISTRADOR`, `GRUPOS-NUEVO`, …), áreas, bodegas y proyectos permitidos. Cada login crea una `Sesion`; el JWT lleva `{ui, u, si}` = usuario id, nombre, sesión id. |
+| `Usuario`, `Rol`, `Sesion` | | `debeCambiarPassword` y `vencePasswordTemporal` (no se exponen) marcan una contraseña temporal pendiente de cambiar (L2). Usuario con roles (códigos `ADMINISTRADOR`, `GRUPOS-NUEVO`, …), áreas, bodegas y proyectos permitidos. Cada login crea una `Sesion`; el JWT lleva `{ui, u, si}` = usuario id, nombre, sesión id. |
 | `Archivo` | `archivo` | Binario en `mediumblob` + metadatos. Se asocia N:M a producto, operación, grupo, usuario. |
 | `Comentario` | `comentario` | Texto + sesión. N:M con casi todo. |
 | `LogFuncionamiento` | | Auditoría automática de insert/update/remove (suscriptor). |

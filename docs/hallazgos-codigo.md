@@ -99,7 +99,7 @@ fase se corrige cada uno.
 | # | Ubicación | Descripción |
 |---|---|---|
 | L1 | `helpers/passGenerator.ts:34` | **✅ Corregido (fase 2):** `crypto.randomInt`; `password-generator` eliminado. `password-generator` usa `Math.random` (no CSPRNG); `maxLength=20` también limita contraseñas elegidas por el usuario. |
-| L2 | `helpers/enviarMail.ts:93,105,116` | Contraseñas enviadas en claro por correo. |
+| L2 | `helpers/enviarMail.ts:93,105,116` | **✅ Corregido (v2.84.0):** la contraseña del correo es temporal (vence a las 72 h) y el token que da solo permite cambiarla; el front obliga al cambio. Contraseñas enviadas en claro por correo. |
 | L3 | `Auth.Controller.ts:84-88`; `routes/index.ts:68` | **✅ Mitigado (v2.83.3):** `/` responde `{ estado: "ok" }` y `/auth/version` solo la versión. La versión sigue pública a propósito: el login la muestra y `desplegar.sh` la usa para comprobar el contenedor. `/` y `/auth/version` exponen nombre y versión sin autenticación. |
 | L4 | `Archivo.Controller.ts:159-163` | **✅ Corregido (fase 2):** 15 MiB coherente en mensaje y `multer.limits`. Límite 16 000 000 bytes vs mensaje "15MB"; se valida después de que multer escribió el temporal; multer sin `limits`. |
 | L5 | `Archivo.Controller.ts:35-117`; `InventarioActual.Controller.ts:389-576,806-842`; `Grupo.Controller.ts:513-880` | **✅ Corregido (fase 4):** código borrado. Código Supabase muerto/comentado (≈ 600 líneas): `obtenerGenerarArchivo*Supabase`, `export2Supabase`, `convertAviability/…`, `convertMovementType/InvoiceType`. |

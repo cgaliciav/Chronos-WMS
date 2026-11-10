@@ -43,7 +43,7 @@ interface ParametrosTabla {
 type FnFiltrado = (filters: any) => FiltrosSql | string;
 
 /** Campos que nunca se copian desde el body a una entidad (asignación masiva). */
-const CAMPOS_PROHIBIDOS = new Set(["id", "password", "sesionId", "estatus"]);
+const CAMPOS_PROHIBIDOS = new Set(["id", "password", "sesionId", "estatus", "debeCambiarPassword", "vencePasswordTemporal"]);
 
 const copiarCampos = (registro: any, body: any, camposPermitidos?: string[]) => {
   if (!body || typeof body !== "object") return;
