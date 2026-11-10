@@ -78,8 +78,5 @@
   },
   "engines": {
     "node": ">=22"
-  },
-  "allowScripts": {
-    "sharp@0.30.7": true
   }
 }
