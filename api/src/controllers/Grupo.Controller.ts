@@ -555,7 +555,7 @@ class GrupoController {
 
       res.json({
         results: qryResult,
-        filtered: conteoTotal,
+        filtered, // antes el total sin filtrar (M14)
         pagination: {
           current: page,
           pageSize,

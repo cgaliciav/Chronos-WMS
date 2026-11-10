@@ -54,6 +54,8 @@ const copiarCampos = (registro: any, body: any, camposPermitidos?: string[]) => 
   }
 };
 
+const conAlias = (campo: string, alias: string) => (campo.includes(".") ? campo : `${alias}.${campo}`);
+
 const paginacionDe = ({ pagination }: ParametrosTabla) => {
   const page = Number(pagination?.current ?? 1) || 1;
   const pageSize = Math.min(Math.max(Number(pagination?.pageSize ?? 10) || 10, 1), 500);
@@ -85,10 +87,11 @@ export default class {
     return await repo.find(options);
   };
 
-  static listaSimple = (repo: Repository<any>, campos: string[], estatus: EstatusEstado = EstatusEstado.ACTIVO) =>
+  /** `filtro`: condiciones extra resueltas en la consulta (p. ej. `{ esExterno: true }`), no en JS (hallazgo L12). */
+  static listaSimple = (repo: Repository<any>, campos: string[], estatus: EstatusEstado = EstatusEstado.ACTIVO, filtro: object = {}) =>
     repo.find({
       select: rutasAObjeto(campos),
-      where: { estatus },
+      where: { ...filtro, estatus },
       order: { id: "DESC" },
     });
 
@@ -116,11 +119,13 @@ export default class {
     direccionPorDefecto: "ASC" | "DESC" = "ASC"
   ): Promise<ResultadoTabla> => {
     const { sortField, sortOrder, filters } = parametros;
-    const campoOrden = columnaSegura(sortField, ordenPorDefecto);
+    const qry = fnQuery();
+    // Un campo sin alias ("id", "nombre") se refiere a la entidad principal: con joins, sin alias es ambiguo o no
+    // existe (500 ER_BAD_FIELD_ERROR con el orden por defecto, hallazgo L19).
+    const campoOrden = conAlias(columnaSegura(sortField, ordenPorDefecto), qry.alias);
     const direccion = sortOrder === undefined ? direccionPorDefecto : direccionSegura(sortOrder);
     const { page, pageSize, starts } = paginacionDe(parametros);
 
-    const qry = fnQuery();
     const conteoTotal = await qry.getCount();
 
     const filtrado = fnFiltrado(filters ?? {});

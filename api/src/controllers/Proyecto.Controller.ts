@@ -5,12 +5,9 @@ import CommonController from "./common/Common.Controller";
 import { construirFiltros } from "../helpers/filtrosTabla";
 import { parametro } from "../helpers/ids";
 
-const listaSimple = async()=>(
-    await CommonController.listaSimple(
-        AppDataSource.getRepository(Proyecto),
-        ["id","nombre","esExterno"]
-    )
-);
+// El filtro por esExterno va en la consulta (antes se cargaban todos y se filtraban en JS, hallazgo L12).
+const listaSimple = async (filtro: { esExterno?: boolean } = {}) =>
+    CommonController.listaSimple(AppDataSource.getRepository(Proyecto), ["id", "nombre", "esExterno"], undefined, filtro);
 
 // Filtros de las tablas antd, parametrizados (antes se interpolaban llaves y valores: hallazgo C1).
 const condicionesWhereAnd = (filters: any) => construirFiltros(filters, { alias: "proyecto" });
@@ -18,17 +15,17 @@ const condicionesWhereAnd = (filters: any) => construirFiltros(filters, { alias:
 class ProyectoController{
 
     static listaSimpleExterna = (req: Request, res: Response,next:NextFunction) =>{
-        listaSimple()
+        listaSimple({ esExterno: true })
         .then(lista => {
-            res.json(lista.filter(item=>item.esExterno));
+            res.json(lista);
         })
         .catch(error => next(error));
     };
 
     static listaSimpleInterna = (req: Request, res: Response,next:NextFunction) =>{
-        listaSimple()
+        listaSimple({ esExterno: false })
         .then(lista => {
-            res.json(lista.filter(item=>!item.esExterno));
+            res.json(lista);
         })
         .catch(error => next(error));
     };

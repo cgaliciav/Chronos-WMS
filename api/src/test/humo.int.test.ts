@@ -16,10 +16,12 @@ describe("humo: la aplicación arranca contra MariaDB de pruebas", () => {
   });
   afterAll(cerrarPruebas);
 
-  it("GET / devuelve nombre y versión", async () => {
+  it("GET / solo dice que el servicio vive; /auth/version da la versión sin el nombre del paquete (L3)", async () => {
     const res = await supertest(app).get("/");
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ name: "almacen-api", version: expect.any(String) });
+    expect(res.body).toEqual({ estado: "ok" });
+    const version = await supertest(app).get("/auth/version");
+    expect(version.body).toEqual({ version: expect.stringMatching(/^\d+\.\d+\.\d+/) });
   });
 
   it("POST /auth/login entrega un token y crea sesión", async () => {

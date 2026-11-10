@@ -67,7 +67,7 @@ routes.use("/reports", reportes);
 routes.use("/role", roles);
 routes.use("/user", usuarios);
 
-routes.get("/", AuthController.version);
+routes.get("/", AuthController.estado);
 
 
 export default routes;
