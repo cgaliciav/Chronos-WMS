@@ -10,6 +10,7 @@
 | [`api/procedimiento-migracion-produccion.md`](api/procedimiento-migracion-produccion.md) | Cómo respaldar, aplicar, verificar y revertir las migraciones en producción |
 | [`../infra/staging/README.md`](../infra/staging/README.md) | Staging local (VM réplica de producción): crearla, refrescar datos y actualizarla con `update-staging.sh` |
 | [`front/arquitectura.md`](front/arquitectura.md) | Stack, estructura, flujo de autenticación y convenciones del front |
+| [`../front/CHANGELOG.md`](../front/CHANGELOG.md) | Historial de versiones del front (4.0.0: plan 01, fases 0-6) |
 | [`front/inventario-rutas.md`](front/inventario-rutas.md) | Las rutas del front con componente, roles (menú vs ACL), endpoints y rutas críticas |
 | [`front/checklist-humo.md`](front/checklist-humo.md) | Verificaciones manuales de las 10 rutas críticas, a pasar al cerrar cada fase del plan 01 |
 | [`front/baseline/`](front/baseline/README.md) | Capturas de referencia del front legado y script para regenerarlas (Playwright + API simulado) |

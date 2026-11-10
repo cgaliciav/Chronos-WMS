@@ -87,3 +87,7 @@ componentes de antd (`Tarjeta`/`Encabezado` de `components/ui`, `Space`, `Flex`,
 
 `deploy-production.sh`: `npm version patch` (package.json + lock), commit y tag git, `npm ci && npm run build`, `rsync` de
 `build/` al servidor y `tar.gz` en `deploy_history/`. `deploy.sh` (pruebas) solo hace rsync de `build/`.
+
+Versionado: semántico, en `package.json` (Sentry lo usa como `release`). La 4.0.0 marca el cierre de las fases 0-6 del
+plan 01; como el script de producción sube el parche, el primer despliegue la publica como 4.0.1. Los saltos de mayor o
+menor se hacen a mano y todos los cambios se anotan en [`front/CHANGELOG.md`](../../front/CHANGELOG.md).

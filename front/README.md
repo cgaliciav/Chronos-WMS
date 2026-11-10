@@ -6,6 +6,7 @@ describe la migración a Vite + React 19 + antd 6.
 
 Documentación: [`../docs/front/arquitectura.md`](../docs/front/arquitectura.md), guía para agentes en
 [`CLAUDE.md`](CLAUDE.md), fallos conocidos en [`../docs/hallazgos-codigo.md`](../docs/hallazgos-codigo.md).
+Versión actual: **4.0.0**; historial de cambios en [`CHANGELOG.md`](CHANGELOG.md).
 
 ### Stack actual
 - Node 24 (`.nvmrc`, `engines` con `engine-strict`), npm
