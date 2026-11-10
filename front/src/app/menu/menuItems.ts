@@ -11,6 +11,7 @@ import {
   PlusOutlined,
   PrinterOutlined,
   ProjectOutlined,
+  SettingOutlined,
   TruckOutlined,
   UnorderedListOutlined,
   UserOutlined,
@@ -330,6 +331,13 @@ export const menuItems: EntradaMenu[] = [
     category: true,
     title: 'Administración',
     role: 'V-ADMINISTRACION-TITULO',
+  },
+  {
+    title: 'Configuración',
+    key: 'configuracion',
+    icon: SettingOutlined,
+    role: 'CONFIGURACION-EDITAR',
+    url: '/configuracion',
   },
   {
     title: 'Usuarios',

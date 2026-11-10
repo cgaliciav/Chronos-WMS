@@ -15,6 +15,18 @@ Los códigos `F<n>` remiten a [`docs/hallazgos-codigo.md`](../docs/hallazgos-cod
 
 Pendiente: fase 7 del plan 01 (pruebas e2e con Playwright, CI y cobertura).
 
+## [4.6.0-d] - 2026-11-10
+
+Plan 03, fase 4: pantalla de configuración.
+
+### Añadido
+
+- `/configuracion` (menú de Administración, `ADMINISTRADOR` o `CONFIGURACION-EDITAR`) con pestañas Marca, Correo,
+  Reportes y Regional: nombre, textos, soporte, crédito, colores (selector), fuente, logo y favicon con vista previa;
+  servidor SMTP con contraseña solo de escritura, remitente, plantillas con la lista de variables y "Enviar correo de
+  prueba"; logo de los reportes; monedas, idioma y zona horaria. Si otra persona guardó antes se avisa y se recarga;
+  los campos que el API rechaza se marcan en el formulario.
+
 ## [4.5.0-d] - 2026-11-10
 
 Plan 03, fase 3: la marca del cliente llega del API (`GET /config/public`, API v2.86+).

@@ -221,7 +221,11 @@ configurado.
 **Aceptación:** cambiando la fila `marca` en la BD y recargando, el login, el menú, el pie, la pestaña y los colores
 muestran la nueva marca sin rebuild; con el API apagado el login muestra "Chronos WMS" y el error de conexión.
 
-### Fase 4 · Front: pantalla de configuración
+### Fase 4 · Front: pantalla de configuración ✅ (hecha el 2026-11-10, front v4.6.0)
+
+> **Resultado:** `pages/administracion/configuracion` (página + una pestaña por sección + `useSeccion` para versión,
+> 409 y errores por campo del 400 + `SubirImagen`). Tras guardar se recarga la marca: el cambio se ve al momento, no
+> solo al recargar. Checklist de humo, sección 11.
 
 1. Ruta `/configuracion` (lazy, en `router.tsx` e `inventario-rutas.md`) con pestañas Marca, Correo, Reportes y
    Regional; formularios `Form.useForm` con la misma validación que el esquema zod del API (mensajes del 400).

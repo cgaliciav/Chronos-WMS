@@ -15,6 +15,7 @@ type Cargador = () => Promise<{ default: ComponentType }>
  */
 export const RUTAS: Array<[ruta: string, cargar: Cargador]> = [
   ['/usuarios/listado', () => import('pages/administracion/usuarios/listado')],
+  ['/configuracion', () => import('pages/administracion/configuracion')],
   ['/usuarios/cambiar-password', () => import('pages/administracion/usuarios/cambiarPassword')],
   ['/usuarios/nuevo', () => import('pages/administracion/usuarios/nuevo')],
   ['/usuarios/editar', () => import('pages/administracion/usuarios/editar')],

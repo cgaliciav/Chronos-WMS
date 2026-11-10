@@ -114,6 +114,17 @@ la fase 7, este documento es la red de seguridad. Inventario completo de rutas, 
 | 10.2 | Pestañas "Historial", "Comentarios Movimiento" y "Archivos Movimiento" cambian y cargan su contenido. |
 | 10.3 | Agregar un comentario lo muestra en la lista sin recargar. |
 
+## 11. `/configuracion` (plan 03)
+
+| # | Verificación |
+|---|---|
+| 11.1 | Con `ADMINISTRADOR` o `CONFIGURACION-EDITAR` aparece "Configuración" en el menú; sin el rol, la ruta lleva a `/auth/401`. |
+| 11.2 | Marca: cambiar nombre y color primario y guardar; el menú, la pestaña y los botones cambian sin recargar. Al recargar el login muestra la marca nueva. |
+| 11.3 | Subir un logo PNG: aparece en el menú; un SVG se rechaza con mensaje. |
+| 11.4 | Correo: guardar un servidor con contraseña; al volver a abrir, "Hay una contraseña guardada" y el campo vacío. "Enviar correo de prueba" llega (en staging, a mailpit). |
+| 11.5 | Dos pestañas: guardar la misma sección en ambas; la segunda avisa que otra persona la cambió y recarga. |
+| 11.6 | Regional: con solo `USD` en monedas y por defecto, el alta de artículo propone USD. |
+
 ## Registro de ejecuciones
 
 | Fecha | Fase / commit | Ejecutó | Resultado | Notas |

@@ -37,6 +37,7 @@ Plan 01, fase 0, paso 2. Sirve de checklist para las fases 1–6 (no perder ruta
 
 | Ruta | Componente | Rol(es) | Endpoints del API consumidos | Crítica |
 |---|---|---|---|:-:|
+| `/configuracion` | `src/pages/administracion/configuracion/index.tsx` | `CONFIGURACION-EDITAR` (menú y ACL) o `ADMINISTRADOR` | `GET /config`, `PUT /config/:seccion`, `POST /config/marca/logo\|favicon`, `POST /config/reportes/logo`, `POST /config/correo/prueba` | plan 03, fase 4 |
 | `/usuarios/listado` | `src/pages/administracion/usuarios/listado/index.tsx` | `V-ADMINISTRACION-USUARIOSLISTADO` ≠ ACL `ADMINISTRACION-USUARIOSLISTADO` ⚠️ | `PUT /user/disable/:id`, `POST /user/list-antd`, `PUT /user/renewpassword/` |  |
 | `/usuarios/cambiar-password` | `src/pages/administracion/usuarios/cambiarPassword/index.tsx` | `V-ADMINISTRACION-USUARIOSCAMBIARPASSWORD` · **sin ACL** ⚠️ | `PUT /user/password` |  |
 | `/usuarios/nuevo` | `src/pages/administracion/usuarios/nuevo/index.tsx` | `V-ADMINISTRACION-USUARIOSNUEVO` ≠ ACL `USUARIO-NUEVO` ⚠️ | `GET /area/list-names`, `GET /project/list-names`, `GET /role/list-names`, `POST /user/new`, `GET /warehouse/list-names` |  |
