@@ -15,6 +15,16 @@ Los códigos `F<n>` remiten a [`docs/hallazgos-codigo.md`](../docs/hallazgos-cod
 
 Pendiente: fase 7 del plan 01 (pruebas e2e con Playwright, CI y cobertura).
 
+## [4.5.0-d] - 2026-11-10
+
+Plan 03, fase 3: la marca del cliente llega del API (`GET /config/public`, API v2.86+).
+
+### Añadido
+
+- Nombre, logo, favicon, colores, fuente, textos del login, soporte y crédito del pie salen de la configuración del
+  cliente, sin rebuild: basta recargar. Con el API caído se usa la marca de Chronos WMS y se reintenta al navegar.
+- Moneda por defecto, lista de monedas y formato de importes desde la configuración regional.
+
 ## [4.4.0-d] - 2026-11-10
 
 Plan 03, fase 0: identidad por defecto "Chronos WMS" (no desplegar a producción hasta la fase 5).

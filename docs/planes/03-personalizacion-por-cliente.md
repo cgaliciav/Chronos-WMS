@@ -205,7 +205,11 @@ alternativa temporal documentada del paso 3); suites verdes; checklist de humo 0
 al cambiar la plantilla por `PUT /config/correo`, el siguiente correo la usa sin reiniciar; el Excel lleva el logo
 configurado.
 
-### Fase 3 · Front: aplicar la marca
+### Fase 3 · Front: aplicar la marca ✅ (hecha el 2026-11-10, front v4.5.0)
+
+> **Resultado:** `stores/marca.store.ts` (carga antes del primer render y reintenta al navegar si el API falla),
+> `temaConMarca` en `tema.ts`, `helpers/moneda.ts`, `services/axios/configuracion`. `MARCA_POR_DEFECTO` queda como
+> respaldo (y como manejador por defecto de MSW en las pruebas).
 
 1. `services/axios/configuracion` (clase sobre `PeticionBase`) y `stores/marca.store.ts` (§2.5).
 2. `index.tsx` espera la marca antes de renderizar; `ConfigProvider` combina `tema.ts` con `marca.tema`.
