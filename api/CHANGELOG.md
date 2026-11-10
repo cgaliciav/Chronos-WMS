@@ -9,6 +9,20 @@ La versión vive en `package.json` (la devuelven `GET /` y `/auth/version`, y Se
 `desplegar.sh` publica una versión `X.Y.Z-d` como `X.Y.Z` y, si ya no lleva sufijo, sube el parche. Contrato con el
 front: [`docs/api/endpoints.md`](../docs/api/endpoints.md). Plan: [`docs/planes/02-api-relacion-movimientos.md`](../docs/planes/02-api-relacion-movimientos.md).
 
+## [2.83.1-d] - Sin publicar
+
+### Corregido
+
+- **Fechas en UTC** (`timezone: "Z"` en `data-source.ts`, hallazgo M38). El driver usaba la zona del proceso: con Node en
+  hora local (desarrollo), las fechas que pone MariaDB (`DEFAULT CURRENT_TIMESTAMP`, p. ej. `notificacion.fecha`) se
+  leían 6 h en el futuro ("en 6 horas") y las que escribe Node se guardaban en hora local. En staging y producción
+  (contenedores en UTC) no cambia nada.
+- El suscriptor de auditoría reconoce la entidad por `event.metadata`: con `repo.update(criterio, cambios)` recibía un
+  objeto plano y, al marcar notificaciones como leídas, intentaba auditarlas y registraba
+  `Field 'idOrigen' doesn't have a default value`.
+- `docker-compose.test.yml` tiene su propio nombre de proyecto (`almacen-api-test`): `npm run test:int:up` reemplazaba el
+  contenedor de la BD de desarrollo (mismo proyecto `api` y servicio `mariadb`; los datos del volumen se conservaban).
+
 ## [2.83.0-d] - Sin publicar
 
 Fase 7 del plan 02: notificaciones propias (sustituyen a MagicBell). **Migración nueva** `1794327605255-Notificacion`

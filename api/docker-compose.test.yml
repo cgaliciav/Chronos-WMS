@@ -2,6 +2,9 @@
 #   docker compose -f docker-compose.test.yml up -d
 #   npm run test:int
 # Sin Docker: instala MariaDB >= 10.11 y crea la BD/usuario de .env.test (ver docs/api/pruebas.md).
+# Proyecto propio: con el nombre por defecto (`api`, el de la carpeta) compartiría proyecto y servicio con
+# docker-compose.dev.yml y `up` reemplazaría el contenedor de la BD de desarrollo.
+name: almacen-api-test
 services:
   mariadb:
     image: mariadb:10.11

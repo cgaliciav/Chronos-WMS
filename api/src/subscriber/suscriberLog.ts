@@ -10,20 +10,23 @@ import { logger } from "../helpers/logger";
 
 // Se usa la fuente de datos (`event.dataSource`) y no `event.manager`: el registro se escribe sin esperar (void), así que
 // puede terminar después de que la transacción que lo disparó haya liberado su conexión.
-const nuevaOperacion = async (dataSource:DataSource,entity:any,funcionamiento:FuncionamientoEstado)=>{
+// `nombreEntidad` viene de `event.metadata`: con `repo.update(criterio, cambios)` TypeORM pasa en `entity` el objeto plano
+// de cambios (constructor `Object`), así que su `constructor.name` no sirve para reconocer la entidad.
+const nuevaOperacion = async (dataSource:DataSource,entity:any,funcionamiento:FuncionamientoEstado,nombreEntidad?:string)=>{
     if(entity === undefined)
         return;
+    const name = nombreEntidad ?? entity.constructor.name;
     if (
-      entity.constructor.name == "LogFuncionamiento" ||
-      entity.constructor.name == "LogGeneral" ||
-      entity.constructor.name == "LogPeticiones" ||
-      entity.constructor.name == "Notificacion" // la crea el sistema, sin sesión (plan 02 · fase 7)
+      name == "LogFuncionamiento" ||
+      name == "LogGeneral" ||
+      name == "LogPeticiones" ||
+      name == "Notificacion" // la crea el sistema, sin sesión (plan 02 · fase 7)
     )
       // Omitir las funcionamientoes sobre LogOperacion y LogGeneral.
       return;
 
     let dataJSON:string;
-    if(entity.constructor.name=="Archivo"){
+    if(name=="Archivo"){
         const {data,...entitySinDatosArchivo}=entity;
         dataJSON=JSON.stringify(entitySinDatosArchivo);
     }
@@ -33,7 +36,6 @@ const nuevaOperacion = async (dataSource:DataSource,entity:any,funcionamiento:Fu
     if(dataJSON.length>60000){
         dataJSON="DEMASIADA INFORMACION. SE DECARTA PORQUE GENERA BUCLE INFINITO.";
     }
-    const {name}=entity.constructor;
     const {id}=entity;
     
 
@@ -67,15 +69,15 @@ const nuevaOperacion = async (dataSource:DataSource,entity:any,funcionamiento:Fu
 export class GeneralSubscriber implements EntitySubscriberInterface{
 
     afterInsert(event: InsertEvent<any>){
-        void nuevaOperacion(event.dataSource,event.entity,FuncionamientoEstado.NUEVO);
+        void nuevaOperacion(event.dataSource,event.entity,FuncionamientoEstado.NUEVO,event.metadata?.name);
     }
     
     afterUpdate(event: UpdateEvent<any>){
-        void nuevaOperacion(event.dataSource,event.entity,FuncionamientoEstado.ACTUALIZACION);
+        void nuevaOperacion(event.dataSource,event.entity,FuncionamientoEstado.ACTUALIZACION,event.metadata?.name);
     }
 
     beforeRemove(event:RemoveEvent<any>){
-        void nuevaOperacion(event.dataSource,event.entity,FuncionamientoEstado.ELIMINACION);
+        void nuevaOperacion(event.dataSource,event.entity,FuncionamientoEstado.ELIMINACION,event.metadata?.name);
     }
 
 
