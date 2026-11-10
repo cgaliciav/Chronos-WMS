@@ -3,23 +3,6 @@ import { AppDataSource } from "../data-source";
 import { Rol } from "../entity/Rol";
 import CommonController from "./common/Common.Controller";
 
-
-
-// const BusquedaListaSimpleCompleta = async (camposSelect:string[],busqueda:string="")=>{
-
-//   const options:FindManyOptions<Rol>={
-//     select:camposSelect.map(cs=>cs as (keyof Rol))
-//   }
-
-//   if(busqueda.length>0)
-//     options.where={nombre:Like(`%${busqueda}%`)}
-
-//   return getRepository(Rol).find({
-//     select:["id","nombre"],
-//     where:{nombre:Like(`%${busqueda}%`) }
-//   })
-// }
-
 class RolController{
 
   static listaSimple = (req: Request, res: Response, next: NextFunction) =>{

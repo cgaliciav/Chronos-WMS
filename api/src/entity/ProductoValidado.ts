@@ -1,7 +1,5 @@
 import {Entity, Column, OneToOne,JoinColumn} from "typeorm";
 import {NombreEstatus} from './common/NombreEstatus'
-import { InventarioActual } from "./InventarioActual";
-import { InventarioDetalle } from "./InventarioDetalle";
 import { Producto } from "./Producto";
 
 export enum ValidacionEstado {

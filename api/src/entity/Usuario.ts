@@ -1,4 +1,4 @@
-import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany, Index, ManyToMany, JoinTable} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, Index, ManyToMany, JoinTable } from "typeorm";
 import { Rol } from "./Rol";
 import { Area } from "./Area";
 import { Bodega } from "./Bodega";
@@ -6,13 +6,9 @@ import { Archivo } from "./Archivo";
 import { Comentario } from "./Comentario";
 import { Proyecto } from './Proyecto'
 import { Sesion } from './Sesion'
-// import { MovimientoUsuario } from "./MovimientoUsuario";
 import { EstatusEstado } from "./common/NombreEstatus";
 import { Length, IsEmail } from "class-validator";
 import * as bcrypt from "bcryptjs";
-// import { type } from "os";
-
-
 
 @Entity()
 export class Usuario {

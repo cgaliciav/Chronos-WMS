@@ -34,12 +34,10 @@ export const verificarCorreo = () =>
         subject,
         html // antes se enviaba como `text` y el destinatario veía el HTML crudo (M22)
         }).then(info=>{
-            // console.log(`Correo Enviado:`, info.rejected,info.response);
             LogGeneralController.InsertarLog(LogTipo.INFO,"Correo Enviado",info);
         })
         .catch(err=>{
             LogGeneralController.InsertarLog(LogTipo.ERROR,"Correo NO Enviado",err);
-            // console.log(`ERROR: Al intentar enviar correo`, err);
         });
 
 
@@ -49,16 +47,11 @@ let enviarCorreoSimple = (correoDestino:string,subject:string, text:string) =>
         to: correoDestino, // list of receivers
         subject,
         text
-        // subject: "Hello ✔", // Subject line
-        // text: "Hello world?", // plain text body
-        // html: "<b>Hello world?</b>" // html body
         }).then(info=>{
-            // console.log(`Correo Enviado:`, info.rejected,info.response);
             LogGeneralController.InsertarLog(LogTipo.INFO,"Correo Enviado",info);
         })
         .catch(err=>{
             LogGeneralController.InsertarLog(LogTipo.ERROR,"Correo NO Enviado",err);
-            // console.log(`ERROR: Al intentar enviar correo`, err);
         });
 
 let enviarCorreoConAnexos = (correoDestino:string,subject:string, text:string, archivos:{filename:string,path:string}[]) =>
@@ -68,16 +61,11 @@ let enviarCorreoConAnexos = (correoDestino:string,subject:string, text:string, a
             subject,
             text,
             attachments:archivos,
-            // subject: "Hello ✔", // Subject line
-            // text: "Hello world?", // plain text body
-            // html: "<b>Hello world?</b>" // html body
             }).then(info=>{
-                // console.log(`Correo Enviado:`, info.rejected,info.response);
                 LogGeneralController.InsertarLog(LogTipo.INFO,"Correo Enviado",info);
             })
             .catch(err=>{
                 LogGeneralController.InsertarLog(LogTipo.ERROR,"Correo NO Enviado",err);
-                // console.log(`ERROR: Al intentar enviar correo`, err);
             });
 
 export default class EnviarMail{
@@ -150,14 +138,3 @@ export default class EnviarMail{
         enviarCorreoHTML(correoDestino,titulo,html);
     }
 }
-// async function enviarCorreoSimple(correodestino,subject, text){
-//     let info = await transporter.sendMail({
-//         from: SMTP_FROM, // sender address
-//         to: correodestino, // list of receivers
-//         subject,
-//         text
-//         // subject: "Hello ✔", // Subject line
-//         // text: "Hello world?", // plain text body
-//         // html: "<b>Hello world?</b>" // html body
-//       });
-// }

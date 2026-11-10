@@ -7,7 +7,6 @@ import { soloDigitos } from "../middlewares/rutas";
 
 const router = Router();
 
-// const upload = multer({ dest: process.env.UPLOADS })
 
 router.get("/prior-activity/:id", soloDigitos("id"), [checkJwt,checkRole(["ADMINISTRADOR","MOVIMIENTO-ULTIMOMOVIMIENTO"])],MovimientoController.obtenerUltimoMovimiento)
 router.get("/get-group/:id", soloDigitos("id"), [checkJwt,checkRole(["ADMINISTRADOR","MOVIMIENTO-OBTENERGRUPO"])],MovimientoController.obtenerGrupo)

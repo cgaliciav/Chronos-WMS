@@ -2,11 +2,8 @@ import { EventSubscriber, EntitySubscriberInterface, InsertEvent, UpdateEvent, R
 import { LogFuncionamiento, FuncionamientoEstado } from "../entity/LogFuncionamiento";
 import { EstatusEstado } from "../entity/common/NombreEstatus";
 import { Sesion } from "../entity/Sesion";
-import LogGeneralController from "../controllers/LogGeneral.Controller";
-import { LogTipo } from "../entity/LogGeneral";
 import { logger } from "../helpers/logger";
 
-// import { LoadEvent } from "typeorm/subscriber/event/LoadEvent";
 
 // Se usa la fuente de datos (`event.dataSource`) y no `event.manager`: el registro se escribe sin esperar (void), así que
 // puede terminar después de que la transacción que lo disparó haya liberado su conexión.

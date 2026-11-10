@@ -33,8 +33,6 @@ export const TAMANO_MAXIMO_ARCHIVO = 15 * 1024 * 1024;
 
 const existe = (ruta: string) => access(ruta).then(() => true).catch(() => false);
 
-
-
 interface ResponseFile {
   uid: string,
   name: string,
@@ -121,7 +119,6 @@ class ArchivoController {
   };
 
   static quitar = async (archivo: Archivo, sesionId: number) => {
-    // const archivo = await getRepository(Archivo).findOneOrFail(archivoId);
     archivo.sesionId = sesionId;
     const id = archivo.id;
     const quitado = await AppDataSource.getRepository(Archivo).remove(archivo);
@@ -236,7 +233,6 @@ class ArchivoController {
   };
 
   static obtenerIdsPorInventarioId = async (id: number | string) => {
-    // const id = parametro(req, "id");
     const inventarioActual = await AppDataSource.getRepository(InventarioActual)
       .createQueryBuilder("inventarioActual")
       .innerJoin("inventarioActual.producto", "producto")
@@ -244,7 +240,6 @@ class ArchivoController {
       .addSelect("archivos.id")
       .where("inventarioActual.id = :id", { id })
       .getOne();
-    // findOneOrFail(id,{relations:["producto"]})
     if (inventarioActual == null)
       throw new AppError("Inventario acutal indefinidos");
 

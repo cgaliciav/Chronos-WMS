@@ -115,27 +115,6 @@ class ProductoClaveController{
         }
     }
 
-    // static borrar = async (req: Request, res: Response, next:NextFunction) =>{
-    //     const {jwtPayload}=res.locals;
-    //     try{
-
-    //         res.json();
-
-    //     }catch (error) {
-    //         next(error)
-    //     }
-    // }
-    
-
-    // static editar = async (req: Request, res: Response, next:NextFunction) =>{
-    //     const {jwtPayload}=res.locals;
-    //     try{
-    //         res.json();
-    //     }catch (error) {
-    //         next(error)
-    //     }
-    // }
-
 }
 
 export default ProductoClaveController;

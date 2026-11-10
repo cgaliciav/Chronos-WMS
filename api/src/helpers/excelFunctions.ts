@@ -1,4 +1,4 @@
-import { stream, Table, Workbook, Worksheet } from "exceljs";
+import { Table, Workbook, Worksheet } from "exceljs";
 import { performance } from "perf_hooks";
 import { Brackets, SelectQueryBuilder, In } from "typeorm";
 import { AppDataSource } from "../data-source";
@@ -14,7 +14,6 @@ import {
 import { Archivo } from "../entity/Archivo";
 import { Area } from "../entity/Area";
 import { Grupo } from "../entity/Grupo";
-import { InventarioActual } from "../entity/InventarioActual";
 import { Movimiento } from "../entity/Movimiento";
 import { Proyecto } from "../entity/Proyecto";
 import { Usuario } from "../entity/Usuario";
@@ -116,80 +115,6 @@ const columnasDetalleResumen: columnasExcel[] = [
 
 ]
 
-const columnasDetalle: columnasExcel[] = [
-  //PARA REPORTE GENERAL
-  {
-    titulo: "No.",
-    letra: "font8",
-    ancho: 5.14,
-    tipo: "general",
-    filtro: false,
-  },
-  {
-    titulo: "FOTOGRAFÍA",
-    letra: "font8",
-    ancho: 10.71,
-    tipo: "general",
-    filtro: false,
-  },
-  {
-    titulo: "CÓDIGO",
-    letra: "font8",
-    ancho: 11.43,
-    tipo: "general",
-    filtro: true,
-  },
-  {
-    titulo: "ARTÍCULO",
-    letra: "font8",
-    ancho: 13.71,
-    tipo: "general",
-    filtro: true,
-  },
-  {
-    titulo: "DESCRIPCIÓN",
-    letra: "font7",
-    ancho: 43.29,
-    tipo: "general",
-    filtro: true,
-  },
-  {
-    titulo: "AREA",
-    letra: "font8",
-    ancho: 16.14,
-    tipo: "general",
-    filtro: true,
-  },
-  {
-    titulo: "ALMACÉN",
-    letra: "font8",
-    ancho: 20.29,
-    tipo: "general",
-    filtro: true,
-  },
-  {
-    titulo: "ESTADO",
-    letra: "font8",
-    ancho: 20.29,
-    tipo: "general",
-    filtro: true,
-  },
-  {
-    titulo: "TOTAL",
-    letra: "font8",
-    ancho: 13.29,
-    tipo: "total",
-    filtro: true,
-    total: "sum",
-  },
-  {
-    titulo: "NOTAS / COMENTARIOS",
-    letra: "font8",
-    ancho: 30.29,
-    tipo: "general",
-    filtro: true,
-  },
-];
 
 const columnasDetallePorProyecto: columnasExcel[] = [
   {
@@ -644,52 +569,6 @@ const obtenerRenglonesMovimientoComprasUSD = (
     .filter((it) => it !== null);
 };
 
-const obtenerRenglones = (resultados: InventarioActual[], saltar: number) => {
-  return resultados.map((item, idx) => {
-    return [
-      idx + 1 + saltar,
-      "",
-      item.producto.productoClaves[item.producto.productoClaves.length - 1]
-        .barras, // clave más reciente
-      item.producto.titulo, // artículo
-      item.producto.descripcion.trim(), // descripcion
-      item.producto.area.nombre, // area
-      item.bodega.nombre, // almacen
-      item.disponible, // estado
-      item.cantidadAlmacen *
-      item.producto.productoPrecios[
-        item.producto.productoPrecios.findIndex(
-          (pp) => pp.precioTipo.id === 2
-        )
-      ].precio, // DONE total $$$
-      item.producto.productoCaracteristicas
-        .map((it) => `${it.llave}:${it.valor}`)
-        .join("\n"), // notas y comentarios
-    ];
-  });
-};
-
-const agregarDatosRenglones = async (
-  tbl: Table,
-  query: SelectQueryBuilder<InventarioActual>,
-  saltar: number,
-  tomar: number
-) => {
-  const resultados = await query.take(tomar).skip(saltar).getMany();
-
-  // Agregar contenido a la tabla
-
-  obtenerRenglones(resultados, saltar).map((it, idx) =>
-    tbl.addRow(it, saltar + idx)
-  );
-
-  tbl.commit();
-  // tbl.getColumn()
-
-  return resultados.length === tomar;
-};
-
-
 const agregarDatosRenglonesMovimientoProyecto = async (
   tbl: Table,
   query: SelectQueryBuilder<Movimiento>,
@@ -705,7 +584,6 @@ const agregarDatosRenglonesMovimientoProyecto = async (
   );
 
   tbl.commit();
-  // tbl.getColumn()
 
   return resultados.length === tomar;
 };
@@ -725,7 +603,6 @@ const agregarDatosRenglonesMovimientoProyectoFotoGrande = async (
   );
 
   tbl.commit();
-  // tbl.getColumn()
 
   return resultados.length === tomar;
 };
@@ -746,7 +623,6 @@ const agregarDatosRenglonesMovimiento = async (
   );
 
   tbl.commit();
-  // tbl.getColumn()
 
   return resultados.length === tomar;
 };
@@ -765,12 +641,10 @@ const agregarDatosRenglonesMovimientoCompras = async (
   logger.debug('agregarDatosRenglonesMovimientoCompras', { saltoTabla });
 
   obtenerRenglonesMovimientoCompras(resultados, saltoTabla).map((it, idx) =>
-    // tbl.addRow(it, saltoTabla + idx)
     tbl.addRow(it)
   );
 
   tbl.commit();
-  // tbl.getColumn()
 
   return resultados.length === tomar;
 };
@@ -788,12 +662,10 @@ const agregarDatosRenglonesMovimientoComprasUSD = async (
   logger.debug('agregarDatosRenglonesMovimientoCompras', { saltoTabla });
 
   obtenerRenglonesMovimientoComprasUSD(resultados, saltoTabla).map((it, idx) =>
-    // tbl.addRow(it, saltoTabla + idx)
     tbl.addRow(it)
   );
 
   tbl.commit();
-  // tbl.getColumn()
 
   return resultados.length === tomar;
 };
@@ -802,7 +674,6 @@ const configurarHojaExcel = async (
   sheet: Worksheet,
   columnas: columnasExcel[]
 ) => {
-  // console.log('*******************************************chet', sheet.state, sheet)
 
   for (let index = 1; index <= columnas.length; index++) {
     sheet.getColumn(index).font = letras[columnas[index - 1].letra];
@@ -862,7 +733,6 @@ const agregarTituloHojaExcel = async (
       tl: { col: 0, row: 0 },
       ext: { width: 73, height: 38 },
     });
-    // row.commit();
   } catch (error) {
     logger.error(error);
   } finally {
@@ -892,50 +762,12 @@ const agregarTabla = async (
       totalsRowFormula: it.formulaTotal || "",
       totalsRowLabel: "",
     })),
-    //   {name: 'TOTAL', totalsRowFunction: 'custom', totalsRowFormula:`sum(I4:I${total+3})`, filterButton: true},
     rows: valoresIniciales,
   });
-  // tbl.commit();
-  // console.log("valoresIniciales", valoresIniciales.pop())
-
-
 
   return tbl;
 };
 
-const agregarImagenes = async (
-  sheet: Worksheet,
-  workbook: Workbook,
-  query: SelectQueryBuilder<InventarioActual>,
-  saltar: number,
-  tomar: number
-) => {
-  const articulos = await query.take(tomar).skip(saltar).getMany();
-  let rowInc = 0 + saltar;
-  // console.log(articulos[0]);
-  for (const item of articulos) {
-    // console.log(item);
-    if (item.producto.archivos.length > 0) {
-
-      const idImage = workbook.addImage({
-        buffer: (await sharp(item.producto.archivos[0].data)
-          .resize(64, 64)
-          .withMetadata().toFormat('jpeg')
-          .toBuffer()) as any, // exceljs tipa `buffer` con un Buffer antiguo incompatible con @types/node 22
-        extension: "jpeg",
-      });
-      sheet.addImage(idImage, {
-        editAs: "",
-        tl: { col: 1.15, row: rowInc + 3.35 },
-        ext: { width: 60, height: 60 },
-      });
-    }
-    sheet.getRow(rowInc + 4).height = 60;
-    rowInc++;
-  }
-
-  return articulos.length === tomar;
-};
 
 const agregarImagenesMovimiento = async (
   sheet: Worksheet,
@@ -946,9 +778,7 @@ const agregarImagenesMovimiento = async (
 ) => {
   const articulos = await query.take(tomar).skip(saltar).getMany();
   let rowInc = 0 + saltar;
-  // console.log(articulos[0]);
   for (const item of articulos) {
-    // console.log(item);
     if (item.inventarioActual.producto.archivos.length > 0) {
 
       // GET THE LATEST FILE BASE ON ITS ID
@@ -956,9 +786,6 @@ const agregarImagenesMovimiento = async (
       const file = await AppDataSource.getRepository(Archivo).findOneBy({ id: itemFile.id });
 
 
-      // const file = await getRepository(Archivo).findOne(
-      //   item.inventarioActual.producto.archivos[0].id
-      // );
       if (file == null) continue;
       const idImage = workbook.addImage({
         buffer: (await sharp(file.data).resize(64, 64).withMetadata().toFormat('jpeg').toBuffer()) as any, // tipos de exceljs vs @types/node 22
@@ -986,17 +813,12 @@ const agregarImagenesMovimientoFotoGrande = async (
 ) => {
   const articulos = await query.take(tomar).skip(saltar).getMany();
   let rowInc = 0 + saltar;
-  // console.log(articulos[0]);
   for (const item of articulos) {
-    // console.log(item);
     if (item.inventarioActual.producto.archivos.length > 0) {
       // GET THE LATEST FILE BASE ON ITS ID
       const itemFile = item.inventarioActual.producto.archivos.sort((a, b) => a.id - b.id).pop();
       const file = await AppDataSource.getRepository(Archivo).findOneBy({ id: itemFile.id });
 
-      // const file = await getRepository(Archivo).findOne(
-      //   item.inventarioActual.producto.archivos[0].id
-      // );
       if (file == null) continue;
       const idImage = workbook.addImage({
         buffer: (await sharp(file.data).resize(400, null, { fit: 'inside' }).withMetadata().toFormat('jpeg').toBuffer()) as any, // tipos de exceljs vs @types/node 22
@@ -1026,18 +848,12 @@ const agregarImagenesMovimientoCompra = async (
   renUSD: number
 ): Promise<[boolean, number, number]> => {
   const articulos = await query.take(tomar).skip(saltar).getMany();
-  // let rowInc = 0 + saltar;
-  // console.log(articulos[0]);
   for (const item of articulos) {
-    // console.log(item);
     if (item.inventarioActual.producto.archivos.length > 0) {
       // GET THE LATEST FILE BASE ON ITS ID
       const itemFile = item.inventarioActual.producto.archivos.sort((a, b) => a.id - b.id).pop();
       const file = await AppDataSource.getRepository(Archivo).findOneBy({ id: itemFile.id });
 
-      // const file = await getRepository(Archivo).findOne(
-      //   item.inventarioActual.producto.archivos[0].id
-      // );
       if (file == null) continue;
       const idImage = workbook.addImage({
         buffer: (await sharp(file.data).resize(64, 64).withMetadata().toFormat('jpeg').toBuffer()) as any, // tipos de exceljs vs @types/node 22
@@ -1062,7 +878,6 @@ const agregarImagenesMovimientoCompra = async (
       sheet.getRow(renMXP + 4).height = 60;
       renMXP++;
     }
-    // rowInc++;
   }
 
   return [articulos.length === tomar, renMXP, renUSD];
@@ -1084,7 +899,7 @@ async function agregarHojaMovimientos(
   },
   t0: number
 ) {
-  const { areasId, bodegasId, proyectosId, fechaInicio, fechaFin, tiposMovimientosId,
+  const { areasId, bodegasId, proyectosId, tiposMovimientosId,
     usuariosIds, filters, campoOrden = 'movimiento.id', direccion = 'DESC'
   } = movementsParams;
 
@@ -1154,7 +969,6 @@ async function agregarHojaMovimientos(
       `agregarDatosRenglones. ${incRenglones} Regs:${50 + incRenglones * 50}-${50 + incRenglones * 50 + 50
       }......${reportTitle}.........`, performance.now() - t0
     );
-    // process.send({r:0,message:`6 + ${incRenglones}`});
     incRenglones++;
   }
 
@@ -1173,18 +987,9 @@ async function agregarHojaMovimientos(
         `agregarDatosRenglones. ${incImagenes}.....${reportTitle}..........`,
         performance.now() - t0
       );
-      // process.send({r:0,message:`7 + ${incImagenes}`});
       incImagenes++;
     }
   }
-  // if (!conFoto) {
-  //   tbl.removeColumns(1, 1);
-  //   tbl.commit()
-  // }
-  // if (areasId?.length) {
-  //   tbl.removeColumns(5, 1);
-  //   tbl.commit()
-  // }
 
   // para obtener el total de registros y el total de precios
   qryResultados.andWhere("precioTipo.id = 2")
@@ -1225,7 +1030,7 @@ async function agregarHojaPrestamosActivos(
   },
   t0: number
 ) {
-  const { areasId = [], bodegasId = [], proyectosId, fechaInicio, fechaFin, tiposMovimientosId,
+  const { areasId = [], bodegasId = [], proyectosId,
     usuariosIds = [], filters, campoOrden = 'movimiento.id', direccion = 'DESC'
   } = movementsParams;
 
@@ -1279,7 +1084,6 @@ async function agregarHojaPrestamosActivos(
       `agregarDatosRenglones. ${incRenglones} Regs:${50 + incRenglones * 50}-${50 + incRenglones * 50 + 50
       }......${reportTitle}.........`, performance.now() - t0
     );
-    // process.send({r:0,message:`6 + ${incRenglones}`});
     incRenglones++;
   }
 
@@ -1298,7 +1102,6 @@ async function agregarHojaPrestamosActivos(
         `agregarDatosRenglones. ${incImagenes}.....${reportTitle}..........`,
         performance.now() - t0
       );
-      // process.send({r:0,message:`7 + ${incImagenes}`});
       incImagenes++;
     }
   }
@@ -1458,16 +1261,6 @@ const reporteGeneral = async (body: {
     t0
   );
 
-
-  // const sheetCompras = workbook.addWorksheet("COMPRAS");
-  // const sheetPrestamos = workbook.addWorksheet("PRÉSTAMOS");
-  // const sheetDevoluciones = workbook.addWorksheet("DEVOLUCIONES");
-  // const sheetBajasJ = workbook.addWorksheet("BAJAS JUSTIFICADAS");
-  // const sheetBajasI = workbook.addWorksheet("BAJAS INJUSTIFICADAS");
-  // const sheetBajasI = workbook.addWorksheet("FALTANTES");
-
-
-
   logger.debug("...............RESUMEN");
   await configurarHojaExcel(sheetResumen, columnasDetalleResumen);
   logger.debug("configurarHojaExcel................", performance.now() - t0);
@@ -1511,301 +1304,6 @@ const reporteGeneral = async (body: {
   return { path: arch, nombreReporte };
 };
 
-const queryReporteGeneralImagenes = () =>
-  AppDataSource.getRepository(InventarioActual)
-    .createQueryBuilder("inventarioActual")
-    .innerJoinAndSelect("inventarioActual.producto", "producto")
-    .leftJoinAndSelect("producto.archivos", "archivos")
-    // .leftJoinAndSelect("producto.productoCaracteristicas","productoCaracteristicas")
-    .leftJoin("producto.productoPrecios", "productoPrecios")
-    .leftJoin("productoPrecios.precioTipo", "precioTipo")
-    .leftJoin("producto.area", "area")
-    .where("area.id=1") // Maquillaje
-    .andWhere("precioTipo.id=2") // COMPRA ORIGEN
-    .andWhere("inventarioActual.disponible<>'baja'");
-
-const queryReporteGeneral = () =>
-  AppDataSource.getRepository(InventarioActual)
-    .createQueryBuilder("inventarioActual")
-    .innerJoinAndSelect("inventarioActual.producto", "producto")
-    // .leftJoinAndSelect("producto.archivos","archivos")
-    .leftJoinAndSelect(
-      "producto.productoCaracteristicas",
-      "productoCaracteristicas"
-    )
-    .leftJoinAndSelect("producto.productoClaves", "productoClaves")
-    .leftJoinAndSelect("producto.productoPrecios", "productoPrecios")
-    .leftJoinAndSelect("productoPrecios.precioTipo", "precioTipo")
-    .leftJoinAndSelect("producto.area", "area")
-    .leftJoinAndSelect("inventarioActual.bodega", "bodega")
-    .where("area.id=1") // Maquillaje
-    .andWhere("precioTipo.id=2") // COMPRA ORIGEN
-    .andWhere("inventarioActual.disponible<>'baja'");
-
-const reporteGeneral2 = async () => {
-  const t0 = performance.now();
-  const arch =
-    process.env.RUTA_REPORTES + "RG" + Date.now().toString() + ".xlsx";
-  const columnas = [
-    "No.",
-    "FOTOGRAFÍA",
-    "CÓDIGO",
-    "ARTÍCULO",
-    "DESCRIPCIÓN",
-    "AREA",
-    "ALMACEN",
-    "ESTADO",
-    "TOTAL",
-    "NOTAS / COMENTARIOS",
-  ];
-  logger.debug("Iniciando generacion de reporte................");
-
-  // const query= queryReporteGeneral();
-
-  // const workbook=new Workbook();
-  // new stream.xlsx.WorksheetReader({})
-  const workbook = new stream.xlsx.WorkbookWriter({
-    filename: arch,
-    useStyles: true,
-    useSharedStrings: true,
-  });
-  workbook.creator = "Sistema Almacén Exogrid";
-  workbook.created = new Date();
-  const sheet = workbook.addWorksheet("GENERAL");
-  // console.log("sheet",sheet)
-  // const sheet=new stream.xlsx.WorksheetReader({
-  //     workbook,
-  //     id:1,
-
-  // })
-  // sheet.commit();
-
-  await configurarHojaExcel(sheet, columnasDetalle);
-
-  await agregarTituloHojaExcel(sheet, workbook, 10, "REPORTE GENERAL");
-  // workbook.commit();
-
-  // const tbl = await agregarTabla(sheet,columnas,'A3',obtenerRenglones( await queryReporteGeneral().take(50).getMany() ) )
-
-  // await agregarDatosRenglones(tbl,queryReporteGeneral(),50,50)
-
-  // await agregarImagenes(sheet,workbook,queryReporteGeneralImagenes(),0,5)
-  await workbook.commit();
-
-  // console.log("Imagenes de productos agregados................", performance.now() - t0)
-  const arch2 =
-    process.env.RUTA_REPORTES + "RG-2-" + Date.now().toString() + ".xlsx";
-  // workbook.xlsx.writeFile(arch2);
-  logger.debug("Workbook guardado .............", performance.now() - t0);
-  logger.debug("ARCHIVO EXCEL....", arch);
-  // console.log("ARCHIVO EXCEL....", arch2)
-  // console.log("ARCHIVO EXCEL....", arch2)
-
-  logger.debug(
-    "...............FIN DE REPORTE.............",
-    performance.now() - t0
-  );
-
-  return arch;
-};
-
-const reporteMaquillajeGeneral = async () => {
-  const t0 = performance.now();
-  const arch =
-    process.env.RUTA_REPORTES + "RG" + Date.now().toString() + ".xlsx";
-  logger.debug("Iniciando generacion de reporte................");
-
-  const [articulos, total] = await AppDataSource.getRepository(InventarioActual)
-    .createQueryBuilder("inventarioActual")
-    .innerJoinAndSelect("inventarioActual.producto", "producto")
-    .leftJoinAndSelect("producto.archivos", "archivos")
-    .leftJoinAndSelect(
-      "producto.productoCaracteristicas",
-      "productoCaracteristicas"
-    )
-    .leftJoinAndSelect("producto.productoClaves", "productoClaves")
-    .leftJoinAndSelect("producto.productoPrecios", "productoPrecios")
-    .leftJoinAndSelect("productoPrecios.precioTipo", "precioTipo")
-    .leftJoinAndSelect("producto.area", "area")
-    .leftJoinAndSelect("inventarioActual.bodega", "bodega")
-    .where("area.id=1") // Maquillaje
-    .andWhere("precioTipo.id=2") // COMPRA ORIGEN
-    .andWhere("inventarioActual.disponible<>'baja'")
-    .getManyAndCount();
-
-  logger.debug(
-    "Datos obtenidos de la DB................",
-    performance.now() - t0
-  );
-
-  const workbook = new Workbook();
-  workbook.creator = "Sistema Almacén Exogrid";
-  workbook.created = new Date();
-
-  const sheet = workbook.addWorksheet("General");
-
-  // CONFIGURAR HOJA
-  const font8 = {
-    name: "Calibri",
-    size: 8,
-    color: { theme: 1 },
-  };
-  const font7 = {
-    name: "Calibri",
-    size: 7,
-    color: { theme: 1 },
-  };
-  const alignment = { vertical: "middle", horizontal: "center" };
-
-  for (let index = 1; index <= 10; index++) {
-    sheet.getColumn(index).font = font8;
-    sheet.getColumn(index).alignment = {
-      wrapText: true,
-      vertical: "middle",
-      horizontal: "center",
-    };
-    // sheet.getColumn(index).width=5.14;
-  }
-  (sheet.getColumn(1).width = 5.14), // numero partida
-    (sheet.getColumn(2).width = 10.71); // foto
-  sheet.getColumn(3).width = 11.43; // clave
-  sheet.getColumn(4).width = 13.71; // articulo
-
-  sheet.getColumn(5).width = 43.29; // descripcion
-  sheet.getColumn(5).font = font7;
-
-  sheet.getColumn(6).width = 16.14; // area
-  sheet.getColumn(7).width = 20.29; // almacen
-  sheet.getColumn(8).width = 20.29; // estado
-
-  sheet.getColumn(9).width = 13.29; // precio
-  sheet.getColumn(9).numFmt = '"$"#,##0.00';
-
-  sheet.getColumn(10).width = 43.29; // notas y comentarios
-
-  /// TITULO
-  sheet.getRow(1).height = 32.25;
-  sheet.mergeCells("A1:M1");
-  sheet.getCell("A1").value = "MAQUILLAJE";
-  const img = workbook.addImage({
-    filename: process.env.ARCHIVOS_AUXILIARES + "sony-tv-logo.jpg",
-    extension: "jpeg",
-  });
-  sheet.addImage(img, {
-    editAs: "absolute",
-    tl: { col: 0, row: 0 },
-    ext: { width: 73, height: 38 },
-  });
-
-  /// REGISTROS
-  // await GrupoController.generarExcel(workbook,query,0,100);
-
-  const renglones = articulos.map((item, idx) => {
-    return [
-      idx + 1,
-      "",
-      item.producto.productoClaves[item.producto.productoClaves.length - 1]
-        .barras, // clave más reciente
-      item.producto.titulo, // artículo
-      item.producto.descripcion.trim(), // descripcion
-      item.producto.area.nombre, // area
-      item.bodega.nombre, // almacen
-      item.disponible, // estado
-      item.cantidadAlmacen *
-      item.producto.productoPrecios[
-        item.producto.productoPrecios.findIndex(
-          (pp) => pp.precioTipo.id === 2
-        )
-      ].precio, // DONE total $$$
-      item.producto.productoCaracteristicas
-        .map((it) => `${it.llave}:${it.valor}`)
-        .join("\n"), // notas y comentarios
-    ];
-  });
-
-  const tbl = sheet.addTable({
-    name: `T-${Date.now().toString()}`,
-    ref: "A3",
-    headerRow: true,
-    totalsRow: true,
-    style: {
-      theme: "TableStyleMedium15",
-      showRowStripes: true,
-    },
-    columns: [
-      { name: "No.", totalsRowLabel: "", filterButton: false },
-      {
-        name: "FOTOGRAFÍA",
-        /* totalsRowFunction: 'sum',*/ filterButton: false,
-      },
-      { name: "CÓDIGO", /* totalsRowFunction: 'sum',*/ filterButton: true },
-      { name: "ARTÍCULO", /* totalsRowFunction: 'sum',*/ filterButton: true },
-      { name: "DESCRIPCIÓN", /* totalsRowLabel: 'TOTAL',*/ filterButton: true },
-      { name: "AREA", /* totalsRowFunction: 'sum',*/ filterButton: true },
-      { name: "ALMACEN", /* totalsRowFunction: 'sum',*/ filterButton: true },
-      { name: "ESTADO", /* totalsRowFunction: 'sum',*/ filterButton: true },
-      {
-        name: "TOTAL",
-        totalsRowFunction: "custom",
-        totalsRowFormula: `sum(I4:I${total + 3})`,
-        filterButton: true,
-      },
-      {
-        name: "NOTAS / COMENTARIOS",
-        /* totalsRowFunction: 'sum',*/ filterButton: true,
-      },
-      //   {name: 'PROVEEDOR',/* totalsRowFunction: 'sum',*/ filterButton: true},
-    ],
-    rows: renglones,
-  });
-  // tbl.addRow()
-  logger.debug("Tabla agregada................", performance.now() - t0);
-
-  // COLOCANDO IMAGENES
-  let rowInc = 0;
-  for (const item of articulos) {
-    if (item.producto.archivos.length > 0) {
-      const data = (
-        await sharp(item.producto.archivos[0].data)
-          .resize(64, 64)
-          .withMetadata().toFormat('jpeg')
-          .toBuffer()
-      ).toString("base64");
-      const base64 = `data:${item.producto.archivos[0].tipo};base64,${data}`;
-      const idImage = workbook.addImage({
-        base64,
-        extension: "jpeg",
-      });
-      // console.log(`idImage: ${idImage}`);
-
-      sheet.addImage(idImage, {
-        editAs: "",
-        tl: { col: 1.15, row: rowInc + 3.35 },
-        ext: { width: 60, height: 60 },
-      });
-    }
-    sheet.getRow(rowInc + 4).height = 60;
-    rowInc++;
-  }
-
-  logger.debug(
-    "Imagenes de productos agregados................",
-    performance.now() - t0
-  );
-
-  await workbook.xlsx.writeFile(arch);
-  logger.debug("Workbook guardado .............", performance.now() - t0);
-
-  logger.debug("ARCHIVO EXCEL....", arch);
-
-  logger.debug(
-    "...............FIN DE REPORTE.............",
-    performance.now() - t0
-  );
-
-  return arch;
-};
-
 const reportePorGrupo = async (body: any) => {
   const {
     grupoNombre,
@@ -1815,8 +1313,7 @@ const reportePorGrupo = async (body: any) => {
     sortField,
     sortOrder,
     filters,
-    nombreAlmacenista,
-    ...nuevoBody
+    nombreAlmacenista
   } = body;
 
   const t0 = performance.now();
@@ -1829,7 +1326,6 @@ const reportePorGrupo = async (body: any) => {
     .where("Grupo.id = :grupoId", { grupoId })
     .getOne();
 
-  // console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>gres", gres, gres.grupoDetalle);
   const proyectoNombre = gres?.grupoDetalle?.proyecto?.nombre ?? "SIN PROYECTO";
 
 
@@ -1840,7 +1336,6 @@ const reportePorGrupo = async (body: any) => {
   logger.debug(
     `"Iniciando generacion de reporte......${nombreReporte}.........."`
   );
-  // // process.send({r:0,message:"Iniciando generacion de reporte......nombreReporte.........."});
 
   const workbook = new Workbook();
 
@@ -1877,30 +1372,23 @@ const reportePorGrupo = async (body: any) => {
   //clonar qry para obtener el total de registros
   const qryTotal = qry.clone();
 
-
-
   const tbl: Table = await agregarTabla(
     sheet,
     columnasDetallePorProyecto,
     "A3",
     obtenerRenglonesMovimientoProyecto(await qry.take(50).getMany(), 0)
-    // obtenerRenglonesMovimiento(await qry.take(50).getMany(), 0)
   );
-  // console.log("agregarTabla.....nombreReporte...........", performance.now() - t0)
-  // process.send({r:0,message:"4"});
 
   let incRenglones = 0;
 
   while (
     await agregarDatosRenglonesMovimientoProyecto(tbl, qry, 50 + incRenglones * 50, 50)
-    // await agregarDatosRenglonesMovimiento(tbl, qry, 50 + incRenglones * 50, 50)
   ) {
     logger.debug(
       `agregarDatosRenglones. ${incRenglones} Regs:${50 + incRenglones * 50}-${50 + incRenglones * 50 + 50
       }......${nombreReporte}.........`,
       performance.now() - t0
     );
-    // process.send({r:0,message:`6 + ${incRenglones}`});
     incRenglones++;
   }
 
@@ -1919,31 +1407,19 @@ const reportePorGrupo = async (body: any) => {
         `agregarDatosRenglones. ${incImagenes}.....${nombreReporte}..........`,
         performance.now() - t0
       );
-      // process.send({r:0,message:`7 + ${incImagenes}`});
       incImagenes++;
     }
   }
 
-  // qry.getCount();
-
-
-  // const totalRows = tbl.rows.length;
   const totalRows = await qryTotal.getCount();
   logger.debug(">>>>>>>>>>>>>>>>>>totalRows", totalRows);
   if (totalRows > 0) {
 
     const nombreResponsable = gres?.grupoDetalle?.usuarios?.map((it) => it.nombre).join("\r\n") ?? "SIN RESPONSABLE";
-    // const nombreResponsable = tbl.rows[0][columnasDetallePorProyecto.length - 1];
-
-
-    // sheet.getCell(`A${totalRows + 7}`).value = `Fecha: ${new Date().toLocaleString()}`;
-
 
     mergeCellsAndInsertData(sheet, `F${totalRows + 9}:G${totalRows + 9}`, `___________________________`);
     mergeCellsAndInsertData(sheet, `C${totalRows + 9}:D${totalRows + 9}`, `___________________________`);
-    // sheet.getCell(`F${totalRows + 9}`).value = `_________________________________`;
 
-    // sheet.getCell(`C${totalRows + 9}`).value = `_________________________________`;
 
     if (compareStringsIgnoreAccents(movimientoTipoNombre, 'PRÉSTAMO')
       || compareStringsIgnoreAccents(movimientoTipoNombre, 'RENTA EXTERNA')
@@ -1951,37 +1427,19 @@ const reportePorGrupo = async (body: any) => {
     ) {
       mergeCellsAndInsertData(sheet, `F${totalRows + 10}:G${totalRows + 10}`, `RECIBE`);
       mergeCellsAndInsertData(sheet, `C${totalRows + 10}:D${totalRows + 10}`, `ENTREGA`);
-      // sheet.getCell(`F${totalRows + 10}`).value = `RECIBE`;
-      // sheet.getCell(`C${totalRows + 10}`).value = `ENTREGA`;
     } else if (compareStringsIgnoreAccents(movimientoTipoNombre, 'DEVOLUCIÓN')) {
       mergeCellsAndInsertData(sheet, `F${totalRows + 10}:G${totalRows + 10}`, `ENTREGA`);
       mergeCellsAndInsertData(sheet, `C${totalRows + 10}:D${totalRows + 10}`, `RECIBE`);
-      // sheet.getCell(`F${totalRows + 10}`).value = `ENTREGA`;
-      // sheet.getCell(`C${totalRows + 10}`).value = `RECIBE`;
     } else {
-      // if (movimientoTipoNombre === 'COMPRA' ||
-      //   movimientoTipoNombre === 'COMPRA*' ||
-      //   movimientoTipoNombre === 'BAJA EN INVENTARIO' ||
-      //   movimientoTipoNombre === 'BAJA JUSTIFICADA' ||
-      //   movimientoTipoNombre === 'BAJA INJUSTIFICADA' ||
-      //   movimientoTipoNombre === 'BAJA ADMINISTRADOR'
-      // ) 
 
       mergeCellsAndInsertData(sheet, `F${totalRows + 10}:G${totalRows + 10}`, `RESPONSABLE`);
       mergeCellsAndInsertData(sheet, `C${totalRows + 10}:D${totalRows + 10}`, `ALMACENISTA`);
-      //
-      // sheet.getCell(`F${totalRows + 10}`).value = `RESPONSABLE`;
-      // sheet.getCell(`C${totalRows + 10}`).value = `ALMACENISTA`;
     }
 
     // agregar nombre del almacenista al final del archivo
 
     mergeCellsAndInsertData(sheet, `F${totalRows + 11}:G${totalRows + 11}`, `${nombreResponsable}`);
     mergeCellsAndInsertData(sheet, `C${totalRows + 11}:D${totalRows + 11}`, `${nombreAlmacenista}`);
-
-    // sheet.getCell(`F${totalRows + 11}`).value = `${nombreResponsable}`;
-    // sheet.getCell(`C${totalRows + 11}`).value = `${nombreAlmacenista}`;
-
 
   }
 
@@ -1991,31 +1449,25 @@ const reportePorGrupo = async (body: any) => {
     `"Workbook guardando ......${nombreReporte}......."`,
     performance.now() - t0
   );
-  // // process.send({r:0,message:`8 + ${arch}`});
   await workbook.xlsx.writeFile(arch);
-  // console.log("ARCHIVO EXCEL.........", arch)
-  // // process.send({r:0,message:`9 + ${arch}`});
 
   logger.debug(
     `"FIN DE REPORTE ......${nombreReporte}......."`,
     performance.now() - t0
   );
-  // // process.send({r:0,message:`10 + ${arch}`});
 
   return { path: arch, nombreReporte };
 };
 
 const reportePorGrupoFotoGrande = async (body: any) => {
   const {
-    grupoNombre,
     movimientoTipoNombre,
     conFoto,
     grupoId,
     sortField,
     sortOrder,
     filters,
-    nombreAlmacenista,
-    ...nuevoBody
+    nombreAlmacenista
   } = body;
 
   const t0 = performance.now();
@@ -2028,11 +1480,7 @@ const reportePorGrupoFotoGrande = async (body: any) => {
     .where("Grupo.id = :grupoId", { grupoId })
     .getOne();
 
-  // console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>gres", gres, gres.grupoDetalle);
   const proyectoNombre = gres?.grupoDetalle?.proyecto?.nombre ?? "SIN PROYECTO";
-
-
-
 
   const nombreReporte = sanitizeFilename(
     `${movimientoTipoNombre ?? ""} ${proyectoNombre ?? ""}_BIGPIC_${Math.trunc(Math.random() * 1000000)}.xlsx`
@@ -2041,7 +1489,6 @@ const reportePorGrupoFotoGrande = async (body: any) => {
   logger.debug(
     `"Iniciando generacion de reporte......${nombreReporte}.........."`
   );
-  // // process.send({r:0,message:"Iniciando generacion de reporte......nombreReporte.........."});
 
   const workbook = new Workbook();
 
@@ -2078,30 +1525,23 @@ const reportePorGrupoFotoGrande = async (body: any) => {
   //clonar qry para obtener el total de registros
   const qryTotal = qry.clone();
 
-
-
   const tbl: Table = await agregarTabla(
     sheet,
     columnasDetallePorProyectoFotoGrande,
     "A3",
     obtenerRenglonesMovimientoProyectoFotoGrande(await qry.take(50).getMany(), 0)
-    // obtenerRenglonesMovimiento(await qry.take(50).getMany(), 0)
   );
-  // console.log("agregarTabla.....nombreReporte...........", performance.now() - t0)
-  // process.send({r:0,message:"4"});
 
   let incRenglones = 0;
 
   while (
     await agregarDatosRenglonesMovimientoProyectoFotoGrande(tbl, qry, 50 + incRenglones * 50, 50)
-    // await agregarDatosRenglonesMovimiento(tbl, qry, 50 + incRenglones * 50, 50)
   ) {
     logger.debug(
       `agregarDatosRenglones. ${incRenglones} Regs:${50 + incRenglones * 50}-${50 + incRenglones * 50 + 50
       }......${nombreReporte}.........`,
       performance.now() - t0
     );
-    // process.send({r:0,message:`6 + ${incRenglones}`});
     incRenglones++;
   }
 
@@ -2120,15 +1560,10 @@ const reportePorGrupoFotoGrande = async (body: any) => {
         `agregarDatosRenglones. ${incImagenes}.....${nombreReporte}..........`,
         performance.now() - t0
       );
-      // process.send({r:0,message:`7 + ${incImagenes}`});
       incImagenes++;
     }
   }
 
-  // qry.getCount();
-
-
-  // const totalRows = tbl.rows.length;
   const totalRows = await qryTotal.getCount();
   logger.debug(">>>>>>>>>>>>>>>>>>totalRows", totalRows);
   if (totalRows > 0) {
@@ -2188,10 +1623,7 @@ const reportePorProyecto = async (body: any) => {
     bodegasIds,
     sortField,
     sortOrder,
-    pagination,
     filters,
-    nombreAlmacenista,
-    ...nuevoBody
   } = body;
 
   logger.debug("-----------------------------", {
@@ -2207,16 +1639,10 @@ const reportePorProyecto = async (body: any) => {
     })
   ).nombre;
 
-  // const movimientoNombre = movimientoTipoId ? (await getRepository(MovimientoTipo).findOne(movimientoTipoId, {
-  //   select: ["id", "nombre"],
-  //   loadEagerRelations: false,
-  // })).nombre:'';
 
   const areasNombres = areasIds ? (await AppDataSource.getRepository(Area).findBy({ id: In(areasIds) })).map(area => area.nombre).join(' - ') : '';
-  // proyectoId,movimientoTipoId,usuariosIds,areasIds,bodegasIds,
 
   const t0 = performance.now();
-  // const nombreReporte=`${proyectoNombre}_${movimientoTipoNombre}_${Math.trunc(Math.random()*10000000)}`
   const nombreReporte = sanitizeFilename(
     `${movimientoTipoNombre ?? "_"}_${areasNombres}_${proyectoNombre ?? "_"}_${Math.trunc(
       Math.random() * 1000000
@@ -2244,7 +1670,6 @@ const reportePorProyecto = async (body: any) => {
     `${movimientoTipoNombre ?? ""} ${areasNombres} ${proyectoNombre ?? ""}`.toLocaleUpperCase()
   );
 
-  //   const campoOrden: string | string[] = sortField ? sortField : "movimiento.id";
   const campoOrden: string | string[] = sortField
     ? sortField
     : "inventarioActual.id";
@@ -2301,7 +1726,6 @@ const reportePorProyecto = async (body: any) => {
       }......${nombreReporte}.........`,
       performance.now() - t0
     );
-    // process.send({r:0,message:`6 + ${incRenglones}`});
     incRenglones++;
   }
 
@@ -2320,18 +1744,9 @@ const reportePorProyecto = async (body: any) => {
         `agregarDatosRenglones. ${incImagenes}.....${nombreReporte}..........`,
         performance.now() - t0
       );
-      // process.send({r:0,message:`7 + ${incImagenes}`});
       incImagenes++;
     }
   }
-
-  // const totalRows = tbl.rows.length;
-
-
-
-  // agregar firma
-  // nombreAlmacenista
-
 
   const arch = process.env.RUTA_REPORTES + nombreReporte;
   logger.debug(
@@ -2360,9 +1775,7 @@ const reportePorProyectoCompras = async (body: any) => {
     bodegasIds,
     sortField,
     sortOrder,
-    pagination,
-    filters,
-    ...nuevoBody
+    filters
   } = body;
   logger.debug("-----------------------------", {
     sortField,
@@ -2417,7 +1830,6 @@ const reportePorProyectoCompras = async (body: any) => {
     `REPORTE ${movimientoTipoNombre ?? ""} - ${proyectoNombre ?? ""} - DÓLARES`
   );
 
-  //   const campoOrden: string | string[] = sortField ? sortField : "movimiento.id";
   const campoOrden: string | string[] = sortField
     ? sortField
     : "inventarioActual.id";
@@ -2455,7 +1867,6 @@ const reportePorProyectoCompras = async (body: any) => {
 
   qry.orderBy(columnaSegura(campoOrden, "movimiento.id"), direccionSegura(direccion === "DESC" ? "descend" : direccion === "ASC" ? "ascend" : direccion));
 
-  // console.log("SQL", qry.getSql());
 
   const qryResultInit = await qry.take(50).getMany();
 
@@ -2488,7 +1899,6 @@ const reportePorProyectoCompras = async (body: any) => {
       }......${nombreReporte}.........`,
       performance.now() - t0
     );
-    // process.send({r:0,message:`6 + ${incRenglones}`});
     incRenglones++;
   }
 
@@ -2507,7 +1917,6 @@ const reportePorProyectoCompras = async (body: any) => {
       }-${50 + incRenglonesUSD * 50 + 50}......${nombreReporte}......... USD`,
       performance.now() - t0
     );
-    // process.send({r:0,message:`6 + ${incRenglones}`});
     incRenglonesUSD++;
   }
 
@@ -2534,22 +1943,6 @@ const reportePorProyectoCompras = async (body: any) => {
       incImagenes++;
     } while (resp);
 
-    //   await agregarImagenesMovimientoCompra(
-    //     sheet,
-    //     sheetUSD,
-    //     workbook,
-    //     qry,
-    //     50 * incImagenes,
-    //     50
-    //   )
-    // ) {
-    //   console.log(
-    //     `agregarDatosRenglones. ${incImagenes}.....${nombreReporte}..........`,
-    //     performance.now() - t0
-    //   );
-    //   // process.send({r:0,message:`7 + ${incImagenes}`});
-    //   incImagenes++;
-    // }
   }
 
   const arch = process.env.RUTA_REPORTES + nombreReporte;
@@ -2577,8 +1970,7 @@ const reportePorPrestamosRentasActivas = async (body: any) => {
     bodegasIds,
     sortField,
     sortOrder,
-    filters,
-    ...nuevoBody
+    filters
   } = body;
 
   const proyectoNombre = proyectoId > 0 ? (
@@ -2589,7 +1981,6 @@ const reportePorPrestamosRentasActivas = async (body: any) => {
   ).nombre : 'Todos';
 
   const t0 = performance.now();
-  // const nombreReporte = `${Math.trunc(Math.random() * 10000000)}.xlsx`;
   const nombreReporte = sanitizeFilename(
     `${movimientoTipoNombre ?? "_"}_${proyectoNombre ?? "_"}_${Math.trunc(
       Math.random() * 1000000
@@ -2649,7 +2040,6 @@ const reportePorPrestamosRentasActivas = async (body: any) => {
       }......${nombreReporte}.........`,
       performance.now() - t0
     );
-    // process.send({r:0,message:`6 + ${incRenglones}`});
     incRenglones++;
   }
 
@@ -2668,7 +2058,6 @@ const reportePorPrestamosRentasActivas = async (body: any) => {
         `agregarDatosRenglones. ${incImagenes}.....${nombreReporte}..........`,
         performance.now() - t0
       );
-      // process.send({r:0,message:`7 + ${incImagenes}`});
       incImagenes++;
     }
   }
@@ -2687,9 +2076,6 @@ const reportePorPrestamosRentasActivas = async (body: any) => {
 
   return { path: arch, nombreReporte };
 };
-
-
-// const reporte
 
 /**
  * Sanitizes a given filename by replacing invalid characters and removing accents.
@@ -2728,8 +2114,6 @@ function sanitizeFilename(filename: string): string {
 
 export {
   reporteGeneral,
-  reporteGeneral2,
-  reporteMaquillajeGeneral,
   reportePorGrupo,
   reportePorPrestamosRentasActivas,
   reportePorProyecto,

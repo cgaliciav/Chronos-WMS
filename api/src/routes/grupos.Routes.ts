@@ -1,18 +1,12 @@
 import { Router } from "express";
-import multer from 'multer'
 import GrupoController from "../controllers/Grupo.Controller";
 import { checkJwt } from "../middlewares/verificarJwt";
 import { checkRole } from "../middlewares/verificarRol";
 import { validarBody } from "../middlewares/validar";
 import { actividadCompraSchema, actividadSchema, agregarOperacionSchema, quitarMovimientoSchema } from "../esquemas";
-import { TAMANO_MAXIMO_ARCHIVO } from "../controllers/Archivo.Controller";
 import { soloDigitos } from "../middlewares/rutas";
-// import { conManejoDeErrores } from "../middlewares/manejoErrores";
 
 const router = Router();
-
-
-const upload = multer({ dest: process.env.UPLOADS, limits: { fileSize: TAMANO_MAXIMO_ARCHIVO, files: 1 } })
 
 //Get all users
 
@@ -37,19 +31,8 @@ router.post("/new-purchase",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-NUEVOCO
 router.put("/edit-details",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-EDITARDETALLE"])],GrupoController.editarConDetalle)
 router.put("/edit-purchase",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-EDITARCOMPRA"])],GrupoController.editarConCompra)
 
-
-
-// router.post("/activity-list",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-LISTAMOVIMIENTOS"])],GrupoController.listaTablaMovimientos)
 router.post("/activity-list-by-group",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-LISTAMOVIMIENTOS"])],GrupoController.listaTablaMovimientosPorGrupo)
 router.post("/active-activity-list",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-LISTAMOVIMIENTOSACTIVOS"])],GrupoController.listaTablaPendientesActivos)
-
-
-// router.post("/file",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-ARCHIVOSUBIR"])],upload.single('file'),GrupoController.agregarArchivo) // esta peticion tiene que ser post por requerimiento del componente.
-// router.delete("/file",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-ARCHIVOBORRAR"])],GrupoController.quitarArchivo)
-
-
-// router.put("/comment",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-COMENTARIONUEVO"])],GrupoController.agregarComentario)
-// router.delete("/comment",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-COMENTARIOBORRAR"])],GrupoController.quitarComentario)
 
 router.put("/activity",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-MOVIMIENTONUEVO"]),validarBody(actividadSchema)],GrupoController.agregarMovimiento)
 router.put("/activity-purchase",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-MOVIMIENTONUEVOCOMPRA"]),validarBody(actividadCompraSchema)],GrupoController.agregarMovimientoCompra)
@@ -67,7 +50,5 @@ router.post("/create-list-from-report-use",[checkJwt,checkRole(["ADMINISTRADOR",
 router.post("/create-list-from-report-activity",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-CREARLISTADEREPORTEOPERACIONES"])],GrupoController.nuevoListadoDeReporteMovimiento)
 
 router.post("/similar-names-count",[checkJwt],GrupoController.obtenerCanteoNombresSimilares)
-
-
 
 export default router;

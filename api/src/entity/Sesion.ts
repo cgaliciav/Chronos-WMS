@@ -5,9 +5,6 @@ import { Movimiento } from "./Movimiento";
 import { Comentario } from "./Comentario";
 import { Grupo } from "./Grupo";
 import { ProductoInventariado } from "./ProductoInventariado";
-// import { Factura } from "./FacturaDetalle";
-// import { Previodata } from "./Previodata";
-// import { Previo } from "./Previo";
 
 
 @Entity()

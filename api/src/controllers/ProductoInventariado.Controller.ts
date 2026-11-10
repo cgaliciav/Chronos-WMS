@@ -6,7 +6,6 @@ import { ProductoInventariado, InventarioEstado } from "../entity/ProductoInvent
 import { Sesion } from "../entity/Sesion";
 import { idSeguro, parametro } from "../helpers/ids";
 import { logger } from "../helpers/logger";
-// import { ProductoInventariado, ValidacionEstado } from "../entity/ProductoInventariado";
 
 export default class ProductoInventariadoController {
   static guardar = async (
@@ -15,14 +14,6 @@ export default class ProductoInventariadoController {
     validacion: InventarioEstado,
     sesionId: number,
   ) => {
-    // let productoInventariado = await getRepository(ProductoInventariado)
-    //   .createQueryBuilder("productoInventariado")
-    //   .innerJoinAndSelect("productoInventariado.producto", "producto")
-    //   .where("producto.id = :productoId", { productoId })
-    //   .getOne();
-    // console.log({ productoInventariado, productoId, validacion });
-    // if (productoInventariado === undefined) {
-    // }
     const productoInventariado = new ProductoInventariado();
     productoInventariado.estatus = EstatusEstado.ACTIVO;
     productoInventariado.producto = await AppDataSource.getRepository(Producto).findOneByOrFail({ id: idSeguro(productoId, "productoId") });
@@ -106,7 +97,6 @@ export default class ProductoInventariadoController {
   ) => {
     logger.info("ProductoInventariadoController - DETALLE", { param: req.params });
     const id = parametro(req, "id");
-    //const { jwtPayload } = res.locals;
     try {
       const respuesta = await AppDataSource.getRepository(Producto).findOneByOrFail({ id: idSeguro(id) });      
       res.json(respuesta.productoInventarios);

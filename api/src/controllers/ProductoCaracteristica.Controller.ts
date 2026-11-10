@@ -9,8 +9,6 @@ import { Producto } from "../entity/Producto";
 import { ProductoCaracteristica } from "../entity/ProductoCaracteristica";
 import { logger } from "../helpers/logger";
 
-
-
 class ProductoCaracteristicaController{
     
     static guardar=async(productoCaracteristicas:{llave:string,valor:string}[],sesionId:number,manager:EntityManager=AppDataSource.manager)=>{
@@ -27,15 +25,6 @@ class ProductoCaracteristicaController{
         )
     }
 
-    // static guardarUno=async(productoCaracteristicas:{llave:string,valor:string},sesionId:number)=>{
-    //     const pc=new ProductoCaracteristica();
-    //     pc.llave=productoCaracteristicas.llave;
-    //     pc.valor=productoCaracteristicas.valor;
-    //     pc.sesionId=sesionId;
-    //     return(
-    //         await getRepository(ProductoCaracteristica).save(pc)
-    //     )
-    // }
 
     static quitar=async (productoCaracteristicas:ProductoCaracteristica[],sesionId:number)=>{
         productoCaracteristicas.forEach(pc=>{ pc.sesionId=sesionId});
@@ -43,14 +32,6 @@ class ProductoCaracteristicaController{
             await AppDataSource.getRepository(ProductoCaracteristica).remove(productoCaracteristicas)
         )
     }
-
-    // static quitarUno=async (productoCaracteristicas:ProductoCaracteristica,sesionId:number)=>{
-    //     productoCaracteristicas.sesionId=sesionId;
-    //     return(
-    //         await getRepository(ProductoCaracteristica).remove(productoCaracteristicas)
-    //     )
-
-    // }
 
     static modificar=async(productoCaracteristicas:ProductoCaracteristica, productoCaracteristicasNuevo:{llave:string,valor:string},sesionId:number)=>{
         productoCaracteristicas.sesionId=sesionId;
@@ -72,9 +53,7 @@ class ProductoCaracteristicaController{
             for (const caracteristicas of nuevasCaracteristicas) {
                 productoCaracteristicas.push(caracteristicas)
             }
-            // for(const caracteristicas of nuevasCaracteristicas)
             
-            // producto.productoCaracteristicas.concat(nuevasCaracteristicas);
             producto.sesionId=jwtPayload.si;
             await AppDataSource.getRepository(Producto).save(producto);
             res.json();

@@ -10,7 +10,6 @@ let minLength = 8;
 let uppercaseMinCount = 1;
 let lowercaseMinCount = 1;
 let numberMinCount = 1;
-// let specialMinCount = 2;
 let UPPERCASE_RE = /([A-Z])/g;
 let LOWERCASE_RE = /([a-z])/g;
 let NUMBER_RE = /([\d])/g;
@@ -21,7 +20,6 @@ export default class  passGenerator{
         let uc = password.match(UPPERCASE_RE);
         let lc = password.match(LOWERCASE_RE);
         let n = password.match(NUMBER_RE);
-      //   let sc = password.match(SPECIAL_CHAR_RE);
         let nr = password.match(NON_REPEATING_CHAR_RE);
         return password.length >= minLength &&
           password.length <= maxLength &&
@@ -29,7 +27,6 @@ export default class  passGenerator{
           uc && uc.length >= uppercaseMinCount &&
           lc && lc.length >= lowercaseMinCount &&
           n && n.length >= numberMinCount //&&
-          // sc && sc.length >= specialMinCount;
       }
        
       static generarPassword= ()=> {
