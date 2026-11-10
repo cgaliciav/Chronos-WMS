@@ -3,39 +3,36 @@ import LogGeneralController from "../controllers/LogGeneral.Controller";
 import { LogTipo } from "../entity/LogGeneral";
 import { logger } from "./logger";
 
-let transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.postmarkapp.com",
-    port: +(process.env.SMTP_PORT || 2525),
-    headers: {
-        "X-PM-Message-Stream": "outbound",
-    },
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-        method: "PLAIN",
-    },
-  });
-
 const SMTP_FROM = process.env.SMTP_FROM || 'telesetalmacen@exogrid.xyz';
 
-transporter.verify()
-  .then(success => {
-      logger.info("SMTP correcto");
-  })
-  .catch(error =>{
-      logger.error("SMTP error:", error);
-  });
+// La cabecera de Postmark es un valor por defecto de cada MENSAJE (segundo argumento). Antes iba entre las opciones del
+// transporte, donde nodemailer la ignora (hallazgo M22).
+let transporter = nodemailer.createTransport(
+  {
+    host: process.env.SMTP_HOST || "smtp.postmarkapp.com",
+    port: +(process.env.SMTP_PORT || 2525),
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+      method: "PLAIN",
+    },
+  },
+  { from: SMTP_FROM, headers: { "X-PM-Message-Stream": "outbound" } }
+);
 
-  let enviarCorreoHTML = (correoDestino:string,subject:string, text:string) =>
+/** Comprueba la conexión SMTP. Se llama al arrancar (index.ts), no al importar el módulo: antes cada importación (y cada prueba) abría una conexión (M22). */
+export const verificarCorreo = () =>
+  transporter
+    .verify()
+    .then(() => logger.info("SMTP correcto"))
+    .catch((error) => logger.error("SMTP error:", error));
+
+  let enviarCorreoHTML = (correoDestino:string,subject:string, html:string) =>
     transporter.sendMail({
         from: SMTP_FROM, // sender address
         to: correoDestino, // list of receivers
-        // html:
         subject,
-        text
-        // subject: "Hello ✔", // Subject line
-        // text: "Hello world?", // plain text body
-        // html: "<b>Hello world?</b>" // html body
+        html // antes se enviaba como `text` y el destinatario veía el HTML crudo (M22)
         }).then(info=>{
             // console.log(`Correo Enviado:`, info.rejected,info.response);
             LogGeneralController.InsertarLog(LogTipo.INFO,"Correo Enviado",info);

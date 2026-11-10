@@ -4,7 +4,7 @@ import { EstatusEstado } from "../entity/common/NombreEstatus";
 import { Producto } from "../entity/Producto";
 import { ProductoInventariado, InventarioEstado } from "../entity/ProductoInventariado";
 import { Sesion } from "../entity/Sesion";
-import { idSeguro } from "../helpers/ids";
+import { idSeguro, parametro } from "../helpers/ids";
 import { logger } from "../helpers/logger";
 // import { ProductoInventariado, ValidacionEstado } from "../entity/ProductoInventariado";
 
@@ -105,7 +105,7 @@ export default class ProductoInventariadoController {
     next: NextFunction
   ) => {
     logger.info("ProductoInventariadoController - DETALLE", { param: req.params });
-    const { id } = req.params;
+    const id = parametro(req, "id");
     //const { jwtPayload } = res.locals;
     try {
       const respuesta = await getRepository(Producto).findOneOrFail(id);      

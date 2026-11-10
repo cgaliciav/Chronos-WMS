@@ -50,6 +50,8 @@ Los ids fijos están en `SEMILLA`.
 | `src/test/humo.int.test.ts` | arranque, login, token, roles |
 | `src/test/caracterizacion.int.test.ts` | escenarios de negocio (compra, alta, préstamo, devolución, deshacer, concurrencia, listados, edición, IP). Desde la fase 3 deshacer el penúltimo y la concurrencia se comprueban en estricto |
 | `src/test/relaciones.int.test.ts` | fase 3: relaciones origen→derivado, saldos, FIFO, `strict`, transferencias, deshacer con derivados, compras/bajas, modo de compatibilidad con legados, listado de pendientes, atomicidad, edición de proyecto |
+| `src/test/rutas.int.test.ts` | fase 5: lee `src/routes`, llama a todas las rutas con token de admin y falla si alguna da el 404 de Express o se queda colgada; comprueba también que todos los `*.Routes.ts` estén montados |
+| `src/test/humoArchivosReportes.int.test.ts` | fase 5: subida a `/item/file` (multer), original y miniaturas (sharp), límite de tamaño y un reporte `.xlsx` con fotos (exceljs) |
 | `src/test/parcheTypeorm.int.test.ts` | fase 4: el parche de rendimiento de TypeORM genera exactamente el mismo SQL que la implementación original |
 | `src/test/rendimiento.ts` (`npm run rendimiento`) | no es una prueba: medición con autocannon, ver `docs/api/rendimiento.md` |
 | `src/services/reglas/*.test.ts`, `src/services/resolverRelaciones.test.ts`, `src/helpers/cacheArchivos.test.ts` | unitarias de los efectos sobre el inventario (17 tipos, 100 % de ramas), del planificador de relaciones con datos simulados y del caché de archivos |

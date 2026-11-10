@@ -9,13 +9,13 @@ guía para agentes en [`CLAUDE.md`](CLAUDE.md), fallos conocidos en
 
 ### Stack actual
 - Node.js 24 LTS (`.nvmrc`; `engines` ≥ 22), imagen `node:24-alpine` multietapa (`Dockerfile`)
-- MariaDB ≥ 10.11 (driver `mysql2` 3), TypeORM 0.2.45, Express 4, TypeScript 5.9, logs con pino
+- MariaDB ≥ 10.11 (driver `mysql2` 3), TypeORM 0.2.45, Express 5, TypeScript 5.9, logs con pino
 - Esquema por migraciones (`src/migration/`): `node build/migrar.js show|run|revert` en la imagen;
   procedimiento en [`../docs/api/procedimiento-migracion-produccion.md`](../docs/api/procedimiento-migracion-produccion.md)
 - Scripts: `npm run dev` (ts-node-dev), `npm start` (ts-node), `npm run build` + `npm run prod` (compilado),
   `npm run typecheck`, `npm run test:unit`, `npm run test:int`, `npm run rendimiento`
   (ver [`../docs/api/pruebas.md`](../docs/api/pruebas.md) y [`../docs/api/rendimiento.md`](../docs/api/rendimiento.md))
-- Despliegue: `./desplegar.sh pruebas|produccion` (o `deploy.sh` / `deploy-production.sh`)
+- Despliegue: `./desplegar.sh pruebas|produccion` (o `deploy.sh` / `deploy-production.sh`); cambios en [`CHANGELOG.md`](CHANGELOG.md)
 
 ### Historia
 Proyecto originalmente pensado para el almacén de Teleset/Sony en México; ha ido cambiando constantemente.

@@ -37,6 +37,12 @@ export const crearApp = (opciones: { registrarPeticiones?: boolean } = {}) => {
   app.use(helmet());
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
+  // Express 5 deja req.body en undefined si no hubo cuerpo que parsear (GET, DELETE sin JSON); los controladores
+  // desestructuran req.body, así que se conserva el {} de Express 4.
+  app.use((req, _res, next) => {
+    if (req.body === undefined) req.body = {};
+    next();
+  });
   app.use(pasadas);
 
   // Límite de intentos de inicio de sesión por IP (hallazgo M3).

@@ -54,6 +54,13 @@ los marcados con ⚠.
 - ⚠ Retirados `GET /groups/export-to-supabase/:id` y `GET /current-inventory/export-to-supabase/:id` (el front no los usaba).
 - ⚠ `POST /auth/logout` revoca el token: después, ese token responde 401 ("Sesión terminada").
 
+**Cambios de la fase 5 (v2.81.0, Express 5):** compatibles salvo lo marcado.
+- `POST /groups/create-list-from-report-use` y `/create-list-from-report-activity` responden `501` (antes la petición
+  se quedaba colgada). `POST /current-inventory/get-activity-inventory` con un id inválido responde `400` (antes colgaba).
+- ⚠ `req.query` usa el parser simple de Express 5: `?a[b]=1` ya no se convierte en objeto (ningún endpoint lo usa;
+  los listados reciben sus filtros en el cuerpo).
+- Las rutas con `:id` numérico siguen sin casar con valores no numéricos (404 de Express), igual que antes.
+
 **Cambios del 2026-11-08 (decisiones 11-13):**
 - ⚠ `PUT /groups/activity`, `/activity-purchase` y `/activity-add-transaction` responden 400 si el tipo de la operación
   no es el del listado ("El listado X es de … : solo admite movimientos de ese tipo"). Los listados antiguos de tipo 5

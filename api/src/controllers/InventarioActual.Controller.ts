@@ -6,7 +6,7 @@ import { Operacion } from "../entity/Operacion";
 import { Producto } from "../entity/Producto";
 import { AppError } from "../helpers/errorClases";
 import { andWhereIn, textoBusquedaBooleana } from "../helpers/filtrosTabla";
-import { idSeguro, idsSeguros } from "../helpers/ids";
+import { idSeguro, idsSeguros, parametro, parametroOpcional } from "../helpers/ids";
 import CommonController, { ResultadoTabla } from "./common/Common.Controller";
 import InventarioActualHistoricoController from "./InventarioActualHistorico.Controller";
 import ProductoController from "./Producto.Controller";
@@ -321,7 +321,7 @@ class InventarioActualController {
     }
 
     static obtenerId = async (req: Request, res: Response, next: NextFunction) => {
-        const { id } = req.params;
+        const id = parametro(req, "id");
         try {
             const resp = await CommonController.obtenerIdQuery(
                 fnQueryId(id)
@@ -518,9 +518,9 @@ class InventarioActualController {
     // Tipos de inventario: AJUSTE_INVENTARIO (6), BAJA_EN_INVENTARIO (8), INVENTARIO (9)
     static obtenerMovimientosInventario = async (req: Request, res: Response, next: NextFunction) => {
         // La ruta es POST sin :id; el id viene en el body (hallazgo H10). Se acepta también en params por compatibilidad.
-        const id = idSeguro(req.body?.inventarioActualId ?? req.params?.id, "inventarioActualId");
-
         try {
+            // Dentro del try: un id inválido lanzaba fuera de él y la petición se quedaba colgada (fase 5).
+            const id = idSeguro(req.body?.inventarioActualId ?? parametroOpcional(req, "id"), "inventarioActualId");
             res.json(
                 await getRepository(Operacion)
                     .createQueryBuilder("operacion")

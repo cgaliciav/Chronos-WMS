@@ -4,7 +4,7 @@ Monorepo del sistema de almacén (WMS) de Teleset/Sony México. Dos aplicaciones
 
 | Carpeta | Qué es | Guía propia |
 |---|---|---|
-| `api/` | API REST Node.js + Express 4 + TypeORM 0.2 + MariaDB (TypeScript) | `api/CLAUDE.md` |
+| `api/` | API REST Node.js + Express 5 + TypeORM 0.2 + MariaDB (TypeScript) | `api/CLAUDE.md` |
 | `front/` | SPA React 19 + antd 6 + Vite, 100 % TypeScript (plan 01: falta la fase 7, pruebas e2e y CI) | `front/CLAUDE.md` |
 | `docs/` | Documentación técnica, hallazgos y planes de trabajo | `docs/README.md` |
 
@@ -55,7 +55,7 @@ grande que incluya la versión.
 - `docs/hallazgos-codigo.md`: fallos conocidos con archivo:línea y severidad. Si corriges uno, márcalo ahí.
 - `docs/planes/01-front-actualizacion-antd.md`: plan por fases para Vite + React 19 + antd 6 y retirar Clean UI.
 - `docs/planes/02-api-relacion-movimientos.md`: plan por fases para la relación origen→derivado entre
-  movimientos, transacciones, migraciones y limpieza. Fases 0-4 hechas; la siguiente es la 5 (dependencias de runtime: Express 5, jsonwebtoken 9, multer 2, sharp…).
+  movimientos, transacciones, migraciones y limpieza. Fases 0-5 hechas; la siguiente es la 6 (TypeORM 1.x).
 
 ## Flujo de trabajo esperado
 

@@ -7,6 +7,7 @@ import { AppError } from "../helpers/errorClases";
 import CommonController from "./common/Common.Controller";
 import OperacionController from "./Operacion.Controller";
 import MovimientoService from "../services/MovimientoService";
+import { parametro } from "../helpers/ids";
 
 // Registrar, deshacer y relacionar operaciones vive en services/MovimientoService.ts (plan 02 fase 3).
 // Tipos de movimiento: entity/common/MovimientoTipoId.ts y docs/api/tipos-de-movimiento.md.
@@ -111,7 +112,7 @@ class MovimientoController {
   /** GET /activity/:id/chain — movimiento, sus orígenes, sus derivados y su saldo pendiente. */
   static obtenerCadena = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      res.json(await MovimientoService.cadena(req.params.id));
+      res.json(await MovimientoService.cadena(parametro(req, "id")));
     } catch (error) {
       next(error);
     }
@@ -120,7 +121,7 @@ class MovimientoController {
   /** GET /activity/open-by-inventory/:inventarioActualId?proyectoId= — salidas con saldo pendiente. */
   static obtenerAbiertosPorInventario = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      res.json(await MovimientoService.abiertosPorInventario(req.params.inventarioActualId, req.query.proyectoId as string | undefined));
+      res.json(await MovimientoService.abiertosPorInventario(parametro(req, "inventarioActualId"), req.query.proyectoId as string | undefined));
     } catch (error) {
       next(error);
     }
@@ -131,7 +132,7 @@ class MovimientoController {
     res: Response,
     next: NextFunction
   ) => {
-    const { id } = req.params; //inventarioActualId
+    const id = parametro(req, "id"); //inventarioActualId
     // const {jwtPayload}=res.locals;
     try {
       res.json(
@@ -158,7 +159,7 @@ class MovimientoController {
     res: Response,
     next: NextFunction
   ) => {
-    const { id } = req.params; //inventarioActualId
+    const id = parametro(req, "id"); //inventarioActualId
     // const {jwtPayload}=res.locals;
     try {
       res.json(
@@ -187,7 +188,7 @@ class MovimientoController {
     res: Response,
     next: NextFunction
   ) => {
-    const { id } = req.params;
+    const id = parametro(req, "id");
 
     // const {jwtPayload}=res.locals;
     try {
@@ -204,7 +205,7 @@ class MovimientoController {
     res: Response,
     next: NextFunction
   ) => {
-    const { id } = req.params; //movimientoId
+    const id = parametro(req, "id"); //movimientoId
     // const {jwtPayload}=res.locals;
     try {
       res.json(

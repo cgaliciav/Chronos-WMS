@@ -4,6 +4,7 @@ import { Proveedor } from "../entity/Proveedor";
 import CommonController from "./common/Common.Controller";
 import { construirFiltros } from "../helpers/filtrosTabla";
 import { logger } from "../helpers/logger";
+import { parametro } from "../helpers/ids";
 
 
 // Filtros de las tablas antd, parametrizados (antes se interpolaban llaves y valores: hallazgo C1).
@@ -52,7 +53,7 @@ class ProveedorController{
 
 
     static obtenerId = (req: Request, res: Response,next:NextFunction) =>{
-        const {id} = req.params;
+        const id = parametro(req, "id");
         CommonController.obtenerId( 
             getRepository(Proveedor), 
             ["comentarios"], 
@@ -93,7 +94,7 @@ class ProveedorController{
 
     static habilitar = (req: Request, res: Response,next:NextFunction) =>{
         const {jwtPayload}=res.locals;
-        const {id} = req.params;
+        const id = parametro(req, "id");
         CommonController.habilitar(
             getRepository(Proveedor),
             id,
@@ -107,7 +108,7 @@ class ProveedorController{
 
     static deshabilitar = (req: Request, res: Response,next:NextFunction) =>{
         const {jwtPayload}=res.locals;
-        const {id} = req.params;
+        const id = parametro(req, "id");
         CommonController.deshabilitar(
             getRepository(Proveedor),
             id,

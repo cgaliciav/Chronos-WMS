@@ -8,7 +8,8 @@ dotenv.config({ path: resolve(__dirname, "../../.env.test"), quiet: true });
 // `res.sendFile` exige rutas absolutas: las rutas relativas de .env.test se resuelven contra api/.
 for (const ruta of ["RUTA_ARCHIVOS", "RUTA_REPORTES", "UPLOADS", "ARCHIVOS_AUXILIARES", "IMAGENES_IMPORTACION"]) {
   const valor = process.env[ruta];
-  if (valor && !isAbsolute(valor)) process.env[ruta] = resolve(__dirname, "../..", valor);
+  // Se conserva la barra final: varias rutas se concatenan sin separador (como en producción, /code/exogrid/…/).
+  if (valor && !isAbsolute(valor)) process.env[ruta] = resolve(__dirname, "../..", valor) + (valor.endsWith("/") ? "/" : "");
 }
 
 // Las pruebas de integración hacen varias peticiones HTTP reales contra MariaDB.

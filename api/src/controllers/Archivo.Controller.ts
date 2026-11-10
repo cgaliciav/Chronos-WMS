@@ -9,7 +9,7 @@ import { InventarioActual } from "../entity/InventarioActual";
 import { AppError } from "../helpers/errorClases";
 import CommonController from "./common/Common.Controller";
 import { esImagen, extensionSegura, nombreArchivoSeguro } from "../helpers/archivosSeguros";
-import { idSeguro } from "../helpers/ids";
+import { idSeguro, parametro, parametroOpcional } from "../helpers/ids";
 import { escribirAtomico, olvidarArchivoEnCache, rutaTemporal } from "../helpers/cacheArchivos";
 import { Grupo } from "../entity/Grupo";
 import { Operacion } from "../entity/Operacion";
@@ -129,7 +129,7 @@ class ArchivoController {
   };
 
   static borrar = async (req: Request, res: Response, next: NextFunction) => {
-    const archivoId = idSeguro(req.params.id ?? req.body?.archivoId, "archivoId");
+    const archivoId = idSeguro(parametroOpcional(req, "id") ?? req.body?.archivoId, "archivoId");
     const { jwtPayload } = res.locals;
     try {
       await ArchivoController.quitar(await getRepository(Archivo).findOneOrFail(archivoId), jwtPayload.si);
@@ -144,7 +144,7 @@ class ArchivoController {
     res: Response,
     next: NextFunction
   ) => {
-    const { id } = req.params;
+    const id = parametro(req, "id");
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
 
     try {
@@ -159,7 +159,7 @@ class ArchivoController {
     res: Response,
     next: NextFunction
   ) => {
-    const { id } = req.params;
+    const id = parametro(req, "id");
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
 
     try {
@@ -185,7 +185,7 @@ class ArchivoController {
     res: Response,
     next: NextFunction
   ) => {
-    const { id } = req.params;
+    const id = parametro(req, "id");
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
 
     try {
@@ -212,7 +212,7 @@ class ArchivoController {
     res: Response,
     next: NextFunction
   ) => {
-    const { id } = req.params;
+    const id = parametro(req, "id");
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
 
     try {
@@ -235,7 +235,7 @@ class ArchivoController {
   };
 
   static obtenerIdsPorInventarioId = async (id: number | string) => {
-    // const {id} = req.params;
+    // const id = parametro(req, "id");
     const inventarioActual = await getRepository(InventarioActual)
       .createQueryBuilder("inventarioActual")
       .innerJoin("inventarioActual.producto", "producto")
@@ -316,7 +316,7 @@ class ArchivoController {
   ) => {
     try {
       // Solo el nombre base, servido desde la carpeta de reportes como raíz (hallazgo C4: recorrido de rutas).
-      const nombreArchivo = nombreArchivoSeguro(req.params.id);
+      const nombreArchivo = nombreArchivoSeguro(parametro(req, "id"));
       const raiz = process.env.RUTA_REPORTES;
       if (!raiz) throw new AppError("RUTA_REPORTES indefinida");
       if (!(await existe(join(raiz, nombreArchivo)))) {

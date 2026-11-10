@@ -23,3 +23,14 @@ export const idsSeguros = (valores: unknown, nombre = "ids"): number[] | undefin
   if (!Array.isArray(valores)) throw new AppError(`${nombre} debe ser un arreglo`, 400);
   return valores.map((v, i) => idSeguro(v, `${nombre}[${i}]`));
 };
+
+/**
+ * Parámetro de ruta como texto. Express 5 tipa `req.params` como `string | string[]` (por los comodines de
+ * path-to-regexp 8); las rutas del API no usan comodines, así que siempre llega un texto.
+ */
+export const parametroOpcional = (req: { params: Record<string, string | string[] | undefined> }, nombre: string): string | undefined => {
+  const valor = req.params?.[nombre];
+  return Array.isArray(valor) ? valor.join("/") : valor;
+};
+export const parametro = (req: { params: Record<string, string | string[] | undefined> }, nombre: string): string =>
+  parametroOpcional(req, nombre) ?? "";

@@ -316,7 +316,21 @@ no incluye `c` en la respuesta. Las de caracterización siguen verdes (10 cambia
 **Pruebas:** suite completa; `tsc --noEmit`; `npm audit --omit=dev` sin críticas; `autocannon` 30 s sobre
 los 5 endpoints más usados antes/después → `docs/api/rendimiento.md`.
 
-### Fase 5 · Actualización de dependencias de runtime
+### Fase 5 · Actualización de dependencias de runtime ✅ (hecha el 2026-11-10, v2.81.0)
+
+> **Resultado:** Express 5.3, helmet 8, jsonwebtoken 9, bcryptjs 3, multer 2.5, sharp 0.35, nodemailer 10, pino 10 y
+> pino-http 11. Suites en verde con Node 22 y 24, `typecheck` y `build`; `npm audit --omit=dev` sin altos (queda
+> `typeorm`, fase 6). Detalle en `api/CHANGELOG.md` y `docs/api/endpoints.md` ("Cambios de la fase 5").
+>
+> - Rutas `:id([0-9]+)` → `:id` + `soloDigitos` (`next("route")` si no es numérico: mismo comportamiento que la
+>   expresión, en lugar de validar con zod y responder 400). `req.body` se inicializa a `{}` (Express 5 lo deja
+>   `undefined` y 67 controladores lo desestructuran). `parametro()` para los `req.params` de Express 5.
+> - El paso pendiente de la fase 4 (async/await uniforme con `asyncHandler`) queda cubierto por Express 5, que pasa
+>   las promesas rechazadas a `next`.
+> - `rutas.int.test.ts` encontró, aún con Express 4, tres manejadores que nunca respondían; se corrigieron.
+> - Se corrigió también el hallazgo M22 (correo) al actualizar nodemailer.
+> - `class-validator` y `@sentry/node` ya se habían actualizado en las fases 4 y 2; TypeScript sigue en 5.9 y
+>   `reflect-metadata` en 0.1 (lo exige TypeORM 0.2) hasta la fase 6.
 
 | Paquete | Actual | Objetivo | Nota |
 |---|---|---|---|

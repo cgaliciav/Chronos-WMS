@@ -3,6 +3,7 @@ import { getRepository } from "typeorm";
 import { Area } from "../entity/Area";
 import CommonController from "./common/Common.Controller";
 import { construirFiltros } from "../helpers/filtrosTabla";
+import { parametro } from "../helpers/ids";
 
 
 // Filtros de las tablas antd, parametrizados (antes se interpolaban llaves y valores: hallazgo C1).
@@ -36,7 +37,7 @@ class AreaController{
 
 
     static obtenerId = (req: Request, res: Response,next:NextFunction) =>{
-        const {id} = req.params;
+        const id = parametro(req, "id");
         CommonController.obtenerId( 
             getRepository(Area), 
             [], 
@@ -77,7 +78,7 @@ class AreaController{
 
     static habilitar = (req: Request, res: Response,next:NextFunction) =>{
         const {jwtPayload}=res.locals;
-        const {id} = req.params;
+        const id = parametro(req, "id");
         CommonController.habilitar(
             getRepository(Area),
             id,
@@ -91,7 +92,7 @@ class AreaController{
 
     static deshabilitar = (req: Request, res: Response,next:NextFunction) =>{
         const {jwtPayload}=res.locals;
-        const {id} = req.params;
+        const id = parametro(req, "id");
         CommonController.deshabilitar(
             getRepository(Area),
             id,

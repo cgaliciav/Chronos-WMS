@@ -3,6 +3,7 @@ import { getRepository } from "typeorm";
 import { Bodega } from "../entity/Bodega";
 import CommonController from "./common/Common.Controller";
 import { construirFiltros } from "../helpers/filtrosTabla";
+import { parametro } from "../helpers/ids";
 
 // Filtros de las tablas antd, parametrizados (antes se interpolaban llaves y valores: hallazgo C1).
 const condicionesWhereAnd = (filters: any) => construirFiltros(filters, { alias: "bodega" });
@@ -35,7 +36,7 @@ class BodegaController{
 
 
     static obtenerId = (req: Request, res: Response,next:NextFunction) =>{
-        const {id} = req.params;
+        const id = parametro(req, "id");
         CommonController.obtenerId( 
             getRepository(Bodega), 
             [], 
@@ -76,7 +77,7 @@ class BodegaController{
 
     static habilitar = (req: Request, res: Response,next:NextFunction) =>{
         const {jwtPayload}=res.locals;
-        const {id} = req.params;
+        const id = parametro(req, "id");
         CommonController.habilitar(
             getRepository(Bodega),
             id,
@@ -90,7 +91,7 @@ class BodegaController{
 
     static deshabilitar = (req: Request, res: Response,next:NextFunction) =>{
         const {jwtPayload}=res.locals;
-        const {id} = req.params;
+        const id = parametro(req, "id");
         CommonController.deshabilitar(
             getRepository(Bodega),
             id,

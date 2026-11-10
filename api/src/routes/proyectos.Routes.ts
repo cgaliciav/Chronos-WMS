@@ -2,6 +2,7 @@ import { Router } from "express";
 import ProyectoController from "../controllers/Proyecto.Controller";
 import { checkJwt } from "../middlewares/verificarJwt";
 import { checkRole } from "../middlewares/verificarRol";
+import { soloDigitos } from "../middlewares/rutas";
 
 const router = Router();
 
@@ -12,9 +13,9 @@ router.get("/list-names",[checkJwt,checkRole(["ADMINISTRADOR","PROYECTO-LISTASIM
 router.get("/list-names-inbound",[checkJwt,checkRole(["ADMINISTRADOR","PROYECTO-LISTASIMPLEINTERNA"])], ProyectoController.listaSimpleInterna);
 router.get("/list-names-outbound",[checkJwt,checkRole(["ADMINISTRADOR","PROYECTO-LISTASIMPLEEXTERNA"])], ProyectoController.listaSimpleExterna);
 router.post("/list-antd",[checkJwt,checkRole(["ADMINISTRADOR","PROYECTO-LISTADETALLE"])], ProyectoController.listaTabla);
-router.put("/disable/:id([0-9]+)",[checkJwt,checkRole(["ADMINISTRADOR","PROYECTO-DESHABILITAR"])],ProyectoController.deshabilitar)
-router.put("/enable/:id([0-9]+)",[checkJwt,checkRole(["ADMINISTRADOR","PROYECTO-HABILITAR"])],ProyectoController.habilitar)
-router.get("/:id([0-9]+)",[checkJwt,checkRole(["ADMINISTRADOR","PROYECTO-DETALLE"])],ProyectoController.obtenerId)
+router.put("/disable/:id", soloDigitos("id"), [checkJwt,checkRole(["ADMINISTRADOR","PROYECTO-DESHABILITAR"])],ProyectoController.deshabilitar)
+router.put("/enable/:id", soloDigitos("id"), [checkJwt,checkRole(["ADMINISTRADOR","PROYECTO-HABILITAR"])],ProyectoController.habilitar)
+router.get("/:id", soloDigitos("id"), [checkJwt,checkRole(["ADMINISTRADOR","PROYECTO-DETALLE"])],ProyectoController.obtenerId)
 router.put("/edit",[checkJwt,checkRole(["ADMINISTRADOR","PROYECTO-EDITAR"])],ProyectoController.editar)
 router.post("/new",[checkJwt,checkRole(["ADMINISTRADOR","PROYECTO-NUEVO"])],ProyectoController.nuevo)
 

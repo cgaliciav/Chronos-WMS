@@ -4,6 +4,7 @@ import { checkJwt } from "../middlewares/verificarJwt";
 import { checkRole } from "../middlewares/verificarRol";
 import { validarBody } from "../middlewares/validar";
 import { regenerarPasswordSchema, usuarioEditarSchema, usuarioNuevoSchema } from "../esquemas";
+import { soloDigitos } from "../middlewares/rutas";
 
 const router = Router();
 
@@ -13,9 +14,9 @@ router.get("/list-names",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-LISTASIMP
 router.get("/list-names-full",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-LISTASIMPLECOMPLETA"])], UsuarioController.listaSimpleCompleto);
 router.post("/list-names-dynamic",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-LISTADINAMICA"])], UsuarioController.listaSimpleCompletaDinamica);
 router.post("/list-antd",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-LISTADETALLE"])], UsuarioController.listaTabla);
-router.put("/disable/:id([0-9]+)",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-DEHABILITAR"])],UsuarioController.deshabilitar)
-router.put("/enable/:id([0-9]+)",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-HABILITAR"])],UsuarioController.habilitar)
-router.get("/:id([0-9]+)",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-DETALLE"])],UsuarioController.obtenerId)
+router.put("/disable/:id", soloDigitos("id"), [checkJwt,checkRole(["ADMINISTRADOR","USUARIO-DEHABILITAR"])],UsuarioController.deshabilitar)
+router.put("/enable/:id", soloDigitos("id"), [checkJwt,checkRole(["ADMINISTRADOR","USUARIO-HABILITAR"])],UsuarioController.habilitar)
+router.get("/:id", soloDigitos("id"), [checkJwt,checkRole(["ADMINISTRADOR","USUARIO-DETALLE"])],UsuarioController.obtenerId)
 router.put("/edit",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-EDITAR"]),validarBody(usuarioEditarSchema)],UsuarioController.editar)
 router.post("/new",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-NUEVO"]),validarBody(usuarioNuevoSchema)],UsuarioController.nuevo)
 

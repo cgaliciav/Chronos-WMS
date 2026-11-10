@@ -16,7 +16,7 @@ import { InventarioActual } from "../entity/InventarioActual";
 import { Movimiento } from "../entity/Movimiento";
 import { Proyecto } from "../entity/Proyecto";
 import { Usuario } from "../entity/Usuario";
-import sharp = require("sharp");
+import sharp from "sharp";
 import { logger } from "./logger";
 
 function compareStringsIgnoreAccents(str1: string, str2: string): boolean {
@@ -918,7 +918,7 @@ const agregarImagenes = async (
       const idImage = workbook.addImage({
         buffer: (await sharp(item.producto.archivos[0].data)
           .resize(64, 64)
-          .withMetadata().toFormat('jpg')
+          .withMetadata().toFormat('jpeg')
           .toBuffer()) as any, // exceljs tipa `buffer` con un Buffer antiguo incompatible con @types/node 22
         extension: "jpeg",
       });
@@ -959,7 +959,7 @@ const agregarImagenesMovimiento = async (
       // );
       if (file === undefined) continue;
       const idImage = workbook.addImage({
-        buffer: (await sharp(file.data).resize(64, 64).withMetadata().toFormat('jpg').toBuffer()) as any, // tipos de exceljs vs @types/node 22
+        buffer: (await sharp(file.data).resize(64, 64).withMetadata().toFormat('jpeg').toBuffer()) as any, // tipos de exceljs vs @types/node 22
         extension: "jpeg",
       });
       sheet.addImage(idImage, {
@@ -997,7 +997,7 @@ const agregarImagenesMovimientoFotoGrande = async (
       // );
       if (file === undefined) continue;
       const idImage = workbook.addImage({
-        buffer: (await sharp(file.data).resize(400, null, { fit: 'inside' }).withMetadata().toFormat('jpg').toBuffer()) as any, // tipos de exceljs vs @types/node 22
+        buffer: (await sharp(file.data).resize(400, null, { fit: 'inside' }).withMetadata().toFormat('jpeg').toBuffer()) as any, // tipos de exceljs vs @types/node 22
         extension: "jpeg",
       });
       sheet.addImage(idImage, {
@@ -1038,7 +1038,7 @@ const agregarImagenesMovimientoCompra = async (
       // );
       if (file === undefined) continue;
       const idImage = workbook.addImage({
-        buffer: (await sharp(file.data).resize(64, 64).withMetadata().toFormat('jpg').toBuffer()) as any, // tipos de exceljs vs @types/node 22
+        buffer: (await sharp(file.data).resize(64, 64).withMetadata().toFormat('jpeg').toBuffer()) as any, // tipos de exceljs vs @types/node 22
         extension: "jpeg",
       });
 
@@ -1766,7 +1766,7 @@ const reporteMaquillajeGeneral = async () => {
       const data = (
         await sharp(item.producto.archivos[0].data)
           .resize(64, 64)
-          .withMetadata().toFormat('jpg')
+          .withMetadata().toFormat('jpeg')
           .toBuffer()
       ).toString("base64");
       const base64 = `data:${item.producto.archivos[0].tipo};base64,${data}`;
