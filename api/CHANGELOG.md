@@ -9,6 +9,26 @@ La versión vive en `package.json` (la devuelve `/auth/version`, y Sentry la usa
 `desplegar.sh` publica una versión `X.Y.Z-d` como `X.Y.Z` y, si ya no lleva sufijo, sube el parche. Contrato con el
 front: [`docs/api/endpoints.md`](../docs/api/endpoints.md). Plan: [`docs/planes/02-api-relacion-movimientos.md`](../docs/planes/02-api-relacion-movimientos.md).
 
+## [2.86.0-d] - Sin publicar
+
+Plan 03, fase 1: configuración por cliente servida por el API. **Migración nueva** `1794338006363-Configuracion`
+(tabla `configuracion` con los valores por defecto y rol `CONFIGURACION-EDITAR`). Variable nueva `CONFIG_CLAVE`.
+
+### Añadido
+
+- Recurso `/config` (contrato en `docs/api/endpoints.md`): `GET /config/public` y `/config/public/logo|favicon` sin
+  token (lo que muestra el login, con `ETag`); `GET /config`, `PUT /config/:seccion` (`{ version, valor }`, 400 por
+  esquema, 409 si otra persona guardó antes) y subida de logo, favicon y logo de reportes, con `ADMINISTRADOR` o
+  `CONFIGURACION-EDITAR`.
+- La contraseña SMTP se guarda cifrada (AES-256-GCM con `CONFIG_CLAVE`, 32 bytes en base64) y nunca sale en una
+  respuesta (`tieneContrasena`). Sin `CONFIG_CLAVE`, guardar una contraseña responde 400.
+- Si una sección falta o no valida se usan los valores por defecto de Chronos WMS (la app no deja de arrancar).
+
+### Seguridad
+
+- La auditoría (`LogFuncionamiento`) enmascara `password` y `contrasena*`: el hash bcrypt del usuario se registraba al
+  guardar una contraseña.
+
 ## [2.85.0-d] - Sin publicar
 
 Plan 03, fase 0: identidad por defecto "Chronos WMS". **No desplegar a producción solo**: los usuarios del cliente

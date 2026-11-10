@@ -54,6 +54,9 @@ los marcados con ⚠.
 - ⚠ Retirados `GET /groups/export-to-supabase/:id` y `GET /current-inventory/export-to-supabase/:id` (el front no los usaba).
 - ⚠ `POST /auth/logout` revoca el token: después, ese token responde 401 ("Sesión terminada").
 
+**Cambios de v2.86.0 (plan 03, fase 1):** nuevo recurso `/config` (sección "Configuración"), rol `CONFIGURACION-EDITAR`,
+migración `Configuracion`. v2.85.0 (fase 0): correos con "Chronos WMS" en lugar del nombre del cliente.
+
 **Cambios de v2.84.0 (contraseña temporal, hallazgo L2):** requiere la migración `PasswordTemporal`.
 - ⚠ La contraseña de alta (`POST /user/new`) y la regenerada (`PUT /user/renewpassword`) son temporales: vencen a las
   `HORAS_PASSWORD_TEMPORAL` horas (72) y hay que cambiarlas al entrar.
@@ -220,6 +223,19 @@ abre con `?auth=`).
 
 Productores: reportes (al terminar o fallar) y la tarea periódica de vencimientos (préstamos y rentas externas no
 legados con saldo abierto de más de `DIAS_CUARENTENA` días, una vez por movimiento y usuario).
+
+## Configuración (`/config`, plan 03)
+
+Una sección por fila: `marca`, `correo`, `reportes`, `regional` (campos y valores por defecto en
+`api/src/esquemas/configuracion.ts` y `docs/planes/03-personalizacion-por-cliente.md` §2.1).
+
+| Método | Ruta | Auth | Respuesta |
+|---|---|---|---|
+| GET | `/config/public` | ninguna | `{ marca (sin logoId/faviconId), regional, logoUrl\|null, faviconUrl\|null, version }`; `ETag` y `Cache-Control: no-cache` (304 con `If-None-Match`) |
+| GET | `/config/public/logo`, `/config/public/favicon` | ninguna | PNG de marca (solo archivos de tipo `MARCA-*`); sin configurar, el icono de Chronos WMS |
+| GET | `/config` | `ADMINISTRADOR`/`CONFIGURACION-EDITAR` | `{ marca, correo, reportes, regional }`, cada una `{ valor, version }`. En `correo.transporte` nunca sale la contraseña: `tieneContrasena` |
+| PUT | `/config/:seccion` | igual | Body `{ version, valor }` → `{ valor, version }`. 400 `{ errores: [{ campo, mensaje }] }` si no valida (campos desconocidos incluidos), 404 sección desconocida, 409 `{ version }` si otra persona guardó antes. En `correo.transporte.contrasena`: ausente = se conserva, `null` = se borra, texto = se cifra (400 sin `CONFIG_CLAVE`) |
+| POST | `/config/marca/logo`, `/config/marca/favicon`, `/config/reportes/logo` | igual | multipart `file` (PNG/JPEG/WebP ≤ 2 MiB; SVG no) → la sección actualizada. Se normaliza a PNG (logo ≤ 512 px, favicon 192 px, reportes ≤ 512×256) y se borra la imagen anterior |
 
 ## Reportes (`/reports`)
 | Método | Ruta | Roles | Nota |

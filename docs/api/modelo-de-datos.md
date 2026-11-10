@@ -109,6 +109,7 @@ erDiagram
 | `LogGeneral` | | Errores capturados por `errorMiddlewere`. |
 | `LogPeticiones` | | Métricas por petición HTTP (`request-stats`). |
 | `Parametros` | | Pares llave/valor de configuración. |
+| `Configuracion` | `configuracion` | Configuración por cliente (plan 03): una fila por sección (`marca`, `correo`, `reportes`, `regional`) con el JSON validado por zod (`esquemas/configuracion.ts`), `esquema` (versión del JSON) y `version` (bloqueo optimista). La contraseña SMTP va cifrada con `CONFIG_CLAVE`. Las imágenes de marca son `Archivo` con `tipo` `MARCA-LOGO`, `MARCA-FAVICON` o `REPORTES-LOGO`. |
 | `Notificacion` | `notificacion` | Aviso para un usuario (fase 7): `titulo`, `mensaje`, `tipo` (`reporte`, `prestamo`, `sistema`), `url`, `leida`, `fecha`, `fechaLectura`. `clave` (única por usuario, no se expone) evita repetir el aviso de vencimiento de un movimiento. Sin `sesionId`: la auditoría la omite. |
 
 ## Cómo se encadenan los movimientos (fase 3 del plan 02)

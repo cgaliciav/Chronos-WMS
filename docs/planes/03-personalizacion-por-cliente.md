@@ -154,7 +154,14 @@ Cambio rápido e independiente; deja el código sin referencias a Sony/Teleset a
 **Aceptación:** `grep -riE "sony|teleset" front/src front/index.html front/public api/src` sin resultados (salvo la
 alternativa temporal documentada del paso 3); suites verdes; checklist de humo 0.x y login.
 
-### Fase 1 · API: modelo, servicio y endpoints de configuración
+### Fase 1 · API: modelo, servicio y endpoints de configuración ✅ (hecha el 2026-11-10, API v2.86.0)
+
+> **Resultado y desviaciones:** `valor` es `simple-json` (texto) y no `json`: MariaDB guarda `json` como LONGTEXT y el
+> generador de migraciones vería diferencias en cada `test:int`. SVG se **rechaza** (no se sanea) e ICO también (sharp
+> no lo lee): se aceptan PNG/JPEG/WebP. `PUT` recibe `{ version, valor }`. La plantilla `passwordPerdido` no se incluye
+> (el flujo de contraseña perdida es la regeneración temporal de L2) y se añade la variable `{{horas}}`. La migración
+> congela los JSON por defecto (una migración publicada no cambia si cambia el código). La auditoría enmascara
+> secretos (M40). El rol se recrea con id fijo en `seed.ts`.
 
 1. Entidad `Configuracion` + migración (`npm run migration:generate -- Configuracion`) que crea la tabla e **inserta
    las secciones con los valores por defecto** de Chronos WMS (idempotente).
