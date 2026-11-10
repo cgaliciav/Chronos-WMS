@@ -5,8 +5,6 @@ import { checkRole } from "../middlewares/verificarRol";
 
 const router = Router();
 
-//Get all users
-// TODO Definir nivel de acceso de los usuarios
 
 router.get("/list-names",[checkJwt,checkRole(["ADMINISTRADOR","ROL-LISTASIMPLE"])], RolController.listaSimple);
 router.get("/list-names-dynamic",[checkJwt,checkRole(["ADMINISTRADOR","ROL-LISTADINAMICA"])], RolController.listaSimpleCompletaDinamica);

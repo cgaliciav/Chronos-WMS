@@ -603,7 +603,7 @@ class GrupoController {
     }
   };
 
-  // TODO nuevoListadoDeCatalogoFacturas
+  // Pendiente (responde 501): nuevoListadoDeCatalogoFacturas
   // **
   static nuevoListadoDeCatalogoFacturas = async (
     req: Request,
@@ -654,7 +654,7 @@ class GrupoController {
   };
 
   // **
-  // TODO nuevoListadoDeReporteUso
+  // Pendiente (responde 501): nuevoListadoDeReporteUso
   static nuevoListadoDeReporteUso = async (
     req: Request,
     res: Response,
@@ -665,7 +665,7 @@ class GrupoController {
   };
 
   // **
-  // TODO nuevoListadoDeReporteMovimiento
+  // Pendiente (responde 501): nuevoListadoDeReporteMovimiento
   static nuevoListadoDeReporteMovimiento = async (
     req: Request,
     res: Response,

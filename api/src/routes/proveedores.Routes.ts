@@ -6,8 +6,6 @@ import { soloDigitos } from "../middlewares/rutas";
 
 const router = Router();
 
-//Get all users
-// TODO Definir nivel de acceso de los usuarios
 
 router.get("/list-names",[checkJwt,checkRole(["ADMINISTRADOR","PROVEEDOR-LISTASIMPLE"])], ProveedorController.listaSimple);
 router.post("/list-dynamic",[checkJwt,checkRole(["ADMINISTRADOR","PROVEEDOR-LISTADINAMICA"])], ProveedorController.listaSimpleCompletaDinamica);

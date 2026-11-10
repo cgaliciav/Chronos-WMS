@@ -471,13 +471,12 @@ class InventarioActualController {
         }
     }
 
-    // TODO busqueda Catalogo por factura sistema viejo... y actual?
+    // Pendiente (responde 501): búsqueda del catálogo por factura
     static busquedaCatalogoFacturas = async (req: Request, res: Response, next: NextFunction) => {
         // Pendiente de implementar (búsqueda por factura/proveedor). Antes la petición se quedaba colgada (hallazgo H9).
         next(new AppError("Búsqueda por facturas no implementada", 501));
     }
 
-    // TODO SE PODRÍA HACER QUE TODAS LAS LISTAS SE MUESTREN EN FORMA DE CATALOGO???
 
     // #Factura Original
 
