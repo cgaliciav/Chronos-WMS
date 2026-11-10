@@ -15,6 +15,22 @@ Los códigos `F<n>` remiten a [`docs/hallazgos-codigo.md`](../docs/hallazgos-cod
 
 Pendiente: fase 7 del plan 01 (pruebas e2e con Playwright, CI y cobertura).
 
+## [4.2.1-d] - 2026-11-10
+
+### Cambiado
+
+- Campana de notificaciones más compacta (unos 50 % menos de alto por elemento): menos relleno, título a 13 px, mensaje a
+  12 px en dos líneas como máximo (completo en un tooltip) y la fecha relativa a 11 px junto al título (fecha exacta al
+  pasar el cursor).
+- Las no leídas se distinguen claramente: fondo azul claro, punto azul y título en negrita; las leídas, sin fondo y con
+  el texto atenuado (antes solo cambiaba la opacidad).
+
+### Corregido
+
+- El contador de la campana muestra el total de no leídas del API (`GET /notifications/count` al cargar y el evento
+  `conteo` del SSE, que también refleja lo marcado en otra pestaña). Antes contaba solo las 50 cargadas en la lista, así
+  que nunca pasaba de 50.
+
 ## [4.2.0-d] - 2026-11-10
 
 Notificaciones del API (plan 02 fase 7, D14). Para activarlas: `VITE_NOTIFICACIONES=on` cuando el API v2.83 esté

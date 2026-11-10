@@ -19,7 +19,8 @@ class EventSourceFalso {
     this.escuchas.set(tipo, [...(this.escuchas.get(tipo) ?? []), fn])
   }
   emitir(tipo: string, datos: unknown) {
-    for (const fn of this.escuchas.get(tipo) ?? []) fn(new MessageEvent(tipo, { data: JSON.stringify(datos) }))
+    for (const fn of this.escuchas.get(tipo) ?? [])
+      fn(new MessageEvent(tipo, { data: JSON.stringify(datos) }))
   }
   close() {
     this.cerrada = true
@@ -29,7 +30,10 @@ class EventSourceFalso {
 describe('notificaciones.store · conectar', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_NOTIFICACIONES', 'on')
-    useNotificacionesStore.setState({ notificaciones: [{ id: 1, titulo: 'Vieja', fecha: '2026-11-01', leida: true }] })
+    useNotificacionesStore.setState({
+      notificaciones: [{ id: 1, titulo: 'Vieja', fecha: '2026-11-01', leida: true }],
+      conteo: null,
+    })
   })
   afterEach(() => {
     vi.unstubAllEnvs()
@@ -50,6 +54,32 @@ describe('notificaciones.store · conectar', () => {
 
     cerrar()
     expect(fuente.cerrada).toBe(true)
+  })
+
+  it('usa el total del evento "conteo", lo sube con cada nueva y lo baja al marcar', async () => {
+    vi.stubGlobal('EventSource', EventSourceFalso)
+    servidor.use(
+      http.put(`${API}/notifications/:id/read`, () => HttpResponse.json({})),
+      http.put(`${API}/notifications/read-all`, () => HttpResponse.json({ actualizadas: 1 })),
+    )
+    const cerrar = useNotificacionesStore.getState().conectar()
+    const fuente = EventSourceFalso.ultima!
+    const noLeidas = () => useNotificacionesStore.getState().noLeidas()
+
+    fuente.emitir('conteo', { noLeidas: 120 }) // más que las que caben en la lista
+    expect(noLeidas()).toBe(120)
+    fuente.emitir('notificacion', { id: 2, titulo: 'Nueva', fecha: '2026-11-10', leida: false })
+    expect(noLeidas()).toBe(121)
+    fuente.emitir('notificacion', { id: 2, titulo: 'Nueva', fecha: '2026-11-10', leida: false }) // repetida
+    expect(noLeidas()).toBe(121)
+
+    await useNotificacionesStore.getState().marcarLeida(2)
+    expect(noLeidas()).toBe(120)
+    await useNotificacionesStore.getState().marcarLeida(1) // ya estaba leída: no cambia
+    expect(noLeidas()).toBe(120)
+    await useNotificacionesStore.getState().marcarTodas()
+    expect(noLeidas()).toBe(0)
+    cerrar()
   })
 
   it('si el SSE se cierra (p. ej. 401), pasa a pedir la lista cada 60 s', async () => {

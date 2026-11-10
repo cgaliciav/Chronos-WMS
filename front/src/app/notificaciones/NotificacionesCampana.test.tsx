@@ -11,7 +11,7 @@ import NotificacionesCampana from './NotificacionesCampana'
 describe('NotificacionesCampana', () => {
   afterEach(() => {
     vi.unstubAllEnvs()
-    useNotificacionesStore.setState({ notificaciones: [] })
+    useNotificacionesStore.setState({ notificaciones: [], conteo: null })
   })
 
   it('no se muestra si VITE_NOTIFICACIONES no es "on" (plan 01 D14)', () => {
@@ -30,10 +30,16 @@ describe('NotificacionesCampana', () => {
           { id: 3, titulo: 'Antigua', fecha: '2026-10-01', leida: true },
         ]),
       ),
+      http.get(`${API}/notifications/count`, () => HttpResponse.json({ noLeidas: 2 })),
     )
     renderizarEnRuta(<NotificacionesCampana />)
     expect(await screen.findByText('2')).toBeInTheDocument()
     expect(screen.getByLabelText('Notificaciones')).toBeInTheDocument()
+
+    // Solo las no leídas llevan el indicador "Sin leer"
+    await userEvent.click(screen.getByLabelText('Notificaciones'))
+    await screen.findByText('Antigua')
+    expect(screen.getAllByLabelText('Sin leer')).toHaveLength(2)
   })
 
   it('abre el reporte del API en otra pestaña con el token y navega a las rutas del front', async () => {
@@ -44,8 +50,22 @@ describe('NotificacionesCampana', () => {
     servidor.use(
       http.get(`${API}/notifications/`, () =>
         HttpResponse.json([
-          { id: 1, titulo: 'Reporte generado', fecha: '2026-11-01', leida: false, tipo: 'reporte', url: '/file/report/Alta%20A.xlsx' },
-          { id: 2, titulo: 'Préstamo vencido', fecha: '2026-11-02', leida: false, tipo: 'prestamo', url: '/prestamos/operacion?uid=3' },
+          {
+            id: 1,
+            titulo: 'Reporte generado',
+            fecha: '2026-11-01',
+            leida: false,
+            tipo: 'reporte',
+            url: '/file/report/Alta%20A.xlsx',
+          },
+          {
+            id: 2,
+            titulo: 'Préstamo vencido',
+            fecha: '2026-11-02',
+            leida: false,
+            tipo: 'prestamo',
+            url: '/prestamos/operacion?uid=3',
+          },
         ]),
       ),
       http.put(`${API}/notifications/:id/read`, ({ params }) => {
@@ -57,7 +77,11 @@ describe('NotificacionesCampana', () => {
     await userEvent.click(await screen.findByLabelText('Notificaciones'))
 
     await userEvent.click(await screen.findByText('Reporte generado'))
-    expect(abrir).toHaveBeenCalledWith(`${API}/file/report/Alta%20A.xlsx?auth=tok-1`, '_blank', 'noopener')
+    expect(abrir).toHaveBeenCalledWith(
+      `${API}/file/report/Alta%20A.xlsx?auth=tok-1`,
+      '_blank',
+      'noopener',
+    )
 
     await userEvent.click(screen.getByText('Préstamo vencido'))
     await waitFor(() => expect(router.state.location.pathname).toBe('/prestamos/operacion'))
@@ -76,6 +100,7 @@ describe('NotificacionesCampana', () => {
           { id: 2, titulo: 'Dos', fecha: '2026-11-02', leida: false },
         ]),
       ),
+      http.get(`${API}/notifications/count`, () => HttpResponse.json({ noLeidas: 2 })),
       http.put(`${API}/notifications/read-all`, () => {
         llamadas++
         return HttpResponse.json({ actualizadas: 2 })
@@ -88,5 +113,17 @@ describe('NotificacionesCampana', () => {
     await waitFor(() => expect(useNotificacionesStore.getState().noLeidas()).toBe(0))
     expect(llamadas).toBe(1)
     expect(screen.queryByText('Marcar todas como leídas')).toBeNull()
+  })
+
+  it('el contador muestra el total de no leídas del API aunque la lista cargue menos', async () => {
+    vi.stubEnv('VITE_NOTIFICACIONES', 'on')
+    servidor.use(
+      http.get(`${API}/notifications/`, () =>
+        HttpResponse.json([{ id: 1, titulo: 'Una', fecha: '2026-11-01', leida: false }]),
+      ),
+      http.get(`${API}/notifications/count`, () => HttpResponse.json({ noLeidas: 73 })),
+    )
+    renderizarEnRuta(<NotificacionesCampana />)
+    expect(await screen.findByTitle('73')).toBeInTheDocument() // antd pinta cada dígito aparte
   })
 })
