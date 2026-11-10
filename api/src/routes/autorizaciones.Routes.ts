@@ -13,6 +13,7 @@ router.post("/logout",[checkJwt], AuthController.logout);
 
 router.get("/version", AuthController.version);
 
-// TODO QUE HACER PARA QUE LOS USUARIOS  PUEDAN RECUPERAR SOLO SU PROPIO PASSWORD
+// Recuperación de acceso: el administrador genera una contraseña temporal (PUT /user/renewpassword) y el usuario
+// debe cambiarla al entrar (hallazgo L2). No hay autoservicio de "olvidé mi contraseña".
 
 export default router;

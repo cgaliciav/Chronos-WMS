@@ -30,6 +30,17 @@ export class Usuario {
     @Column({ type:"varchar", length:255,  select:false, nullable: false })
     password: string;
 
+    /**
+     * La contraseña es temporal (alta o regeneración por el administrador): hasta cambiarla, el token solo permite
+     * cambiarla (hallazgo L2). `select: false`: se pide explícitamente donde hace falta.
+     */
+    @Column({ default: false, select: false })
+    debeCambiarPassword: boolean;
+
+    /** Vencimiento de la contraseña temporal (`HORAS_PASSWORD_TEMPORAL`, 72 h por defecto). */
+    @Column({ type: "datetime", precision: 6, nullable: true, select: false })
+    vencePasswordTemporal: Date | null;
+
     @Column()
     vencimiento: Date;
 

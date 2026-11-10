@@ -2,11 +2,14 @@ import { Request, Response, NextFunction } from "express";
 import * as jwt from "jsonwebtoken";
 import { AppDataSource } from "../data-source";
 import { AppError } from "../helpers/errorClases";
+import { rutaPermitidaConCambioPendiente } from "../services/PasswordService";
 
 interface jwtPaylodType{
   ui:number,
   u:string,
-  si:number
+  si:number,
+  /** Cambio de contraseña pendiente (contraseña temporal, hallazgo L2): solo se permiten las rutas para cambiarla. */
+  cp?:boolean
 }
 
 /** Duración de los tokens (login y renovación). Antes: 12 h en login y 90 d en la renovación que nunca se enviaba. */
@@ -44,7 +47,10 @@ const exigirSesionVigente = async (sesionId: number) => {
 const esErrorDeToken = (error: unknown) =>
   error instanceof Error && (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError");
 
-const verificarYRenovar = async (token: string | undefined, res: Response) => {
+/** Respuesta 403 de un token con contraseña temporal: el front la reconoce por `cambiarPassword: true`. */
+export const ERROR_CAMBIO_PENDIENTE = "Debes cambiar tu contraseña temporal antes de continuar";
+
+const verificarYRenovar = async (token: string | undefined, req: Request, res: Response) => {
   if (!token) {
     throw new AppError("Token requerido", 401);
   }
@@ -53,17 +59,20 @@ const verificarYRenovar = async (token: string | undefined, res: Response) => {
     throw new AppError("Token inválido", 401);
   }
   await exigirSesionVigente(jwtPayload.si);
+  if (jwtPayload.cp && !rutaPermitidaConCambioPendiente(req.method, req.baseUrl + req.path)) {
+    throw new AppError(ERROR_CAMBIO_PENDIENTE, 403, { cambiarPassword: true });
+  }
   res.locals.jwtPayload = jwtPayload;
-  const { ui, u, si } = jwtPayload;
+  const { ui, u, si, cp } = jwtPayload;
   // Se renueva el token en cada petición y se envía el NUEVO en la cabecera `t` (antes se enviaba el viejo).
   res.setHeader("Access-Control-Expose-Headers", "t");
-  res.setHeader("t", firmarToken({ ui, u, si }));
+  res.setHeader("t", firmarToken(cp ? { ui, u, si, cp } : { ui, u, si }));
 };
 
 /** Cabecera `auth`. Un JWT inválido o ausente responde 401. */
 export const checkJwt = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await verificarYRenovar(req.headers["auth"] as string | undefined, res);
+    await verificarYRenovar(req.headers["auth"] as string | undefined, req, res);
     next();
   } catch (error) {
     next(esErrorDeToken(error) ? new AppError("Token inválido", 401) : error);
@@ -84,7 +93,7 @@ export const checkJwtArchivos = async (req: Request, res: Response, next: NextFu
     return next();
   }
   try {
-    await verificarYRenovar(token, res);
+    await verificarYRenovar(token, req, res);
     next();
   } catch (error) {
     next(esErrorDeToken(error) ? new AppError("Token inválido", 401) : error);
@@ -97,7 +106,7 @@ export const checkJwtArchivos = async (req: Request, res: Response, next: NextFu
  */
 export const checkJwtConsulta = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await verificarYRenovar(tokenDeCabeceraOConsulta(req), res);
+    await verificarYRenovar(tokenDeCabeceraOConsulta(req), req, res);
     next();
   } catch (error) {
     next(esErrorDeToken(error) ? new AppError("Token inválido", 401) : error);

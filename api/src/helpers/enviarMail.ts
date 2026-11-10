@@ -1,3 +1,4 @@
+import { horasPasswordTemporal } from "../services/PasswordService";
 import * as nodemailer from "nodemailer";
 import LogGeneralController from "../controllers/LogGeneral.Controller";
 import { LogTipo } from "../entity/LogGeneral";
@@ -68,39 +69,37 @@ let enviarCorreoConAnexos = (correoDestino:string,subject:string, text:string, a
                 LogGeneralController.InsertarLog(LogTipo.ERROR,"Correo NO Enviado",err);
             });
 
+const PIE_CORREO = 'Este correo se genera automáticamente si tienes problemas técnicos con el sistema por favor escribenos a soporte@exogrid.io para auxiliarte a resolver el problema,  GRACIAS :D .\n\n';
+
+const textoTemporal = () =>
+    `Es una contraseña temporal: vence en ${horasPasswordTemporal()} horas y al entrar el sistema te pedirá elegir una nueva. ` +
+    'Si venció, pide a tu administrador que genere otra. \n\n\n\n';
+
 export default class EnviarMail{
+    /**
+     * Correos con la contraseña TEMPORAL (hallazgo L2): vence a las `HORAS_PASSWORD_TEMPORAL` horas y el sistema obliga
+     * a cambiarla al entrar, así que la que viaja por correo deja de servir en cuanto el usuario elige la suya.
+     */
     static correoNuevoUsuario = (correoDestino:string,password:string) =>{
         enviarCorreoSimple(correoDestino,
             'BIENVENIDO AL ALMACEN DE SONY MX',
             'Bienvenido al Almacen, \n\n '+
             'Fuiste dado de alta al almacén por el administrador, tu acceso es mediante los siguientes datos: \n'+
-            'correo:' +correoDestino + '\n'+
-            'clave:' +password + '\n\n'+
-            'Si lo deseas, podrás cambiar la contraseña dentro del sistema. Si tienes dudas comunicate con tu administrador. \n\n\n\n'+
-            'Este correo se genera automáticamente si tienes problemas técnicos con el sistema por favor escribenos a soporte@exogrid.io para auxiliarte a resolver el problema,  GRACIAS :D .\n\n'
-            );    
-
+            'correo: ' +correoDestino + '\n'+
+            'contraseña temporal: ' +password + '\n\n'+
+            textoTemporal() +
+            PIE_CORREO
+            );
     }
 
     static correoNuevoPassword = (correoDestino:string,password:string) =>{
         enviarCorreoSimple(correoDestino,
-            'CAMBIO DE CONTRASEÑA ALMACEN SONY MX',
-            'Se cambió exitosamente tu contraseña, tus nuevos datos son:, \n'+
-            'correo:' +correoDestino + '\n'+
-            'clave:' +password + '\n\n'+
-            'Si lo deseas, podrás cambiar la contraseña dentro del sistema. Si tienes dudas comunicate con tu administrador. \n\n\n\n'+
-            'Este correo se genera automáticamente si tienes problemas técnicos con el sistema por favor escribenos a soporte@exogrid.io para auxiliarte a resolver el problema,  GRACIAS :D .\n\n'
-            );
-    }
-
-    static correoPasswordPerdido = (correoDestino:string,password:string) =>{
-        enviarCorreoSimple(correoDestino,
-            'RECUPERACION DE ACCESO ALMACEN TELESET/SONY',
-            'Tus nuevos datos de acceso son:, \n'+
-            'correo:' +correoDestino + '\n'+
-            'clave:' +password + '\n\n'+
-            'Si lo deseas, podrás cambiar la contraseña dentro del sistema. Si tienes dudas comunicate con tu administrador. \n\n\n\n'+
-            'Este correo se genera automáticamente si tienes problemas técnicos con el sistema por favor escribenos a soporte@exogrid.io para auxiliarte a resolver el problema,  GRACIAS :D .\n\n'
+            'NUEVA CONTRASEÑA TEMPORAL ALMACEN SONY MX',
+            'El administrador generó una nueva contraseña para tu acceso: \n'+
+            'correo: ' +correoDestino + '\n'+
+            'contraseña temporal: ' +password + '\n\n'+
+            textoTemporal() +
+            PIE_CORREO
             );
     }
 
