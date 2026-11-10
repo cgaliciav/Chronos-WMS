@@ -9,6 +9,15 @@ La versión vive en `package.json` (la devuelven `GET /` y `/auth/version`, y Se
 `desplegar.sh` publica una versión `X.Y.Z-d` como `X.Y.Z` y, si ya no lleva sufijo, sube el parche. Contrato con el
 front: [`docs/api/endpoints.md`](../docs/api/endpoints.md). Plan: [`docs/planes/02-api-relacion-movimientos.md`](../docs/planes/02-api-relacion-movimientos.md).
 
+## [2.83.2-d] - Sin publicar
+
+### Corregido
+
+- Las rutas con barras repetidas vuelven a funcionar (`//file/thumbnail/:id` → `/file/thumbnail/:id`, middleware
+  `unirBarrasRepetidas`, hallazgo M39). Express 4 las aceptaba; con Express 5 respondían 404, y el front hasta v4.2.1 pide
+  así las miniaturas de los listados de movimientos y la subida de archivos (`/file/file`). Necesario para desplegar
+  este API mientras siga en producción un front anterior a v4.2.2.
+
 ## [2.83.1-d] - Sin publicar
 
 ### Corregido
