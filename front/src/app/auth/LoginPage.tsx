@@ -6,6 +6,7 @@ import { limpiarCache } from 'helpers/limpiarCache'
 import { useVersionApi } from 'app/layouts/useVersionApi'
 import { NOMBRE_APP } from 'app/layouts/Logo'
 import { useUsuarioStore } from 'stores/usuario.store'
+import { RUTA_CAMBIO_PASSWORD } from './rutas'
 
 interface DatosAcceso {
   email: string
@@ -21,8 +22,9 @@ export default function LoginPage() {
 
   const alEnviar = async ({ email, password }: DatosAcceso) => {
     if (await login(email, password)) {
-      // Vuelve a la última ruta visitada (la guarda el layout raíz) o al inicio.
-      navigate(localStorage.getItem('ultimaVisitada') ?? '/')
+      // Con contraseña temporal hay que cambiarla primero (L2); si no, vuelve a la última ruta visitada o al inicio.
+      if (useUsuarioStore.getState().cambioPasswordPendiente) navigate(RUTA_CAMBIO_PASSWORD)
+      else navigate(localStorage.getItem('ultimaVisitada') ?? '/')
     }
   }
 

@@ -15,6 +15,16 @@ Los códigos `F<n>` remiten a [`docs/hallazgos-codigo.md`](../docs/hallazgos-cod
 
 Pendiente: fase 7 del plan 01 (pruebas e2e con Playwright, CI y cobertura).
 
+## [4.3.0-d] - 2026-11-10
+
+Contraseña temporal con cambio obligatorio (hallazgo L2; necesita el API v2.84 con su migración).
+
+### Añadido
+
+- Quien entra con la contraseña temporal que le llegó por correo va a `/auth/cambiar-password` y no ve otra página hasta
+  elegir la suya (también al recargar: `GET /user/current` lo indica). Al guardarla, el API entrega el token normal.
+- Las reglas de la contraseña nueva se comparten con la pantalla de "Cambiar password" (`helpers/reglasPassword.ts`).
+
 ## [4.2.2-d] - 2026-11-10
 
 ### Corregido

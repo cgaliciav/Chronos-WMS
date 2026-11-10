@@ -54,6 +54,16 @@ los marcados con ⚠.
 - ⚠ Retirados `GET /groups/export-to-supabase/:id` y `GET /current-inventory/export-to-supabase/:id` (el front no los usaba).
 - ⚠ `POST /auth/logout` revoca el token: después, ese token responde 401 ("Sesión terminada").
 
+**Cambios de v2.84.0 (contraseña temporal, hallazgo L2):** requiere la migración `PasswordTemporal`.
+- ⚠ La contraseña de alta (`POST /user/new`) y la regenerada (`PUT /user/renewpassword`) son temporales: vencen a las
+  `HORAS_PASSWORD_TEMPORAL` horas (72) y hay que cambiarlas al entrar.
+- ⚠ `POST /auth/login` con la temporal → `{ t, cambiarPassword: true }`. Con ese token solo valen `PUT /user/password`,
+  `GET /user/current` y `POST /auth/logout`; el resto responde **403** `{ code, message, cambiarPassword: true }`. Con
+  la temporal vencida, 401.
+- `PUT /user/password` `{ pa, pn }` → `{ t }` (token normal, también en la cabecera `t`); 406 si `pn` no es válida o es
+  igual a `pa`.
+- `GET /user/current` añade `cambiarPassword: true` mientras el cambio está pendiente.
+
 **Cambios de v2.83.3 (hallazgos M14, L19, L12, L3):**
 - `filtered` es el conteo filtrado en todos los listados (antes el tamaño de página en `list-catalog-*` y el total sin
   filtrar en `active-activity-list`; el front no lo usa).
@@ -107,7 +117,7 @@ principal; sin `sortField`, orden por su `id`.
 ## Autenticación (`/auth`)
 | Método | Ruta | Roles | Controlador |
 |---|---|---|---|
-| POST | `/auth/login` | — | `Auth.login` body `{c, p, ip}` → `{t}` (JWT 12 h con `{ui,u,si}`) |
+| POST | `/auth/login` | — | `Auth.login` body `{c, p}` → `{t}` (JWT 12 h con `{ui,u,si}`); con contraseña temporal `{t, cambiarPassword: true}` y el JWT lleva `cp` |
 | POST | `/auth/logout` | jwt | `Auth.logout` (marca `Sesion.fechaFin`; `checkJwt` rechaza después ese token) |
 | GET | `/auth/version` | — | `{ version }` (pública: la muestra el login) |
 | GET | `/` | — | `{ estado: "ok" }` (comprobación de vida) |
@@ -176,7 +186,7 @@ Patrón común (`CommonController`): `GET /list-names` (`*-LISTASIMPLE`), `POST 
 `PUT /disable/:id` · `/enable/:id` (`*-DESHABILITAR`/`*-HABILITAR`), `POST`/`DELETE /comment`
 (`*-COMENTARIONUEVO`/`*-COMENTARIOBORRAR`). Extras:
 - `/supplier/list-dynamic` (PROVEEDOR-LISTADINAMICA), `/project/list-names-inbound|outbound`.
-- `/user/current` (jwt), `/user/password` (jwt, cambia la propia), `/user/renewpassword`
+- `/user/current` (jwt; `cambiarPassword: true` si la contraseña es temporal), `/user/password` (jwt, cambia la propia; `{pa, pn}` → `{t}`), `/user/renewpassword`
   (USUARIO-GENERERARPASSWORD; envía la contraseña por correo), `/user/get-areas|get-warehouses|get-projects` (jwt),
   `/user/list-names-full`, `/user/list-names-dynamic`.
 - `/role/list-names-dynamic` (GET que lee `req.body`).

@@ -89,6 +89,7 @@ export const RUTAS: Array<[ruta: string, cargar: Cargador]> = [
   ['/reportes/por-usuario', () => import('pages/reportes/6.porUsuario')],
   ['/reportes/de-cierre', () => import('pages/reportes/3.cierreProyecto')],
   ['/auth/login', () => import('app/auth/LoginPage')],
+  ['/auth/cambiar-password', () => import('app/auth/CambiarPasswordTemporal')],
   ['/auth/401', () => Promise.resolve({ default: () => <ErrorPage code={401} /> })],
   ['/auth/404', () => Promise.resolve({ default: () => <ErrorPage code={404} /> })],
   ['/auth/500', () => Promise.resolve({ default: () => <ErrorPage code={500} /> })],

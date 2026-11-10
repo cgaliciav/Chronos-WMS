@@ -66,7 +66,9 @@ Documentación detallada: `docs/api/modelo-de-datos.md`, `docs/api/tipos-de-movi
   `MovimientoService.enTransaccion` (no `AppDataSource.getRepository`), y la primera sentencia debe ser el bloqueo.
 - `sesionId` en las entidades **no es columna**: lo lee el suscriptor de auditoría. Siempre asígnalo
   (`registro.sesionId = jwtPayload.si`) antes de `save`.
-- JWT: `{ ui: usuarioId, u: nombre, si: sesionId }`, 12 h, cabecera `auth`. `res.locals.jwtPayload`.
+- JWT: `{ ui: usuarioId, u: nombre, si: sesionId }`, 12 h, cabecera `auth`. `res.locals.jwtPayload`. Con contraseña
+  temporal lleva además `cp: true` y `checkJwt` solo admite las rutas de `rutaPermitidaConCambioPendiente`
+  (`services/PasswordService.ts`, hallazgo L2); nunca asignes contraseñas a mano: `asignarPasswordTemporal`/`Definitiva`.
 - Respuestas de error: `throw new AppError(mensaje, statusCode)` y `next(error)` en el `catch`.
 
 ## Convenciones al escribir código aquí
@@ -113,7 +115,7 @@ Documentación detallada: `docs/api/modelo-de-datos.md`, `docs/api/tipos-de-movi
 Ver `.env.example`. Imprescindibles: `JWTSECRET`, `SALT_ROUNDS`, `DB_HOST/PORT/USER/PASSWORD/DATABASE_NAME`,
 `DB_SYNCRO` (**`false`**: el esquema lo cambian las migraciones), `DB_LOGGING`,
 `PORT_ALMACEN_API`, rutas de archivos (`RUTA_ARCHIVOS`, `RUTA_REPORTES`, `UPLOADS`, `ARCHIVOS_AUXILIARES`,
-`IMAGENES_IMPORTACION`), `SMTP_*`, `DIAS_CUARENTENA`, `CACHE_ARCHIVOS_DIAS`, `REPORTES_DIAS`, `LOG_NIVEL`
+`IMAGENES_IMPORTACION`), `SMTP_*`, `DIAS_CUARENTENA`, `HORAS_PASSWORD_TEMPORAL`, `CACHE_ARCHIVOS_DIAS`, `REPORTES_DIAS`, `LOG_NIVEL`
 (o `LOG_CONSOLE_VERBOSE`).
 `ENV_FILE=.env.test npm run migration:show` apunta `src/migrar.ts` a otro archivo de variables.
 

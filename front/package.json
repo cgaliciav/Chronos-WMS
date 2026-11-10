@@ -1,6 +1,6 @@
 {
   "name": "chronos-wms-front",
-  "version": "4.2.2-d",
+  "version": "4.3.0-d",
   "private": true,
   "type": "module",
   "engines": {
