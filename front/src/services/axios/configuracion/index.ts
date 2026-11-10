@@ -46,6 +46,18 @@ export default class ConfiguracionPeticiones {
     const { data } = await apiClient.post<SeccionConValor>(`/${recurso}/${destino}`, formulario)
     return data
   }
+  /** `GET /config/export`: configuración sin secretos con las imágenes en base64. */
+  static exportar = async (): Promise<unknown> => {
+    const { data } = await apiClient.get<unknown>(`/${recurso}/export`)
+    return data
+  }
+  /** `POST /config/import`: aplica una exportación (el API valida todo antes de guardar). */
+  static importar = (exportacion: object) =>
+    PeticionBase.generalPost<{ importadas: SeccionConfig[]; imagenes: string[] }>(
+      recurso,
+      'import',
+      exportacion,
+    )
   static probarCorreo = () =>
     PeticionBase.generalPost<{ enviado: boolean; transporte: string; destino: string }>(
       recurso,

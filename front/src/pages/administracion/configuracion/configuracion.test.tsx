@@ -94,6 +94,37 @@ describe('pantalla de configuración (plan 03, fase 4)', () => {
     expect(await screen.findByText('Correo no válido (API)')).toBeInTheDocument()
   })
 
+  it('importar envía el JSON al API y vuelve a leer la configuración', async () => {
+    let importado: unknown
+    let lecturas = 0
+    servidor.use(
+      http.get(`${API}/config/`, () => {
+        lecturas++
+        return HttpResponse.json(todas())
+      }),
+      http.post(`${API}/config/import`, async ({ request }) => {
+        importado = await request.json()
+        return HttpResponse.json({ importadas: ['marca'], imagenes: [] })
+      }),
+    )
+    const { container } = renderizarEnRuta(<Configuracion />, '/configuracion')
+    await screen.findByLabelText('Nombre de la aplicación')
+    const exportacion = {
+      formato: 'chronos-wms-config',
+      version: 1,
+      secciones: { marca: MARCA_POR_DEFECTO },
+    }
+    const archivo = new File([JSON.stringify(exportacion)], 'config.json', {
+      type: 'application/json',
+    })
+    const entrada = container.querySelector<HTMLInputElement>('input[type="file"][accept*="json"]')
+    expect(entrada).not.toBeNull()
+    await userEvent.upload(entrada as HTMLInputElement, archivo)
+    await waitFor(() => expect(importado).toEqual(exportacion))
+    await waitFor(() => expect(notification.success).toHaveBeenCalled())
+    await waitFor(() => expect(lecturas).toBeGreaterThanOrEqual(2))
+  })
+
   it('sin el rol no se muestra (ACL)', () => {
     useUsuarioStore.setState({ permisos: ['GRUPOS-LISTADETALLE'] })
     renderizarEnRuta(<Configuracion />, '/configuracion')
