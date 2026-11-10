@@ -1,4 +1,5 @@
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
+import { idSeguro } from "../helpers/ids";
 import { InventarioActual } from "../entity/InventarioActual";
 import { InventarioActualHistorico } from "../entity/InventarioActualHistorico";
 
@@ -13,16 +14,16 @@ class InventarioActualHistoricoController{
         inventarioActualHistorico.fechaDisponibilidad=inventarioActual.fechaDisponibilidad;
         inventarioActualHistorico.idOriginal=inventarioActual.id;
         inventarioActualHistorico.sesionId=sesionId;
-        return (await getRepository(InventarioActualHistorico).save(inventarioActualHistorico));
+        return (await AppDataSource.getRepository(InventarioActualHistorico).save(inventarioActualHistorico));
     }
 
     static obtenerHistorico=async(inventarioActualId:number|string)=>{
-        return (await getRepository(InventarioActualHistorico).findOne({where:{idOriginal:inventarioActualId}, order:{id:"DESC"}}));
+        return (await AppDataSource.getRepository(InventarioActualHistorico).findOne({where:{idOriginal:idSeguro(inventarioActualId, "inventarioActualId")}, order:{id:"DESC"}}));
     }
 
     static quitar=async(inventarioActualHistorico:InventarioActualHistorico,sesionId:number)=>{
         inventarioActualHistorico.sesionId=sesionId;
-        return (await getRepository(InventarioActualHistorico).remove(inventarioActualHistorico));
+        return (await AppDataSource.getRepository(InventarioActualHistorico).remove(inventarioActualHistorico));
     }
 
 }

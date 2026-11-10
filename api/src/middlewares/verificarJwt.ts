@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import * as jwt from "jsonwebtoken";
-import { getConnection } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { AppError } from "../helpers/errorClases";
 // import config from "../config/config";
 
@@ -33,7 +33,7 @@ export const olvidarSesion = (sesionId: number) => {
 const exigirSesionVigente = async (sesionId: number) => {
   const vista = sesionesVigentes.get(sesionId);
   if (vista !== undefined && Date.now() - vista < VIGENCIA_CACHE_MS) return;
-  const [sesion] = await getConnection().query("SELECT fechaFin FROM sesion WHERE id = ?", [sesionId]);
+  const [sesion] = await AppDataSource.query("SELECT fechaFin FROM sesion WHERE id = ?", [sesionId]);
   if (!sesion || sesion.fechaFin !== null) {
     sesionesVigentes.delete(sesionId);
     throw new AppError("Sesión terminada. Inicia sesión de nuevo", 401);

@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import { Brackets, getRepository, In } from "typeorm";
+import { Brackets, In } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { Bodega } from "../entity/Bodega";
 import { InventarioActual, InventarioDisponible } from "../entity/InventarioActual";
 import { Operacion } from "../entity/Operacion";
@@ -15,7 +16,7 @@ import { logger } from "../helpers/logger";
 
 const queryBusqueda = () => {
     return (
-        getRepository(InventarioActual)
+        AppDataSource.getRepository(InventarioActual)
             .createQueryBuilder("inventarioActual")
             .leftJoinAndSelect("inventarioActual.bodega", "bodega")
             .leftJoinAndSelect("inventarioActual.producto", "producto")
@@ -42,7 +43,7 @@ const queryBusquedaOperacion = () => {
     return (
         // getRepository(Operacion)
         // .createQueryBuilder("operacion")
-        getRepository(InventarioActual)
+        AppDataSource.getRepository(InventarioActual)
             .createQueryBuilder("inventarioActual")
             .leftJoin("inventarioActual.movimientos", "movimiento")
             .innerJoin("movimiento.operacion", "operacion")
@@ -81,7 +82,7 @@ const queryBusquedaCatalogo = ({
     if (texto !== null) {
         // Búsqueda de texto completo con el literal ESCAPADO por el driver y sin operadores booleanos sueltos
         // (antes se interpolaba sin escapar: hallazgo C2). MariaDB no admite parámetros preparados dentro de AGAINST(...).
-        const subquery = getRepository(Producto)
+        const subquery = AppDataSource.getRepository(Producto)
             .createQueryBuilder("producto")
             .select("producto.id")
             .where(new Brackets(qb =>
@@ -176,14 +177,14 @@ const crearBaseInventarioActual = async (cantidad: number | string, bodegaId: nu
     inventarioActual.cantidad = +cantidad;
     inventarioActual.cantidadAlmacen = +cantidad;
     inventarioActual.fechaDisponibilidad = new Date();
-    inventarioActual.bodega = await getRepository(Bodega).findOneOrFail(bodegaId);
+    inventarioActual.bodega = await AppDataSource.getRepository(Bodega).findOneByOrFail({ id: idSeguro(bodegaId, "bodegaId") });
     inventarioActual.sesionId = sesionId;
 
     return inventarioActual;
 }
 
 const fnQueryId = (id: number | string) => {
-    return getRepository(InventarioActual)
+    return AppDataSource.getRepository(InventarioActual)
         .createQueryBuilder("inventarioActual")
         .leftJoinAndSelect("inventarioActual.bodega", "bodega")
         .leftJoinAndSelect("inventarioActual.producto", "producto")
@@ -237,12 +238,12 @@ class InventarioActualController {
 
     static guardar = async (inventarioActual: InventarioActual, sesionId: number) => {
         inventarioActual.sesionId = sesionId;
-        return (await getRepository(InventarioActual).save(inventarioActual));
+        return (await AppDataSource.getRepository(InventarioActual).save(inventarioActual));
     }
 
     static obtenerInventarioActualDeId = async (id: number | string) => {
 
-        const qry = getRepository(InventarioActual)
+        const qry = AppDataSource.getRepository(InventarioActual)
             .createQueryBuilder("inventarioActual")
             .innerJoinAndSelect("inventarioActual.producto", "producto")
             .leftJoin("inventarioActual.bodega", "bodega")
@@ -269,7 +270,7 @@ class InventarioActualController {
             throw new AppError("Código inválido", 400);
         }
         codigo = codigo.trim();
-        const qry = getRepository(InventarioActual)
+        const qry = AppDataSource.getRepository(InventarioActual)
             .createQueryBuilder("inventarioActual")
             .innerJoinAndSelect("inventarioActual.producto", "producto")
             .leftJoin("inventarioActual.bodega", "bodega")
@@ -303,7 +304,7 @@ class InventarioActualController {
     static quitar = async (inventarioActual: InventarioActual, sesionId: number) => {
         inventarioActual.sesionId = sesionId;
         await ProductoController.quitar(inventarioActual.producto, sesionId);
-        return (await getRepository(InventarioActual).remove(inventarioActual));
+        return (await AppDataSource.getRepository(InventarioActual).remove(inventarioActual));
     }
 
     static borrar = async (req: Request, res: Response, next: NextFunction) => {
@@ -311,7 +312,7 @@ class InventarioActualController {
         const { jwtPayload } = res.locals;
         try {
             await InventarioActualController.quitar(
-                await getRepository(InventarioActual).findOneOrFail(idSeguro(inventarioActualId, "inventarioActualId"), { relations: ["producto"] }),
+                await AppDataSource.getRepository(InventarioActual).findOneOrFail({ where: { id: idSeguro(inventarioActualId, "inventarioActualId") },  relations: { producto: true } }),
                 jwtPayload.si
             );
             res.json();
@@ -328,7 +329,7 @@ class InventarioActualController {
             )
 
             // if resp is undefined thrown a 404 error
-            if (resp === undefined) {
+            if (resp == null) {
                 throw new AppError("No se encontró el registro", 404);
             }
 
@@ -350,11 +351,11 @@ class InventarioActualController {
             ...body } = req.body;
         const { jwtPayload } = res.locals;
         try {
-            const inventarioActual = await getRepository(InventarioActual).findOneOrFail(idSeguro(inventarioActualId, "inventarioActualId"), { relations: ["bodega"] });
-            inventarioActual.bodega = await getRepository(Bodega).findOneOrFail(idSeguro(bodegaId, "bodegaId"));
+            const inventarioActual = await AppDataSource.getRepository(InventarioActual).findOneOrFail({ where: { id: idSeguro(inventarioActualId, "inventarioActualId") },  relations: { bodega: true } });
+            inventarioActual.bodega = await AppDataSource.getRepository(Bodega).findOneByOrFail({ id: idSeguro(bodegaId, "bodegaId") });
             // cantidad, cantidadAlmacen y disponible solo cambian con movimientos (hallazgo H6)
             const resp = await CommonController.editarConRegistro(
-                getRepository(InventarioActual),
+                AppDataSource.getRepository(InventarioActual),
                 inventarioActual,
                 body,
                 jwtPayload.si,
@@ -522,7 +523,7 @@ class InventarioActualController {
             // Dentro del try: un id inválido lanzaba fuera de él y la petición se quedaba colgada (fase 5).
             const id = idSeguro(req.body?.inventarioActualId ?? parametroOpcional(req, "id"), "inventarioActualId");
             res.json(
-                await getRepository(Operacion)
+                await AppDataSource.getRepository(Operacion)
                     .createQueryBuilder("operacion")
                     .innerJoin("operacion.movimientoTipo", "movimientoTipo")
                     .innerJoin("operacion.movimiento", "movimiento")

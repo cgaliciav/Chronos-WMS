@@ -4,7 +4,7 @@
  */
 import "./env";
 import { Express } from "express";
-import { getConnection } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { crearApp } from "../app";
 import { cerrarPruebas, conectarPruebas } from "./conexion";
 import { clienteAdmin, crearArticulo, crearGrupoDetalle, movimientosDe, nombreUnico, registrarOperacion } from "./factories";
@@ -95,7 +95,7 @@ describe("listados tipados y tipos que no son movimientos", () => {
     expect(otroTipo.body.message).toMatch(/solo entre baja justificada e injustificada/);
     expect((await editarListado(listado, 16, SEMILLA.proyectoBId)).status).toBe(409); // proyecto con relaciones (fase 3)
     expect(await tiposDe(inventarioActualId)).toEqual([14, 3, 16]);
-    const detalle = await getConnection().query(
+    const detalle = await AppDataSource.query(
       "SELECT gd.movimientoTipoId, gd.proyectoId FROM grupo g JOIN grupo_detalle gd ON gd.id = g.grupoDetalleId WHERE g.id = ?",
       [listado]
     );
@@ -107,7 +107,7 @@ describe("listados tipados y tipos que no son movimientos", () => {
     beforeAll(async () => {
       listado = (await nuevoListado(13)).body.id;
       // Simula un listado creado antes de la decisión 11.
-      await getConnection().query(
+      await AppDataSource.query(
         "UPDATE grupo_detalle gd JOIN grupo g ON g.grupoDetalleId = gd.id SET gd.movimientoTipoId = 5 WHERE g.id = ?",
         [listado]
       );
@@ -125,7 +125,7 @@ describe("listados tipados y tipos que no son movimientos", () => {
     it("se pueden editar (proyecto y responsables) conservando el tipo de cada línea", async () => {
       const res = await editarListado(listado, 5);
       expect(res.status).toBe(200);
-      const tipos = await getConnection().query(
+      const tipos = await AppDataSource.query(
         `SELECT o.movimientoTipoId AS tipo FROM grupo_movimientos_movimiento gm JOIN movimiento m ON m.id = gm.movimientoId
           JOIN operacion o ON o.id = m.operacionId WHERE gm.grupoId = ? ORDER BY m.id`,
         [listado]
@@ -141,7 +141,7 @@ describe("listados tipados y tipos que no son movimientos", () => {
 
   it("un artículo nuevo solo guarda el precio original (decisión 13: sin depreciación ni rentas)", async () => {
     const { inventarioActualId } = await crearArticulo(api, { grupoId: grupoAlta, cantidad: 1, movimientoTipoId: 14, precio: 1234.5 });
-    const precios = await getConnection().query(
+    const precios = await AppDataSource.query(
       "SELECT pp.precioTipoId AS tipo, pp.precio FROM producto_precio pp JOIN inventario_actual ia ON ia.productoId = pp.productoId WHERE ia.id = ?",
       [inventarioActualId]
     );

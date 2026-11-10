@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { getRepository, EntityManager, getManager } from "typeorm";
+import { EntityManager } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { PrecioTipo } from "../entity/PrecioTipo";
 import { ProductoPrecio } from "../entity/ProductoPrecio";
 import { idSeguro } from "../helpers/ids";
@@ -18,8 +19,8 @@ const crearBaseProductoPrecio = async (
   moneda: string = "MXP"
 ) => {
   const productoPrecio = new ProductoPrecio();
-  productoPrecio.precioTipo = await getRepository(PrecioTipo).findOneOrFail(
-    precioTipoId
+  productoPrecio.precioTipo = await AppDataSource.getRepository(PrecioTipo).findOneByOrFail(
+    { id: precioTipoId }
   );
   productoPrecio.precio = +precio;
   productoPrecio.sesionId = sesionId;
@@ -34,7 +35,7 @@ class ProductoPrecioController {
     productoPrecioOriginal: number | string,
     sesionId: number,
     moneda: string = "MXP",
-    manager: EntityManager = getManager()
+    manager: EntityManager = AppDataSource.manager
   ) => {
     const precios = [await crearBaseProductoPrecio(productoPrecioOriginal, PRECIO_COMPRA_ORIGEN, sesionId, moneda)];
 
@@ -52,7 +53,7 @@ class ProductoPrecioController {
     productoPrecio.sesionId = sesionId;
     productoPrecio.moneda = moneda;
 
-    return await getRepository(ProductoPrecio).save(productoPrecio);
+    return await AppDataSource.getRepository(ProductoPrecio).save(productoPrecio);
   };
 
   // editar precios
@@ -61,7 +62,7 @@ class ProductoPrecioController {
     const { jwtPayload } = res.locals;
 
     try {
-      const productoPrecio = await getRepository(ProductoPrecio).findOneOrFail(idSeguro(productoPrecioId, "productoPrecioId"));
+      const productoPrecio = await AppDataSource.getRepository(ProductoPrecio).findOneByOrFail({ id: idSeguro(productoPrecioId, "productoPrecioId") });
       await ProductoPrecioController.modificar(
         Number(precio),
         productoPrecio,

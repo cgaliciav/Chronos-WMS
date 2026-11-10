@@ -6,7 +6,7 @@
 import "./env";
 import { Express } from "express";
 import supertest from "supertest";
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { crearApp } from "../app";
 import { Sesion } from "../entity/Sesion";
 import { cerrarPruebas, conectarPruebas } from "./conexion";
@@ -225,7 +225,7 @@ describe("caracterización: operaciones de almacén", () => {
     expect(res.status).toBe(200);
     const movimientos = await esperarHasta(
       () =>
-        getRepository("Movimiento" as any)
+        AppDataSource.getRepository("Movimiento" as any)
           .createQueryBuilder("m")
           .leftJoinAndSelect("m.operacion", "o")
           .leftJoinAndSelect("o.proyecto", "p")
@@ -240,7 +240,8 @@ describe("caracterización: operaciones de almacén", () => {
   it("el login ignora la IP del body y guarda la de la conexión (o la de X-Forwarded-For desde un proxy confiable)", async () => {
     const directo = await supertest(app).post("/auth/login").send({ c: SEMILLA.adminCorreo, p: SEMILLA.adminPassword, ip: "203.0.113.9" });
     expect(directo.status).toBe(200);
-    let sesion = await getRepository(Sesion).findOne({ order: { id: "DESC" } });
+    const ultimaSesion = async () => (await AppDataSource.getRepository(Sesion).find({ order: { id: "DESC" }, take: 1 }))[0];
+    let sesion = await ultimaSesion();
     expect(sesion.IP).not.toBe("203.0.113.9");
     expect(sesion.IP).toMatch(/127\.0\.0\.1|::1|::ffff:127\.0\.0\.1/);
 
@@ -250,7 +251,7 @@ describe("caracterización: operaciones de almacén", () => {
       .set("X-Forwarded-For", "198.51.100.7")
       .send({ c: SEMILLA.adminCorreo, p: SEMILLA.adminPassword });
     expect(viaProxy.status).toBe(200);
-    sesion = await getRepository(Sesion).findOne({ order: { id: "DESC" } });
+    sesion = await ultimaSesion();
     expect(sesion.IP).toBe("198.51.100.7");
   });
 });

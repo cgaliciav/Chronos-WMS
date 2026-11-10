@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { EstatusEstado } from "../entity/common/NombreEstatus";
 import { Producto } from "../entity/Producto";
 import { ProductoInventariado, InventarioEstado } from "../entity/ProductoInventariado";
@@ -25,14 +25,14 @@ export default class ProductoInventariadoController {
     // }
     const productoInventariado = new ProductoInventariado();
     productoInventariado.estatus = EstatusEstado.ACTIVO;
-    productoInventariado.producto = await getRepository(Producto).findOneOrFail(idSeguro(productoId, "productoId"));
+    productoInventariado.producto = await AppDataSource.getRepository(Producto).findOneByOrFail({ id: idSeguro(productoId, "productoId") });
     productoInventariado.validacion = validacion;
     productoInventariado.sesionId = sesionId;
-    productoInventariado.sesion = await getRepository(Sesion).findOneOrFail(idSeguro(sesionId, "sesionId"));
+    productoInventariado.sesion = await AppDataSource.getRepository(Sesion).findOneByOrFail({ id: idSeguro(sesionId, "sesionId") });
     
     productoInventariado.nombre = `${nombre_comentario}>>>${Math.trunc(Math.random()*10000000000000)}`;
 
-    return await getRepository(ProductoInventariado).save(productoInventariado);
+    return await AppDataSource.getRepository(ProductoInventariado).save(productoInventariado);
   };
 
   static InventarioExiste = async (
@@ -108,7 +108,7 @@ export default class ProductoInventariadoController {
     const id = parametro(req, "id");
     //const { jwtPayload } = res.locals;
     try {
-      const respuesta = await getRepository(Producto).findOneOrFail(id);      
+      const respuesta = await AppDataSource.getRepository(Producto).findOneByOrFail({ id: idSeguro(id) });      
       res.json(respuesta.productoInventarios);
     } catch (error) {
       next(error);

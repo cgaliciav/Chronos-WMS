@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { Parametros } from "../entity/Parametros";
 import CommonController from "./common/Common.Controller";
 
@@ -7,7 +7,7 @@ import CommonController from "./common/Common.Controller";
 class ParametrosController{
     static listaSimpleInterna = (req: Request, res: Response,next:NextFunction) =>{
         CommonController.listaSimple(
-            getRepository(Parametros),
+            AppDataSource.getRepository(Parametros),
             ["id","llave","valor"]
         )
         .then(lista => {
@@ -19,7 +19,7 @@ class ParametrosController{
     static editar = (req: Request, res: Response,next:NextFunction) => {
         const {jwtPayload}=res.locals;
         CommonController.editar(
-            getRepository(Parametros) ,
+            AppDataSource.getRepository(Parametros) ,
             req.body,
             jwtPayload.si 
         )

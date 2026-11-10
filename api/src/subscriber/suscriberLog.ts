@@ -1,4 +1,4 @@
-import { EventSubscriber, EntitySubscriberInterface, InsertEvent, UpdateEvent, RemoveEvent, BaseEntity, Entity, getRepository, Connection } from "typeorm";
+import { EventSubscriber, EntitySubscriberInterface, InsertEvent, UpdateEvent, RemoveEvent, DataSource } from "typeorm";
 import { LogFuncionamiento, FuncionamientoEstado } from "../entity/LogFuncionamiento";
 import { EstatusEstado } from "../entity/common/NombreEstatus";
 import { Sesion } from "../entity/Sesion";
@@ -8,7 +8,9 @@ import { logger } from "../helpers/logger";
 
 // import { LoadEvent } from "typeorm/subscriber/event/LoadEvent";
 
-const nuevaOperacion = async (connection:Connection,entity:any,funcionamiento:FuncionamientoEstado)=>{
+// Se usa la fuente de datos (`event.dataSource`) y no `event.manager`: el registro se escribe sin esperar (void), así que
+// puede terminar después de que la transacción que lo disparó haya liberado su conexión.
+const nuevaOperacion = async (dataSource:DataSource,entity:any,funcionamiento:FuncionamientoEstado)=>{
     if(entity === undefined)
         return;
     if (
@@ -48,13 +50,14 @@ const nuevaOperacion = async (connection:Connection,entity:any,funcionamiento:Fu
         }
     }
     try {
-        // findOneOrFail(undefined) devolvería la PRIMERA sesión (TypeORM 0.2): se registra sin sesión (hallazgo M31)
+        // Sin sesión se registra sin ella (hallazgo M31); TypeORM 1.x además rechaza `id: undefined` en el where
         if (sesionId !== undefined && sesionId !== null) {
-            logOp.sesion = await connection.getRepository(Sesion).findOne(sesionId);
+            const sesion = await dataSource.getRepository(Sesion).findOneBy({ id: sesionId });
+            if (sesion) logOp.sesion = sesion;
         }
-        await connection.getRepository(LogFuncionamiento).save(logOp)
+        await dataSource.getRepository(LogFuncionamiento).save(logOp)
     } catch (error) {
-        logger.error("Error en el suscriptor de auditoría:", error.message);
+        logger.error("Error en el suscriptor de auditoría:", (error as Error).message);
     }
 }
 
@@ -63,15 +66,15 @@ const nuevaOperacion = async (connection:Connection,entity:any,funcionamiento:Fu
 export class GeneralSubscriber implements EntitySubscriberInterface{
 
     afterInsert(event: InsertEvent<any>){
-        void nuevaOperacion(event.connection,event.entity,FuncionamientoEstado.NUEVO);
+        void nuevaOperacion(event.dataSource,event.entity,FuncionamientoEstado.NUEVO);
     }
     
     afterUpdate(event: UpdateEvent<any>){
-        void nuevaOperacion(event.connection,event.entity,FuncionamientoEstado.ACTUALIZACION);
+        void nuevaOperacion(event.dataSource,event.entity,FuncionamientoEstado.ACTUALIZACION);
     }
 
     beforeRemove(event:RemoveEvent<any>){
-        void nuevaOperacion(event.connection,event.entity,FuncionamientoEstado.ELIMINACION);
+        void nuevaOperacion(event.dataSource,event.entity,FuncionamientoEstado.ELIMINACION);
     }
 
 

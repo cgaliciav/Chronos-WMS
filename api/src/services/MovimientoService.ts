@@ -7,7 +7,8 @@
  * Sustituye a MovimientoController.guardarConOperacion / guardarConOperacionCompra / agregarOperacion / quitar y al
  * `switch` de actualizarInventarioActual.
  */
-import { EntityManager, getConnection, getRepository } from "typeorm";
+import { EntityManager } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { EstatusEstado } from "../entity/common/NombreEstatus";
 import {
   esTipo,
@@ -109,7 +110,7 @@ export const consultasRelacion: ConsultasRelacion = {
 
   async nombreProyecto(manager, proyectoId) {
     if (proyectoId === null) return null;
-    const proyecto = await manager.findOne(Proyecto, proyectoId, { select: ["id", "nombre"], loadEagerRelations: false });
+    const proyecto = await manager.findOne(Proyecto, { where: { id: proyectoId },  select: { id: true, nombre: true }, loadEagerRelations: false });
     return proyecto?.nombre ?? null;
   },
 };
@@ -227,7 +228,7 @@ const exigirTipoDelListado = async (manager: EntityManager, tipo: number, grupoI
 
 /** Ejecuta `fn` en una transacción READ COMMITTED (cada lectura ve lo confirmado tras obtener el bloqueo). */
 const enTransaccion = <R>(fn: (manager: EntityManager) => Promise<R>, manager?: EntityManager): Promise<R> =>
-  manager ? fn(manager) : getConnection().transaction("READ COMMITTED", fn);
+  manager ? fn(manager) : AppDataSource.transaction("READ COMMITTED", fn);
 
 export default class MovimientoService {
   static enTransaccion = enTransaccion;
@@ -254,7 +255,7 @@ export default class MovimientoService {
   };
 
   /** Saldo pendiente de un movimiento con saldo (orígenes y 7); null para los demás tipos. */
-  static saldoPendiente = async (movimientoId: number | string, manager: EntityManager = getConnection().manager) => {
+  static saldoPendiente = async (movimientoId: number | string, manager: EntityManager = AppDataSource.manager) => {
     const [fila] = await manager.query("SELECT saldo, legado FROM v_movimiento_saldo WHERE movimientoId = ?", [idSeguro(movimientoId, "movimientoId")]);
     if (!fila) return null;
     return Number(fila.legado) === 1 ? null : Number(fila.saldo); // los legados no tienen relaciones: su saldo no es fiable
@@ -288,7 +289,7 @@ export default class MovimientoService {
         if (!fila) throw new AppError(`No existe el movimiento ${movimientoExistenteId}`, 404);
         if (Number(fila.inventarioActualId) !== inventarioActualId) throw new AppError("El movimiento no pertenece a este inventario", 409);
         if (fila.operacionId !== null) throw new AppError("El movimiento ya tiene una operación", 400);
-        movimiento = await manager.findOneOrFail(Movimiento, movimientoExistenteId, { loadEagerRelations: false });
+        movimiento = await manager.findOneOrFail(Movimiento, { where: { id: movimientoExistenteId },  loadEagerRelations: false });
       } else {
         movimiento = new Movimiento();
       }
@@ -359,7 +360,7 @@ export default class MovimientoService {
 
       const grupoId = idOpcional(datos.grupoId, "grupoId");
       if (grupoId !== undefined) {
-        await manager.findOneOrFail(Grupo, grupoId, { select: ["id"], loadEagerRelations: false });
+        await manager.findOneOrFail(Grupo, { where: { id: grupoId },  select: { id: true }, loadEagerRelations: false });
         await manager.createQueryBuilder().relation(Grupo, "movimientos").of(grupoId).add(movimiento.id);
       }
 
@@ -376,12 +377,12 @@ export default class MovimientoService {
       return movimiento.id;
     }, managerExterno);
 
-    const manager = managerExterno ?? getConnection().manager;
+    const manager = managerExterno ?? AppDataSource.manager;
     // Misma forma que devolvía el API antes (operación, inventario, sesión) + relaciones como derivado.
     // Las relaciones se cargan aparte: anidar `relacionesComoDerivado.origen` con las relaciones eager de
     // Movimiento genera alias demasiado largos en TypeORM 0.2.
-    const movimiento = await manager.findOneOrFail(Movimiento, movimientoId, {
-      relations: ["operacion", "operacion.operacionDetalle", "operacion.usuarios"],
+    const movimiento = await manager.findOneOrFail(Movimiento, { where: { id: movimientoId }, 
+      relations: { operacion: { operacionDetalle: true, usuarios: true } },
     });
     movimiento.relacionesComoDerivado = await manager
       .createQueryBuilder(MovimientoRelacion, "r")
@@ -405,14 +406,14 @@ export default class MovimientoService {
   static deshacer = async (movimientoId: number | string, sesionId: number) => {
     const id = idSeguro(movimientoId, "movimientoId");
     // Se lee fuera de la transacción solo para saber qué inventario bloquear; dentro se vuelve a leer.
-    const [previo] = await getConnection().query("SELECT inventarioActualId FROM movimiento WHERE id = ?", [id]);
+    const [previo] = await AppDataSource.query("SELECT inventarioActualId FROM movimiento WHERE id = ?", [id]);
     if (!previo) throw new AppError("Movimiento desconocido", 400);
     const inventarioActualId = Number(previo.inventarioActualId);
 
     return enTransaccion(async (manager) => {
       const { inventario } = await bloquearInventario(manager, inventarioActualId);
-      const movimiento = await manager.findOne(Movimiento, id, {
-        relations: ["operacion", "operacion.movimientoTipo", "operacion.operacionDetalle"],
+      const movimiento = await manager.findOne(Movimiento, { where: { id: id }, 
+        relations: { operacion: { movimientoTipo: true, operacionDetalle: true } },
         loadEagerRelations: false,
       });
       if (!movimiento) throw new AppError("Movimiento desconocido", 400);
@@ -504,7 +505,7 @@ export default class MovimientoService {
   /** Movimiento con sus relaciones en ambos sentidos y su saldo pendiente (GET /activity/:id/chain). */
   static cadena = async (movimientoId: number | string) => {
     const id = idSeguro(movimientoId, "movimientoId");
-    const movimiento = await getRepository(Movimiento)
+    const movimiento = await AppDataSource.getRepository(Movimiento)
       .createQueryBuilder("m")
       .leftJoinAndSelect("m.operacion", "o")
       .leftJoinAndSelect("o.movimientoTipo", "t")
@@ -537,7 +538,7 @@ export default class MovimientoService {
   static abiertosPorInventario = async (inventarioActualId: number | string, proyectoId?: number | string | null) => {
     const inventario = idSeguro(inventarioActualId, "inventarioActualId");
     const proyecto = idOpcional(proyectoId, "proyectoId");
-    const filas = await getConnection().query(
+    const filas = await AppDataSource.query(
       `SELECT v.movimientoId, v.movimientoTipoId, t.nombre AS movimientoTipo, v.proyectoId, p.nombre AS proyecto,
               v.fecha, v.cantidad, v.aplicado, v.saldo
          FROM v_movimiento_saldo v

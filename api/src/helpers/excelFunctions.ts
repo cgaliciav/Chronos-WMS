@@ -1,6 +1,8 @@
 import { stream, Table, Workbook, Worksheet } from "exceljs";
 import { performance } from "perf_hooks";
-import { Brackets, getConnection, getRepository, SelectQueryBuilder } from "typeorm";
+import { Brackets, SelectQueryBuilder, In } from "typeorm";
+import { AppDataSource } from "../data-source";
+import { idSeguro } from "./ids";
 import { aplicarFiltros, columnaSegura, direccionSegura } from "./filtrosTabla";
 import { MovimientoTipoId as T } from "../entity/common/MovimientoTipoId";
 import {
@@ -951,13 +953,13 @@ const agregarImagenesMovimiento = async (
 
       // GET THE LATEST FILE BASE ON ITS ID
       const itemFile = item.inventarioActual.producto.archivos.sort((a, b) => a.id - b.id).pop();
-      const file = await getRepository(Archivo).findOne(itemFile.id);
+      const file = await AppDataSource.getRepository(Archivo).findOneBy({ id: itemFile.id });
 
 
       // const file = await getRepository(Archivo).findOne(
       //   item.inventarioActual.producto.archivos[0].id
       // );
-      if (file === undefined) continue;
+      if (file == null) continue;
       const idImage = workbook.addImage({
         buffer: (await sharp(file.data).resize(64, 64).withMetadata().toFormat('jpeg').toBuffer()) as any, // tipos de exceljs vs @types/node 22
         extension: "jpeg",
@@ -990,12 +992,12 @@ const agregarImagenesMovimientoFotoGrande = async (
     if (item.inventarioActual.producto.archivos.length > 0) {
       // GET THE LATEST FILE BASE ON ITS ID
       const itemFile = item.inventarioActual.producto.archivos.sort((a, b) => a.id - b.id).pop();
-      const file = await getRepository(Archivo).findOne(itemFile.id);
+      const file = await AppDataSource.getRepository(Archivo).findOneBy({ id: itemFile.id });
 
       // const file = await getRepository(Archivo).findOne(
       //   item.inventarioActual.producto.archivos[0].id
       // );
-      if (file === undefined) continue;
+      if (file == null) continue;
       const idImage = workbook.addImage({
         buffer: (await sharp(file.data).resize(400, null, { fit: 'inside' }).withMetadata().toFormat('jpeg').toBuffer()) as any, // tipos de exceljs vs @types/node 22
         extension: "jpeg",
@@ -1031,12 +1033,12 @@ const agregarImagenesMovimientoCompra = async (
     if (item.inventarioActual.producto.archivos.length > 0) {
       // GET THE LATEST FILE BASE ON ITS ID
       const itemFile = item.inventarioActual.producto.archivos.sort((a, b) => a.id - b.id).pop();
-      const file = await getRepository(Archivo).findOne(itemFile.id);
+      const file = await AppDataSource.getRepository(Archivo).findOneBy({ id: itemFile.id });
 
       // const file = await getRepository(Archivo).findOne(
       //   item.inventarioActual.producto.archivos[0].id
       // );
-      if (file === undefined) continue;
+      if (file == null) continue;
       const idImage = workbook.addImage({
         buffer: (await sharp(file.data).resize(64, 64).withMetadata().toFormat('jpeg').toBuffer()) as any, // tipos de exceljs vs @types/node 22
         extension: "jpeg",
@@ -1189,7 +1191,7 @@ async function agregarHojaMovimientos(
     .select("productoPrecios.precio", "tPrecio")
     .addSelect("movimiento.id", "tId");
 
-  const resulQry = getConnection().createQueryBuilder()
+  const resulQry = AppDataSource.createQueryBuilder()
     .select("SUM(listing.tPrecio)", "totalPrecio")
     .addSelect("COUNT(listing.tId)", "totalRegistros")
     .from("(" + qryResultados.getQuery() + ")", "listing")
@@ -1338,12 +1340,12 @@ const reporteGeneral = async (body: {
     usuariosIds = [], fechaInicio, fechaFin, areasId = [], bodegasId, filters, campoOrden, direccion
   } = body
 
-  const proyecto = await getRepository(Proyecto).findOne(proyectoId, {
-    select: ["id", "nombre"],
+  const proyecto = await AppDataSource.getRepository(Proyecto).findOne({ where: { id: idSeguro(proyectoId, "proyectoId") }, 
+    select: { id: true, nombre: true },
     loadEagerRelations: false,
   });
 
-  if (proyecto === undefined) {
+  if (proyecto == null) {
     logger.debug(">>>>>> Proyecto no encontrado para reporte general");
     throw new Error("Proyecto no encontrado para reporte general");
   }
@@ -1351,10 +1353,10 @@ const reporteGeneral = async (body: {
   const t0 = performance.now();
 
   // obtener los nombres de las areas definidas en areasId
-  const areas = (await getRepository(Area).findByIds(areasId)).map((it) => it.nombre).join(" ") || "";
+  const areas = (await AppDataSource.getRepository(Area).findBy({ id: In(areasId) })).map((it) => it.nombre).join(" ") || "";
 
   //obtener los nombres de usuarios definidos en usuariosIds
-  const usuarios = (await getRepository(Usuario).findByIds(usuariosIds)).map((it) => it.nombre).join(" ") || "";
+  const usuarios = (await AppDataSource.getRepository(Usuario).findBy({ id: In(usuariosIds) })).map((it) => it.nombre).join(" ") || "";
 
   logger.debug("Iniciando generacion de reporte................");
   const tituloReporte = `CIERRE - ${proyecto.nombre.toLocaleUpperCase()}
@@ -1510,7 +1512,7 @@ const reporteGeneral = async (body: {
 };
 
 const queryReporteGeneralImagenes = () =>
-  getRepository(InventarioActual)
+  AppDataSource.getRepository(InventarioActual)
     .createQueryBuilder("inventarioActual")
     .innerJoinAndSelect("inventarioActual.producto", "producto")
     .leftJoinAndSelect("producto.archivos", "archivos")
@@ -1523,7 +1525,7 @@ const queryReporteGeneralImagenes = () =>
     .andWhere("inventarioActual.disponible<>'baja'");
 
 const queryReporteGeneral = () =>
-  getRepository(InventarioActual)
+  AppDataSource.getRepository(InventarioActual)
     .createQueryBuilder("inventarioActual")
     .innerJoinAndSelect("inventarioActual.producto", "producto")
     // .leftJoinAndSelect("producto.archivos","archivos")
@@ -1613,7 +1615,7 @@ const reporteMaquillajeGeneral = async () => {
     process.env.RUTA_REPORTES + "RG" + Date.now().toString() + ".xlsx";
   logger.debug("Iniciando generacion de reporte................");
 
-  const [articulos, total] = await getRepository(InventarioActual)
+  const [articulos, total] = await AppDataSource.getRepository(InventarioActual)
     .createQueryBuilder("inventarioActual")
     .innerJoinAndSelect("inventarioActual.producto", "producto")
     .leftJoinAndSelect("producto.archivos", "archivos")
@@ -1819,7 +1821,7 @@ const reportePorGrupo = async (body: any) => {
 
   const t0 = performance.now();
 
-  const gres = await getRepository(Grupo)
+  const gres = await AppDataSource.getRepository(Grupo)
     .createQueryBuilder("Grupo")
     .leftJoinAndSelect("Grupo.grupoDetalle", "GrupoDetalle")
     .leftJoinAndSelect("GrupoDetalle.usuarios", "Usuarios")
@@ -2018,7 +2020,7 @@ const reportePorGrupoFotoGrande = async (body: any) => {
 
   const t0 = performance.now();
 
-  const gres = await getRepository(Grupo)
+  const gres = await AppDataSource.getRepository(Grupo)
     .createQueryBuilder("Grupo")
     .leftJoinAndSelect("Grupo.grupoDetalle", "GrupoDetalle")
     .leftJoinAndSelect("GrupoDetalle.usuarios", "Usuarios")
@@ -2199,8 +2201,8 @@ const reportePorProyecto = async (body: any) => {
   });
 
   const proyectoNombre = (
-    await getRepository(Proyecto).findOne(proyectoId, {
-      select: ["id", "nombre"],
+    await AppDataSource.getRepository(Proyecto).findOne({ where: { id: idSeguro(proyectoId, "proyectoId") }, 
+      select: { id: true, nombre: true },
       loadEagerRelations: false,
     })
   ).nombre;
@@ -2210,7 +2212,7 @@ const reportePorProyecto = async (body: any) => {
   //   loadEagerRelations: false,
   // })).nombre:'';
 
-  const areasNombres = areasIds ? (await getRepository(Area).findByIds(areasIds)).map(area => area.nombre).join(' - ') : '';
+  const areasNombres = areasIds ? (await AppDataSource.getRepository(Area).findBy({ id: In(areasIds) })).map(area => area.nombre).join(' - ') : '';
   // proyectoId,movimientoTipoId,usuariosIds,areasIds,bodegasIds,
 
   const t0 = performance.now();
@@ -2369,13 +2371,13 @@ const reportePorProyectoCompras = async (body: any) => {
   });
 
   const proyectoNombre = (
-    await getRepository(Proyecto).findOne(proyectoId, {
-      select: ["id", "nombre"],
+    await AppDataSource.getRepository(Proyecto).findOne({ where: { id: idSeguro(proyectoId, "proyectoId") }, 
+      select: { id: true, nombre: true },
       loadEagerRelations: false,
     })
   ).nombre;
 
-  const areasNombres = areasIds ? (await getRepository(Area).findByIds(areasIds)).map(area => area.nombre).join(' - ') : '';
+  const areasNombres = areasIds ? (await AppDataSource.getRepository(Area).findBy({ id: In(areasIds) })).map(area => area.nombre).join(' - ') : '';
 
   const t0 = performance.now();
   const nameProposal = [movimientoTipoNombre, areasNombres, proyectoNombre, Math.trunc(Math.random() * 1000000)]
@@ -2580,8 +2582,8 @@ const reportePorPrestamosRentasActivas = async (body: any) => {
   } = body;
 
   const proyectoNombre = proyectoId > 0 ? (
-    await getRepository(Proyecto).findOne(proyectoId, {
-      select: ["id", "nombre"],
+    await AppDataSource.getRepository(Proyecto).findOne({ where: { id: idSeguro(proyectoId, "proyectoId") }, 
+      select: { id: true, nombre: true },
       loadEagerRelations: false,
     })
   ).nombre : 'Todos';

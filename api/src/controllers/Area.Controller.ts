@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { Area } from "../entity/Area";
 import CommonController from "./common/Common.Controller";
 import { construirFiltros } from "../helpers/filtrosTabla";
@@ -13,7 +13,7 @@ class AreaController{
 
     static listaSimple = (req: Request, res: Response,next:NextFunction) =>{
         CommonController.listaSimple(
-            getRepository(Area),
+            AppDataSource.getRepository(Area),
             ["id","nombre"]
         )
         .then(lista => {
@@ -25,7 +25,7 @@ class AreaController{
     //TABLA SEGUN LO REQUIEREN LAS TABLAS DE ANTD
     static listaTabla = async (req: Request, res: Response,next:NextFunction) =>{
         CommonController.listaTabla(
-            getRepository(Area),
+            AppDataSource.getRepository(Area),
             req.body,
             condicionesWhereAnd,
         )
@@ -39,7 +39,7 @@ class AreaController{
     static obtenerId = (req: Request, res: Response,next:NextFunction) =>{
         const id = parametro(req, "id");
         CommonController.obtenerId( 
-            getRepository(Area), 
+            AppDataSource.getRepository(Area), 
             [], 
             id,
         )
@@ -52,7 +52,7 @@ class AreaController{
     static nuevo = async (req: Request, res: Response,next:NextFunction) => {
         const {jwtPayload}=res.locals;
         CommonController.nuevo( 
-            getRepository( Area ),
+            AppDataSource.getRepository( Area ),
             new Area(),
             req.body,
             jwtPayload.si 
@@ -66,7 +66,7 @@ class AreaController{
     static editar = (req: Request, res: Response,next:NextFunction) => {
         const {jwtPayload}=res.locals;
         CommonController.editar(
-            getRepository(Area) ,
+            AppDataSource.getRepository(Area) ,
             req.body,
             jwtPayload.si 
         )
@@ -80,7 +80,7 @@ class AreaController{
         const {jwtPayload}=res.locals;
         const id = parametro(req, "id");
         CommonController.habilitar(
-            getRepository(Area),
+            AppDataSource.getRepository(Area),
             id,
             jwtPayload.si 
         )
@@ -94,7 +94,7 @@ class AreaController{
         const {jwtPayload}=res.locals;
         const id = parametro(req, "id");
         CommonController.deshabilitar(
-            getRepository(Area),
+            AppDataSource.getRepository(Area),
             id,
             jwtPayload.si 
         )

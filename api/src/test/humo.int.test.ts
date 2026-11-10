@@ -5,7 +5,7 @@ import { crearApp } from "../app";
 import { cerrarPruebas, conectarPruebas } from "./conexion";
 import { clienteAdmin } from "./factories";
 import { SEMILLA } from "./seed";
-import { getConnection } from "typeorm";
+import { AppDataSource } from "../data-source";
 
 describe("humo: la aplicación arranca contra MariaDB de pruebas", () => {
   let app: Express;
@@ -54,7 +54,7 @@ describe("humo: la aplicación arranca contra MariaDB de pruebas", () => {
     expect(res.status).toBe(200);
     let fila: any;
     for (let i = 0; i < 40 && !fila; i++) {
-      [fila] = await getConnection().query("SELECT * FROM log_peticiones WHERE reqPath = '/auth/version' ORDER BY id DESC LIMIT 1");
+      [fila] = await AppDataSource.query("SELECT * FROM log_peticiones WHERE reqPath = '/auth/version' ORDER BY id DESC LIMIT 1");
       if (!fila) await new Promise((r) => setTimeout(r, 50));
     }
     expect(fila).toEqual(expect.objectContaining({ reqMethod: "GET", resStatus: 200, ok: 1 }));

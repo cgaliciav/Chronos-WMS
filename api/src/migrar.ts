@@ -3,13 +3,13 @@
  *   node build/migrar.js show     lista las migraciones y marca las aplicadas
  *   node build/migrar.js run      aplica las pendientes
  *   node build/migrar.js revert   revierte la última
- * En desarrollo: npx ts-node src/migrar.ts <orden>. Usa las variables DB_* del entorno (y .env fuera de producción).
+ * En desarrollo: npm run migration:show|run|revert (ts-node src/migrar.ts <orden>; ENV_FILE=.env.test para la BD de pruebas). Usa las variables DB_* del entorno (y .env fuera de producción).
  * Procedimiento completo: docs/api/procedimiento-migracion-produccion.md.
  */
 import "./entorno"; // primero: carga .env antes de que otros módulos lean process.env (M34)
 import "reflect-metadata";
-import { createConnection } from "typeorm";
-import { opcionesConexion } from "./conexionORM";
+import { DataSource } from "typeorm";
+import { opcionesDataSource } from "./data-source";
 
 const orden = process.argv[2];
 
@@ -18,7 +18,7 @@ const orden = process.argv[2];
     console.error("Uso: node build/migrar.js show|run|revert");
     process.exit(2);
   }
-  const conexion = await createConnection(opcionesConexion({ synchronize: false, subscribers: [], logging: ["error", "migration"] } as any));
+  const conexion = await new DataSource(opcionesDataSource({ synchronize: false, subscribers: [], logging: ["error", "migration"] })).initialize();
   try {
     if (orden === "show") {
       const tabla = "migrations";
@@ -35,7 +35,7 @@ const orden = process.argv[2];
       console.log("Última migración revertida.");
     }
   } finally {
-    await conexion.close();
+    await conexion.destroy();
   }
 })().catch((error) => {
   console.error("Error en las migraciones:", error);

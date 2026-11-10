@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { FacturaTipo } from "../entity/FacturaTipo";
 import CommonController from "./common/Common.Controller";
 
@@ -7,7 +7,7 @@ class FacturaTipoController{
 
     static listaSimple = (req: Request, res: Response,next:NextFunction) =>{
         CommonController.listaSimple(
-            getRepository(FacturaTipo),
+            AppDataSource.getRepository(FacturaTipo),
             ["id","nombre"]
         )
         .then(lista => {

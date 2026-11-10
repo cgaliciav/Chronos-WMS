@@ -1,5 +1,5 @@
 import { escape } from "mysql2"; // mismo escape que mysql (sqlstring); mysql se retiró en la fase 4
-import { SelectQueryBuilder } from "typeorm";
+import { ObjectLiteral, SelectQueryBuilder } from "typeorm";
 import { AppError } from "./errorClases";
 
 /** Condición WHERE parametrizada lista para `qb.andWhere(sql, parametros)`. */
@@ -129,7 +129,7 @@ export const combinarFiltros = (...filtros: (FiltrosSql | string | undefined)[])
 };
 
 /** Aplica la condición al QueryBuilder (con AND) si no está vacía. */
-export const aplicarFiltros = <T>(qb: SelectQueryBuilder<T>, filtros: FiltrosSql | string): SelectQueryBuilder<T> => {
+export const aplicarFiltros = <T extends ObjectLiteral>(qb: SelectQueryBuilder<T>, filtros: FiltrosSql | string): SelectQueryBuilder<T> => {
   if (typeof filtros === "string") {
     if (filtros.length > 0) qb.andWhere(filtros);
     return qb;
@@ -142,7 +142,7 @@ export const aplicarFiltros = <T>(qb: SelectQueryBuilder<T>, filtros: FiltrosSql
  * `IN (:...ids)` con un arreglo vacío es un error de sintaxis en MariaDB. Esta función añade la condición
  * solo si hay valores; con arreglo vacío añade `1=0` (ningún resultado), que es lo que significa "en ninguno".
  */
-export const andWhereIn = <T>(qb: SelectQueryBuilder<T>, columna: string, valores: unknown[] | undefined, nombre: string) => {
+export const andWhereIn = <T extends ObjectLiteral>(qb: SelectQueryBuilder<T>, columna: string, valores: unknown[] | undefined, nombre: string) => {
   if (!esIdentificadorSeguro(columna)) throw new AppError(`Columna inválida: ${columna}`, 400);
   if (!valores || valores.length === 0) return qb.andWhere("1=0");
   const parametros: Record<string, unknown> = {};

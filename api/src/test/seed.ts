@@ -1,4 +1,4 @@
-import { Connection } from "typeorm";
+import { DataSource } from "typeorm";
 import { Area } from "../entity/Area";
 import { Bodega } from "../entity/Bodega";
 import { EstatusEstado } from "../entity/common/NombreEstatus";
@@ -52,7 +52,7 @@ const PARAMETROS: [string, string][] = [
  * bodega, proyectos, proveedor, tipos de factura/precio/producto y parámetros de depreciación.
  * Idempotente: usa `save` con ids fijos.
  */
-export const sembrar = async (connection: Connection) => {
+export const sembrar = async (connection: DataSource) => {
   const repo = <T>(e: new () => T) => connection.getRepository<T>(e);
   const silenciar = console.log;
   console.log = () => undefined; // el suscriptor de auditoría es ruidoso mientras no hay sesión

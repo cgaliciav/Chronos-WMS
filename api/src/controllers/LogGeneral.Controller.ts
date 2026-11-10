@@ -1,4 +1,4 @@
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { LogGeneral, LogTipo } from "../entity/LogGeneral";
 import { logger } from "../helpers/logger";
 
@@ -18,7 +18,7 @@ export default class LogGeneralController{
         else 
             log.data=JSON.stringify(data);
         
-        getRepository(LogGeneral)
+        AppDataSource.getRepository(LogGeneral)
         .save(log)
         .then(()=>{
             // Además de la BD, al log de la aplicación con el nivel equivalente (el nivel visible lo decide helpers/logger).

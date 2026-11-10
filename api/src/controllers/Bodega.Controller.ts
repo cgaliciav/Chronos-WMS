@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { Bodega } from "../entity/Bodega";
 import CommonController from "./common/Common.Controller";
 import { construirFiltros } from "../helpers/filtrosTabla";
@@ -12,7 +12,7 @@ class BodegaController{
 
     static listaSimple = (req: Request, res: Response,next:NextFunction) =>{
         CommonController.listaSimple(
-            getRepository(Bodega),
+            AppDataSource.getRepository(Bodega),
             ["id","nombre"]
         )
         .then(lista => {
@@ -24,7 +24,7 @@ class BodegaController{
     //TABLA SEGUN LO REQUIEREN LAS TABLAS DE ANTD
     static listaTabla = async (req: Request, res: Response,next:NextFunction) =>{
         CommonController.listaTabla(
-            getRepository(Bodega),
+            AppDataSource.getRepository(Bodega),
             req.body,
             condicionesWhereAnd,
         )
@@ -38,7 +38,7 @@ class BodegaController{
     static obtenerId = (req: Request, res: Response,next:NextFunction) =>{
         const id = parametro(req, "id");
         CommonController.obtenerId( 
-            getRepository(Bodega), 
+            AppDataSource.getRepository(Bodega), 
             [], 
             id,
         )
@@ -51,7 +51,7 @@ class BodegaController{
     static nuevo = async (req: Request, res: Response,next:NextFunction) => {
         const {jwtPayload}=res.locals;
         CommonController.nuevo( 
-            getRepository( Bodega ),
+            AppDataSource.getRepository( Bodega ),
             new Bodega(),
             req.body,
             jwtPayload.si 
@@ -65,7 +65,7 @@ class BodegaController{
     static editar = (req: Request, res: Response,next:NextFunction) => {
         const {jwtPayload}=res.locals;
         CommonController.editar(
-            getRepository(Bodega) ,
+            AppDataSource.getRepository(Bodega) ,
             req.body,
             jwtPayload.si 
         )
@@ -79,7 +79,7 @@ class BodegaController{
         const {jwtPayload}=res.locals;
         const id = parametro(req, "id");
         CommonController.habilitar(
-            getRepository(Bodega),
+            AppDataSource.getRepository(Bodega),
             id,
             jwtPayload.si 
         )
@@ -93,7 +93,7 @@ class BodegaController{
         const {jwtPayload}=res.locals;
         const id = parametro(req, "id");
         CommonController.deshabilitar(
-            getRepository(Bodega),
+            AppDataSource.getRepository(Bodega),
             id,
             jwtPayload.si 
         )

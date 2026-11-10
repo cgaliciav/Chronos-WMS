@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { Rol } from "../entity/Rol";
 import CommonController from "./common/Common.Controller";
 
@@ -24,7 +24,7 @@ class RolController{
 
   static listaSimple = (req: Request, res: Response, next: NextFunction) =>{
     CommonController.listaSimple(
-        getRepository(Rol),
+        AppDataSource.getRepository(Rol),
         ["id","nombre","codigoRol"]
     )
     .then(lista => {
@@ -37,7 +37,7 @@ class RolController{
     const {busqueda}= req.body;
     try {
       res.json(await CommonController.BusquedaListaSimpleCompleta(
-        getRepository(Rol),
+        AppDataSource.getRepository(Rol),
         ["id","nombre"],
         busqueda) 
         );

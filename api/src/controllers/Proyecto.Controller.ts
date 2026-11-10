@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { Proyecto } from "../entity/Proyecto";
 import CommonController from "./common/Common.Controller";
 import { construirFiltros } from "../helpers/filtrosTabla";
@@ -7,7 +7,7 @@ import { parametro } from "../helpers/ids";
 
 const listaSimple = async()=>(
     await CommonController.listaSimple(
-        getRepository(Proyecto),
+        AppDataSource.getRepository(Proyecto),
         ["id","nombre","esExterno"]
     )
 );
@@ -44,7 +44,7 @@ class ProyectoController{
 //TABLA SEGUN LO REQUIEREN LAS TABLAS DE ANTD
     static listaTabla = async (req: Request, res: Response,next:NextFunction) =>{
         CommonController.listaTabla(
-            getRepository(Proyecto),
+            AppDataSource.getRepository(Proyecto),
             req.body,
             condicionesWhereAnd,
         )
@@ -59,7 +59,7 @@ class ProyectoController{
     static obtenerId = (req: Request, res: Response,next:NextFunction) =>{
         const id = parametro(req, "id");
         CommonController.obtenerId( 
-            getRepository(Proyecto), 
+            AppDataSource.getRepository(Proyecto), 
             ["comentarios"], 
             id,
         )
@@ -72,7 +72,7 @@ class ProyectoController{
     static nuevo = async (req: Request, res: Response,next:NextFunction) => {
         const {jwtPayload}=res.locals;
         CommonController.nuevo( 
-        getRepository( Proyecto ),
+        AppDataSource.getRepository( Proyecto ),
         new Proyecto(),
         req.body,
         jwtPayload.si 
@@ -86,7 +86,7 @@ class ProyectoController{
     static editar = (req: Request, res: Response,next:NextFunction) => {
         const {jwtPayload}=res.locals;
         CommonController.editar(
-            getRepository(Proyecto) ,
+            AppDataSource.getRepository(Proyecto) ,
             req.body,
             jwtPayload.si 
         )
@@ -100,7 +100,7 @@ class ProyectoController{
         const {jwtPayload}=res.locals;
         const id = parametro(req, "id");
         CommonController.habilitar(
-            getRepository(Proyecto),
+            AppDataSource.getRepository(Proyecto),
             id,
             jwtPayload.si 
         )
@@ -114,7 +114,7 @@ class ProyectoController{
         const {jwtPayload}=res.locals;
         const id = parametro(req, "id");
         CommonController.deshabilitar(
-            getRepository(Proyecto),
+            AppDataSource.getRepository(Proyecto),
             id,
             jwtPayload.si 
         )
@@ -128,7 +128,7 @@ class ProyectoController{
         const {jwtPayload}=res.locals;
         const {id,comentario} = req.body;
         CommonController.agregarComentario(
-            getRepository(Proyecto),
+            AppDataSource.getRepository(Proyecto),
             id,
             jwtPayload.si,
             comentario
@@ -144,7 +144,7 @@ class ProyectoController{
         const {jwtPayload}=res.locals;
         const {id,idComentario} = req.body;
         CommonController.quitarComentario(
-            getRepository(Proyecto),
+            AppDataSource.getRepository(Proyecto),
             id,
             jwtPayload.si,
             idComentario

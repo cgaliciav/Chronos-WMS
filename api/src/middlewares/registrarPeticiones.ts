@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { LogPeticiones } from "../entity/LogPeticiones";
 import { logger } from "../helpers/logger";
 
@@ -19,7 +19,7 @@ export const registrarPeticiones = (req: Request, res: Response, next: NextFunct
     registro.reqBytes = Number(req.headers["content-length"] ?? 0) || 0;
     registro.resBytes = Number(res.getHeader("content-length") ?? 0) || 0;
     registro.resStatus = res.statusCode;
-    getRepository(LogPeticiones)
+    AppDataSource.getRepository(LogPeticiones)
       .save(registro)
       .catch((error) => logger.error("No se pudo guardar LogPeticiones", error.message));
   });

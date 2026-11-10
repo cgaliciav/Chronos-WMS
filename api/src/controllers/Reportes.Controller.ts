@@ -1,7 +1,7 @@
 // import { fork, spawn } from "child_process"
 import { Request, Response, NextFunction } from "express";
 import { stat } from "fs";
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
 
 // import MagicBellClient, { Notification } from "@magicbell/core";
 
@@ -215,8 +215,8 @@ class ReporteController {
       funcionGenerarReportePorGrupo(
         { ...body, nombreAlmacenista: jwtPayload.u },
         (
-          await getRepository(Usuario).findOneOrFail(jwtPayload.ui, {
-            select: ["id", "correo"],
+          await AppDataSource.getRepository(Usuario).findOneOrFail({ where: { id: jwtPayload.ui }, 
+            select: { id: true, correo: true },
             loadEagerRelations: false /*cache:true,*/,
           })
         ).correo
@@ -247,8 +247,8 @@ class ReporteController {
         funcionQueryMovimientosActivosReporteProyecto(
           body,
           (
-            await getRepository(Usuario).findOneOrFail(jwtPayload.ui, {
-              select: ["id", "correo"],
+            await AppDataSource.getRepository(Usuario).findOneOrFail({ where: { id: jwtPayload.ui }, 
+              select: { id: true, correo: true },
               loadEagerRelations: false /*cache:true,*/,
             })
           ).correo
@@ -257,8 +257,8 @@ class ReporteController {
         funcionQueryMovimientosReporteProyecto(
           body,
           (
-            await getRepository(Usuario).findOneOrFail(jwtPayload.ui, {
-              select: ["id", "correo"],
+            await AppDataSource.getRepository(Usuario).findOneOrFail({ where: { id: jwtPayload.ui }, 
+              select: { id: true, correo: true },
               loadEagerRelations: false /*cache:true,*/,
             })
           ).correo
@@ -289,8 +289,8 @@ class ReporteController {
       funcionQueryReporteCierre(
         req.body,
         (
-          await getRepository(Usuario).findOneOrFail(jwtPayload.ui, {
-            select: ["id", "correo"],
+          await AppDataSource.getRepository(Usuario).findOneOrFail({ where: { id: jwtPayload.ui }, 
+            select: { id: true, correo: true },
             loadEagerRelations: false /*cache:true,*/,
           })
         ).correo

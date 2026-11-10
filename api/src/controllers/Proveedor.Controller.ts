@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { getRepository } from "typeorm";
+import { AppDataSource } from "../data-source";
 import { Proveedor } from "../entity/Proveedor";
 import CommonController from "./common/Common.Controller";
 import { construirFiltros } from "../helpers/filtrosTabla";
@@ -14,7 +14,7 @@ class ProveedorController{
     static listaSimple = async (req: Request, res: Response,next:NextFunction) =>{
         try {
           res.json(await CommonController.listaSimpleGenerica(
-            getRepository(Proveedor),
+            AppDataSource.getRepository(Proveedor),
             ["id","nombre"]
           )); 
         } catch (error) {
@@ -26,7 +26,7 @@ class ProveedorController{
         const {busqueda}= req.body;
         try {
             const resp=await CommonController.BusquedaListaSimpleCompleta(
-                getRepository(Proveedor),
+                AppDataSource.getRepository(Proveedor),
                 ["id","nombre"],
                 busqueda);
             // console.log("ProveedorController->listaSimpleCompletaDinamica<<<<<<<<<<<<<",resp)
@@ -41,7 +41,7 @@ class ProveedorController{
     static listaTabla = async (req: Request, res: Response, next: NextFunction) =>{
         logger.info("******* LISTA TABLA PROVEEDORES BODY",req.body)
         CommonController.listaTabla(
-            getRepository(Proveedor),
+            AppDataSource.getRepository(Proveedor),
             req.body,
             condicionesWhereAnd,
         )
@@ -55,7 +55,7 @@ class ProveedorController{
     static obtenerId = (req: Request, res: Response,next:NextFunction) =>{
         const id = parametro(req, "id");
         CommonController.obtenerId( 
-            getRepository(Proveedor), 
+            AppDataSource.getRepository(Proveedor), 
             ["comentarios"], 
             id,
         )
@@ -68,7 +68,7 @@ class ProveedorController{
     static nuevo = async (req: Request, res: Response,next:NextFunction) => {
         const {jwtPayload}=res.locals;
         CommonController.nuevo( 
-            getRepository( Proveedor ),
+            AppDataSource.getRepository( Proveedor ),
             new Proveedor(),
             req.body,
             jwtPayload.si 
@@ -82,7 +82,7 @@ class ProveedorController{
     static editar = (req: Request, res: Response,next:NextFunction) => {
         const {jwtPayload}=res.locals;
         CommonController.editar(
-            getRepository(Proveedor) ,
+            AppDataSource.getRepository(Proveedor) ,
             req.body,
             jwtPayload.si 
         )
@@ -96,7 +96,7 @@ class ProveedorController{
         const {jwtPayload}=res.locals;
         const id = parametro(req, "id");
         CommonController.habilitar(
-            getRepository(Proveedor),
+            AppDataSource.getRepository(Proveedor),
             id,
             jwtPayload.si 
         )
@@ -110,7 +110,7 @@ class ProveedorController{
         const {jwtPayload}=res.locals;
         const id = parametro(req, "id");
         CommonController.deshabilitar(
-            getRepository(Proveedor),
+            AppDataSource.getRepository(Proveedor),
             id,
             jwtPayload.si 
         )
@@ -124,7 +124,7 @@ class ProveedorController{
         const {jwtPayload}=res.locals;
         const {id,comentario} = req.body;
         CommonController.agregarComentario(
-            getRepository(Proveedor),
+            AppDataSource.getRepository(Proveedor),
             id,
             jwtPayload.si,
             comentario
@@ -140,7 +140,7 @@ class ProveedorController{
         const {jwtPayload}=res.locals;
         const {id,idComentario} = req.body;
         CommonController.quitarComentario(
-            getRepository(Proveedor),
+            AppDataSource.getRepository(Proveedor),
             id,
             jwtPayload.si,
             idComentario
