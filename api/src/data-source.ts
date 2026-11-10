@@ -20,6 +20,9 @@ export const opcionesDataSource = (extra: Partial<DataSourceOptions> = {}): Data
     username: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE_NAME,
+    // Fechas en UTC, como los DEFAULT CURRENT_TIMESTAMP del servidor (contenedores en UTC). Sin esto el driver usa la
+    // zona del proceso: con Node en hora local (desarrollo) las fechas puestas por MariaDB se leían desplazadas (M38).
+    timezone: "Z",
     synchronize: process.env.DB_SYNCRO === "true",
     migrationsRun: false,
     logging: nivelesSql(process.env.DB_LOGGING),

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Modal, Row, Spin, Upload, type UploadFile, type UploadProps } from 'antd'
 import { notification } from 'helpers/feedback'
 import { PlusOutlined } from '@ant-design/icons'
-import { apiURLBase } from 'services/axios'
+import { urlDelApi } from 'services/axios'
 import { obtenerToken } from 'helpers/storage'
 import ArchivoPeticiones from 'services/axios/archivos'
 import type { ArchivoId, EventoCerrarModal } from './tipos'
@@ -97,7 +97,7 @@ const SubirArchivos = ({
   }
 
   const componenteHabilitado = habilitado && habilitadoInterno
-  const rutaUploadProducto = `${apiURLBase}/file/file`
+  const rutaUploadProducto = urlDelApi('file/file')
   const token = obtenerToken()
 
   return (

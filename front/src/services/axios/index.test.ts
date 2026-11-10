@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { notification } from 'helpers/feedback'
 import { API, servidor } from 'test/servidor'
-import { apiClient, conToken, PeticionBase } from '.'
+import { apiClient, conToken, PeticionBase, urlDelApi } from '.'
 
 describe('apiClient y PeticionBase', () => {
   beforeEach(() => {
@@ -73,5 +73,11 @@ describe('apiClient y PeticionBase', () => {
     expect(conToken('/api/file/1')).toBe('/api/file/1?auth=a%20b')
     expect(conToken('/api/file/1?x=1')).toBe('/api/file/1?x=1&auth=a%20b')
     expect(conToken(undefined)).toBeUndefined()
+  })
+
+  it('urlDelApi une la base y la ruta con una sola barra (Express 5 responde 404 a /api//file)', () => {
+    expect(urlDelApi('file/thumbnail/7')).toBe(`${API}/file/thumbnail/7`)
+    expect(urlDelApi('/file/file')).toBe(`${API}/file/file`)
+    expect(urlDelApi('//file/report/a.xlsx')).toBe(`${API}/file/report/a.xlsx`)
   })
 })

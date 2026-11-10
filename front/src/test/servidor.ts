@@ -18,6 +18,7 @@ export const manejadores = [
   http.post(`${API}/auth/login`, () => HttpResponse.json({ t: 'token-nuevo' })),
   http.post(`${API}/auth/logout`, () => HttpResponse.json({})),
   http.get(`${API}/auth/version`, () => HttpResponse.json({ version: '9.9.9' })),
+  http.get(`${API}/notifications/count`, () => HttpResponse.json({ noLeidas: 0 })),
   http.get(`${API}/user/current`, ({ request }) =>
     request.headers.get('auth')
       ? HttpResponse.json(USUARIO_PRUEBA)

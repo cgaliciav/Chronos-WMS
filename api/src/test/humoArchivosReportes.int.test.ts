@@ -5,11 +5,13 @@
 import "./env";
 import { Express } from "express";
 import { existsSync, mkdirSync, readFileSync } from "fs";
+import http from "http";
+import { AddressInfo } from "net";
 import sharp from "sharp";
 import { crearApp } from "../app";
 import { reportePorGrupo } from "../helpers/excelFunctions";
 import { cerrarPruebas, conectarPruebas } from "./conexion";
-import { clienteAdmin, crearArticulo, crearGrupoDetalle } from "./factories";
+import { clienteAdmin, crearArticulo, crearGrupoDetalle, tokenAdmin } from "./factories";
 
 // PNG de 8×8 px (rojo): lo bastante grande para que sharp lo redimensione de verdad.
 const PNG = Buffer.from(
@@ -51,6 +53,31 @@ describe("fase 5 · humo de archivos e informes", () => {
       const res = await api.get(`/file/${variante}/${archivoId}`);
       expect(res.status).toBe(200);
       expect(Number(res.headers["content-length"])).toBeGreaterThan(0);
+    }
+  });
+
+  it("acepta barras repetidas como Express 4: `//file/thumbnail/:id` y `//file/file` (front hasta v4.2.1)", async () => {
+    // Petición HTTP cruda: supertest (y `new URL`) leerían `//file/...` como una URL sin protocolo con host "file".
+    const servidor = http.createServer(app).listen(0);
+    const { port } = servidor.address() as AddressInfo;
+    const pedir = (method: string, path: string) =>
+      new Promise<http.IncomingMessage>((resolve, reject) => {
+        const req = http.request({ host: "127.0.0.1", port, method, path, headers: { auth: tokenAdmin() } }, (res) => {
+          res.resume();
+          resolve(res);
+        });
+        req.on("error", reject);
+        req.end();
+      });
+    try {
+      const miniatura = await pedir("GET", `//file/thumbnail/${archivoId}`);
+      expect(miniatura.statusCode).toBe(200);
+      expect(Number(miniatura.headers["content-length"])).toBeGreaterThan(0);
+      // La subida llega a su ruta (sin archivo responde un error de validación, no 404)
+      const subida = await pedir("POST", "//file/file");
+      expect(subida.statusCode).not.toBe(404);
+    } finally {
+      servidor.close();
     }
   });
 

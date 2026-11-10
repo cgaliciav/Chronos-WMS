@@ -1,6 +1,6 @@
 import { Tag, Popconfirm, Typography, Badge } from 'antd'
 import { DeleteOutlined, DollarOutlined, EyeOutlined } from '@ant-design/icons'
-import { apiURLBase, conToken } from 'services/axios'
+import { conToken, urlDelApi } from 'services/axios'
 import { obtenerPropsBusquedaInput } from 'pages/componentes/filtrosTablas'
 import type { Archivo, ProductoClave } from 'types/api'
 import type { ColumnaOperacion, FnQuitarMovimiento, MovimientoOperacion } from '../tipos'
@@ -35,7 +35,7 @@ const ColumnasOperaciones: ColumnasOperacionesComunes = {
     render: (archivos: Archivo[] | undefined) => {
       let ruta
       if (archivos && archivos.length > 0)
-        ruta = conToken(`${apiURLBase}/file/thumbnail/${archivos[0].id}`)
+        ruta = conToken(urlDelApi(`file/thumbnail/${archivos[0].id}`))
       else ruta = '/resources/images/no-photo-available.svg'
       return (
         <a

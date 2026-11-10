@@ -3,6 +3,8 @@
 #   docker compose -f docker-compose.dev.yml down        # conserva los datos
 #   docker compose -f docker-compose.dev.yml down -v     # borra la BD de desarrollo
 # Mailpit atrapa todo el correo del API: UI en http://localhost:8025
+# Nombre explícito (el que Compose deducía de la carpeta): conserva el volumen `api_almacen_dev_db`.
+name: api
 services:
   mariadb:
     image: mariadb:10.11

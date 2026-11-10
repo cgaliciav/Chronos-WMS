@@ -10,3 +10,18 @@ export const soloDigitos = (nombre: string) => (req: Request, _res: Response, ne
   if (/^\d+$/.test(parametro(req, nombre))) next();
   else next("route");
 };
+
+/**
+ * Une las barras repetidas de la ruta (`//file/thumbnail/1` → `/file/thumbnail/1`); no toca la consulta (`?…`).
+ * Express 4 casaba esas rutas; path-to-regexp 8 (Express 5) no, y respondía 404. El front hasta v4.2.1 pide
+ * `${apiURLBase}/file/…` con `apiURLBase` terminado en `/` (miniaturas de los listados y subida de archivos): sin esto,
+ * esos builds dejan de ver miniaturas y de subir archivos contra un API con Express 5.
+ */
+export const unirBarrasRepetidas = (req: Request, _res: Response, next: NextFunction) => {
+  const inicioConsulta = req.url.indexOf("?");
+  const ruta = inicioConsulta === -1 ? req.url : req.url.slice(0, inicioConsulta);
+  if (ruta.includes("//")) {
+    req.url = ruta.replace(/\/{2,}/g, "/") + (inicioConsulta === -1 ? "" : req.url.slice(inicioConsulta));
+  }
+  next();
+};

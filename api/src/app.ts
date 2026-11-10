@@ -5,6 +5,7 @@ import routes from "./routes";
 import { errorMiddlewere } from "./middlewares/manejoErrores";
 import { pasadas } from "./middlewares/pasada";
 import { registrarPeticiones } from "./middlewares/registrarPeticiones";
+import { unirBarrasRepetidas } from "./middlewares/rutas";
 import pinoHttp from "pino-http";
 import { ocultarToken, pinoBase } from "./helpers/logger";
 import rateLimit from "express-rate-limit";
@@ -29,6 +30,9 @@ export const crearApp = (opciones: { registrarPeticiones?: boolean } = {}) => {
     );
     app.use(registrarPeticiones);
   }
+
+  // Antes que cualquier ruta (también el límite de /auth/login): `//file/…` → `/file/…` (Express 5 no las casa).
+  app.use(unirBarrasRepetidas);
 
   // IP real del cliente detrás del proxy inverso (nginx/docker). TRUST_PROXY admite los valores de Express:
   // "loopback" (por defecto), "loopback, 172.18.0.0/16", un número de saltos, "true"...

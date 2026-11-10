@@ -10,6 +10,7 @@ import { AddressInfo } from "net";
 import sharp from "sharp";
 import { crearApp } from "../app";
 import { AppDataSource } from "../data-source";
+import { logger } from "../helpers/logger";
 import NotificacionService from "../services/NotificacionService";
 import { cerrarPruebas, conectarPruebas } from "./conexion";
 import { clienteAdmin, clienteOperador, crearArticulo, crearGrupoDetalle, registrarOperacion, tokenOperador } from "./factories";
@@ -108,6 +109,27 @@ describe("fase 7 · notificaciones", () => {
     const otraVez = await admin.put(`/notifications/${creada.id}/read`);
     expect(otraVez.body.fechaLectura).toBe(leida.body.fechaLectura);
     expect((await admin.put("/notifications/999999/read")).status).toBe(404);
+  });
+
+  it("la fecha que pone MariaDB se lee como el instante real, aunque Node no esté en UTC (M38)", async () => {
+    const creada = (await NotificacionService.crear(SEMILLA.adminId, { titulo: "Reloj" }))!;
+    const [leida] = (await lista(admin, "?unread=1")).filter((n) => n.id === creada.id);
+    expect(Math.abs(new Date(leida.fecha).getTime() - Date.now())).toBeLessThan(60_000);
+  });
+
+  it("marcar como leídas no dispara el suscriptor de auditoría (repo.update pasa un objeto plano)", async () => {
+    const errores = jest.spyOn(logger, "error");
+    try {
+      const creada = (await NotificacionService.crear(SEMILLA.adminId, { titulo: "Sin auditoría" }))!;
+      await NotificacionService.crear(SEMILLA.adminId, { titulo: "Sin auditoría 2" });
+      expect((await admin.put(`/notifications/${creada.id}/read`)).status).toBe(200);
+      expect((await admin.put("/notifications/read-all")).status).toBe(200);
+      await new Promise((r) => setTimeout(r, 300)); // el suscriptor escribe sin esperar (void)
+      const delSuscriptor = errores.mock.calls.filter(([m]) => String(m).includes("suscriptor de auditoría"));
+      expect(delSuscriptor).toEqual([]);
+    } finally {
+      errores.mockRestore();
+    }
   });
 
   it("read-all marca solo las del usuario", async () => {
