@@ -22,3 +22,5 @@ Respuestas de César Galicia a las dudas planteadas tras la auditoría. Son vinc
 | 12 | Tipos 6, 9 y 10 | Un inventario o un ajuste **no es un movimiento**: el API los rechaza como operación y como tipo de listado. | `api/tipos-de-movimiento.md` |
 | 13 | Depreciación de precios | **No se implementa**: solo se usa el precio original (tipo 2). Los artículos nuevos solo guardan ese precio. | Hallazgo M5 |
 | 14 | Duración de la sesión | **Se mantiene** el token de 12 h que se renueva en cada petición (caduca tras 12 h sin uso o al cerrar sesión). | Plan 02 §7 |
+| 15 | Rutas del front | **Sin `#`** (`createBrowserRouter`), revisa D5 del plan 01 (2026-11-10). El contenedor del front sirve `front/nginx.conf` con fallback a `index.html`. | Front v4.1.0; `docs/front/arquitectura.md` |
+| 16 | Personalización por cliente | **El API sirve la marca** y la configuración (correo, logo de reportes), editables desde el front; un solo código y build para todos, **sin ramas por cliente**; "Sony"/"Teleset" pasan a **"Chronos WMS"** como valor por defecto (2026-11-10). | Plan 03 §2 |
