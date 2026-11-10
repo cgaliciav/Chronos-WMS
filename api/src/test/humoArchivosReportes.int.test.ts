@@ -4,10 +4,9 @@
  */
 import "./env";
 import { Express } from "express";
-import { existsSync, mkdirSync, readFileSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import http from "http";
 import { AddressInfo } from "net";
-import sharp from "sharp";
 import { crearApp } from "../app";
 import { reportePorGrupo } from "../helpers/excelFunctions";
 import { cerrarPruebas, conectarPruebas } from "./conexion";
@@ -30,11 +29,6 @@ describe("fase 5 · humo de archivos e informes", () => {
     app = crearApp();
     api = clienteAdmin(app);
     grupoId = (await crearGrupoDetalle(api, 14)).id;
-    // Los reportes incrustan el logo de ARCHIVOS_AUXILIARES (en producción vive en el volumen exogrid).
-    mkdirSync(process.env.ARCHIVOS_AUXILIARES as string, { recursive: true });
-    await sharp({ create: { width: 40, height: 20, channels: 3, background: "#000" } })
-      .jpeg()
-      .toFile(`${process.env.ARCHIVOS_AUXILIARES}sony-tv-logo.jpg`);
   });
   afterAll(cerrarPruebas);
 

@@ -7,7 +7,7 @@
 import "./env";
 import { Workbook } from "exceljs";
 import { Express } from "express";
-import { existsSync, mkdirSync, readFileSync, renameSync } from "fs";
+import { readFileSync } from "fs";
 import { basename } from "path";
 import sharp from "sharp";
 import { crearApp } from "../app";
@@ -80,10 +80,6 @@ describe("caracterización de los reportes Excel", () => {
     await conectarPruebas();
     app = crearApp();
     api = clienteAdmin(app);
-    mkdirSync(process.env.ARCHIVOS_AUXILIARES as string, { recursive: true });
-    await sharp({ create: { width: 40, height: 20, channels: 3, background: "#000" } })
-      .jpeg()
-      .toFile(`${process.env.ARCHIVOS_AUXILIARES}sony-tv-logo.jpg`);
 
     // Proyecto propio: los reportes por proyecto no ven datos de otras suites
     const repo = AppDataSource.getRepository(Proyecto);
@@ -133,16 +129,9 @@ describe("caracterización de los reportes Excel", () => {
     expect(await huella(path)).toMatchSnapshot();
   });
 
-  it("sin el logo histórico en ARCHIVOS_AUXILIARES, el reporte lleva el logo de Chronos WMS (plan 03, fase 0)", async () => {
-    const historico = `${process.env.ARCHIVOS_AUXILIARES}sony-tv-logo.jpg`;
-    const apartado = `${historico}.apartado`;
-    if (existsSync(historico)) renameSync(historico, apartado);
-    try {
-      const { path } = (await reportePorGrupo({ ...comun, grupoId: grupoPrestamo, grupoNombre: "QA", movimientoTipoNombre: "PRÉSTAMO", conFoto: false })) as { path: string };
-      const medios = new Set(readFileSync(path).toString("latin1").match(/xl\/media\/image\d+\.(png|jpe?g)/g) ?? []);
-      expect([...medios]).toEqual([expect.stringMatching(/\.png$/)]); // un solo medio, el PNG empaquetado (sin fotos)
-    } finally {
-      if (existsSync(apartado)) renameSync(apartado, historico);
-    }
+  it("sin logo configurado, el reporte lleva el logo de Chronos WMS (plan 03)", async () => {
+    const { path } = (await reportePorGrupo({ ...comun, grupoId: grupoPrestamo, grupoNombre: "QA", movimientoTipoNombre: "PRÉSTAMO", conFoto: false })) as { path: string };
+    const medios = new Set(readFileSync(path).toString("latin1").match(/xl\/media\/image\d+\.(png|jpe?g)/g) ?? []);
+    expect([...medios]).toEqual([expect.stringMatching(/\.png$/)]); // un solo medio, el PNG empaquetado (sin fotos)
   });
 });

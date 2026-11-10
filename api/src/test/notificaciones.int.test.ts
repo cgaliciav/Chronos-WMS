@@ -4,10 +4,8 @@
  */
 import "./env";
 import { Express } from "express";
-import { mkdirSync } from "fs";
 import http from "http";
 import { AddressInfo } from "net";
-import sharp from "sharp";
 import { crearApp } from "../app";
 import { AppDataSource } from "../data-source";
 import { logger } from "../helpers/logger";
@@ -39,11 +37,6 @@ describe("fase 7 · notificaciones", () => {
     app = crearApp();
     admin = clienteAdmin(app);
     operador = clienteOperador(app);
-    // Los reportes incrustan el logo de ARCHIVOS_AUXILIARES (como en humoArchivosReportes).
-    mkdirSync(process.env.ARCHIVOS_AUXILIARES as string, { recursive: true });
-    await sharp({ create: { width: 40, height: 20, channels: 3, background: "#000" } })
-      .jpeg()
-      .toFile(`${process.env.ARCHIVOS_AUXILIARES}sony-tv-logo.jpg`);
   });
   afterAll(cerrarPruebas);
 

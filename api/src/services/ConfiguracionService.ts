@@ -6,7 +6,10 @@
  * Caché en memoria de 30 s por sección, invalidada al guardar: con varias instancias del API, las demás ven el cambio
  * en ≤ 30 s.
  */
+import sharp, { Sharp } from "sharp";
+import { z } from "zod";
 import { AppDataSource } from "../data-source";
+import { Archivo } from "../entity/Archivo";
 import { Configuracion } from "../entity/Configuracion";
 import {
   ConfigCorreo,
@@ -24,6 +27,28 @@ import { AppError } from "../helpers/errorClases";
 import { logger } from "../helpers/logger";
 
 const VIGENCIA_CACHE_MS = 30_000;
+
+/** Destinos de las imágenes de marca: sección, campo con el id del `Archivo`, `tipo` del archivo y normalización. */
+export const DESTINOS_IMAGEN = {
+  logo: { seccion: "marca", campo: "logoId", tipo: "MARCA-LOGO", normalizar: (s: Sharp) => s.resize(512, 512, { fit: "inside", withoutEnlargement: true }) },
+  favicon: { seccion: "marca", campo: "faviconId", tipo: "MARCA-FAVICON", normalizar: (s: Sharp) => s.resize(192, 192, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } }) },
+  reportes: { seccion: "reportes", campo: "logoId", tipo: "REPORTES-LOGO", normalizar: (s: Sharp) => s.resize(512, 256, { fit: "inside", withoutEnlargement: true }) },
+} as const;
+export type DestinoImagen = keyof typeof DESTINOS_IMAGEN;
+
+/** Formatos de imagen aceptados. SVG no (riesgo de XSS al servirlo sin token); ICO tampoco (sharp no lo lee). */
+const FORMATOS_ACEPTADOS = new Set(["png", "jpeg", "webp"]);
+
+/** Formato de exportación (plan 03, fase 5): secciones sin secretos e imágenes en base64. */
+const exportacionSchema = z
+  .object({
+    formato: z.literal("chronos-wms-config"),
+    version: z.literal(1),
+    exportado: z.string().optional(),
+    secciones: z.object({ marca: z.unknown().optional(), correo: z.unknown().optional(), reportes: z.unknown().optional(), regional: z.unknown().optional() }).strict(),
+    imagenes: z.object({ logo: z.string().optional(), favicon: z.string().optional(), reportes: z.string().optional() }).strict().optional(),
+  })
+  .strict();
 
 export interface SeccionLeida<S extends Seccion> {
   valor: Configuraciones[S];
@@ -157,6 +182,111 @@ export default class ConfiguracionService {
     const { valor } = await ConfiguracionService.leer("correo");
     const sobre = valor.transporte?.contrasenaCifrada;
     return sobre ? descifrar(sobre) : null;
+  };
+
+  /**
+   * Guarda una imagen de marca: comprueba que sea PNG/JPEG/WebP (por su contenido, no por el nombre), la normaliza a
+   * PNG, la asigna a su sección y borra la anterior. Devuelve la sección actualizada.
+   */
+  static guardarImagen = async (destino: DestinoImagen, datos: Buffer, sesionId: number) => {
+    const { seccion, campo, tipo, normalizar } = DESTINOS_IMAGEN[destino];
+    let png: Buffer;
+    try {
+      const { format } = await sharp(datos).metadata();
+      if (!format || !FORMATOS_ACEPTADOS.has(format)) throw new Error(String(format));
+      png = await normalizar(sharp(datos)).png().toBuffer();
+    } catch {
+      throw new AppError("Formato no admitido: usa una imagen PNG, JPEG o WebP", 400);
+    }
+    const repo = AppDataSource.getRepository(Archivo);
+    const nuevo = await repo.save(Object.assign(new Archivo(), { data: png, nombre: `${destino}.png`, tipoMIME: "image/png", tipo, sesionId }));
+    const { valor } = await ConfiguracionService.leer(seccion);
+    const anterior = (valor as Record<string, unknown>)[campo];
+    const resultado = await ConfiguracionService.actualizarCampos(seccion, { [campo]: nuevo.id }, sesionId);
+    if (typeof anterior === "number") {
+      const viejo = await repo.findOneBy({ id: anterior, tipo });
+      if (viejo) await repo.remove(Object.assign(viejo, { sesionId }));
+    }
+    return resultado;
+  };
+
+  /** `GET /config/export`: todas las secciones SIN secretos e imágenes en base64, para otro entorno o cliente. */
+  static exportar = async () => {
+    const [marca, correo, reportes, regional] = await Promise.all(SECCIONES.map((s) => ConfiguracionService.leer(s)));
+    const imagen = async (id: number | null | undefined, tipo: string) => {
+      const archivo = id ? await AppDataSource.getRepository(Archivo).findOneBy({ id, tipo }) : null;
+      return archivo ? Buffer.from(archivo.data).toString("base64") : undefined;
+    };
+    const { logoId, faviconId, ...datosMarca } = marca.valor as Configuraciones["marca"];
+    const { logoId: logoReportesId, ...datosReportes } = reportes.valor as Configuraciones["reportes"];
+    const datosCorreo = correo.valor as ConfigCorreo;
+    const imagenes = {
+      logo: await imagen(logoId, DESTINOS_IMAGEN.logo.tipo),
+      favicon: await imagen(faviconId, DESTINOS_IMAGEN.favicon.tipo),
+      reportes: await imagen(logoReportesId, DESTINOS_IMAGEN.reportes.tipo),
+    };
+    return {
+      formato: "chronos-wms-config" as const,
+      version: 1 as const,
+      exportado: new Date().toISOString(),
+      secciones: {
+        marca: datosMarca,
+        // La contraseña nunca se exporta: al importar se conserva la del entorno de destino
+        correo: datosCorreo.transporte ? { ...datosCorreo, transporte: (({ contrasenaCifrada: _c, ...t }) => t)(datosCorreo.transporte) } : datosCorreo,
+        reportes: datosReportes,
+        regional: regional.valor,
+      },
+      imagenes: Object.fromEntries(Object.entries(imagenes).filter(([, v]) => v !== undefined)),
+    };
+  };
+
+  /**
+   * `POST /config/import`: aplica una exportación. Valida todo antes de guardar nada (400 sin cambios si algo falla);
+   * cada sección presente se reemplaza (con la versión actual: importar es una decisión explícita), las imágenes se
+   * normalizan como una subida y la contraseña SMTP del destino se conserva.
+   */
+  static importar = async (cuerpo: unknown, sesionId: number) => {
+    const envoltura = exportacionSchema.safeParse(cuerpo);
+    if (!envoltura.success) {
+      throw new AppError("Archivo de configuración inválido", 400, { errores: envoltura.error.issues.map((i) => ({ campo: i.path.join("."), mensaje: i.message })) });
+    }
+    const { secciones, imagenes = {} } = envoltura.data;
+    // 1. Validar todas las secciones antes de tocar nada
+    const errores: { campo: string; mensaje: string }[] = [];
+    for (const seccion of SECCIONES) {
+      const valor = secciones[seccion];
+      if (valor === undefined) continue;
+      const esquema = seccion === "correo" ? correoEntradaSchema : ESQUEMAS[seccion];
+      const r = esquema.safeParse(valor);
+      if (!r.success) errores.push(...r.error.issues.map((i) => ({ campo: `${seccion}.${i.path.join(".")}`, mensaje: i.message })));
+    }
+    if (errores.length) throw new AppError("Archivo de configuración inválido", 400, { errores });
+    // 2. Guardar secciones (los ids de imagen del origen no valen aquí: se conservan los del destino hasta subir las nuevas)
+    const importadas: Seccion[] = [];
+    for (const seccion of SECCIONES) {
+      const valor = secciones[seccion] as Record<string, unknown> | undefined;
+      if (valor === undefined) continue;
+      const actual = await ConfiguracionService.leer(seccion);
+      const conservar =
+        seccion === "marca"
+          ? { logoId: (actual.valor as Configuraciones["marca"]).logoId, faviconId: (actual.valor as Configuraciones["marca"]).faviconId }
+          : seccion === "reportes"
+            ? { logoId: (actual.valor as Configuraciones["reportes"]).logoId }
+            : {};
+      cache.delete(seccion);
+      await ConfiguracionService.guardar(seccion, { ...valor, ...Object.fromEntries(Object.entries(conservar).filter(([, v]) => v != null)) }, actual.version, sesionId);
+      importadas.push(seccion);
+    }
+    // 3. Imágenes
+    const imagenesImportadas: DestinoImagen[] = [];
+    for (const destino of Object.keys(DESTINOS_IMAGEN) as DestinoImagen[]) {
+      const base64 = imagenes[destino];
+      if (!base64) continue;
+      await ConfiguracionService.guardarImagen(destino, Buffer.from(base64, "base64"), sesionId);
+      imagenesImportadas.push(destino);
+    }
+    logger.info(`Configuración importada: ${importadas.join(", ") || "-"}; imágenes: ${imagenesImportadas.join(", ") || "-"}`);
+    return { importadas, imagenes: imagenesImportadas };
   };
 
   /** Solo pruebas: vacía la caché. */

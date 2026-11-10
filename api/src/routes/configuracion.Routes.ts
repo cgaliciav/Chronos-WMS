@@ -18,6 +18,8 @@ router.get("/public/logo", ConfiguracionController.imagenPublica("logo"));
 router.get("/public/favicon", ConfiguracionController.imagenPublica("favicon"));
 
 router.get("/", [checkJwt, checkRole(ROLES)], ConfiguracionController.todas);
+router.get("/export", [checkJwt, checkRole(ROLES)], ConfiguracionController.exportar);
+router.post("/import", [checkJwt, checkRole(ROLES)], ConfiguracionController.importar);
 router.post("/marca/logo", [checkJwt, checkRole(ROLES)], subida.single("file"), ConfiguracionController.subirImagen("logo"));
 router.post("/marca/favicon", [checkJwt, checkRole(ROLES)], subida.single("file"), ConfiguracionController.subirImagen("favicon"));
 router.post("/reportes/logo", [checkJwt, checkRole(ROLES)], subida.single("file"), ConfiguracionController.subirImagen("reportes"));

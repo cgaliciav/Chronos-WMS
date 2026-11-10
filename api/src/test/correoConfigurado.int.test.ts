@@ -5,7 +5,6 @@
 import "./env";
 import { Workbook } from "exceljs";
 import { Express } from "express";
-import { existsSync, mkdirSync, renameSync } from "fs";
 import sharp from "sharp";
 import { crearApp } from "../app";
 import { reportePorGrupo } from "../helpers/excelFunctions";
@@ -109,9 +108,6 @@ describe("plan 03 · fase 2 · correo y reportes desde la configuración", () =>
   });
 
   it("el reporte Excel lleva el logo configurado en reportes.logoId", async () => {
-    mkdirSync(process.env.ARCHIVOS_AUXILIARES as string, { recursive: true });
-    const historico = `${process.env.ARCHIVOS_AUXILIARES}sony-tv-logo.jpg`;
-    if (existsSync(historico)) renameSync(historico, `${historico}.apartado`);
     try {
       const logo = await sharp({ create: { width: 300, height: 120, channels: 3, background: "#ff0000" } }).png().toBuffer();
       expect((await admin.post("/config/reportes/logo").attach("file", logo, "logo.png")).status).toBe(200);
@@ -124,7 +120,6 @@ describe("plan 03 · fase 2 · correo y reportes desde la configuración", () =>
       const meta = await sharp(medios[0].buffer).metadata();
       expect([meta.width, meta.height]).toEqual([300, 120]);
     } finally {
-      if (existsSync(`${historico}.apartado`)) renameSync(`${historico}.apartado`, historico);
       const { valor, version } = await seccion("reportes");
       await admin.put("/config/reportes").send({ version, valor: { ...valor, logoId: null } });
     }

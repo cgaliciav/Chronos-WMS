@@ -42,7 +42,10 @@ export const crearApp = (opciones: { registrarPeticiones?: boolean } = {}) => {
   app.use(cors());
   app.use(helmet());
   app.use(express.urlencoded({ extended: true }));
-  app.use(express.json());
+  // `POST /config/import` lleva las imágenes de marca en base64: límite propio (el general de express.json es 100 KB).
+  const jsonGeneral = express.json();
+  const jsonImportacion = express.json({ limit: "8mb" });
+  app.use((req, res, next) => (req.path === "/config/import" ? jsonImportacion : jsonGeneral)(req, res, next));
   // Express 5 deja req.body en undefined si no hubo cuerpo que parsear (GET, DELETE sin JSON); los controladores
   // desestructuran req.body, así que se conserva el {} de Express 4.
   app.use((req, _res, next) => {

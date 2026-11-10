@@ -5,12 +5,15 @@
  */
 import "./env";
 import { randomBytes } from "crypto";
+import { readFileSync } from "fs";
+import { join } from "path";
 import { Express } from "express";
 import sharp from "sharp";
 import supertest from "supertest";
 import { crearApp } from "../app";
 import { AppDataSource } from "../data-source";
 import ConfiguracionService from "../services/ConfiguracionService";
+import { POR_DEFECTO } from "../esquemas/configuracion";
 import { cerrarPruebas, conectarPruebas } from "./conexion";
 import { clienteAdmin, clienteOperador } from "./factories";
 
@@ -170,6 +173,68 @@ describe("plan 03 · fase 1 · /config", () => {
       await AppDataSource.query("DELETE FROM configuracion WHERE seccion = 'regional'");
       await AppDataSource.query("INSERT INTO configuracion (seccion, valor, esquema, version) VALUES ('regional', ?, 1, ?)", [respaldo.valor, respaldo.version]);
       ConfiguracionService.olvidarCache();
+    }
+  });
+  it("exportar sin secretos e importar en otro entorno (plan 03, fase 5)", async () => {
+    process.env.CONFIG_CLAVE ??= randomBytes(32).toString("base64");
+    // Origen: marca propia, logo grande (> 100 KB en base64: límite propio de la importación) y SMTP con contraseña
+    let marca = await seccion("marca");
+    expect((await admin.put("/config/marca").send({ version: marca.version, valor: { ...marca.valor, nombreApp: "Cliente Exportado" } })).status).toBe(200);
+    const ruido = randomBytes(300 * 300 * 3); // ruido aleatorio: el PNG no se comprime y pasa de 100 KB
+    const logo = await sharp(ruido, { raw: { width: 300, height: 300, channels: 3 } }).png().toBuffer();
+    expect((await admin.post("/config/marca/logo").attach("file", logo, "logo.png")).status).toBe(200);
+    let correo = await seccion("correo");
+    const transporte = { host: "smtp.origen.io", puerto: 587, seguro: false, usuario: "u", contrasena: "NoExportar-1" };
+    expect((await admin.put("/config/correo").send({ version: correo.version, valor: { ...correo.valor, transporte } })).status).toBe(200);
+
+    const exportada = await admin.get("/config/export");
+    expect(exportada.status).toBe(200);
+    expect(exportada.headers["content-disposition"]).toMatch(/configuracion-chronos-wms\.json/);
+    expect(exportada.body).toMatchObject({ formato: "chronos-wms-config", version: 1, secciones: { marca: { nombreApp: "Cliente Exportado" } } });
+    expect(exportada.body.secciones.marca).not.toHaveProperty("logoId");
+    expect(exportada.body.imagenes.logo.length).toBeGreaterThan(100_000);
+    expect(JSON.stringify(exportada.body)).not.toMatch(/NoExportar|contrasenaCifrada|v1:/);
+
+    // "Destino": se cambia todo y se importa
+    marca = await seccion("marca");
+    await admin.put("/config/marca").send({ version: marca.version, valor: { ...marca.valor, nombreApp: "Otro" } });
+    const logoAntes = (await seccion("marca")).valor.logoId;
+    const importada = await admin.post("/config/import").send(exportada.body);
+    expect(importada.status).toBe(200);
+    expect(importada.body.importadas).toEqual(["marca", "correo", "reportes", "regional"]);
+    expect(importada.body.imagenes).toContain("logo"); // y el de reportes si una prueba anterior lo subió
+    const despues = await seccion("marca");
+    expect(despues.valor.nombreApp).toBe("Cliente Exportado");
+    expect(despues.valor.logoId).not.toBe(logoAntes);
+    correo = await seccion("correo");
+    expect(correo.valor.transporte).toMatchObject({ host: "smtp.origen.io", tieneContrasena: true }); // la contraseña del destino se conserva
+
+    // Un archivo inválido no cambia nada
+    const mala = { ...exportada.body, secciones: { ...exportada.body.secciones, regional: { monedaPorDefecto: "XXX" } } };
+    const rechazada = await admin.post("/config/import").send(mala);
+    expect(rechazada.status).toBe(400);
+    expect(rechazada.body.errores.some((e: { campo: string }) => e.campo.startsWith("regional."))).toBe(true);
+    expect((await seccion("marca")).version).toBe(despues.version);
+    expect((await admin.post("/config/import").send({ formato: "otro" })).status).toBe(400);
+
+    // Se deja la marca y el correo por defecto para las demás suites
+    marca = await seccion("marca");
+    await admin.put("/config/marca").send({ version: marca.version, valor: { ...marca.valor, nombreApp: "Chronos WMS" } });
+    correo = await seccion("correo");
+    await admin.put("/config/correo").send({ version: correo.version, valor: { ...correo.valor, transporte: null } });
+  });
+  it("el archivo de configuración de Sony (infra/clientes/sony) se importa: su marca vuelve sin tocar el código", async () => {
+    const sony = JSON.parse(readFileSync(join(__dirname, "../../../infra/clientes/sony/configuracion.json"), "utf8"));
+    const res = await admin.post("/config/import").send(sony);
+    expect(res.status).toBe(200);
+    const publica = (await supertest(app).get("/config/public")).body;
+    expect(publica.marca).toMatchObject({ nombreApp: "Sony Almacén México", nombreCorto: "Sony Almacén" });
+    expect((await seccion("correo")).valor.remitente).toEqual({ nombre: "Almacén Sony MX", correo: "telesetalmacen@exogrid.xyz" });
+    // Se restaura Chronos WMS para las demás suites
+    for (const nombre of ["marca", "correo"] as const) {
+      const { version } = await seccion(nombre);
+      const valor = nombre === "marca" ? { ...POR_DEFECTO.marca } : { ...POR_DEFECTO.correo };
+      expect((await admin.put(`/config/${nombre}`).send({ version, valor })).status).toBe(200);
     }
   });
 });
