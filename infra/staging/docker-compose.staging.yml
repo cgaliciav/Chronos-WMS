@@ -1,7 +1,8 @@
 # docker-compose de STAGING. Se instala en la VM como ~/teleset-almacen/docker-compose.yml
 # Misma estructura que producción (linode-prod) con estas diferencias:
 #   - Secretos propios de staging vía .env (tienen prioridad sobre los valores de la imagen)
-#   - BACKEND_IMAGE parametrizable para probar builds nuevos
+#   - BACKEND_IMAGE parametrizable para probar builds nuevos (update-staging.sh)
+#   - DB_SYNCRO=false siempre: el esquema solo lo cambian las migraciones
 #   - mailpit atrapa TODO el correo (alias de red con el host SMTP que usa el backend)
 #   - MariaDB solo escucha en 127.0.0.1 (usar túnel SSH)
 services:
@@ -44,6 +45,11 @@ services:
       DB_USER: almacen_usr
       DB_PASSWORD: ${DB_PASSWORD}
       DB_DATABASE_NAME: almacen_sony_migracion
+      # El esquema lo cambian las migraciones (update-staging.sh). Explícito porque la imagen de producción
+      # 2.63.x trae DB_SYNCRO=true: con synchronize, al volver a ella tras migrar ajustaría el esquema por su cuenta.
+      DB_SYNCRO: "false"
+      # Imágenes por <img src> sin token mientras el front no añada ?auth= (procedimiento de migración, paso 3).
+      ARCHIVOS_PUBLICOS: "true"
       # Variables usadas por versiones nuevas del API (api/.env.example); el correo va a mailpit.
       SMTP_HOST: mailpit
       SMTP_PORT: "2525"

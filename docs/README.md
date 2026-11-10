@@ -8,6 +8,7 @@
 | [`api/endpoints.md`](api/endpoints.md) | Catálogo de rutas HTTP con roles y controladores (y cambios de contrato por fase) |
 | [`api/rendimiento.md`](api/rendimiento.md) | Medición de rendimiento (autocannon) antes y después de la fase 4 y qué se optimizó |
 | [`api/procedimiento-migracion-produccion.md`](api/procedimiento-migracion-produccion.md) | Cómo respaldar, aplicar, verificar y revertir las migraciones en producción |
+| [`../infra/staging/README.md`](../infra/staging/README.md) | Staging local (VM réplica de producción): crearla, refrescar datos y actualizarla con `update-staging.sh` |
 | [`front/arquitectura.md`](front/arquitectura.md) | Stack, estructura, flujo de autenticación y convenciones del front |
 | [`decisiones.md`](decisiones.md) | Decisiones del propietario que fijan el alcance de los planes |
 | [`hallazgos-codigo.md`](hallazgos-codigo.md) | Fallos encontrados (API y front) con severidad, archivo:línea y evidencia |

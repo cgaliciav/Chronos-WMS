@@ -17,6 +17,9 @@ comprobar que las migraciones, aplicadas sobre una base vacía, reproducen exact
 
 ## Antes de empezar
 
+0. **Ensaya en staging.** `infra/staging/update-staging.sh --ref <commit>` aplica las mismas migraciones sobre una copia
+   de los datos de producción (con snapshot previo de la VM) y mide cuánto tardan; ver `infra/staging/README.md`.
+
 1. El usuario de la BD que ejecute las migraciones necesita `CREATE`, `ALTER`, `INDEX`, `REFERENCES`,
    `CREATE VIEW` y `DROP` sobre la base. La vista se crea con `SQL SECURITY INVOKER`, así que la puede
    consultar el usuario de la aplicación aunque la cree otro.

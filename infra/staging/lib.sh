@@ -89,3 +89,28 @@ vm_rsync() {
   rsync -e "ssh $(_vm_ssh_opts)" "${args[@]}" "$VM_USER@$(vm_ip):$dest"
 }
 virshc() { virsh -c "$LIBVIRT_URI" "$@"; }
+
+# ---------- Comprobaciones de staging ----------
+# Front, API y mailpit responden; el host SMTP del backend resuelve a mailpit; iptables bloquea SMTP saliente.
+# Devuelve 1 si alguna falla (cada fallo se reporta con warn).
+smoke_tests() {
+  local ip fail=0 code smtp_ip mailpit_ip
+  ip=$(vm_ip)
+  _check() { # nombre url esperado
+    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$2" || true)
+    if [[ "$code" == "$3" ]]; then ok "$1 ($2) → $code"; else warn "$1 ($2) → $code (esperado $3)"; fail=1; fi
+  }
+  _check "Frontend" "http://$ip/" 200
+  _check "API" "http://$ip/api/" 200
+  _check "Mailpit UI" "http://$ip:8025/" 200
+  smtp_ip=$(vm_ssh "docker exec teleset-almacen_backend_1 node -e \"require('dns').lookup('smtp.postmarkapp.com',(e,a)=>console.log(a||e))\"" || true)
+  mailpit_ip=$(vm_ssh "docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' teleset-almacen_mailpit_1" || true)
+  if [[ -n "$smtp_ip" && "$smtp_ip" == "$mailpit_ip" ]]; then ok "smtp.postmarkapp.com → mailpit ($mailpit_ip)"
+  else warn "smtp.postmarkapp.com resuelve a '$smtp_ip' (mailpit=$mailpit_ip)"; fail=1; fi
+  if vm_ssh "sudo iptables -C DOCKER-USER -o \$(ip route show default | awk '{print \$5; exit}') -p tcp -m multiport --dports 25,465,587,2525 -j REJECT --reject-with tcp-reset"; then
+    ok "SMTP saliente bloqueado (iptables DOCKER-USER)"
+  else
+    warn "Regla de bloqueo SMTP no encontrada"; fail=1
+  fi
+  return "$fail"
+}
