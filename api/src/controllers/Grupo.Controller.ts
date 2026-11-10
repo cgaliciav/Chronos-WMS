@@ -767,7 +767,10 @@ class GrupoController {
     req: Request,
     res: Response,
     next: NextFunction
-  ) => { };
+  ) => {
+    // Sin implementar: antes el manejador estaba vacío y la petición se quedaba colgada (fase 5, rutas.int.test.ts).
+    next(new AppError("Funcion no implementada", 501));
+  };
 
   // **
   // TODO nuevoListadoDeReporteMovimiento
@@ -775,7 +778,9 @@ class GrupoController {
     req: Request,
     res: Response,
     next: NextFunction
-  ) => { };
+  ) => {
+    next(new AppError("Funcion no implementada", 501)); // antes: manejador vacío, petición colgada
+  };
 
   // ** nuevo
   static nuevo = async (req: Request, res: Response, next: NextFunction) => {
