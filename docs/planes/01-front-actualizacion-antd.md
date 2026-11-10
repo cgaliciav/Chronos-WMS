@@ -89,6 +89,12 @@ customize-cra, react-app-rewired, react-scripts, node-sass, less, less-loader, b
 
 **Aceptación:** existen los tres documentos; commit.
 
+> **Ejecutada (2026-11-07).** El legado compila con Node 14 + Yarn 1 (`docs/front/baseline/README.md`); hay
+> capturas de las 10 rutas críticas con API simulado. Desviación en el paso 5: `engines.node >=24` hace que
+> Yarn rechace `yarn build` en Node 14 (y rompería `deploy-production.sh` hasta la fase 2), así que
+> `.nvmrc` queda en `14` (versión verificada para el legado), `.npmrc` sí se crea y **`.nvmrc = 24` +
+> `engines` se mueven al paso 1 de la fase 2**. El inventario encontró 67 rutas activas (no 58).
+
 ### Fase 1 · Eliminar código muerto del template
 
 1. Confirmar con `npx knip` / `npx madge --orphans src` y con grep que nada de negocio importa lo que se
@@ -116,11 +122,27 @@ customize-cra, react-app-rewired, react-scripts, node-sass, less, less-loader, b
 `npx eslint src` sin errores de import.
 **Aceptación:** LOC de `src` ≈ 20 k; ningún import roto; commit.
 
+> **Ejecutada (2026-11-07).** `src`: 961 → 263 archivos; 21,7 k LOC de JS (27,2 k con SCSS/LESS). `yarn build`
+> (Node 14) compila y las capturas de las 10 rutas críticas coinciden con la línea base salvo la campana de
+> MagicBell. Desviaciones respecto al paso 2, porque el build se rompía:
+> - **No se borran** `kit-core`, `kit-vendors/{antd,bootstrap,nprogress,perfect-scrollbar}` ni `cui-styles`
+>   (los importa `global.scss`: utilidades `kit__utils__*`, ajustes de antd/Bootstrap), ni
+>   `kit/core/mixins.scss` y `kit/vendors/antd/themes` (los usan `components/mixins.scss` y `index.js`).
+>   Sí se borró todo lo demás de `kit*`/`cui-*` y los estilos que nadie importaba. Lo restante desaparece con
+>   `global.scss` en las fases 4-6.
+> - **`public/resources/fonts` se conserva** (iconos `icmn`/`fe` del menú y fuentes de `index.html`; se retira
+>   en la fase 6, paso 4). De `public/resources/images` solo queda `logo.svg`.
+> - También se retiró `reactstrap` (sin consumidores) y la plantilla `services/HOW-TO-AUTH-APP.md`.
+> - Quedan 4 archivos de negocio no importados por ninguna ruta (`operaciones/7.inventario/nuevo`,
+>   `reportes/5.inventario`, `catalogos/7.inventarioVisual/componentes/resultadosValidaciones.js`,
+>   `operaciones/componentes/accionesTablasGrupos.js`): no se borran sin confirmar con el propietario.
+
 ### Fase 2 · Tooling: CRA → Vite 8 + TypeScript, Node 24, npm
 
 **Objetivo:** compilar con herramientas actuales **sin cambiar aún React/antd** (React 16.14, antd 4.24).
 
-1. `nvm use 24`. Borrar `yarn.lock`, `config-overrides.js`, `jsconfig.json`, `.eslintrc.js`,
+1. `.nvmrc` = `24` y `"engines": { "node": ">=24" }` en `package.json` (aplazados desde la fase 0).
+   `nvm use 24`. Borrar `yarn.lock`, `config-overrides.js`, `jsconfig.json`, `.eslintrc.js`,
    `.prettierrc`, `.stylelintrc.json`, `.prettierignore`, `.stylelintignore`.
 2. **TypeScript**: `tsconfig.json`:
    ```json
@@ -168,6 +190,35 @@ customize-cra, react-app-rewired, react-scripts, node-sass, less, less-loader, b
 **Pruebas:** `npm run typecheck` sin errores (los `.jsx` no se verifican aún); build sin módulos sin
 resolver; `npm run lint`; checklist de humo.
 **Aceptación:** la app arranca con Vite; login y las 10 rutas críticas funcionan igual que antes. Commit.
+
+> **Ejecutada (2026-11-07).** `npm ci`, `npm run typecheck`, `npm run lint` (0 errores, 174 avisos del código
+> heredado), `npm test` y `npm run build` en verde con Node 24; las 10 rutas críticas cargan sin errores en
+> `build`, `preview` y `dev`. Comparación visual en `docs/front/baseline/README.md` (diferencias aceptadas:
+> antd 4.24 y retirada del `Sidebar`). Desviaciones:
+> - **TypeScript 5.9** (ya existe la 7.0, pero `typescript-eslint` exige `< 6.1`). `tsconfig.json` (app) +
+>   `tsconfig.node.json` (`vite.config.ts` con tipos de Node), `tsc -b` en `build`/`typecheck`.
+> - **ESLint 10 sin `eslint-plugin-react`** (no admite ESLint 10): typescript-eslint (parser también para `.js/.jsx`),
+>   `@eslint-react/eslint-plugin`, `react-hooks` y `eslint-config-prettier`. En `.js/.jsx` heredados las reglas de
+>   estilo son avisos; `pages/reportes/5.inventario` (huérfana y rota, F29) está excluida.
+> - Los `.js` **sin** JSX (`services/`, `redux/`, `locales/`, `acciones*`) siguen en `.js`: renombrarlos a `.ts`
+>   con `strict` rompe el typecheck; se convierten al tiparlos en la fase 3. Los 142 con JSX pasaron a `.jsx`
+>   (detectados con el parser de TypeScript, no con la regex).
+> - `src/redux/store.js` y `src/redux/history.js` en vez de `src/store.js`/`src/history.js`: con `baseUrl: src`
+>   esos nombres taparían los paquetes npm `store` e `history`.
+> - **Tema antd sin `antd/dist/antd.less`:** `src/styles/antd.less` compila los componentes dentro de
+>   `[data-kit-theme='default']` (el atributo se conserva fijo en `index.html`) y un plugin PostCSS en
+>   `vite.config.ts` sustituye a `AntdThemeLoader`. Sin ese ámbito, `kit-vendors/antd/css` se impone a antd en todos
+>   los componentes (botones ghost rellenos, etc.). Se retira en la fase 4. Además, dos ajustes de compatibilidad:
+>   `!important` en el fondo de los botones ghost (como antd 4.2) y `height: auto` en los títulos de grupo del menú
+>   (el minificador convertía `height: 1.5715` en px).
+> - Dependencias: `react-intl` fijado en 4.5.4 y `overrides` de `intl-messageformat(-parser)` (la resolución nueva
+>   mezclaba versiones incompatibles); `moment` fijado con `overrides`; `clear-cache` sustituido por
+>   `helpers/limpiarCache.ts` (su `.d.ts` no compila).
+> - Corregidos al migrar (F28): `import * as moment`, `global.window`, export del store antes de las sagas y
+>   `Form.useForm` condicional. También se quitó el selector de tema del store (`SET_THEME` fija `default`).
+> - `deploy-production.sh`/`deploy.sh` pasan a npm ya en esta fase (no en la 7) para no dejar el despliegue roto.
+> - Sin script `test:e2e` hasta la fase 7 (Playwright). Vite 8 sugiere `resolve.tsconfigPaths` nativo en lugar de
+>   `vite-tsconfig-paths`; se mantiene el plugin (resuelve `baseUrl`) y se reevaluará en la fase 3.
 
 ### Fase 3 · React 19 + React Router 8 + Zustand (fin de redux) + servicios en TypeScript
 
@@ -218,6 +269,27 @@ resolver; `npm run lint`; checklist de humo.
 (`finalizar` → `PUT /groups/closure/:id`). Build; checklist de humo.
 **Aceptación:** sin warnings de React en consola en las rutas críticas; `src/redux` no existe; `npm run typecheck` verde. Commit.
 
+> **Ejecutada (2026-11-08).** `npm run typecheck`, `npm run lint` (0 errores), `npm test` (20 pruebas) y
+> `npm run build` en verde. Capturas de las 10 rutas críticas idénticas a las de la fase 2 y humo funcional
+> automatizado (`docs/front/baseline/flujo-sesion.js`: login sin `ip`, redirección a la última ruta, menú por
+> permisos, ACL → 401, 404, F5 con sesión, logout). Desviaciones:
+> - **React 18.3 + React Router 7.18**, no 19 + 8: antd 4.24 no funciona con React 19 (paso 7 lo preveía) y
+>   React Router 8 exige React ≥ 19.2.7. La API usada (`createHashRouter`, `RouterProvider`, hooks, todo desde
+>   `'react-router'`) es la misma; subir a 8 es cambiar la versión al pasar a React 19 en la fase 4.
+> - **`react-intl` retirado ya** (D11 lo dejaba para la fase 6): su 4.5.4 exige React 16. `UserMenu` usa textos
+>   fijos y se borraron `src/locales` y `localization` (F13).
+> - **Helmet → componente `components/Titulo.tsx`** (fija `document.title` en un efecto) en vez de `<title>`
+>   nativo, que solo existe en React 19; al subir basta con cambiar ese componente.
+> - El menú es un módulo estático (`services/menu` exporta el array); `app/menu/menuItems.ts` llega en la fase 6.
+> - Ajustes fijos de la plantilla (logo, color de menú, bordes…) pasan a constantes en cada layout; `ui.store`
+>   solo guarda `menuColapsado`, `esMovil` y `menuMovilAbierto`.
+> - La navegación tras el login la hace `Login` (el store devuelve `true/false`), no el store: así los stores no
+>   dependen del router.
+> - La revisión de consumidores (F1) cambió algunos comportamientos ante error, documentados en
+>   `docs/hallazgos-codigo.md` (F30-F33). Se regeneró parte de `package-lock.json` (React 18 y sus tipos).
+> - Quedan avisos de deprecación de antd 4.24 y el de `defaultProps` de su `Table` (F34): se resuelven en la
+>   fase 4, así que el criterio "sin warnings de React" se cumple para el código propio, no para antd 4.
+
 ### Fase 4 · antd 4 → 5.29 (último v5) y moment → dayjs
 
 1. `npm i antd@5 @ant-design/icons@5 dayjs && npm un moment` (quitar `resolutions.moment`).
@@ -246,6 +318,32 @@ resolver; `npm run lint`; checklist de humo.
 bloqueantes; pruebas de componente para los formularios con fecha; checklist.
 **Aceptación:** cero warnings de deprecación en consola en las rutas críticas. Commit.
 
+> **Ejecutada (2026-11-08).** antd 5.29.3 + icons 5.6, dayjs, **React 19.3 + React Router 8.5** (con
+> `@ant-design/v5-patch-for-react-19`). `npm run typecheck`, `npm run lint` (0 errores), `npm test` (28 pruebas,
+> incluidas las de fechas, `FormaEdicionDisponibilidad` y `Comentario`) y `npm run build` en verde. Recorrido en
+> `dev` de las **67 rutas**: cero avisos de deprecación de antd y cero avisos de React (los únicos errores son de
+> datos simulados incompletos en 5 rutas de detalle/edición, idénticos en el build legado). Humo de sesión 10/10.
+> Capturas en `docs/front/baseline/fase-4/` (≈ 3 % de píxeles distintos frente a la fase 2: tipografía y controles
+> de antd 5). Desviaciones:
+> - **Sin codemod oficial**: la ejecución de `@ant-design/codemod-v5` con `npx` no se autorizó en el entorno de
+>   trabajo; los cambios (`visible`→`open`, `Comment`, imports profundos, `items`) se hicieron con scripts propios
+>   y revisión manual. Tampoco se ejecutó `npx antd lint` (mismo motivo); en su lugar, el recorrido de las 67 rutas
+>   con la consola de desarrollo.
+> - **React 19 + Router 8 ya en esta fase** (el plan lo dejaba como alternativa del paso 6): antd 5 + parche lo admite.
+> - **Estilos:** fuera `styles/antd.less`, LESS, el plugin PostCSS, `data-kit-theme` y `kit-vendors/antd` (ajustes
+>   de antd 4 que ya no encajan con el DOM de antd 5). El tema pasa a `src/tema.ts` (tokens traducidos de las
+>   variables LESS) y las reglas estructurales del layout a `src/styles/layout-plantilla.css` (temporal, fase 6).
+>   **`sass` se mantiene** hasta la fase 6: `global.scss`, `cleanui` y `kit-*` siguen en SCSS. Los dos módulos de
+>   negocio (`pages/componentes`, `layouts/Auth`) ya son `.module.css`.
+> - `notification`/`message` (54 archivos) se importan de `helpers/feedback.ts`, que usa la instancia de
+>   `App.useApp()` (con tema y locale) y cae a los estáticos fuera de `<App>` (pruebas).
+> - Locale: `antd/es/locale/es_ES` (la ruta `antd/locale/es_ES` dejaba los textos de antd en inglés con Vite);
+>   dayjs global en `es-mx` (`helpers/fechas.ts`). `src/locales` ya se borró en la fase 3.
+> - `<Titulo>` sigue fijando `document.title` en un efecto: el `<title>` nativo de React 19 compite con el de
+>   `index.html` y el título por defecto del layout; se revisa en la fase 6 junto con el layout nuevo.
+> - Corregido de paso: el filtro de estatus de `usuarios/listado` estaba fijo (`filteredValue`), ahora es valor
+>   inicial (`defaultFilteredValue`), y las claves del menú lateral ya no son aleatorias (F8 parcial).
+
 ### Fase 5 · antd 5 → 6.7 + icons 6
 
 1. `npm i antd@6 @ant-design/icons@6 && npm un @ant-design/v5-patch-for-react-19`.
@@ -261,6 +359,19 @@ bloqueantes; pruebas de componente para los formularios con fecha; checklist.
 
 **Pruebas:** build; `npx antd lint ./src` limpio; comparación con `docs/front/baseline` o checklist; suite Vitest verde.
 **Aceptación:** antd 6.x sin `@ant-design/compatible` ni patch. Commit.
+
+> **Ejecutada (2026-11-08).** antd 6.7.0 + `@ant-design/icons` 6.3.4, sin `@ant-design/v5-patch-for-react-19` ni
+> `@ant-design/compatible`. `npm run typecheck`, `npm run lint` (0 errores), `npm test` (28) y `npm run build` en
+> verde; recorrido de las 67 rutas en `dev` sin avisos de antd ni de React (solo F36, datos simulados); humo de
+> sesión 10/10; capturas de las rutas críticas prácticamente idénticas a las de la fase 4 (< 0,25 %).
+> Renombres aplicados: `Space direction` → `orientation` (9), `Divider type` → `orientation`, `Divider
+> orientation="left"` → `titlePlacement="start"`, `notification … message` → `title` (87 llamadas, más el
+> interceptor y el store), `Descriptions.Item` → `items` (2), `Button size="default"` → `"medium"`. No había usos de
+> `bodyStyle`, `destroyOnClose`, `tabPosition`, `onSelectAll`, `Alert message`, `Button.Group`, `Breadcrumb.Item` ni
+> `Statistic.Countdown`; `bordered` solo aparece en `Table`/`Descriptions`, donde sigue siendo válido.
+> El margen de `Tag` se restaura con `ConfigProvider tag` (`configuracionTag` en `src/tema.ts`). Como en la fase 4,
+> `npx antd lint`/`migrate` no se pudieron ejecutar en el entorno; la verificación fue con los tipos de antd 6
+> (`tsc`) y la consola de desarrollo en todas las rutas.
 
 ### Fase 6 · Reemplazar Clean UI por Ant Design puro y convertir páginas a TypeScript
 
@@ -321,6 +432,25 @@ Pasos:
 
 **Aceptación:** `grep -rn "cleanui\|cui__\|kit__\|bootstrap\|reactstrap\|magicbell" src` = 0 (salvo
 `utilities.css` si quedó); `find src -name "*.js" -o -name "*.jsx"` = 0; `tsc --noEmit` con `strict` verde. Commit.
+
+> **Ejecutada (2026-11-08).** `src` 100 % TypeScript (`allowJs: false`), sin Clean UI, Bootstrap, Sass, LESS,
+> `utilities.css` ni fuentes de iconos (solo `@ant-design/icons`). `npm run typecheck`, `npm run lint` (0 errores),
+> `npm test` (50 pruebas) y `npm run build` en verde; las 67 rutas cargan en `dev` sin errores ni avisos (con datos
+> simulados, incluidas las de detalle/edición: F36 resuelto); humo de sesión 10/10; capturas en `docs/front/after/`.
+> - Armazón en `src/app/` según la estructura propuesta: `layouts/{RaizLayout,MainLayout,AuthLayout}`, `menu/{menuItems.ts,useMenuItems.tsx}`,
+>   `auth/{ACL,LoginPage}`, `errors/{ErrorPage,ErrorBoundary}`, `notificaciones/NotificacionesCampana` (+ `stores/notificaciones.store.ts`
+>   y `services/axios/notificaciones`). `App.tsx` no se separó de `index.tsx` (lo hace todo en pocas líneas).
+> - La campana solo se muestra con `VITE_NOTIFICACIONES=on` (no con "distinto de off"), para no llamar a endpoints que el API aún no tiene.
+> - El barrido de páginas se hizo en paralelo por carpetas con `components/ui/{Tarjeta,Encabezado}` como reemplazo
+>   común de `card`/`kit__utils__heading`; tipos locales en `pages/{administracion,catalogos,componentes,operaciones}/tipos.ts`
+>   (consolidarlos en `types/api.ts` queda para cuando el API publique sus tipos). Los `.js` sin JSX pasaron a `.ts`.
+> - Hubo commits intermedios marcados `WIP` (puntos de control mientras se convertían las carpetas); el commit de
+>   integración es el primero de esta fase en el que `npm run build` vuelve a estar en verde.
+> - Tipar destapó y corrigió fallos reales (F37-F41), entre ellos una **regresión de la fase 4** (F37: `labelInValue`
+>   sin `key` en antd 5 → `usuariosIds` vacíos al crear préstamos, devoluciones, bajas, compras y rentas). Quedan
+>   anotados los pendientes en F42.
+> - e2e con Playwright + MSW en el navegador: pasan a la fase 7 (donde está su configuración); mientras, el humo de
+>   sesión automatizado (`docs/front/baseline/flujo-sesion.js`) y las capturas cubren el recorrido.
 
 ### Fase 7 · Pruebas, calidad y CI
 

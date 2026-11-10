@@ -1,80 +1,89 @@
 # Front · Arquitectura actual
 
-Aplicación React (JavaScript, sin TypeScript) construida sobre la plantilla comercial
-**Clean UI Admin Template (React CRA)** v3.15.17. Consume el API vía `/api/` (proxy inverso) con
+Aplicación React en TypeScript estricto con Ant Design 6, compilada con Vite. Se construyó sobre la plantilla
+comercial Clean UI (React CRA), retirada en la fase 6 del plan 01. Consume el API vía `/api/` (proxy inverso) con
 JWT en la cabecera `auth`.
 
 ## Stack
 
 | Área | Tecnología | Versión |
 |---|---|---|
-| Build | Create React App 3.4.1 + `react-app-rewired` + `customize-cra` (`config-overrides.js`: decorators legacy, less-loader, eslintrc, webpackbar) | Node 10.24.1, Yarn 1.22 |
-| UI | React 16.13, antd 4.2, `@ant-design/icons` 4, Bootstrap 4 CSS, `reactstrap` (solo demo) | |
-| Estado | redux 4, redux-saga 1.1, `connected-react-router` 6, `react-router-dom` 5 (hash history) | |
-| HTTP | axios 1.x (`src/services/axios/index.js`) | |
-| Fechas | moment 2.24 (fijado en `resolutions`) | |
-| Estilos | SCSS (node-sass 4) + LESS (temas antd) + CSS Modules | |
-| i18n | react-intl (solo lo usa la plantilla); locale `es-MX` | |
+| Build | Vite 8 + `@vitejs/plugin-react` + `vite-tsconfig-paths`; TypeScript 5.9 strict (`tsc -b`, sin JavaScript) | Node 24, npm |
+| Calidad | ESLint 10 (flat: typescript-eslint, @eslint-react, react-hooks, prettier), Prettier 3, Vitest 5 (jsdom) + Testing Library 16 + MSW 3 | |
+| UI | React 19.3, antd 6.7, `@ant-design/icons` 6 | |
+| Estado y rutas | Zustand 5 (`stores/`), `react-router` 8 (`createHashRouter`) | |
+| Observabilidad | `@sentry/react` 11 (solo con `VITE_SENTRY_DSN`) + `@sentry/vite-plugin` (source maps si hay credenciales) | |
+| HTTP | axios 1.21 (`src/services/axios/index.ts`) | |
+| Fechas | dayjs 1.11 (`helpers/fechas.ts`: plugins y locale `es-mx`) | |
+| Estilos | antd 6 CSS-in-JS con tokens y variables CSS (`tema.ts`) + CSS Modules puntuales | |
+| i18n | Ninguna librería: textos en español; antd con `locale` `es_ES` | |
 
 ## Estructura de `front/src`
 
 ```
-index.js            crea hash history, store (redux + saga + router middleware), ReactDOM.render
-router.js           array estático de 64 rutas (React.lazy) + transición CSS; guarda localStorage.ultimaVisitada
-localization.js     ConfigProvider(antd es_ES) + IntlProvider
-global.scss         importa bootstrap, estilos de la plantilla (kit-vendors, kit-core, cui-styles)
-layouts/            index.js (elige Public/Auth/Main según ruta y auth), Main (Layout antd + cleanui), Auth, Public
-redux/              reducers.js, sagas.js, user/ (login, currentAccount, logout), menu/ (menuData), settings/ (tema y layout de la plantilla)
-services/
-  axios/index.js    apiClient + PeticionBase (listado, obtenerId, nuevo, editar, enable/disable/closure, generalGet/Post/Put/Delete)
-  axios/<recurso>/  20 clases por recurso (grupos, usuarios, inventarioActual, movimientos, …) con `portionEndPoint`
-  jwt/              login/currentAccount/logout
-  menu/index.js     menú estático con roles por entrada
+index.tsx           reset de antd, fechas, Sentry, viewport, recuperación de sesión y
+                    createRoot(<ConfigProvider tema><App><RouterProvider/>)
+router.tsx          createHashRouter: RaizLayout + 67 rutas lazy + "/" según permisos + "*" → /auth/404
+tema.ts             tokens del tema claro de antd 6 y separación de Tag
+sentry.ts           Sentry.init solo con VITE_SENTRY_DSN
+app/
+  layouts/          RaizLayout (elige layout, protege rutas, guarda ultimaVisitada), MainLayout (Sider/Drawer, cabecera,
+                    migas, ErrorBoundary, pie), AuthLayout, Logo, MenuUsuario, PieDePagina, useVersionApi
+  menu/             menuItems.ts (menú con roles e iconos), useMenuItems.tsx (filtro por permisos, selección, migas)
+  auth/             ACL.tsx (roles, redirect, defaultRedirect), LoginPage.tsx
+  errors/           ErrorPage.tsx (401/404/500/503), ErrorBoundary.tsx
+  notificaciones/   NotificacionesCampana.tsx (solo con VITE_NOTIFICACIONES=on)
+stores/             usuario.store.ts, ui.store.ts, notificaciones.store.ts
+services/axios/     apiClient (interceptores: token, renovación, error → notifica y rechaza), conToken(url), PeticionBase<T>,
+                    21 servicios por recurso (incluido notificaciones)
+types/api.ts        tipos de las respuestas del API
+components/         Titulo.tsx; ui/ Tarjeta, Encabezado, Comentario
+helpers/            storage, feedback, fechas, log, limpiarCache, funcionesExtras
 pages/
-  administracion/   usuarios, proyectos, proveedores, areas, bodegas, parametros
-  catalogos/        1.general … 7.inventarioVisual, articulos (detalle/editar/validado)
-  operaciones/      1.prestamos, 2.devoluciones, 3.bajas, 4.compras, 5.altas, 6.rentaExterna, 8.previo, movimiento, componentes
-  reportes/         por-usuario, de-cierre (+ carpetas vacías)
-  componentes/      formularios y modales compartidos (precios, claves, características, archivos, comentarios, imágenes)
-  auth/             login, 401, 404, 500, 503 (+ no enrutadas)
-  <demo>/           advanced, apps, cards, charts, dashboard, ecommerce, icons, tables, ui-kits, widgets  ← plantilla, no se usa
-components/
-  cleanui/          layout (TopBar, Menu, Breadcrumbs, Footer, Sidebar), system (ACL, Auth/Login, Errors), styles  ← EN USO
-  cui-layout, cui-styles, cui-system   ← copia alternativa de la plantilla, NO se usa
-  kit, kit-core, kit-vendors, kit-widgets ← widgets/demos de la plantilla, solo los usa /dashboard/alpha
-helpers/funcionesExtras.js
-locales/            es-MX (en uso), en-US, fr-FR, ru-RU, zh-CN
+  administracion/   usuarios, proyectos, proveedores, areas, bodegas (+ tipos.ts)
+  catalogos/        1.general … 7.inventarioVisual, articulos (detalle/editar/validado) (+ tipos.ts)
+  operaciones/      1.prestamos … 8.previo, movimiento, componentes (+ tipos.ts)
+  reportes/         por-usuario, de-cierre
+  componentes/      formularios y modales compartidos (+ tipos.ts)
+test/               setup.ts (jest-dom, matchMedia, ResizeObserver, MSW), servidor.ts, renderizar.tsx, conRouter.tsx
 ```
 
-Tamaño: 961 archivos / ≈ 76 k LOC; el negocio real son ≈ 130 archivos / ≈ 17 k LOC.
+Tras la fase 6: 100 % TypeScript; sin plantilla, Bootstrap, Sass, LESS ni fuentes de iconos.
 
 ## Flujo de autenticación
 
-1. `pages/auth/login` → `cleanui/system/Auth/Login` → saga `user/LOGIN` → `services/jwt.login` →
-   `services/axios/autorizacion.login`: obtiene la IP pública en `https://api.ipify.org`, hace
-   `POST /auth/login {c, p, ip}` y guarda `t` en `localStorage`.
-2. Al cargar la app, saga `LOAD_CURRENT_ACCOUNT` → `GET /user/current` → `user.permisos` (códigos de rol).
-3. Interceptor de request: `headers.auth = localStorage.t`. Interceptor de respuesta: si llega
-   cabecera `t`, la guarda (renovación). Interceptor de error: muestra `notification.error` y
-   **devuelve** el error (no lo rechaza; ver hallazgos).
-4. `components/cleanui/system/ACL` (`roles`, `redirect`, `defaultRedirect`) envuelve cada página y
-   bloque sensible: oculta `children` si `user.permisos` no intersecta `roles`; con `redirect` navega a `/auth/401`.
-5. El menú (`services/menu`) filtra entradas por `role`; `ADMINISTRADOR` ve todo.
+1. `app/auth/LoginPage` → `useUsuarioStore.login(correo, contraseña)` →
+   `services/axios/autorizacion.login`: `POST /auth/login {c, p}` (sin `ip`: la toma el API) y guarda `t`
+   con `helpers/storage`. Si va bien, carga la cuenta y `Login` navega a `localStorage.ultimaVisitada` o a `/`.
+2. Al arrancar (`index.tsx`), si hay token, `cargarCuentaActual()` → `GET /user/current` → `permisos`
+   (códigos de rol). Mientras tanto el layout raíz no pinta nada; sin sesión manda a `/auth/login`.
+3. Interceptor de request: cabecera `auth` con el token. Interceptor de respuesta: si llega cabecera `t`, la
+   guarda (renovación). Interceptor de error: muestra `notification.error` y **rechaza** la promesa.
+4. `app/auth/ACL` (`roles`, `redirect`, `defaultRedirect`) envuelve cada página y
+   bloque sensible: oculta `children` si `permisos` no intersecta `roles`; con `redirect` navega a `/auth/401`.
+5. El menú (`app/menu/menuItems.ts` + `useMenuItems`) filtra entradas por `role`; `ADMINISTRADOR` ve todo.
+6. `logout()` llama a `POST /auth/logout` y, falle o no, borra token, `ultimaVisitada` y permisos.
 
 ## Convenciones del código de negocio
 
-- Páginas = `index.js` por ruta + carpeta `componentes/` con formularios (`forma*.js`), tablas
-  (`tabla*.js`) y columnas (`columnas*.js`).
+- Páginas = `index.tsx` por ruta + carpeta `componentes/` con formularios (`forma*.tsx`), tablas
+  (`tabla*.tsx`) y columnas (`columnas*.tsx`).
 - Tablas server-side con antd `Table` y el contrato `list-antd` del API
   (`{ results, pagination: { current, pageSize, total, totalItems }, filtered }`); filtros y orden se
   envían como `{ sortField, sortOrder, pagination, filters }`.
-- Formularios con `Form.useForm` (antd 4); fechas con `moment`; códigos de barras leídos con
-  escáner en `operaciones/componentes/formaAC.js`.
-- Importaciones absolutas desde `src` (`jsconfig.json` `baseUrl`): `components/…`, `services/…`,
-  `pages/…`, `redux/…`, `index` (para `history`/`store`, importación circular).
-- Sin pruebas automatizadas. ESLint airbnb + prettier (sin punto y coma, comillas simples, 100 col).
+- Formularios con `Form.useForm` (antd 6); fechas con `dayjs`; códigos de barras leídos con
+  escáner en `operaciones/componentes/formaAC.tsx`.
+- Importaciones absolutas desde `src` (`tsconfig.json` `baseUrl` + `vite-tsconfig-paths`): `components/…`,
+  `services/…`, `pages/…`, `stores/…`. Variables de entorno con `import.meta.env.VITE_*`.
+- Pruebas con Vitest + MSW en `stores/` y `services/` (`*.test.ts` junto al código). ESLint 10 + Prettier 3
+  (sin punto y coma, comillas simples, 100 col).
+
+### Estilos
+
+`index.tsx` carga solo `antd/dist/reset.css`; antd 6 inyecta sus estilos con el tema de `tema.ts`. Las páginas usan
+componentes de antd (`Tarjeta`/`Encabezado` de `components/ui`, `Space`, `Flex`, `Typography`) y `style` puntual.
 
 ## Despliegue
 
-`deploy-production.sh`: bump de versión con `jq`, tag git, `yarn build` (4 GB heap), `rsync` de
+`deploy-production.sh`: `npm version patch` (package.json + lock), commit y tag git, `npm ci && npm run build`, `rsync` de
 `build/` al servidor y `tar.gz` en `deploy_history/`. `deploy.sh` (pruebas) solo hace rsync de `build/`.

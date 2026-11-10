@@ -1,0 +1,107 @@
+[
+  {
+    "nombre": "auth-login",
+    "ruta": "/auth/login",
+    "peticiones": [
+      "GET /user/current",
+      "GET /auth/version"
+    ]
+  },
+  {
+    "nombre": "catalogo-general",
+    "ruta": "/catalogo/general",
+    "peticiones": [
+      "GET /user/current",
+      "GET /auth/version",
+      "GET /user/get-areas",
+      "GET /user/get-warehouses"
+    ]
+  },
+  {
+    "nombre": "catalogo-por-codigos",
+    "ruta": "/catalogo/por-codigos",
+    "peticiones": [
+      "GET /user/current",
+      "GET /auth/version"
+    ]
+  },
+  {
+    "nombre": "prestamos-nuevo",
+    "ruta": "/prestamos/nuevo",
+    "peticiones": [
+      "GET /user/current",
+      "GET /auth/version",
+      "GET /user/get-warehouses",
+      "GET /user/get-projects",
+      "GET /user/get-areas",
+      "GET /invoice-kind/list-names"
+    ]
+  },
+  {
+    "nombre": "prestamos-operacion",
+    "ruta": "/prestamos/operacion?uid=1",
+    "peticiones": [
+      "GET /user/current",
+      "GET /auth/version",
+      "POST /groups/activity-list-by-group",
+      "GET /groups/1"
+    ]
+  },
+  {
+    "nombre": "devoluciones-nuevo",
+    "ruta": "/devoluciones/nuevo",
+    "peticiones": [
+      "GET /user/current",
+      "GET /auth/version",
+      "GET /user/get-warehouses",
+      "GET /user/get-projects",
+      "GET /user/get-areas",
+      "GET /invoice-kind/list-names"
+    ]
+  },
+  {
+    "nombre": "compras-nuevo",
+    "ruta": "/compras/nuevo",
+    "peticiones": [
+      "GET /user/current",
+      "GET /auth/version",
+      "GET /user/get-warehouses",
+      "GET /user/get-projects",
+      "GET /user/get-areas",
+      "GET /invoice-kind/list-names"
+    ]
+  },
+  {
+    "nombre": "compras-operacion",
+    "ruta": "/compras/operacion?uid=1",
+    "peticiones": [
+      "GET /user/current",
+      "GET /auth/version",
+      "GET /warehouse/list-names",
+      "GET /area/list-names",
+      "POST /groups/activity-list-by-group",
+      "GET /groups/1"
+    ]
+  },
+  {
+    "nombre": "bajas-nuevo",
+    "ruta": "/bajas/nuevo",
+    "peticiones": [
+      "GET /user/current",
+      "GET /auth/version",
+      "GET /user/get-warehouses",
+      "GET /user/get-projects",
+      "GET /user/get-areas",
+      "GET /invoice-kind/list-names"
+    ]
+  },
+  {
+    "nombre": "movimientos-detalle",
+    "ruta": "/movimientos/detalle?uid=1",
+    "peticiones": [
+      "GET /user/current",
+      "GET /auth/version",
+      "GET /activity/1"
+    ]
+  }
+]

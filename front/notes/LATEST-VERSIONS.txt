@@ -1,8 +1,0 @@
-Please use invitation service for access to our private GitHub repositories.
-https://invite.sellpixels.com
-
-Thanks!
-
-
-Sincerely,
-Sellpixels.com

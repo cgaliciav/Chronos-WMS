@@ -1,0 +1,77 @@
+import { Row, Space, Tag, Typography } from 'antd'
+import dayjs from 'dayjs'
+import { formatoMonedaMexico } from 'helpers/funcionesExtras'
+import type { Disponibilidad } from 'types/api'
+import Validacion from 'pages/catalogos/6.validaciones/componentes/validacion'
+import Inventariado from 'pages/catalogos/6.validaciones/componentes/inventariado'
+import type { InventarioArticulo, ProductoArticulo } from './tipos'
+
+export interface ArticuloDatosProps {
+  producto: ProductoArticulo
+  inventarioActual: InventarioArticulo
+}
+
+const colores: Record<Disponibilidad, string> = {
+  disponible: 'green',
+  baja: 'red',
+  cuarentena: 'orange',
+  'no-disponible': 'magenta',
+}
+
+const ArticuloDatos = ({
+  producto: {
+    productoPrecios,
+    productoClaves,
+    area,
+    descripcion,
+    titulo,
+    id: productoId,
+    productoValidado,
+    productoInventarios,
+  },
+  inventarioActual: { bodega, cantidad, disponible, fechaDisponibilidad },
+}: ArticuloDatosProps) => {
+  const precio = productoPrecios?.find(pp => pp.precioTipo.id === 2)?.precio
+  const piezas = parseInt(String(cantidad), 10)
+
+  return (
+    <>
+      <Row justify="end" style={{ marginTop: '15px' }}>
+        <Space>
+          <Validacion productoId={productoId} productoValidado={productoValidado} disabled />
+          <Tag style={{ fontSize: '130%' }} color={colores[disponible]}>
+            {disponible}
+          </Tag>
+          {disponible === 'cuarentena'
+            ? ` hasta: ${dayjs(fechaDisponibilidad).format('D MMM YYYY')}  `
+            : '  '}
+          <Tag style={{ fontSize: '130%' }}>
+            {' '}
+            {productoClaves && productoClaves.length > 0 ? productoClaves[0].barras : '---'}{' '}
+          </Tag>
+          <Inventariado
+            productoId={productoId}
+            productoInventariado={productoInventarios}
+            disabled
+          />
+        </Space>
+      </Row>
+      <Typography.Title level={3}> {titulo} </Typography.Title>
+      <Typography.Title level={3}>
+        {' '}
+        {`${piezas} ${piezas !== 1 ? 'piezas' : 'pieza'}`}{' '}
+      </Typography.Title>
+      <Typography.Title level={3}> {`${formatoMonedaMexico(precio)}`}</Typography.Title>
+      <Typography.Paragraph>{descripcion}</Typography.Paragraph>
+      <br />
+      <Typography.Text strong>Almacén:</Typography.Text>{' '}
+      <Typography.Text>{bodega?.nombre}</Typography.Text>
+      <br />
+      <Typography.Text strong>Área:</Typography.Text>{' '}
+      <Typography.Text>{area?.nombre}</Typography.Text>
+      <br />
+    </>
+  )
+}
+
+export default ArticuloDatos
