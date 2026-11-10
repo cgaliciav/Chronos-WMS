@@ -2,6 +2,7 @@ import { Table, Workbook, Worksheet } from "exceljs";
 import { randomInt } from "crypto";
 import { readFile } from "fs/promises";
 import { LOGO_REPORTES_POR_DEFECTO } from "../recursos/logoReportes";
+import ConfiguracionService from "../services/ConfiguracionService";
 import { performance } from "perf_hooks";
 import { Brackets, SelectQueryBuilder, In } from "typeorm";
 import { AppDataSource } from "../data-source";
@@ -42,12 +43,17 @@ const nombreProyecto = async (proyectoId: unknown) => {
 };
 
 /**
- * Logo de los reportes. Alternativa temporal (plan 03, fase 0, paso 3; se retira en la fase 5): si existe el logo
- * histórico del cliente en `ARCHIVOS_AUXILIARES`, se sigue usando para no cambiar sus reportes antes de cargar su
- * marca por configuración. Si no, el de Chronos WMS empaquetado en el código.
+ * Logo de los reportes (plan 03): el configurado (`reportes.logoId`, un `Archivo` de tipo `REPORTES-LOGO`); si no hay,
+ * el histórico del cliente en `ARCHIVOS_AUXILIARES` (alternativa temporal de la fase 0, se retira en la fase 5); si
+ * tampoco, el de Chronos WMS empaquetado en el código.
  */
 const LOGO_HISTORICO = "sony-tv-logo.jpg";
 const logoReportes = async (): Promise<{ buffer: any; extension: "jpeg" | "png" }> => {
+  const { valor } = await ConfiguracionService.leer("reportes");
+  if (valor.logoId) {
+    const archivo = await AppDataSource.getRepository(Archivo).findOneBy({ id: valor.logoId, tipo: "REPORTES-LOGO" });
+    if (archivo) return { buffer: archivo.data, extension: "png" }; // se guarda normalizado a PNG
+  }
   const historico = `${process.env.ARCHIVOS_AUXILIARES ?? ""}${LOGO_HISTORICO}`;
   try {
     return { buffer: await readFile(historico), extension: "jpeg" };

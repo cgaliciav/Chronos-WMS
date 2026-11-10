@@ -4,7 +4,7 @@ import "reflect-metadata";
 import { crearApp } from "./app";
 import { iniciarSentry } from "./sentry";
 import { iniciarLimpiezaCache } from "./helpers/cacheArchivos";
-import { verificarCorreo } from "./helpers/enviarMail";
+import CorreoService from "./services/CorreoService";
 import NotificacionService from "./services/NotificacionService";
 
 import { AppDataSource, conectarORM } from "./data-source";
@@ -19,7 +19,7 @@ import { logger } from "./helpers/logger";
   if (iniciarSentry()) logger.info("Sentry activo");
   await conectarORM();
   iniciarLimpiezaCache(); // caché de archivos (CACHE_ARCHIVOS_DIAS) y reportes (REPORTES_DIAS), hallazgo M17
-  void verificarCorreo(); // solo informa en el log; no impide arrancar
+  void CorreoService.verificar(); // informa del transporte (bd, anulado o entorno) y comprueba la conexión; no impide arrancar
   NotificacionService.iniciarTareas(); // préstamos vencidos (DIAS_CUARENTENA) y retención de 90 días (plan 02 · fase 7)
 
   const app = crearApp({ registrarPeticiones: true });

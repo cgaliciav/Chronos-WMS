@@ -6,6 +6,8 @@ import { AppError } from "../helpers/errorClases";
 import { parametro } from "../helpers/ids";
 import { ICONO_POR_DEFECTO } from "../recursos/iconoChronos";
 import ConfiguracionService, { esSeccion } from "../services/ConfiguracionService";
+import CorreoService from "../services/CorreoService";
+import { Usuario } from "../entity/Usuario";
 
 /** Destinos de las imágenes de marca: sección, campo con el id del `Archivo`, `tipo` del archivo y cómo se normaliza. */
 const DESTINOS = {
@@ -68,6 +70,16 @@ export default class ConfiguracionController {
       if (!esSeccion(seccion)) throw new AppError(`Sección desconocida: ${seccion}`, 404);
       const { version, valor } = req.body;
       res.json(await ConfiguracionService.guardar(seccion, valor, version, res.locals.jwtPayload.si));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /** `POST /config/correo/prueba`: correo de prueba al usuario que lo pide, con la configuración guardada. */
+  static probarCorreo = async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      const usuario = await AppDataSource.getRepository(Usuario).findOneByOrFail({ id: res.locals.jwtPayload.ui });
+      res.json(await CorreoService.enviarPrueba(usuario.correo));
     } catch (error) {
       next(error);
     }

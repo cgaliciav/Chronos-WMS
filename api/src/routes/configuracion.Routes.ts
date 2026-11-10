@@ -21,6 +21,7 @@ router.get("/", [checkJwt, checkRole(ROLES)], ConfiguracionController.todas);
 router.post("/marca/logo", [checkJwt, checkRole(ROLES)], subida.single("file"), ConfiguracionController.subirImagen("logo"));
 router.post("/marca/favicon", [checkJwt, checkRole(ROLES)], subida.single("file"), ConfiguracionController.subirImagen("favicon"));
 router.post("/reportes/logo", [checkJwt, checkRole(ROLES)], subida.single("file"), ConfiguracionController.subirImagen("reportes"));
+router.post("/correo/prueba", [checkJwt, checkRole(ROLES)], ConfiguracionController.probarCorreo);
 router.put("/:seccion", [checkJwt, checkRole(ROLES)], ConfiguracionController.guardar);
 
 export default router;
