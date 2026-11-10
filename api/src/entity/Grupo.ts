@@ -1,12 +1,9 @@
-import {Entity, ManyToMany, JoinTable, CreateDateColumn, ManyToOne, Column, Index, OneToOne, JoinColumn} from "typeorm";
+import { Entity, ManyToMany, JoinTable, CreateDateColumn, ManyToOne, OneToOne, JoinColumn } from "typeorm";
 import { NombreEstatus } from "./common/NombreEstatus";
 import { Movimiento } from "./Movimiento";
 import { Comentario } from "./Comentario";
 import { Sesion } from "./Sesion";
 import { Archivo } from "./Archivo";
-import { Proyecto } from "./Proyecto";
-import { Usuario } from "./Usuario";
-import { MovimientoTipo } from "./MovimientoTipo";
 import { GrupoDetalle } from "./GrupoDetalle";
 
 

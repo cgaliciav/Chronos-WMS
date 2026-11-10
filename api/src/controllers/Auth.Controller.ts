@@ -6,12 +6,10 @@ import { Sesion } from "../entity/Sesion";
 import { Usuario } from "../entity/Usuario";
 import { AppError } from "../helpers/errorClases";
 import { versionPaquete as version } from "../helpers/paquete";
-// import config from "../config/config";
+import { passwordTemporalVencida } from "../services/PasswordService";
 
 const terminarSesion = async(sesionId:number) =>{
   const sesion = await AppDataSource.getRepository(Sesion).findOneByOrFail({ id: sesionId });
-  
-  
 
   if(sesion.fechaFin===undefined || sesion.fechaFin===null ){
     sesion.fechaFin = new Date();
@@ -34,10 +32,9 @@ class AuthController {
       }
 
       usuario = await AppDataSource.getRepository(Usuario).findOneOrFail({
-        select:{ id: true, nombre: true, correo: true, vencimiento: true, estatus: true, password: true }, 
+        select:{ id: true, nombre: true, correo: true, vencimiento: true, estatus: true, password: true, debeCambiarPassword: true, vencePasswordTemporal: true }, 
         where: { correo: c },
         loadEagerRelations:false, 
-        // cache:true,
       });
 
       if (!usuario.checkIfUnencryptedPasswordIsValid(p)) {
@@ -48,6 +45,10 @@ class AuthController {
         throw new AppError("Sin permiso. Contacta con tu administrador",401);
       }
 
+      if (passwordTemporalVencida(usuario)) {
+        throw new AppError("La contraseña temporal venció. Pide a tu administrador una nueva", 401);
+      }
+
       let sesion = new Sesion;
       sesion.usuario=usuario;
       
@@ -55,9 +56,11 @@ class AuthController {
 
       await AppDataSource.getRepository(Sesion).save(sesion);
 
-      const t = firmarToken({ ui: usuario.id, u: usuario.nombre, si: sesion.id });
+      // Con contraseña temporal el token solo sirve para cambiarla (`cp`, hallazgo L2).
+      const cambiarPassword = usuario.debeCambiarPassword === true;
+      const t = firmarToken({ ui: usuario.id, u: usuario.nombre, si: sesion.id, ...(cambiarPassword ? { cp: true } : {}) });
 
-      res.json({t});
+      res.json(cambiarPassword ? { t, cambiarPassword } : { t });
     } catch (error) {
       next(error);
     }
@@ -95,4 +98,3 @@ class AuthController {
 }
 
 export default AuthController;
-// export {terminarSesion};

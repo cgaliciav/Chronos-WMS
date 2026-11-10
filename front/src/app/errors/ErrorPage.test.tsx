@@ -13,6 +13,6 @@ describe('ErrorPage', () => {
     renderizarEnRuta(<ErrorPage code={codigo} />)
     expect(screen.getByText(`${codigo} · ${titulo}`)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Inicio' })).toBeInTheDocument()
-    expect(document.title).toBe(`Sony Almacén | Error ${codigo}`)
+    expect(document.title).toBe(`Chronos WMS | Error ${codigo}`)
   })
 })

@@ -78,7 +78,6 @@ const destinatarioDe = async (jwtPayload: { ui: number }): Promise<Destinatario>
 };
 
 class ReporteController {
-  // TODO GENERAR REPORTE DE MOVIMINETOS (ALTAS, BAJAS, COMPRAS, ETC, (NO INVENTARIOS, ) POR FECHA)
   static reportePorGrupo = async (req: Request, res: Response, next: NextFunction) => {
     const { ...body } = req.body;
     const { jwtPayload } = res.locals;
@@ -113,7 +112,6 @@ class ReporteController {
     }
   };
 
-  //TODO GENERAR REPORTE DE CIERRRE (COMPRAS, RENTAS, DEVOLUCIONES, BAJAS JUSTIFICADAS E INJUSTIFICADAS, HOJA RESUMEN,TODO EN UN ARCHIVO...)
   static reporteCierre = async (req: Request, res: Response, next: NextFunction) => {
     const { jwtPayload } = res.locals;
     try {
@@ -125,22 +123,22 @@ class ReporteController {
     }
   };
 
-  //TODO GENERAR REPORTE DE USO (CUANTO TIENE QUE SE REALIZÓ EL ULTIMO MOVIMIENTO QUE NO FUE INVENTARIO. EL ARTICULO NO DEBE ESTAR DADO DE BAJA)
+  // Pendiente (responde 501): Generar reporte de uso (cuanto tiene que se realizó el ultimo movimiento que no fue inventario. el articulo no debe estar dado de baja)
   static reportePorUso = async (req: Request, res: Response, next: NextFunction) => {
     next(new AppError("Reporte por uso no implementado", 501)); // antes la petición se quedaba colgada (hallazgo H9)
   };
 
-  //TODO REPORTE DE GRUPODETALLE (LISTADO DE ARTICULOS)
+  // Pendiente (responde 501): Reporte de grupodetalle (listado de articulos)
   static reportePorGrupoDetalle = async (req: Request, res: Response, next: NextFunction) => {
     next(new AppError("Reporte por detalle de grupo no implementado", 501));
   };
 
-  //TODO REPORTE DE FACTURAS (LISTADO DE ARTICULOS)
+  // Pendiente (responde 501): Reporte de facturas (listado de articulos)
   static reportePorFactura = async (req: Request, res: Response, next: NextFunction) => {
     next(new AppError("Reporte por factura no implementado", 501));
   };
 
-  //TODO REPORTE DE INVENTARIO (LISTADO DE ARTICULOS INVENTARIADOS Y POR INVENTARIAR)
+  // Pendiente (responde 501): Reporte de inventario (listado de articulos inventariados y por inventariar)
   static reporteDeInventario = async (req: Request, res: Response, next: NextFunction) => {
     next(new AppError("Reporte de inventario no implementado", 501));
   };

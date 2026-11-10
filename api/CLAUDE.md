@@ -2,7 +2,7 @@
 
 API REST del almacén. **Node 24** (`.nvmrc`, `Dockerfile` multietapa `node:24-alpine`) · **Express 5** ·
 **TypeORM 1.1** (`AppDataSource` de `src/data-source.ts`) · **MariaDB** (driver `mysql2` 3) · TypeScript 5.9
-(no estricto; `tsconfig.estricto.json` aplica `strict` a services, helpers, esquemas, middlewares y migration).
+(no estricto; `tsconfig.estricto.json` aplica `strict` a services, helpers (también excelFunctions), esquemas, middlewares y migration).
 Arranque: `npm run dev` (ts-node-dev) o `npm start` (ts-node); compilado: `npm run build && npm run prod`.
 Puerto `PORT_ALMACEN_API` (4100 dev). Logs: `logger` de `helpers/logger.ts` (pino), **no `console.*`**.
 Pruebas: `npm run test:unit` (sin BD), `npm run test:int` (MariaDB de `.env.test`, recrea el esquema con las
@@ -27,6 +27,9 @@ src/data-source.ts      AppDataSource (TypeORM 1.x) con opcionesDataSource() des
 src/migration/          migraciones (baseline idempotente, MovimientoRelacion, Notificacion) e index.ts con la lista MIGRACIONES
 src/services/           MovimientoService (registrar/deshacer/relacionar, transaccional), guardasRelacion,
                         NotificacionService (crear/listar/marcar, emisor para SSE, vencimientos y retención cada 6 h),
+                        ConfiguracionService (configuración por cliente del plan 03: caché 30 s, secreto SMTP cifrado, imágenes,
+                        exportar/importar; ejemplo de cliente en infra/clientes/sony), PasswordService,
+                        CorreoService (transporte bd/anulado/entorno y plantillas; helpers/enviarMail.ts es su fachada),
                         reglas/efectosInventario.ts, reglas/planificarRelaciones.ts y reglas/notificaciones.ts (puras)
 src/routes/*.Routes.ts  un router por recurso; cada ruta lleva [checkJwt, checkRole([...])]; los ids numéricos usan
                         `"/x/:id", soloDigitos("id")` (middlewares/rutas.ts): Express 5 no admite `:id([0-9]+)`
@@ -39,8 +42,9 @@ src/subscriber/         GeneralSubscriber: auditoría automática en LogFunciona
 src/helpers/            errorClases (AppError, con `detalle` para respuestas 409), filtrosTabla (filtros/orden parametrizados),
                         ids (idSeguro), numericTransformer, archivosSeguros, cacheArchivos (escritura atómica y limpieza),
                         logger (pino), opcionesFind (rutas "a.b" → objeto de relations/select), paquete (versión),
-                        validacion, enviarMail (nodemailer), excelFunctions (reportes exceljs, 2 800 líneas), passGenerator
-src/esquemas/           esquemas zod de los cuerpos de petición (se aplican con middlewares/validar.ts)
+                        validacion, enviarMail (nodemailer), excelFunctions (reportes exceljs, 1 800 líneas, ver reportes.int.test), passGenerator
+src/esquemas/           esquemas zod de los cuerpos de petición (se aplican con middlewares/validar.ts); configuracion.ts: secciones del plan 03
+src/recursos/           imágenes por defecto de Chronos WMS en base64 (logo de reportes, icono): no dependen de copiar archivos al build
 src/sentry.ts           Sentry preparado: solo se inicializa con SENTRY_DSN
 ```
 
@@ -66,7 +70,9 @@ Documentación detallada: `docs/api/modelo-de-datos.md`, `docs/api/tipos-de-movi
   `MovimientoService.enTransaccion` (no `AppDataSource.getRepository`), y la primera sentencia debe ser el bloqueo.
 - `sesionId` en las entidades **no es columna**: lo lee el suscriptor de auditoría. Siempre asígnalo
   (`registro.sesionId = jwtPayload.si`) antes de `save`.
-- JWT: `{ ui: usuarioId, u: nombre, si: sesionId }`, 12 h, cabecera `auth`. `res.locals.jwtPayload`.
+- JWT: `{ ui: usuarioId, u: nombre, si: sesionId }`, 12 h, cabecera `auth`. `res.locals.jwtPayload`. Con contraseña
+  temporal lleva además `cp: true` y `checkJwt` solo admite las rutas de `rutaPermitidaConCambioPendiente`
+  (`services/PasswordService.ts`, hallazgo L2); nunca asignes contraseñas a mano: `asignarPasswordTemporal`/`Definitiva`.
 - Respuestas de error: `throw new AppError(mensaje, statusCode)` y `next(error)` en el `catch`.
 
 ## Convenciones al escribir código aquí
@@ -113,7 +119,7 @@ Documentación detallada: `docs/api/modelo-de-datos.md`, `docs/api/tipos-de-movi
 Ver `.env.example`. Imprescindibles: `JWTSECRET`, `SALT_ROUNDS`, `DB_HOST/PORT/USER/PASSWORD/DATABASE_NAME`,
 `DB_SYNCRO` (**`false`**: el esquema lo cambian las migraciones), `DB_LOGGING`,
 `PORT_ALMACEN_API`, rutas de archivos (`RUTA_ARCHIVOS`, `RUTA_REPORTES`, `UPLOADS`, `ARCHIVOS_AUXILIARES`,
-`IMAGENES_IMPORTACION`), `SMTP_*`, `DIAS_CUARENTENA`, `CACHE_ARCHIVOS_DIAS`, `REPORTES_DIAS`, `LOG_NIVEL`
+`IMAGENES_IMPORTACION`), `SMTP_*`, `SMTP_ANULAR` (pruebas y staging), `SOPORTE_CORREO`, `CONFIG_CLAVE`, `DIAS_CUARENTENA`, `HORAS_PASSWORD_TEMPORAL`, `CACHE_ARCHIVOS_DIAS`, `REPORTES_DIAS`, `LOG_NIVEL`
 (o `LOG_CONSOLE_VERBOSE`).
 `ENV_FILE=.env.test npm run migration:show` apunta `src/migrar.ts` a otro archivo de variables.
 

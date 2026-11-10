@@ -6,6 +6,8 @@ import BodegaPeticiones from 'services/axios/bodegas'
 import type { ElementoListado } from 'services/axios'
 import type { Numerico } from 'types/api'
 import { filtrarOpcion } from 'helpers/funcionesExtras'
+import { formatearImporte, leerImporte, useMonedas } from 'helpers/moneda'
+import { useMarcaStore } from 'stores/marca.store'
 
 const { TextArea } = Input
 
@@ -102,7 +104,7 @@ const wrapperColBtn = {
 }
 
 const FormaEdicionArticulo = ({
-  valoresIniciales = { moneda: 'MXN' },
+  valoresIniciales = { moneda: useMarcaStore.getState().regional.monedaPorDefecto },
   guardando,
   habilitado,
   esNuevo,
@@ -114,6 +116,7 @@ const FormaEdicionArticulo = ({
   const [listadoBodegas, setListadoBodegas] = useState<ElementoListado[]>([])
   const [listadoAreas, setListadoAreas] = useState<ElementoListado[]>([])
   const [form] = Form.useForm<ValoresArticulo>()
+  const monedas = useMonedas()
 
   useEffect(() => {
     setHabilitadoInterno(false)
@@ -223,8 +226,8 @@ const FormaEdicionArticulo = ({
         >
           <InputNumber
             step={0.01}
-            formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-            parser={value => (value ?? '').replace(/\$\s?|(,*)/g, '')}
+            formatter={formatearImporte}
+            parser={leerImporte}
             placeholder="Precio del producto"
             disabled={guardando || !habilitado || !esNuevo}
           />
@@ -242,10 +245,7 @@ const FormaEdicionArticulo = ({
           <Select
             placeholder="Selecciona la moneda"
             disabled={guardando || !habilitado}
-            options={[
-              { label: 'MXN', value: 'MXN' },
-              { label: 'USD', value: 'USD' },
-            ]}
+            options={monedas.opciones}
           />
         </Form.Item>
         <Form.Item

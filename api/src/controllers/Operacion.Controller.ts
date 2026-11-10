@@ -1,5 +1,5 @@
 import { In } from "typeorm";
-import { Request, Response, application, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 import CommonController from "./common/Common.Controller";
 import { AppDataSource } from "../data-source";
 import { Operacion } from "../entity/Operacion";

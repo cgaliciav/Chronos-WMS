@@ -56,8 +56,9 @@ grande que incluya la versión.
 - `docs/planes/01-front-actualizacion-antd.md`: plan por fases para Vite + React 19 + antd 6 y retirar Clean UI.
 - `docs/planes/02-api-relacion-movimientos.md`: plan por fases para la relación origen→derivado entre
   movimientos, transacciones, migraciones y limpieza. Fases 0-7 hechas (plan completo).
-- `docs/planes/03-personalizacion-por-cliente.md`: marca y configuración por cliente servidas por el API y editables desde
-  el front (correo, logo del Excel); "Sony" pasa a "Chronos WMS". Sin empezar; la fase 0 es independiente.
+- `docs/planes/03-personalizacion-por-cliente.md`: marca y configuración por cliente servidas por el API (`/config`) y
+  editables desde el front (`/configuracion`); "Sony" pasa a "Chronos WMS". Fases 0-5 hechas en código; falta que una
+  persona ensaye en staging y despliegue con el procedimiento (la marca de Sony se carga desde `infra/clientes/sony`).
 
 ## Flujo de trabajo esperado
 

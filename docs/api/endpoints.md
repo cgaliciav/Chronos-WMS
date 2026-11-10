@@ -54,6 +54,23 @@ los marcados con ⚠.
 - ⚠ Retirados `GET /groups/export-to-supabase/:id` y `GET /current-inventory/export-to-supabase/:id` (el front no los usaba).
 - ⚠ `POST /auth/logout` revoca el token: después, ese token responde 401 ("Sesión terminada").
 
+**Cambios de v2.88.0 (plan 03, fase 5):** `GET /config/export` y `POST /config/import`; el logo histórico de `ARCHIVOS_AUXILIARES` ya no se usa en los reportes.
+
+**Cambios de v2.87.0 (plan 03, fase 2):** los correos toman remitente, plantillas y marca de `/config`; `POST /config/correo/prueba`; el logo de los reportes sale de `reportes.logoId`.
+
+**Cambios de v2.86.0 (plan 03, fase 1):** nuevo recurso `/config` (sección "Configuración"), rol `CONFIGURACION-EDITAR`,
+migración `Configuracion`. v2.85.0 (fase 0): correos con "Chronos WMS" en lugar del nombre del cliente.
+
+**Cambios de v2.84.0 (contraseña temporal, hallazgo L2):** requiere la migración `PasswordTemporal`.
+- ⚠ La contraseña de alta (`POST /user/new`) y la regenerada (`PUT /user/renewpassword`) son temporales: vencen a las
+  `HORAS_PASSWORD_TEMPORAL` horas (72) y hay que cambiarlas al entrar.
+- ⚠ `POST /auth/login` con la temporal → `{ t, cambiarPassword: true }`. Con ese token solo valen `PUT /user/password`,
+  `GET /user/current` y `POST /auth/logout`; el resto responde **403** `{ code, message, cambiarPassword: true }`. Con
+  la temporal vencida, 401.
+- `PUT /user/password` `{ pa, pn }` → `{ t }` (token normal, también en la cabecera `t`); 406 si `pn` no es válida o es
+  igual a `pa`.
+- `GET /user/current` añade `cambiarPassword: true` mientras el cambio está pendiente.
+
 **Cambios de v2.83.3 (hallazgos M14, L19, L12, L3):**
 - `filtered` es el conteo filtrado en todos los listados (antes el tamaño de página en `list-catalog-*` y el total sin
   filtrar en `active-activity-list`; el front no lo usa).
@@ -107,7 +124,7 @@ principal; sin `sortField`, orden por su `id`.
 ## Autenticación (`/auth`)
 | Método | Ruta | Roles | Controlador |
 |---|---|---|---|
-| POST | `/auth/login` | — | `Auth.login` body `{c, p, ip}` → `{t}` (JWT 12 h con `{ui,u,si}`) |
+| POST | `/auth/login` | — | `Auth.login` body `{c, p}` → `{t}` (JWT 12 h con `{ui,u,si}`); con contraseña temporal `{t, cambiarPassword: true}` y el JWT lleva `cp` |
 | POST | `/auth/logout` | jwt | `Auth.logout` (marca `Sesion.fechaFin`; `checkJwt` rechaza después ese token) |
 | GET | `/auth/version` | — | `{ version }` (pública: la muestra el login) |
 | GET | `/` | — | `{ estado: "ok" }` (comprobación de vida) |
@@ -176,7 +193,7 @@ Patrón común (`CommonController`): `GET /list-names` (`*-LISTASIMPLE`), `POST 
 `PUT /disable/:id` · `/enable/:id` (`*-DESHABILITAR`/`*-HABILITAR`), `POST`/`DELETE /comment`
 (`*-COMENTARIONUEVO`/`*-COMENTARIOBORRAR`). Extras:
 - `/supplier/list-dynamic` (PROVEEDOR-LISTADINAMICA), `/project/list-names-inbound|outbound`.
-- `/user/current` (jwt), `/user/password` (jwt, cambia la propia), `/user/renewpassword`
+- `/user/current` (jwt; `cambiarPassword: true` si la contraseña es temporal), `/user/password` (jwt, cambia la propia; `{pa, pn}` → `{t}`), `/user/renewpassword`
   (USUARIO-GENERERARPASSWORD; envía la contraseña por correo), `/user/get-areas|get-warehouses|get-projects` (jwt),
   `/user/list-names-full`, `/user/list-names-dynamic`.
 - `/role/list-names-dynamic` (GET que lee `req.body`).
@@ -210,6 +227,22 @@ abre con `?auth=`).
 
 Productores: reportes (al terminar o fallar) y la tarea periódica de vencimientos (préstamos y rentas externas no
 legados con saldo abierto de más de `DIAS_CUARENTENA` días, una vez por movimiento y usuario).
+
+## Configuración (`/config`, plan 03)
+
+Una sección por fila: `marca`, `correo`, `reportes`, `regional` (campos y valores por defecto en
+`api/src/esquemas/configuracion.ts` y `docs/planes/03-personalizacion-por-cliente.md` §2.1).
+
+| Método | Ruta | Auth | Respuesta |
+|---|---|---|---|
+| GET | `/config/public` | ninguna | `{ marca (sin logoId/faviconId), regional, logoUrl\|null, faviconUrl\|null, version }`; `ETag` y `Cache-Control: no-cache` (304 con `If-None-Match`) |
+| GET | `/config/public/logo`, `/config/public/favicon` | ninguna | PNG de marca (solo archivos de tipo `MARCA-*`); sin configurar, el icono de Chronos WMS |
+| GET | `/config` | `ADMINISTRADOR`/`CONFIGURACION-EDITAR` | `{ marca, correo, reportes, regional }`, cada una `{ valor, version }`. En `correo.transporte` nunca sale la contraseña: `tieneContrasena` |
+| PUT | `/config/:seccion` | igual | Body `{ version, valor }` → `{ valor, version }`. 400 `{ errores: [{ campo, mensaje }] }` si no valida (campos desconocidos incluidos), 404 sección desconocida, 409 `{ version }` si otra persona guardó antes. En `correo.transporte.contrasena`: ausente = se conserva, `null` = se borra, texto = se cifra (400 sin `CONFIG_CLAVE`) |
+| GET | `/config/export` | igual | Descarga `{ formato: "chronos-wms-config", version: 1, exportado, secciones, imagenes: { logo?, favicon?, reportes? } }` (imágenes en base64). **Sin secretos**: la contraseña SMTP no se exporta |
+| POST | `/config/import` | igual | Body: una exportación (hasta 8 MB). Valida todo antes de guardar (400 `{ errores }` sin cambios); reemplaza las secciones presentes, sube las imágenes y conserva la contraseña SMTP del destino → `{ importadas, imagenes }` |
+| POST | `/config/correo/prueba` | igual | Envía un correo de prueba al usuario que lo pide con la configuración guardada → `{ enviado, transporte: "bd"\|"anulado"\|"entorno", destino, messageId, respuesta }`; 502 `{ message, transporte }` si el SMTP falla |
+| POST | `/config/marca/logo`, `/config/marca/favicon`, `/config/reportes/logo` | igual | multipart `file` (PNG/JPEG/WebP ≤ 2 MiB; SVG no) → la sección actualizada. Se normaliza a PNG (logo ≤ 512 px, favicon 192 px, reportes ≤ 512×256) y se borra la imagen anterior |
 
 ## Reportes (`/reports`)
 | Método | Ruta | Roles | Nota |

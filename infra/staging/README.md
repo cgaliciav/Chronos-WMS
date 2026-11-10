@@ -18,6 +18,7 @@ mismo SO, mismo runtime, misma imagen del backend, misma DB y mismos archivos. P
 Diferencias intencionales:
 - **Secretos propios** (`~/teleset-almacen/.env` en la VM, generados allí): `DB_ROOT_PASSWORD`, `DB_PASSWORD`, `JWTSECRET`. Tienen prioridad sobre cualquier valor por defecto de la imagen.
 - **Correo atrapado**: en staging el host SMTP del backend resuelve al contenedor **mailpit** (UI en `:8025`) y además iptables bloquea SMTP saliente (25/465/587/2525). Los datos son reales: nunca quites este bloqueo.
+- **`SMTP_ANULAR=mailpit:2525`** (plan 03): la configuración restaurada de producción puede traer un SMTP real en la tabla `configuracion`; `SMTP_ANULAR` gana sobre ella y no envía credenciales. `update-staging.sh` se detiene si el log del backend dice `Correo: transporte bd|entorno`. `CONFIG_CLAVE` es propia de staging (se genera en la VM).
 - MariaDB solo escucha en `127.0.0.1:3308` de la VM.
 
 ## Requisitos (laptop)

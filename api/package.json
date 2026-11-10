@@ -1,6 +1,6 @@
 {
   "name": "almacen-api",
-  "version": "2.83.3-d",
+  "version": "2.88.0-d",
   "description": "Proyecto de Almacen para Sony Mexico usando TypeORM, Express, Multer, Sharp...etc",
   "devDependencies": {
     "@types/cors": "^2.8.19",

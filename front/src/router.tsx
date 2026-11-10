@@ -15,6 +15,7 @@ type Cargador = () => Promise<{ default: ComponentType }>
  */
 export const RUTAS: Array<[ruta: string, cargar: Cargador]> = [
   ['/usuarios/listado', () => import('pages/administracion/usuarios/listado')],
+  ['/configuracion', () => import('pages/administracion/configuracion')],
   ['/usuarios/cambiar-password', () => import('pages/administracion/usuarios/cambiarPassword')],
   ['/usuarios/nuevo', () => import('pages/administracion/usuarios/nuevo')],
   ['/usuarios/editar', () => import('pages/administracion/usuarios/editar')],
@@ -89,6 +90,7 @@ export const RUTAS: Array<[ruta: string, cargar: Cargador]> = [
   ['/reportes/por-usuario', () => import('pages/reportes/6.porUsuario')],
   ['/reportes/de-cierre', () => import('pages/reportes/3.cierreProyecto')],
   ['/auth/login', () => import('app/auth/LoginPage')],
+  ['/auth/cambiar-password', () => import('app/auth/CambiarPasswordTemporal')],
   ['/auth/401', () => Promise.resolve({ default: () => <ErrorPage code={401} /> })],
   ['/auth/404', () => Promise.resolve({ default: () => <ErrorPage code={404} /> })],
   ['/auth/500', () => Promise.resolve({ default: () => <ErrorPage code={500} /> })],

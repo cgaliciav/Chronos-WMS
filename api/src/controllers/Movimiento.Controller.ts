@@ -78,8 +78,6 @@ const funcionQueryId = (id: number | string) => {
     .leftJoinAndSelect("relacionesComoOrigen.derivado", "relacionDerivado")
 
     .where("movimiento.id=:id", { id });
-  // .andWhere("precioTipo.id=2")
-  // .getOne()
 };
 class MovimientoController {
   // guardar - creacion de movimiento sin operacion (línea de un listado)
@@ -133,7 +131,6 @@ class MovimientoController {
     next: NextFunction
   ) => {
     const id = parametro(req, "id"); //inventarioActualId
-    // const {jwtPayload}=res.locals;
     try {
       res.json(
         await AppDataSource.getRepository(Movimiento)
@@ -160,7 +157,6 @@ class MovimientoController {
     next: NextFunction
   ) => {
     const id = parametro(req, "id"); //inventarioActualId
-    // const {jwtPayload}=res.locals;
     try {
       res.json(
         await AppDataSource.getRepository(Movimiento)
@@ -190,7 +186,6 @@ class MovimientoController {
   ) => {
     const id = parametro(req, "id");
 
-    // const {jwtPayload}=res.locals;
     try {
       const movimiento: Movimiento | null = await CommonController.obtenerIdQuery(funcionQueryId(id));
       if (movimiento == null) throw new AppError(`No existe el movimiento ${id}`, 404);
@@ -206,7 +201,6 @@ class MovimientoController {
     next: NextFunction
   ) => {
     const id = parametro(req, "id"); //movimientoId
-    // const {jwtPayload}=res.locals;
     try {
       res.json(
         await AppDataSource.getRepository(Movimiento)

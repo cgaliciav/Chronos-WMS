@@ -11,6 +11,8 @@ persona que despliega: **ninguna sesión automatizada ejecuta migraciones contra
 | `1794083852310-Baseline` | Esquema completo al cierre de la fase 2. **Idempotente:** si la tabla `movimiento` ya existe (producción, creada con `synchronize`) solo queda registrada en la tabla `migrations` y no ejecuta nada. | **No** (`down` lanza un error: borraría todas las tablas). |
 | `1794084035404-MovimientoRelacion` | Crea `movimiento_relacion` y la vista `v_movimiento_saldo`; añade `movimiento.fecha`, `movimiento.legado` e `inventario_actual_historico.movimientoId`. Marca **todos** los movimientos existentes con `legado = 1` y rellena su `fecha` con la de su operación (o la de su primer grupo). No crea relaciones para los movimientos históricos (decisión 6, sin backfill). | Sí (`migration:revert`): borra la tabla, la vista y las columnas, **y con ellas las relaciones registradas desde el despliegue**. |
 
+| `1794338006363-Configuracion` | Crea `configuracion` con los valores por defecto de Chronos WMS e inserta el rol `CONFIGURACION-EDITAR` (plan 03, v2.86.0). Antes de guardar la contraseña SMTP en la configuración, añade `CONFIG_CLAVE` al archivo de secretos (`openssl rand -base64 32`; guárdala también fuera del servidor: sin ella no se puede descifrar). | Sí: borra la tabla y el rol. |
+| `1794336939132-PasswordTemporal` | Añade `usuario.debeCambiarPassword` (0 para todas las cuentas existentes) y `usuario.vencePasswordTemporal` (v2.84.0, hallazgo L2). | Sí: quita las dos columnas (las contraseñas temporales pendientes siguen valiendo como definitivas). |
 | `1794327605255-Notificacion` | Crea la tabla `notificacion` (fase 7, v2.83.0). No toca datos existentes. | Sí: borra la tabla y sus notificaciones. |
 
 La fase 6 (TypeORM 1.x, v2.82.0) no añade migraciones: el esquema que generan las entidades es el mismo.
@@ -79,6 +81,30 @@ docker run -d --restart unless-stopped --env-file "$SECRETOS" -e DB_SYNCRO=false
   -v ~/teleset-almacen/exogrid:/code/exogrid --network "$RED" almacen-backend:$VERSION
 docker logs -f almacen-backend-1        # no debe aparecer "hay migraciones pendientes" ni "DB_SYNCRO=true"
 ```
+
+## Plan 03: configuración por cliente y marca de Sony (API v2.85-v2.88, front v4.4-v4.7)
+
+Desde estas versiones la identidad ("Chronos WMS" por defecto) y la configuración de correo y reportes viven en la
+tabla `configuracion`. **Hazlo todo en la misma ventana de despliegue** para que los usuarios de Sony no lleguen a ver
+"Chronos WMS":
+
+1. **Antes de desplegar**, en `api-secrets.env`:
+   - Añade `CONFIG_CLAVE` (`openssl rand -base64 32`) y guarda una copia fuera del servidor: sin ella no se puede
+     descifrar una contraseña SMTP guardada en la configuración.
+   - Comprueba que **no** existe `SMTP_ANULAR` (solo staging y desarrollo).
+   - Mantén `SMTP_HOST/PORT/USER/PASS`: la configuración de Sony usa el SMTP del entorno (`transporte: null`).
+2. Aplica las migraciones pendientes (pasos de arriba): `PasswordTemporal` y `Configuracion`.
+3. Despliega API y front.
+4. Prepara `infra/clientes/sony/sony.import.json` (añade el logo de reportes: `infra/clientes/sony/README.md`) e
+   impórtalo: **Configuración → Importar** como administrador.
+5. Verifica:
+   - El login dice "Bienvenido a Sony Almacén México" y la pestaña "Sony Almacén".
+   - **Configuración → Correo → Enviar correo de prueba** llega a tu buzón; en `docker logs` aparece
+     `Correo: transporte entorno`.
+   - Un reporte por grupo lleva el logo de Sony.
+6. Desde aquí el logo histórico de `ARCHIVOS_AUXILIARES` ya no se usa (el de reportes sale de la configuración).
+
+Rollback de la configuración: **Configuración → Exportar** antes de cambiarla; para volver, importa ese archivo.
 
 ## Consultas de control
 

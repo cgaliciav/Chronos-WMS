@@ -102,13 +102,14 @@ erDiagram
 | `Area` | `area` | Departamento/área dueña de productos. Limita lo que ve cada usuario. |
 | `Proyecto` | `proyecto` | Producción/proyecto al que se prestan artículos. `esExterno` para rentas externas. |
 | `Proveedor` / `FacturaTipo` | | Catálogos de compras. |
-| `Usuario`, `Rol`, `Sesion` | | Usuario con roles (códigos `ADMINISTRADOR`, `GRUPOS-NUEVO`, …), áreas, bodegas y proyectos permitidos. Cada login crea una `Sesion`; el JWT lleva `{ui, u, si}` = usuario id, nombre, sesión id. |
+| `Usuario`, `Rol`, `Sesion` | | `debeCambiarPassword` y `vencePasswordTemporal` (no se exponen) marcan una contraseña temporal pendiente de cambiar (L2). Usuario con roles (códigos `ADMINISTRADOR`, `GRUPOS-NUEVO`, …), áreas, bodegas y proyectos permitidos. Cada login crea una `Sesion`; el JWT lleva `{ui, u, si}` = usuario id, nombre, sesión id. |
 | `Archivo` | `archivo` | Binario en `mediumblob` + metadatos. Se asocia N:M a producto, operación, grupo, usuario. |
 | `Comentario` | `comentario` | Texto + sesión. N:M con casi todo. |
 | `LogFuncionamiento` | | Auditoría automática de insert/update/remove (suscriptor). |
 | `LogGeneral` | | Errores capturados por `errorMiddlewere`. |
 | `LogPeticiones` | | Métricas por petición HTTP (`request-stats`). |
 | `Parametros` | | Pares llave/valor de configuración. |
+| `Configuracion` | `configuracion` | Configuración por cliente (plan 03): una fila por sección (`marca`, `correo`, `reportes`, `regional`) con el JSON validado por zod (`esquemas/configuracion.ts`), `esquema` (versión del JSON) y `version` (bloqueo optimista). La contraseña SMTP va cifrada con `CONFIG_CLAVE`. Las imágenes de marca son `Archivo` con `tipo` `MARCA-LOGO`, `MARCA-FAVICON` o `REPORTES-LOGO`. |
 | `Notificacion` | `notificacion` | Aviso para un usuario (fase 7): `titulo`, `mensaje`, `tipo` (`reporte`, `prestamo`, `sistema`), `url`, `leida`, `fecha`, `fechaLectura`. `clave` (única por usuario, no se expone) evita repetir el aviso de vencimiento de un movimiento. Sin `sesionId`: la auditoría la omite. |
 
 ## Cómo se encadenan los movimientos (fase 3 del plan 02)

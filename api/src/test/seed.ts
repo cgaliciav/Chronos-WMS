@@ -64,7 +64,11 @@ export const sembrar = async (connection: DataSource) => {
     const rolAdmin = Object.assign(new Rol(), { id: 1, nombre: "Administrador", codigoRol: "ADMINISTRADOR" });
     const rolMovimiento = Object.assign(new Rol(), { id: 2, nombre: "Movimiento nuevo", codigoRol: "GRUPOS-MOVIMIENTONUEVO" });
     const rolListado = Object.assign(new Rol(), { id: 3, nombre: "Listado grupos", codigoRol: "GRUPOS-LISTADETALLE" });
-    await repo(Rol).save([rolAdmin, rolMovimiento, rolListado]);
+    // CONFIGURACION-EDITAR lo crea la migración de la fase 1 del plan 03 con el id 1, que la siembra usa para el
+    // administrador: se borra y se recrea con un id fijo
+    await connection.query("DELETE FROM rol WHERE codigoRol = 'CONFIGURACION-EDITAR'");
+    const rolConfiguracion = Object.assign(new Rol(), { id: 4, nombre: "Configuración del sistema", codigoRol: "CONFIGURACION-EDITAR" });
+    await repo(Rol).save([rolAdmin, rolMovimiento, rolListado, rolConfiguracion]);
 
     const area = Object.assign(new Area(), { id: SEMILLA.areaId, nombre: "GENERAL" });
     await repo(Area).save(area);

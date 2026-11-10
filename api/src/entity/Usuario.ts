@@ -1,4 +1,4 @@
-import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany, Index, ManyToMany, JoinTable} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, Index, ManyToMany, JoinTable } from "typeorm";
 import { Rol } from "./Rol";
 import { Area } from "./Area";
 import { Bodega } from "./Bodega";
@@ -6,13 +6,9 @@ import { Archivo } from "./Archivo";
 import { Comentario } from "./Comentario";
 import { Proyecto } from './Proyecto'
 import { Sesion } from './Sesion'
-// import { MovimientoUsuario } from "./MovimientoUsuario";
 import { EstatusEstado } from "./common/NombreEstatus";
 import { Length, IsEmail } from "class-validator";
 import * as bcrypt from "bcryptjs";
-// import { type } from "os";
-
-
 
 @Entity()
 export class Usuario {
@@ -33,6 +29,17 @@ export class Usuario {
 
     @Column({ type:"varchar", length:255,  select:false, nullable: false })
     password: string;
+
+    /**
+     * La contraseña es temporal (alta o regeneración por el administrador): hasta cambiarla, el token solo permite
+     * cambiarla (hallazgo L2). `select: false`: se pide explícitamente donde hace falta.
+     */
+    @Column({ default: false, select: false })
+    debeCambiarPassword: boolean;
+
+    /** Vencimiento de la contraseña temporal (`HORAS_PASSWORD_TEMPORAL`, 72 h por defecto). */
+    @Column({ type: "datetime", precision: 6, nullable: true, select: false })
+    vencePasswordTemporal: Date | null;
 
     @Column()
     vencimiento: Date;
