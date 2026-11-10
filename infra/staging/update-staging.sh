@@ -13,7 +13,7 @@
 #
 # Pasos del API: build de la imagen almacen-backend:staging-<sha> en la VM → migraciones pendientes
 # (snapshot de la VM, backend detenido, node build/migrar.js run) → cambio de imagen → comprobaciones.
-# El front se construye en un contenedor local node:<.nvmrc> (no hace falta Node 10 ni yarn en el equipo).
+# El front se construye en un contenedor local node:<front/.nvmrc> con npm (o yarn si la ref aún trae yarn.lock).
 # Documentación: infra/staging/README.md (sección «Actualizar staging»).
 # shellcheck source=lib.sh
 source "$(dirname "$0")/lib.sh"
@@ -236,14 +236,30 @@ deploy_front() {
     warn "Se publica el build existente de $out (--skip-front-build)"
   else
     require_cmds docker
-    step "Front · build en contenedor node:$node_ver (yarn install + yarn build)"
-    mkdir -p "$SRC/front" "$CACHE_DIR/yarn-cache"
-    rsync -a --delete --exclude node_modules --exclude build --exclude '.env*' "$SRC_ROOT/front/" "$SRC/front/"
+    # Gestor de paquetes según el lockfile del código a desplegar: npm desde el plan 01 (Vite + React 19, Node 24);
+    # yarn solo para refs anteriores (CRA, Node 10) que aún traen yarn.lock, para que --ref a commits viejos funcione.
+    local pm cmd
+    if [[ -f "$SRC_ROOT/front/package-lock.json" ]]; then
+      pm=npm
+      cmd='npm ci --no-audit --no-fund && npm run build'
+    elif [[ -f "$SRC_ROOT/front/yarn.lock" ]]; then
+      pm=yarn
+      cmd='yarn install --frozen-lockfile --non-interactive --network-timeout 600000 && yarn build'
+    else
+      die "front/ no tiene package-lock.json ni yarn.lock"
+    fi
+    step "Front · build en contenedor node:$node_ver ($pm)"
+    mkdir -p "$SRC/front" "$CACHE_DIR/npm-cache" "$CACHE_DIR/yarn-cache"
+    # .env* fuera: el build usa solo las variables de abajo (los valores por defecto del código para lo demás).
+    rsync -a --delete --exclude node_modules --exclude build --exclude '.env*' --exclude '*.tsbuildinfo' \
+      "$SRC_ROOT/front/" "$SRC/front/"
     rm -rf "$out"
-    docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -e YARN_CACHE_FOLDER=/yarn-cache \
-      -e NODE_OPTIONS=--max_old_space_size=4096 -e REACT_APP_API_URL=/api/ -e CI=false \
-      -v "$SRC/front:/app" -v "$CACHE_DIR/yarn-cache:/yarn-cache" -w /app "node:$node_ver" \
-      sh -c 'yarn install --frozen-lockfile --non-interactive --network-timeout 600000 && yarn build'
+    docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp \
+      -e npm_config_cache=/cache/npm -e YARN_CACHE_FOLDER=/cache/yarn \
+      -e NODE_OPTIONS=--max_old_space_size=4096 -e CI=false \
+      -e VITE_API_URL=/api/ -e REACT_APP_API_URL=/api/ \
+      -v "$SRC/front:/app" -v "$CACHE_DIR/npm-cache:/cache/npm" -v "$CACHE_DIR/yarn-cache:/cache/yarn" \
+      -w /app "node:$node_ver" sh -c "$cmd"
     [[ -f "$out/index.html" ]] || die "El build no generó $out/index.html"
   fi
 

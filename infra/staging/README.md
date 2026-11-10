@@ -78,9 +78,11 @@ Qué hace con el **API**:
    «migraciones pendientes» o `DB_SYNCRO=true`.
 5. Borra las imágenes `staging-*` viejas (conserva la actual, la anterior y la de producción).
 
-Con el **front** construye en un contenedor local `node:<front/.nvmrc>` (`yarn install --frozen-lockfile && yarn build`,
-`REACT_APP_API_URL=/api/`), así que no hace falta Node 10 ni yarn en el equipo. Usa `~/staging-cache/src/front`
-como copia de trabajo (conserva `node_modules` entre builds) y `~/staging-cache/yarn-cache`. Publica el build en
+Con el **front** construye en un contenedor local `node:<front/.nvmrc>` (Node 24): `npm ci && npm run build`
+(`tsc -b && vite build`) con `VITE_API_URL=/api/`; las demás variables `VITE_*` toman su valor por defecto
+(notificaciones apagadas, Sentry sin DSN) porque los `.env*` locales no se copian. No hace falta Node ni npm en el
+equipo. Si la ref desplegada aún trae `yarn.lock` (front anterior al plan 01: CRA, Node 10) usa `yarn` en su lugar.
+Usa `~/staging-cache/src/front` como copia de trabajo y `~/staging-cache/npm-cache` (o `yarn-cache`). Publica `build/` en
 `front-www/` de la VM y anota qué se desplegó en `~/teleset-almacen/front.version`.
 
 Al final ejecuta las mismas comprobaciones que el aprovisionamiento (front, API, mailpit, `smtp.postmarkapp.com` →
