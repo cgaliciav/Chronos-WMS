@@ -5,9 +5,34 @@ y la numeración, las reglas de versionado del [`CLAUDE.md` raíz](../CLAUDE.md)
 drásticos de objetivo, lenguaje o stack; **menor** para capacidades, pautas o herramientas nuevas; **parche** para
 correcciones y aclaraciones; sufijo `-d` en desarrollo y `-s` en staging.
 
-La versión vive en `package.json` (la devuelven `GET /` y `/auth/version`, y Sentry la usa como `release`).
+La versión vive en `package.json` (la devuelve `/auth/version`, y Sentry la usa como `release`).
 `desplegar.sh` publica una versión `X.Y.Z-d` como `X.Y.Z` y, si ya no lleva sufijo, sube el parche. Contrato con el
 front: [`docs/api/endpoints.md`](../docs/api/endpoints.md). Plan: [`docs/planes/02-api-relacion-movimientos.md`](../docs/planes/02-api-relacion-movimientos.md).
+
+## [2.83.3-d] - Sin publicar
+
+Fallos abiertos de `docs/hallazgos-codigo.md` y dependencias. Sin migraciones.
+
+### Corregido
+
+- **M14:** `filtered` es siempre el conteo filtrado. Los catálogos de inventario (`list-catalog-*`) devolvían el
+  tamaño de la página y `active-activity-list` el total sin filtrar. `POST /user/list-antd` hace un `COUNT` menos si no
+  hay filtros.
+- **L19:** los listados con joins (`/groups/list-antd`…) respondían 500 sin `sortField` o con un campo sin alias
+  (`"id"`): un campo sin alias se refiere ahora a la entidad principal del listado.
+- **L12:** `GET /project/list-names-outbound` e `-inbound` filtran por `esExterno` en la consulta (antes cargaban todos
+  los proyectos y filtraban en JS).
+- **L3:** `GET /` responde `{ estado: "ok" }` (antes nombre y versión) y `GET /auth/version` solo `{ version }`, sin el
+  nombre del paquete. La versión sigue pública: la pantalla de login la muestra y `desplegar.sh` la usa.
+
+### Dependencias
+
+- `npm audit --omit=dev`: **0 avisos** (antes `uuid` 8 de exceljs, moderado; `overrides` a `uuid` ^11.1.1: exceljs solo
+  usa `v4`). En desarrollo, `npm audit fix` resolvió babel, brace-expansion, browserslist, js-yaml, minimatch,
+  picomatch y diff; queda `deepmerge` (de jest, sin versión corregida, solo en pruebas).
+- @sentry/node 11.12, ts-jest 29.4, autocannon 9. Se dejan para más adelante jest 30 y TypeScript 7 (cambios mayores
+  sin beneficio de seguridad; TypeScript 7 cuando TypeORM confirme los decoradores) y `@types/node` 26 (el runtime es
+  Node 24).
 
 ## [2.83.2-d] - Sin publicar
 

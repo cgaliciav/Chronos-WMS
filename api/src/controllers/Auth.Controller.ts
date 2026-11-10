@@ -5,7 +5,7 @@ import { AppDataSource } from "../data-source";
 import { Sesion } from "../entity/Sesion";
 import { Usuario } from "../entity/Usuario";
 import { AppError } from "../helpers/errorClases";
-import { nombrePaquete as name, versionPaquete as version } from "../helpers/paquete";
+import { versionPaquete as version } from "../helpers/paquete";
 // import config from "../config/config";
 
 const terminarSesion = async(sesionId:number) =>{
@@ -78,10 +78,17 @@ class AuthController {
 
   };
 
+  /**
+   * `GET /auth/version`: pública porque la pantalla de login la muestra y `desplegar.sh` la usa para saber que el
+   * contenedor responde. Solo la versión (antes también el nombre del paquete, hallazgo L3).
+   */
   static version = async (req: Request, res: Response, next:NextFunction) => {
-    res.json({
-      name,
-      version});
+    res.json({ version });
+  }
+
+  /** `GET /`: comprobación de vida sin datos del servicio (antes devolvía nombre y versión, hallazgo L3). */
+  static estado = async (req: Request, res: Response, next:NextFunction) => {
+    res.json({ estado: "ok" });
   }
 
 

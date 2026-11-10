@@ -102,9 +102,13 @@ class UsuarioController{
       .select(["usuario.id"])
       .addSelect(ESTATUS_EXTENDIDO,"estatusExtendido")
       
-      aplicarFiltros(queryVencimiento, condicionesWhereAnd(filters));
+      const filtros = condicionesWhereAnd(filters);
+      aplicarFiltros(queryVencimiento, filtros);
 
       const filtered= await queryVencimiento.getCount();
+      // Sin filtros el total es el mismo conteo: una consulta menos por página (antes 2-3 COUNT, hallazgo M14).
+      const hayFiltro = filtros.sql.length > 0;
+      const totalItems = hayFiltro ? await AppDataSource.getRepository(Usuario).count() : filtered;
       const queryVencimientoResult = await queryVencimiento.orderBy(campoOrden,direccionOrden)
         .skip(starts)
         .take(pageSize)
@@ -128,7 +132,7 @@ class UsuarioController{
           current:page,
           pageSize,
           total:filtered,
-          totalItems:await AppDataSource.getRepository(Usuario).count()
+          totalItems
         }
 
       } 

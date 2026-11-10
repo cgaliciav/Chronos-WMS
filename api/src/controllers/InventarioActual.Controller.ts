@@ -387,7 +387,7 @@ class InventarioActualController {
 
             const respuesta: ResultadoTabla = {
                 results: qryResult,
-                filtered: qryResult.length,
+                filtered: conteoTotal, // la consulta ya lleva la búsqueda: es el conteo filtrado (antes, el tamaño de la página: M14)
                 pagination: {
                     current: page,
                     pageSize,
@@ -425,7 +425,7 @@ class InventarioActualController {
 
             const respuesta: ResultadoTabla = {
                 results: qryResult,
-                filtered: qryResult.length,
+                filtered: conteoTotal, // la consulta ya lleva la búsqueda: es el conteo filtrado (antes, el tamaño de la página: M14)
                 pagination: {
                     current: page,
                     pageSize,
@@ -457,7 +457,7 @@ class InventarioActualController {
 
             const respuesta: ResultadoTabla = {
                 results: qryResult,
-                filtered: qryResult.length,
+                filtered: conteoTotal, // la consulta ya lleva la búsqueda: es el conteo filtrado (antes, el tamaño de la página: M14)
                 pagination: {
                     current: page,
                     pageSize,
@@ -489,7 +489,7 @@ class InventarioActualController {
 
             const respuesta: ResultadoTabla = {
                 results: qryResult,
-                filtered: qryResult.length,
+                filtered: conteoTotal, // la consulta ya lleva la búsqueda: es el conteo filtrado (antes, el tamaño de la página: M14)
                 pagination: {
                     current: page,
                     pageSize,
