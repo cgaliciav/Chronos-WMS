@@ -7,7 +7,8 @@ import { join, relative } from "path";
  * histórico de los reportes (`LOGO_HISTORICO`), alternativa temporal que se retira en la fase 5.
  */
 const RAIZ = join(__dirname);
-const MARCA_DE_CLIENTE = /sony|teleset/i;
+// Palabra completa: el base64 de las imágenes de src/recursos puede contener esas letras por casualidad
+const MARCA_DE_CLIENTE = /\b(sony|teleset)\b/i;
 const EXCEPCION = /^const LOGO_HISTORICO = "sony-tv-logo\.jpg";$/;
 
 const archivos = (directorio: string): string[] =>

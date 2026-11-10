@@ -5,6 +5,11 @@ import { Sesion } from "../entity/Sesion";
 import { logger } from "../helpers/logger";
 
 
+// Secretos que no deben llegar a LogFuncionamiento: el hash de la contraseña del usuario y la contraseña SMTP cifrada
+// de la configuración (plan 03 §2.3).
+const CLAVES_SECRETAS = /^(password|contrasena|contrasenaCifrada)$/i;
+const sinSecretos = (clave: string, valor: unknown) => (CLAVES_SECRETAS.test(clave) && valor != null ? "***" : valor);
+
 // Se usa la fuente de datos (`event.dataSource`) y no `event.manager`: el registro se escribe sin esperar (void), así que
 // puede terminar después de que la transacción que lo disparó haya liberado su conexión.
 // `nombreEntidad` viene de `event.metadata`: con `repo.update(criterio, cambios)` TypeORM pasa en `entity` el objeto plano
@@ -25,10 +30,10 @@ const nuevaOperacion = async (dataSource:DataSource,entity:any,funcionamiento:Fu
     let dataJSON:string;
     if(name=="Archivo"){
         const {data,...entitySinDatosArchivo}=entity;
-        dataJSON=JSON.stringify(entitySinDatosArchivo);
+        dataJSON=JSON.stringify(entitySinDatosArchivo, sinSecretos);
     }
     else{
-        dataJSON=JSON.stringify(entity);
+        dataJSON=JSON.stringify(entity, sinSecretos);
     }
     if(dataJSON.length>60000){
         dataJSON="DEMASIADA INFORMACION. SE DECARTA PORQUE GENERA BUCLE INFINITO.";
@@ -40,7 +45,8 @@ const nuevaOperacion = async (dataSource:DataSource,entity:any,funcionamiento:Fu
     const  logOp = new LogFuncionamiento;
     logOp.data=dataJSON;
     logOp.entidadOrigen=name;
-    logOp.idOrigen=id;
+    // Entidades sin id numérico (Configuracion: su clave es la sección, que va en `data`) se registran con 0
+    logOp.idOrigen=Number.isInteger(id) ? id : 0;
     logOp.funcionamiento=funcionamiento;
     const sesionId=entity.sesionId;
     if(entity.estatus !== undefined){ 

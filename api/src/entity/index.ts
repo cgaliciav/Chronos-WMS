@@ -4,6 +4,7 @@ import { Archivo } from "./Archivo";
 import { Area } from "./Area";
 import { Bodega } from "./Bodega";
 import { Comentario } from "./Comentario";
+import { Configuracion } from "./Configuracion";
 import { FacturaDetalle } from "./FacturaDetalle";
 import { FacturaTipo } from "./FacturaTipo";
 import { Grupo } from "./Grupo";
@@ -38,7 +39,7 @@ import { Usuario } from "./Usuario";
 import { GeneralSubscriber } from "../subscriber/suscriberLog";
 
 export const ENTIDADES = [
-  Archivo, Area, Bodega, Comentario, FacturaDetalle, FacturaTipo, Grupo, GrupoDetalle,
+  Archivo, Area, Bodega, Comentario, Configuracion, FacturaDetalle, FacturaTipo, Grupo, GrupoDetalle,
   InventarioActual, InventarioActualHistorico, InventarioDetalle, LogFuncionamiento, LogGeneral,
   LogPeticiones, Movimiento, MovimientoRelacion, MovimientoTipo, Notificacion, Operacion, OperacionDetalle, OperacionPrecio, Parametros,
   PrecioTipo, Producto, ProductoCaracteristica, ProductoClave, ProductoInventariado, ProductoPrecio,

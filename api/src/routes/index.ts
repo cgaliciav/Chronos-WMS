@@ -8,6 +8,7 @@ import areas from "./areas.Routes";
 import auth from "./autorizaciones.Routes";
 import bodegas from "./bodegas.Routes";
 import comentarios from "./comentarios.Routes";
+import configuracion from "./configuracion.Routes";
 import facturaTipo from "./facturaTipos.Routes";
 import grupos from "./grupos.Routes";
 import inventarioActual from "./inventarioActual.Routes";
@@ -36,6 +37,7 @@ routes.use("/area", areas);
 routes.use("/auth", auth);
 routes.use("/warehouse", bodegas);
 routes.use("/comments", comentarios);
+routes.use("/config", configuracion);
 
 routes.use("/invoice-kind", facturaTipo);
 routes.use("/groups", grupos);
