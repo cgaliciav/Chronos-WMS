@@ -21,7 +21,12 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/api': { target: 'http://localhost:4100', changeOrigin: true },
+      // Igual que el nginx de producción (`proxy_pass …/;`): el API monta sus rutas en `/`, sin el prefijo `/api`.
+      '/api': {
+        target: 'http://localhost:4100',
+        changeOrigin: true,
+        rewrite: (ruta) => ruta.replace(/^\/api/, ''),
+      },
     },
   },
   build: {
