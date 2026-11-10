@@ -8,9 +8,9 @@ Arquitectura detallada: `docs/front/arquitectura.md`. Fallos conocidos: `docs/ha
 **Estado del plan 01:** fases 0-6 hechas (Vite + TypeScript, React 19 + Router 8 + Zustand, antd 6 + dayjs, layout de
 antd puro sin Clean UI y todas las páginas en TS). Siguiente: fase 7 (e2e con Playwright, CI, cobertura).
 Rutas, roles y endpoints: `docs/front/inventario-rutas.md`; verificación manual: `docs/front/checklist-humo.md`.
-**Versión y changelog:** la versión está en `package.json` (4.0.0 desde el cierre de las fases 0-6). Anota cada cambio
-visible en la sección `[Sin publicar]` de `front/CHANGELOG.md`; `deploy-production.sh` sube el parche al desplegar,
-los saltos de mayor o menor se hacen a mano (`npm version x.y.z --no-git-tag-version`).
+**Versión y changelog:** la versión está en `package.json` (v4.0.0 desde el cierre de las fases 0-6) y sigue las
+reglas de versionado del `CLAUDE.md` raíz (`vX.Y.Z`, sufijos `-d`/`-s`). Anota cada cambio visible en la sección
+`[Sin publicar]` de `front/CHANGELOG.md`.
 
 Scripts (Node 24, `nvm use`): `npm run dev` (puerto 3000, proxy `/api` → `http://localhost:4100`),
 `npm run build` (`tsc -b` + `vite build` a `build/`), `npm run preview`, `npm run lint` (ESLint 10, 0 errores

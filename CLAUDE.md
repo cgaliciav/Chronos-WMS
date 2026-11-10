@@ -27,6 +27,27 @@ No hay `node_modules` ni base de datos en este repositorio; cada app se instala 
   listan las variables.
 - Antes de proponer una refactorización grande, revisa si ya está planificada en `docs/planes/`.
 
+## Versionado (obligatorio en `api/` y `front/`)
+
+Cada app lleva su propia versión en su `package.json`. Reglas que **siempre** se siguen:
+
+1. El formato es siempre **`vX.Y.Z`**: en tags, changelogs, commits y comunicación. En `package.json` se guarda sin la
+   `v` (`"version": "4.0.0"`) porque npm no la admite.
+2. **Mayor (`vX.0.0`)**: cambios drásticos en la personalidad, el objetivo principal, el lenguaje o el stack utilizado.
+3. **Menor (`v0.Y.0`)**: adición de nuevas capacidades, pautas o integración de una nueva herramienta.
+4. **Parche (`v0.0.Z`)**: corrección de errores, ajuste de tono o aclaración de funcionamiento.
+
+Sufijo según el entorno:
+
+- **Desarrollo:** termina en **`-d`**, p. ej. `v4.0.0-d`.
+- **Staging:** termina en **`-s`**, p. ej. `v2.80.0-s`.
+- **Producción:** sin sufijo, p. ej. `v4.0.0`.
+
+Al subir Mayor se reinician Menor y Parche (`v2.80.3` → `v3.0.0`); al subir Menor se reinicia Parche. Cambia la versión
+con `npm version X.Y.Z --no-git-tag-version` (o `X.Y.Z-d` / `X.Y.Z-s`) para que `package.json` y `package-lock.json`
+queden iguales, y anota el cambio en el changelog de la app (`front/CHANGELOG.md`). Elige el nivel por el cambio más
+grande que incluya la versión.
+
 ## Estado de la documentación
 
 - `docs/decisiones.md`: decisiones tomadas por el propietario (Vite+npm, Zustand, TypeScript, sin tema

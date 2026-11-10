@@ -1,13 +1,13 @@
 # Changelog · Front
 
 Cambios notables del front de Chronos-WMS. El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
-y la numeración, [versionado semántico](https://semver.org/lang/es/): **mayor** para cambios que rompen el
-despliegue, el contrato con el API o el uso de la aplicación; **menor** para funciones nuevas; **parche** para
-correcciones.
+y la numeración, las reglas de versionado del [`CLAUDE.md` raíz](../CLAUDE.md): `vX.Y.Z`; **mayor** para cambios
+drásticos de objetivo, lenguaje o stack; **menor** para capacidades, pautas o herramientas nuevas; **parche** para
+correcciones y aclaraciones; sufijo `-d` en desarrollo y `-s` en staging.
 
 La versión vive en `package.json` (la usa Sentry como `release`, `chronos-wms-front@<versión>`).
 `deploy-production.sh` sube el **parche** en cada despliegue a producción (`npm version patch`) y crea el tag
-`v<versión>`; los saltos de mayor o menor se hacen a mano con `npm version <x.y.z> --no-git-tag-version` y se anotan aquí.
+`v<versión>`.
 Los códigos `F<n>` remiten a [`docs/hallazgos-codigo.md`](../docs/hallazgos-codigo.md) y los `D<n>` a las decisiones del
 [plan 01](../docs/planes/01-front-actualizacion-antd.md).
 

@@ -10,6 +10,8 @@ migraciones), `npm run typecheck`. Guía completa en `docs/api/pruebas.md`.
 Esquema: **migraciones** (`src/migration/`, `npm run migration:show|run|revert|generate` en desarrollo;
 `node build/migrar.js show|run|revert` en la imagen); `DB_SYNCRO=false`. Despliegue: `./desplegar.sh pruebas|produccion`.
 Rendimiento: `npm run rendimiento` (`docs/api/rendimiento.md`).
+Versión: `package.json` (`helpers/paquete.ts`), con las reglas de versionado del `CLAUDE.md` raíz (`vX.Y.Z`,
+sufijos `-d` en desarrollo y `-s` en staging).
 
 ## Mapa del código
 
