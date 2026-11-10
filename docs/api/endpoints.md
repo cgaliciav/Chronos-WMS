@@ -54,6 +54,12 @@ los marcados con ⚠.
 - ⚠ Retirados `GET /groups/export-to-supabase/:id` y `GET /current-inventory/export-to-supabase/:id` (el front no los usaba).
 - ⚠ `POST /auth/logout` revoca el token: después, ese token responde 401 ("Sesión terminada").
 
+**Cambios de v2.83.3 (hallazgos M14, L19, L12, L3):**
+- `filtered` es el conteo filtrado en todos los listados (antes el tamaño de página en `list-catalog-*` y el total sin
+  filtrar en `active-activity-list`; el front no lo usa).
+- Los listados con joins aceptan `sortField` sin alias o ausente (antes 500).
+- ⚠ `GET /` responde `{ estado: "ok" }` y `GET /auth/version` `{ version }` (sin `name`; el front solo lee `version`).
+
 **Cambios de la fase 7 (v2.83.0, notificaciones):**
 - Nuevo recurso `/notifications` (sección "Notificaciones"). Requiere la migración `Notificacion`.
 - `POST /reports/by-group`, `/by-project` y `/by-project-final` responden igual (`{ message }`, el texto menciona el
@@ -94,14 +100,17 @@ servicio. La tabla `inventario_detalle` se conserva para los grupos antiguos que
 
 Contrato de listados `*/list-antd` y `*/list-by-*`: body `{ sortField, sortOrder, pagination:{current,pageSize}, filters }`
 → `{ results, filtered, pagination:{ current, pageSize, total, totalItems } }`
-(`CommonController.listaTabla*`).
+(`CommonController.listaTabla*`). `filtered` y `total` = filas que cumplen los filtros; `totalItems` = filas sin filtros
+de la tabla (en los catálogos de inventario, igual a `total`). Un `sortField` sin alias se aplica a la entidad
+principal; sin `sortField`, orden por su `id`.
 
 ## Autenticación (`/auth`)
 | Método | Ruta | Roles | Controlador |
 |---|---|---|---|
 | POST | `/auth/login` | — | `Auth.login` body `{c, p, ip}` → `{t}` (JWT 12 h con `{ui,u,si}`) |
 | POST | `/auth/logout` | jwt | `Auth.logout` (marca `Sesion.fechaFin`; `checkJwt` rechaza después ese token) |
-| GET | `/auth/version`, `/` | — | nombre y versión del paquete |
+| GET | `/auth/version` | — | `{ version }` (pública: la muestra el login) |
+| GET | `/` | — | `{ estado: "ok" }` (comprobación de vida) |
 
 ## Movimientos (`/activity`)
 | Método | Ruta | Roles | Controlador |

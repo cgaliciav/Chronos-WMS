@@ -52,6 +52,7 @@ Los ids fijos están en `SEMILLA`.
 | `src/test/relaciones.int.test.ts` | fase 3: relaciones origen→derivado, saldos, FIFO, `strict`, transferencias, deshacer con derivados, compras/bajas, modo de compatibilidad con legados, listado de pendientes, atomicidad, edición de proyecto |
 | `src/test/rutas.int.test.ts` | fase 5: lee `src/routes`, llama a todas las rutas con token de admin y falla si alguna da el 404 de Express o se queda colgada; comprueba también que todos los `*.Routes.ts` estén montados |
 | `src/test/humoArchivosReportes.int.test.ts` | fase 5: subida a `/item/file` (multer), original y miniaturas (sharp), límite de tamaño y un reporte `.xlsx` con fotos (exceljs) |
+| `src/test/conteosYOrden.int.test.ts` | hallazgos M14, L19 y L12: `filtered` = conteo filtrado, orden por defecto y sin alias en listados con joins, proyectos internos/externos |
 | `src/test/notificaciones.int.test.ts` | fase 7: reporte que notifica al terminar y al fallar (y su descarga), conteo, lectura y `read-all`, aislamiento entre usuarios, SSE con un servidor real, avisos de vencimiento (una vez, sin legados ni devueltos) y retención |
 | `src/test/formaRespuestas.int.test.ts` | fase 6: instantánea (`__snapshots__/`) de las claves y tipos del JSON de 30 endpoints; si un cambio la altera a propósito, revisa el diff y actualízala con `npx jest --selectProjects integration -u formaRespuestas` |
 | `src/test/rendimiento.ts` (`npm run rendimiento`) | no es una prueba: medición con autocannon, ver `docs/api/rendimiento.md` |
