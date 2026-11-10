@@ -54,6 +54,8 @@ los marcados con ⚠.
 - ⚠ Retirados `GET /groups/export-to-supabase/:id` y `GET /current-inventory/export-to-supabase/:id` (el front no los usaba).
 - ⚠ `POST /auth/logout` revoca el token: después, ese token responde 401 ("Sesión terminada").
 
+**Cambios de v2.87.0 (plan 03, fase 2):** los correos toman remitente, plantillas y marca de `/config`; `POST /config/correo/prueba`; el logo de los reportes sale de `reportes.logoId`.
+
 **Cambios de v2.86.0 (plan 03, fase 1):** nuevo recurso `/config` (sección "Configuración"), rol `CONFIGURACION-EDITAR`,
 migración `Configuracion`. v2.85.0 (fase 0): correos con "Chronos WMS" en lugar del nombre del cliente.
 
@@ -235,6 +237,7 @@ Una sección por fila: `marca`, `correo`, `reportes`, `regional` (campos y valor
 | GET | `/config/public/logo`, `/config/public/favicon` | ninguna | PNG de marca (solo archivos de tipo `MARCA-*`); sin configurar, el icono de Chronos WMS |
 | GET | `/config` | `ADMINISTRADOR`/`CONFIGURACION-EDITAR` | `{ marca, correo, reportes, regional }`, cada una `{ valor, version }`. En `correo.transporte` nunca sale la contraseña: `tieneContrasena` |
 | PUT | `/config/:seccion` | igual | Body `{ version, valor }` → `{ valor, version }`. 400 `{ errores: [{ campo, mensaje }] }` si no valida (campos desconocidos incluidos), 404 sección desconocida, 409 `{ version }` si otra persona guardó antes. En `correo.transporte.contrasena`: ausente = se conserva, `null` = se borra, texto = se cifra (400 sin `CONFIG_CLAVE`) |
+| POST | `/config/correo/prueba` | igual | Envía un correo de prueba al usuario que lo pide con la configuración guardada → `{ enviado, transporte: "bd"\|"anulado"\|"entorno", destino, messageId, respuesta }`; 502 `{ message, transporte }` si el SMTP falla |
 | POST | `/config/marca/logo`, `/config/marca/favicon`, `/config/reportes/logo` | igual | multipart `file` (PNG/JPEG/WebP ≤ 2 MiB; SVG no) → la sección actualizada. Se normaliza a PNG (logo ≤ 512 px, favicon 192 px, reportes ≤ 512×256) y se borra la imagen anterior |
 
 ## Reportes (`/reports`)

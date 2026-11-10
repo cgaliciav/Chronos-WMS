@@ -181,7 +181,14 @@ alternativa temporal documentada del paso 3); suites verdes; checklist de humo 0
 **Aceptación:** `npm test` y `npm run typecheck` verdes; la migración reproduce la entidad (`test:int`);
 `GET /config/public` responde con "Chronos WMS" en una BD recién migrada.
 
-### Fase 2 · API: correo y reportes desde la configuración
+### Fase 2 · API: correo y reportes desde la configuración ✅ (hecha el 2026-11-10, API v2.87.0)
+
+> **Resultado y desviaciones:** `CorreoService` + reglas puras en `services/reglas/correo.ts`; `EnviarMail` queda como
+> fachada. La cabecera de Postmark se conserva **solo** en el transporte `entorno` (`SMTP_*`), que es el que usa hoy
+> producción: quitarla antes de cargar la configuración de Sony (fase 5) podría cortar sus envíos; en `bd` va en
+> `cabeceras`. El logo histórico de `ARCHIVOS_AUXILIARES` sigue como segunda opción hasta la fase 5 (el paso 4 lo
+> retiraba ya; se deja para no cambiar los reportes de Sony antes de cargar su marca). `.env.test` define
+> `SMTP_ANULAR`: las pruebas nunca escriben a un servidor real.
 
 1. `enviarMail.ts` → `services/CorreoService.ts`: transporte construido desde `correo.transporte` (o `SMTP_ANULAR`,
    o `SMTP_*` como respaldo) y **recreado cuando cambia la `version`**; sin cabecera de Postmark fija (va en

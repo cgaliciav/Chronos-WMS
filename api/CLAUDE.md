@@ -28,6 +28,7 @@ src/migration/          migraciones (baseline idempotente, MovimientoRelacion, N
 src/services/           MovimientoService (registrar/deshacer/relacionar, transaccional), guardasRelacion,
                         NotificacionService (crear/listar/marcar, emisor para SSE, vencimientos y retención cada 6 h),
                         ConfiguracionService (configuración por cliente del plan 03, caché 30 s, secreto SMTP cifrado), PasswordService,
+                        CorreoService (transporte bd/anulado/entorno y plantillas; helpers/enviarMail.ts es su fachada),
                         reglas/efectosInventario.ts, reglas/planificarRelaciones.ts y reglas/notificaciones.ts (puras)
 src/routes/*.Routes.ts  un router por recurso; cada ruta lleva [checkJwt, checkRole([...])]; los ids numéricos usan
                         `"/x/:id", soloDigitos("id")` (middlewares/rutas.ts): Express 5 no admite `:id([0-9]+)`
@@ -117,7 +118,7 @@ Documentación detallada: `docs/api/modelo-de-datos.md`, `docs/api/tipos-de-movi
 Ver `.env.example`. Imprescindibles: `JWTSECRET`, `SALT_ROUNDS`, `DB_HOST/PORT/USER/PASSWORD/DATABASE_NAME`,
 `DB_SYNCRO` (**`false`**: el esquema lo cambian las migraciones), `DB_LOGGING`,
 `PORT_ALMACEN_API`, rutas de archivos (`RUTA_ARCHIVOS`, `RUTA_REPORTES`, `UPLOADS`, `ARCHIVOS_AUXILIARES`,
-`IMAGENES_IMPORTACION`), `SMTP_*`, `SOPORTE_CORREO`, `CONFIG_CLAVE`, `DIAS_CUARENTENA`, `HORAS_PASSWORD_TEMPORAL`, `CACHE_ARCHIVOS_DIAS`, `REPORTES_DIAS`, `LOG_NIVEL`
+`IMAGENES_IMPORTACION`), `SMTP_*`, `SMTP_ANULAR` (pruebas y staging), `SOPORTE_CORREO`, `CONFIG_CLAVE`, `DIAS_CUARENTENA`, `HORAS_PASSWORD_TEMPORAL`, `CACHE_ARCHIVOS_DIAS`, `REPORTES_DIAS`, `LOG_NIVEL`
 (o `LOG_CONSOLE_VERBOSE`).
 `ENV_FILE=.env.test npm run migration:show` apunta `src/migrar.ts` a otro archivo de variables.
 

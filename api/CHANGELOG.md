@@ -9,6 +9,21 @@ La versión vive en `package.json` (la devuelve `/auth/version`, y Sentry la usa
 `desplegar.sh` publica una versión `X.Y.Z-d` como `X.Y.Z` y, si ya no lleva sufijo, sube el parche. Contrato con el
 front: [`docs/api/endpoints.md`](../docs/api/endpoints.md). Plan: [`docs/planes/02-api-relacion-movimientos.md`](../docs/planes/02-api-relacion-movimientos.md).
 
+## [2.87.0-d] - Sin publicar
+
+Plan 03, fase 2: correo y logo de reportes desde la configuración. Variable nueva `SMTP_ANULAR`.
+
+### Añadido
+
+- Los correos usan el remitente (`"nombre" <correo>`) y las plantillas de la sección `correo` (con `{{variables}}`;
+  sin plantilla propia, las del producto) y el nombre de la marca, sin reiniciar al cambiarlos.
+- Transporte SMTP: `SMTP_ANULAR` (`host:puerto`, staging y desarrollo) gana sobre todo y no lleva credenciales; si no,
+  el de la configuración (contraseña descifrada con `CONFIG_CLAVE`); si no, las variables `SMTP_*` de siempre. Al
+  arrancar se registra cuál se usa (`bd`, `anulado` o `entorno`).
+- `POST /config/correo/prueba`: correo de prueba al usuario que lo pide (502 con el error SMTP si falla).
+- El logo de los reportes sale de `reportes.logoId`; sin él, el histórico de `ARCHIVOS_AUXILIARES` (temporal) o el de
+  Chronos WMS.
+
 ## [2.86.0-d] - Sin publicar
 
 Plan 03, fase 1: configuración por cliente servida por el API. **Migración nueva** `1794338006363-Configuracion`
