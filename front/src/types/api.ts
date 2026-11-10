@@ -203,9 +203,15 @@ export interface RespuestaMensaje {
 export interface Notificacion {
   id: number
   titulo: string
-  mensaje?: string
+  mensaje?: string | null
+  /** `reporte` (Excel listo o fallido), `prestamo` (vencido) o `sistema`. */
+  tipo?: 'reporte' | 'prestamo' | 'sistema'
   fecha: string
   leida: boolean
-  /** Ruta del front a la que lleva la notificación (p. ej. `/prestamos/operacion?uid=3`). */
-  url?: string
+  fechaLectura?: string | null
+  /**
+   * Adónde lleva: una ruta del front (`/prestamos/operacion?uid=3`) o un recurso del API que empieza por `/file/`
+   * (`/file/report/x.xlsx`), que se abre con el token (`urlNotificacion`).
+   */
+  url?: string | null
 }

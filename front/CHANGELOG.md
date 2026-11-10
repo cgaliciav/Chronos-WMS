@@ -15,6 +15,19 @@ Los códigos `F<n>` remiten a [`docs/hallazgos-codigo.md`](../docs/hallazgos-cod
 
 Pendiente: fase 7 del plan 01 (pruebas e2e con Playwright, CI y cobertura).
 
+## [4.2.0-d] - 2026-11-10
+
+Notificaciones del API (plan 02 fase 7, D14). Para activarlas: `VITE_NOTIFICACIONES=on` cuando el API v2.83 esté
+desplegado con su migración.
+
+### Añadido
+
+- La campana recibe las notificaciones nuevas al momento por Server-Sent Events (`/notifications/stream`) y, si el
+  canal no está disponible o se cierra, vuelve a pedir la lista cada 60 s.
+- "Marcar todas como leídas" (`PUT /notifications/read-all`).
+- Las notificaciones de reportes abren la descarga del API en otra pestaña con el token (`/file/report/…?auth=`); las
+  demás siguen navegando a su ruta del front.
+
 ## [4.1.0-d] - 2026-11-10
 
 ### Cambios que rompen
