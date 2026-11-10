@@ -238,7 +238,14 @@ muestran la nueva marca sin rebuild; con el API apagado el login muestra "Chrono
 **Aceptación:** un administrador cambia nombre, logo, colores, plantillas y SMTP desde la pantalla; el cambio se ve
 al recargar (marca) o en el siguiente correo/reporte, sin redesplegar; un usuario sin el rol recibe `/auth/401`.
 
-### Fase 5 · Despliegue, Sony como primer cliente configurado y alta de clientes
+### Fase 5 · Despliegue, Sony como primer cliente configurado y alta de clientes ✅ (código y procedimiento hechos el 2026-11-10; API v2.88.0, front v4.7.0)
+
+> **Resultado:** exportar/importar (API y botones en `/configuracion`); `infra/clientes/sony/configuracion.json`
+> (validado por `test:int`) con la marca y los asuntos históricos; staging con `SMTP_ANULAR=mailpit:2525` (mailpit escucha
+> en 2525, no 1025), `CONFIG_CLAVE` propia y verificación del transporte; procedimiento en
+> `procedimiento-migracion-produccion.md`. Se retiró el logo histórico de los reportes. **Pendiente (lo hace una
+> persona):** ensayar en staging y ejecutar el procedimiento en producción. Al hacerlo apareció que
+> `update-staging.sh` leía la versión de `GET /` (cambiado por L3): corregido.
 
 1. Exportar/importar configuración: `GET /config/export` (sin secretos) y `POST /config/import` (admin), para
    clonar la configuración entre entornos y dar de alta clientes.

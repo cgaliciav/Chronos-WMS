@@ -9,6 +9,28 @@ La versión vive en `package.json` (la devuelve `/auth/version`, y Sentry la usa
 `desplegar.sh` publica una versión `X.Y.Z-d` como `X.Y.Z` y, si ya no lleva sufijo, sube el parche. Contrato con el
 front: [`docs/api/endpoints.md`](../docs/api/endpoints.md). Plan: [`docs/planes/02-api-relacion-movimientos.md`](../docs/planes/02-api-relacion-movimientos.md).
 
+## [2.88.0-d] - Sin publicar
+
+Plan 03, fase 5: exportar/importar la configuración y retirada del logo histórico. Procedimiento de despliegue en
+`docs/api/procedimiento-migracion-produccion.md` ("Plan 03"); configuración de Sony lista en `infra/clientes/sony/`.
+
+### Añadido
+
+- `GET /config/export` (sin secretos, imágenes en base64) y `POST /config/import` (todo o nada en la validación;
+  conserva la contraseña SMTP del destino), para copiar la configuración entre entornos y dar de alta clientes.
+
+### Cambiado
+
+- Los reportes ya no buscan el logo histórico en `ARCHIVOS_AUXILIARES`: el de cada cliente se carga por configuración
+  (el de Sony, con la importación del procedimiento). La prueba-guardia ya no tiene excepciones.
+- Las imágenes de marca se aceptan por su contenido (PNG, JPEG o WebP), no por el tipo MIME declarado.
+
+### Corregido
+
+- Staging: `update-staging.sh` leía la versión de `GET /`, que desde v2.83.3 ya no la devuelve (L3): ahora usa
+  `/auth/version`. Además fija `SMTP_ANULAR=mailpit:2525`, genera su `CONFIG_CLAVE` y se detiene si el correo no va
+  a mailpit.
+
 ## [2.87.0-d] - Sin publicar
 
 Plan 03, fase 2: correo y logo de reportes desde la configuración. Variable nueva `SMTP_ANULAR`.

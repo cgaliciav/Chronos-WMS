@@ -1,0 +1,64 @@
+{
+  "formato": "chronos-wms-config",
+  "version": 1,
+  "secciones": {
+    "marca": {
+      "nombreApp": "Sony Almacén México",
+      "nombreCorto": "Sony Almacén",
+      "organizacion": "Teleset / Sony México",
+      "textoBienvenida": "Bienvenido a Sony Almacén México",
+      "textoAyudaLogin": "Si no recuerda su acceso, por favor comuníquese con el administrador del sistema",
+      "soporteCorreo": "soporte@exogrid.io",
+      "creditoProveedor": {
+        "texto": "EXOGRID TECHNOLOGY",
+        "url": "https://exogrid.io/software",
+        "visible": true
+      },
+      "tema": {
+        "colorPrimario": "#4b7cf3",
+        "colorEnlaceHover": "#42baf9",
+        "fuente": "Mukta",
+        "radio": 2
+      }
+    },
+    "correo": {
+      "transporte": null,
+      "remitente": {
+        "nombre": "Almacén Sony MX",
+        "correo": "telesetalmacen@exogrid.xyz"
+      },
+      "plantillas": {
+        "nuevoUsuario": {
+          "asunto": "BIENVENIDO AL ALMACEN DE SONY MX",
+          "cuerpo": "Bienvenido a {{nombreApp}},\n\nFuiste dado de alta por el administrador, tu acceso es mediante los siguientes datos:\ncorreo: {{correo}}\ncontraseña temporal: {{clave}}\n\nEs una contraseña temporal: vence en {{horas}} horas y al entrar el sistema te pedirá elegir una nueva. Si venció, pide a tu administrador que genere otra.\n\n\nEste correo se genera automáticamente; si tienes problemas técnicos con el sistema escríbenos a {{soporteCorreo}}."
+        },
+        "nuevoPassword": {
+          "asunto": "NUEVA CONTRASEÑA TEMPORAL ALMACEN SONY MX",
+          "cuerpo": "El administrador generó una nueva contraseña para tu acceso:\ncorreo: {{correo}}\ncontraseña temporal: {{clave}}\n\nEs una contraseña temporal: vence en {{horas}} horas y al entrar el sistema te pedirá elegir una nueva. Si venció, pide a tu administrador que genere otra.\n\n\nEste correo se genera automáticamente; si tienes problemas técnicos con el sistema escríbenos a {{soporteCorreo}}."
+        },
+        "reporteAnexo": {
+          "asunto": "GENERACION DE REPORTE EXITOSO - ALMACEN SONY",
+          "cuerpo": "En el archivo anexo encontrará el reporte solicitado: {{archivo}}\n\n\nEste correo se genera automáticamente; si tienes problemas técnicos con el sistema escríbenos a {{soporteCorreo}}."
+        },
+        "reporteDescarga": {
+          "asunto": "ALMACEN SONY MX - REPORTE PARA DESCARGA",
+          "cuerpo": "Se generó el siguiente reporte:\n\n{{archivo}}\n\nCopia y pega el enlace de descarga: {{enlace}}\n\nSi tienes dudas comunícate con tu administrador.\n\n\nEste correo se genera automáticamente; si tienes problemas técnicos con el sistema escríbenos a {{soporteCorreo}}."
+        },
+        "alerta": {
+          "asunto": "ALMACEN SONY MX - ALERTA",
+          "cuerpo": "Se generó la siguiente alerta en el sistema:\n\n{{alerta}}\n\nSi tienes dudas comunícate con tu administrador.\n\n\nEste correo se genera automáticamente; si tienes problemas técnicos con el sistema escríbenos a {{soporteCorreo}}."
+        }
+      }
+    },
+    "reportes": {},
+    "regional": {
+      "monedaPorDefecto": "MXN",
+      "monedas": [
+        "MXN",
+        "USD"
+      ],
+      "locale": "es-MX",
+      "zonaHoraria": "America/Mexico_City"
+    }
+  }
+}

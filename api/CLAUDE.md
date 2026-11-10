@@ -27,7 +27,8 @@ src/data-source.ts      AppDataSource (TypeORM 1.x) con opcionesDataSource() des
 src/migration/          migraciones (baseline idempotente, MovimientoRelacion, Notificacion) e index.ts con la lista MIGRACIONES
 src/services/           MovimientoService (registrar/deshacer/relacionar, transaccional), guardasRelacion,
                         NotificacionService (crear/listar/marcar, emisor para SSE, vencimientos y retención cada 6 h),
-                        ConfiguracionService (configuración por cliente del plan 03, caché 30 s, secreto SMTP cifrado), PasswordService,
+                        ConfiguracionService (configuración por cliente del plan 03: caché 30 s, secreto SMTP cifrado, imágenes,
+                        exportar/importar; ejemplo de cliente en infra/clientes/sony), PasswordService,
                         CorreoService (transporte bd/anulado/entorno y plantillas; helpers/enviarMail.ts es su fachada),
                         reglas/efectosInventario.ts, reglas/planificarRelaciones.ts y reglas/notificaciones.ts (puras)
 src/routes/*.Routes.ts  un router por recurso; cada ruta lleva [checkJwt, checkRole([...])]; los ids numéricos usan

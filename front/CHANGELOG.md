@@ -15,6 +15,15 @@ Los códigos `F<n>` remiten a [`docs/hallazgos-codigo.md`](../docs/hallazgos-cod
 
 Pendiente: fase 7 del plan 01 (pruebas e2e con Playwright, CI y cobertura).
 
+## [4.7.0-d] - 2026-11-10
+
+Plan 03, fase 5.
+
+### Añadido
+
+- `/configuracion`: botones **Exportar** (descarga el JSON sin secretos) e **Importar** (aplica uno y recarga la marca y
+  las pestañas).
+
 ## [4.6.0-d] - 2026-11-10
 
 Plan 03, fase 4: pantalla de configuración.

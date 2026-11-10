@@ -82,6 +82,30 @@ docker run -d --restart unless-stopped --env-file "$SECRETOS" -e DB_SYNCRO=false
 docker logs -f almacen-backend-1        # no debe aparecer "hay migraciones pendientes" ni "DB_SYNCRO=true"
 ```
 
+## Plan 03: configuración por cliente y marca de Sony (API v2.85-v2.88, front v4.4-v4.7)
+
+Desde estas versiones la identidad ("Chronos WMS" por defecto) y la configuración de correo y reportes viven en la
+tabla `configuracion`. **Hazlo todo en la misma ventana de despliegue** para que los usuarios de Sony no lleguen a ver
+"Chronos WMS":
+
+1. **Antes de desplegar**, en `api-secrets.env`:
+   - Añade `CONFIG_CLAVE` (`openssl rand -base64 32`) y guarda una copia fuera del servidor: sin ella no se puede
+     descifrar una contraseña SMTP guardada en la configuración.
+   - Comprueba que **no** existe `SMTP_ANULAR` (solo staging y desarrollo).
+   - Mantén `SMTP_HOST/PORT/USER/PASS`: la configuración de Sony usa el SMTP del entorno (`transporte: null`).
+2. Aplica las migraciones pendientes (pasos de arriba): `PasswordTemporal` y `Configuracion`.
+3. Despliega API y front.
+4. Prepara `infra/clientes/sony/sony.import.json` (añade el logo de reportes: `infra/clientes/sony/README.md`) e
+   impórtalo: **Configuración → Importar** como administrador.
+5. Verifica:
+   - El login dice "Bienvenido a Sony Almacén México" y la pestaña "Sony Almacén".
+   - **Configuración → Correo → Enviar correo de prueba** llega a tu buzón; en `docker logs` aparece
+     `Correo: transporte entorno`.
+   - Un reporte por grupo lleva el logo de Sony.
+6. Desde aquí el logo histórico de `ARCHIVOS_AUXILIARES` ya no se usa (el de reportes sale de la configuración).
+
+Rollback de la configuración: **Configuración → Exportar** antes de cambiarla; para volver, importa ese archivo.
+
 ## Consultas de control
 
 ```sql
