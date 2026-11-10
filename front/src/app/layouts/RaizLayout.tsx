@@ -32,7 +32,7 @@ export default function RaizLayout() {
 
   // Título por defecto; efecto de layout para que lo sobrescriba el <Titulo> de la página (efecto normal).
   useLayoutEffect(() => {
-    document.title = `${PREFIJO_TITULO} | Sony México Almacén General`
+    document.title = PREFIJO_TITULO
   }, [pathname])
 
   useEffect(() => {
