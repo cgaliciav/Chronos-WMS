@@ -15,6 +15,13 @@ Los códigos `F<n>` remiten a [`docs/hallazgos-codigo.md`](../docs/hallazgos-cod
 
 Pendiente: fase 7 del plan 01 (pruebas e2e con Playwright, CI y cobertura).
 
+## [4.2.2-d] - 2026-11-10
+
+### Corregido
+
+- Las miniaturas de los listados de movimientos y la subida de archivos piden la URL del API con una sola barra
+  (`urlDelApi()`; antes `/api//file/…`, que el API con Express 5 respondía con 404, hallazgo M39).
+
 ## [4.2.1-d] - 2026-11-10
 
 ### Cambiado

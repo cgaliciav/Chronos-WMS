@@ -17,6 +17,12 @@ function configuracionApi() {
 
 export const apiURLBase = configuracionApi().url
 
+/**
+ * URL absoluta de un recurso del API para el navegador (`<img src>`, `Upload action`, `EventSource`). `apiURLBase` ya
+ * termina en `/`: `${apiURLBase}/file/...` daba `/api//file/...`, que Express 5 no reconoce (404).
+ */
+export const urlDelApi = (ruta: string) => `${apiURLBase}${ruta.replace(/^\/+/, '')}`
+
 if (import.meta.env.DEV) console.log(import.meta.env.MODE, apiURLBase)
 
 export const apiClient = axios.create({
