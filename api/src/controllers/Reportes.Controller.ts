@@ -1,10 +1,6 @@
-// import { fork, spawn } from "child_process"
 import { Request, Response, NextFunction } from "express";
-import { stat } from "fs";
+import { stat } from "fs/promises";
 import { AppDataSource } from "../data-source";
-
-// import MagicBellClient, { Notification } from "@magicbell/core";
-
 import { Usuario } from "../entity/Usuario";
 import EnviarMail from "../helpers/enviarMail";
 import { AppError } from "../helpers/errorClases";
@@ -14,295 +10,119 @@ import {
   reportePorProyecto,
   reportePorPrestamosRentasActivas,
   reportePorProyectoCompras,
-  reporteGeneral, 
+  reporteGeneral,
   reportePorGrupoFotoGrande
 } from "../helpers/excelFunctions";
 import { logger } from "../helpers/logger";
-// import CommonController, { ResultadoTabla } from "./common/Common.Controller"
-// import { funcionQueryListadoMovimientos,condicionesWhereAnd as grupoCondicionesWhereAnd } from "./Grupo.Controller"
+import NotificacionService from "../services/NotificacionService";
 
-/* 
-TODO: DEJAR LOS REPORTES EN EL SERVIDOR POR 15 DÍAS... MANDAR LOS LINKS POR CORREO ELECTRÓNICO. 
-    HACER EL CRON PARA BORRAR ARCHIVOS DE REPORTES CADA 15 DÍAS.
-    HACER EL CRON PARA BORRAR FOTOS CON MÁS DE 30 DÍAS.
+/** Quien pidió el reporte: recibe la notificación (plan 02 · fase 7) y el correo. */
+interface Destinatario {
+  usuarioId: number;
+  correo: string;
+}
 
-*/
+interface ArchivoReporte {
+  path: string;
+  nombreReporte: string;
+}
 
-// NPM package at https://www.npmjs.com/package/@magicbell/core
-// yarn add @magicbell/core
+const MENSAJE_EN_PROCESO = "El reporte se está generando. Te avisaremos al terminar y recibirás un correo con el reporte solicitado";
 
-const mandarArchivo = (
-  correo: string,
-  detalleArchivo: { path: string; nombreReporte: string }
-) => {
-  stat(detalleArchivo.path, async (err, filestats) => {
+/** Correo con el reporte: adjunto si pesa hasta 8 MiB; si no, un enlace de descarga. */
+const enviarPorCorreo = (correo: string, archivo: ArchivoReporte, tamano: number) => {
+  if (tamano > 8 * 1024 * 1024) {
+    EnviarMail.correorReporteDescarga(correo, {
+      filename: archivo.nombreReporte,
+      path: `${process.env.API_ALMACEN}/file/report/${archivo.nombreReporte}`,
+    });
+  } else {
+    EnviarMail.correoConAnexos(correo, [{ filename: "reporte.xlsx", path: archivo.path }]);
+  }
+};
 
-    // MagicBellClient.configure({
-    //   apiKey: process.env.MAGICBELL_API_KEY,
-    //   apiSecret: process.env.MAGICBELL_API_SECRET,
-    // })
+/**
+ * Genera un reporte en segundo plano (la petición ya respondió) y avisa al solicitante: notificación con el enlace
+ * de descarga (`/file/report/<nombre>`) y correo, o una notificación de error si falla. Nunca rechaza: la promesa
+ * corre sin `await` y un rechazo tiraría el proceso (hallazgo H8).
+ */
+const generarEnSegundoPlano = async (etiqueta: string, destinatario: Destinatario, generar: () => Promise<ArchivoReporte>) => {
+  try {
+    const archivo = await generar();
+    const { size } = await stat(archivo.path);
+    logger.info(`Reporte ${etiqueta} generado`, { archivo: archivo.nombreReporte, size });
+    await NotificacionService.crear(destinatario.usuarioId, {
+      tipo: "reporte",
+      titulo: "Reporte generado",
+      mensaje: archivo.nombreReporte,
+      url: `/file/report/${encodeURIComponent(archivo.nombreReporte)}`,
+    });
+    enviarPorCorreo(destinatario.correo, archivo, size);
+  } catch (error) {
+    logger.error(`Error al generar el reporte ${etiqueta}`, { error });
+    await NotificacionService.crear(destinatario.usuarioId, {
+      tipo: "reporte",
+      titulo: "Error al generar el reporte",
+      mensaje: `${etiqueta}: ${(error as Error)?.message ?? error}`,
+    }).catch((e) => logger.error("No se pudo notificar el error del reporte", { error: e }));
+  }
+};
 
-    if (err) {
-      logger.info(`No se puede leer el archivo: ${detalleArchivo.path}`, err);
-      // await Notification.create({
-      //   title: "ERROR al generar el reporte",
-      //   content: `${detalleArchivo.nombreReporte}`,
-      //   action_url: `${process.env.API_ALMACEN}/file/report/${detalleArchivo.nombreReporte}`,
-      //   recipients: [{ email: correo }],
-      // });
-
-    } else {
-      // DONE: MANDAR POR MAGICBELL
-
-      // await Notification.create({
-      //   title: "Reporte generado",
-      //   content: `${detalleArchivo.nombreReporte}`,
-      //   action_url: `${process.env.API_ALMACEN}/file/report/${detalleArchivo.nombreReporte}`,
-      //   recipients: [{ email: correo }],
-      // });
-
-      if (filestats.size > 8 * 1024 * 1024) {
-        logger.info(
-          "********mandarArchivo***************************************************************",
-          { detalleArchivo }
-        );
-        EnviarMail.correorReporteDescarga(correo, {
-          filename: `${detalleArchivo.nombreReporte}`,
-          path: `${process.env.API_ALMACEN}/file/report/${detalleArchivo.nombreReporte}`,
-        });
-      } else {
-        // adjuntar el archivo
-        EnviarMail.correoConAnexos(correo, [
-          { filename: "reporte.xlsx", path: detalleArchivo.path },
-        ]);
-      }
-    }
+const destinatarioDe = async (jwtPayload: { ui: number }): Promise<Destinatario> => {
+  const usuario = await AppDataSource.getRepository(Usuario).findOneOrFail({
+    where: { id: jwtPayload.ui },
+    select: { id: true, correo: true },
+    loadEagerRelations: false,
   });
+  return { usuarioId: usuario.id, correo: usuario.correo };
 };
-
-const funcionQueryReporteCierre = async (
-  body: any,
-  correo: string
-) => {
-  try {
-    // const { proyectoId, conFoto } = body;
-    logger.info("---- funcionQueryReporteCierre ----", { body });
-    const path = await reporteGeneral(body);
-    logger.info("************************ funcionQueryReporteCierre", {
-      path,
-    });
-    mandarArchivo(correo, path);
-  } catch (error) {
-    logger.error("************************ funcionQueryReporteCierre error", { error });
-    // const client = new MagicBellClient({
-    //   apiKey: process.env.MAGICBELL_API_KEY,
-    //   apiSecret: process.env.MAGICBELL_API_SECRET,
-    // });
-    // const notifications = client.getStore();
-
-    // const notification = await notifications.create({
-    //   title: "ERROR. REPORTE NO GENERADO",
-    //   content: `${error.message}`,
-    //   // actionUrl: `${process.env.API_ALMACEN}/file/report/${detalleArchivo.nombreReporte}`,
-    //   recipients: [{ email: correo }],
-    // });
-    // No se relanza: la promesa corre sin await y un rechazo tiraría el proceso (hallazgo H8).
-    // En la fase 7 (notificaciones propias) se avisará al usuario del fallo.
-  }
-};
-
-const funcionQueryMovimientosActivosReporteProyecto = async (
-  body: any,
-  correo: string
-) => {
-  try {
-    const path = await reportePorPrestamosRentasActivas(body);
-    logger.info("************************funcionQueryMovimientosActivosReporteProyecto", {
-      path,
-    });
-    mandarArchivo(correo, path);
-  } catch (error) {
-    logger.error("************************funcionQueryMovimientosActivosReporteProyecto error", { error });
-    // const client = new MagicBellClient({
-    //   apiKey: process.env.MAGICBELL_API_KEY,
-    //   apiSecret: process.env.MAGICBELL_API_SECRET,
-    // });
-    // const notifications = client.getStore();
-
-    // const notification = await notifications.create({
-    //   title: "ERROR. REPORTE NO GENERADO",
-    //   content: `${error.message}`,
-    //   // actionUrl: `${process.env.API_ALMACEN}/file/report/${detalleArchivo.nombreReporte}`,
-    //   recipients: [{ email: correo }],
-    // });
-    // No se relanza: la promesa corre sin await y un rechazo tiraría el proceso (hallazgo H8).
-    // En la fase 7 (notificaciones propias) se avisará al usuario del fallo.
-  }
-};
-
-const funcionQueryMovimientosReporteProyecto = async (
-  body: any,
-  correo: string
-) => {
-  try {
-    const condicion = (Array.isArray(body.movimientoTipoId) && body.movimientoTipoId.map(Number).includes(T.COMPRA));
-    const path = condicion ? await reportePorProyectoCompras(body) : await reportePorProyecto(body);
-    logger.info(`************************funcionQueryMovimientosReporteProyecto${condicion ? "COMPRAS" : ""}`, {
-      path,
-    });
-    mandarArchivo(correo, path);
-  } catch (error) {
-    logger.error("************************funcionQueryMovimientosReporteProyecto error", { error });
-    // const client = new MagicBellClient({
-    //   apiKey: process.env.MAGICBELL_API_KEY,
-    //   apiSecret: process.env.MAGICBELL_API_SECRET,
-    // });
-    // const notifications = client.getStore();
-
-    // const notification = await notifications.create({
-    //   title: "ERROR. REPORTE NO GENERADO",
-    //   content: `${error.message}`,
-    //   // actionUrl: `${process.env.API_ALMACEN}/file/report/${detalleArchivo.nombreReporte}`,
-    //   recipients: [{ email: correo }],
-    // });
-    // No se relanza: la promesa corre sin await y un rechazo tiraría el proceso (hallazgo H8).
-    // En la fase 7 (notificaciones propias) se avisará al usuario del fallo.
-  }
-};
-
-const funcionGenerarReportePorGrupo = async (body: any, correo: string) => {
-  try {
-    const path = body.fotoGrande ? await reportePorGrupoFotoGrande(body) : await reportePorGrupo(body);
-    logger.info(`************************funcionGenerarReportePorGrupo ${body.fotoGrande ? "FOTO GRANDE" : ""}`, {
-      path,
-    });
-    mandarArchivo(correo, path);
-  } catch (error) {
-    logger.error("************************funcionGenerarReportePorGrupo error", { error });
-    // const client = new MagicBellClient({
-    //   apiKey: process.env.MAGICBELL_API_KEY,
-    //   apiSecret: process.env.MAGICBELL_API_SECRET,
-    // });
-    // const notifications = client.getStore();
-    // const notification = await notifications.create({
-    //   title: "ERROR. REPORTE NO GENERADO",
-    //   content: `${error.message}`,
-    //   // actionUrl: `${process.env.API_ALMACEN}/file/report/${detalleArchivo.nombreReporte}`,
-    //   recipients: [{ email: correo }],
-    // });
-
-    // No se relanza: la promesa corre sin await y un rechazo tiraría el proceso (hallazgo H8).
-    // En la fase 7 (notificaciones propias) se avisará al usuario del fallo.
-  }
-};
-
-const funcionQueryMovimientosGeneral = () => { };
-
-const funcionQueryAntiguedadMovimientos = () => { };
 
 class ReporteController {
   // TODO GENERAR REPORTE DE MOVIMINETOS (ALTAS, BAJAS, COMPRAS, ETC, (NO INVENTARIOS, ) POR FECHA)
-  static reportePorGrupo = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
+  static reportePorGrupo = async (req: Request, res: Response, next: NextFunction) => {
     const { ...body } = req.body;
     const { jwtPayload } = res.locals;
-
     try {
-      jwtPayload.ui
-      funcionGenerarReportePorGrupo(
-        { ...body, nombreAlmacenista: jwtPayload.u },
-        (
-          await AppDataSource.getRepository(Usuario).findOneOrFail({ where: { id: jwtPayload.ui }, 
-            select: { id: true, correo: true },
-            loadEagerRelations: false /*cache:true,*/,
-          })
-        ).correo
+      const destinatario = await destinatarioDe(jwtPayload);
+      const datos = { ...body, nombreAlmacenista: jwtPayload.u };
+      void generarEnSegundoPlano(body.fotoGrande ? "por grupo (foto grande)" : "por grupo", destinatario, () =>
+        body.fotoGrande ? reportePorGrupoFotoGrande(datos) : reportePorGrupo(datos)
       );
-      res.json({
-        message:
-          "El reporte se está generando. En breve recibirás un correo con el reporte solicitado",
-      });
+      res.json({ message: MENSAJE_EN_PROCESO });
     } catch (error) {
       next(error);
     }
   };
 
-  static reportePorProyecto = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
+  static reportePorProyecto = async (req: Request, res: Response, next: NextFunction) => {
     const { activos = false, ...body } = req.body;
     const { jwtPayload } = res.locals;
-
     try {
+      const destinatario = await destinatarioDe(jwtPayload);
       if (activos) {
-        logger.info(
-          "funcionQueryMovimientosActivosReporteProyecto----funcionQueryMovimientosActivosReporteProyecto",
-          { activos, body }
-        );
-        funcionQueryMovimientosActivosReporteProyecto(
-          body,
-          (
-            await AppDataSource.getRepository(Usuario).findOneOrFail({ where: { id: jwtPayload.ui }, 
-              select: { id: true, correo: true },
-              loadEagerRelations: false /*cache:true,*/,
-            })
-          ).correo
-        );
+        void generarEnSegundoPlano("de préstamos y rentas activos", destinatario, () => reportePorPrestamosRentasActivas(body));
       } else {
-        funcionQueryMovimientosReporteProyecto(
-          body,
-          (
-            await AppDataSource.getRepository(Usuario).findOneOrFail({ where: { id: jwtPayload.ui }, 
-              select: { id: true, correo: true },
-              loadEagerRelations: false /*cache:true,*/,
-            })
-          ).correo
+        const compras = Array.isArray(body.movimientoTipoId) && body.movimientoTipoId.map(Number).includes(T.COMPRA);
+        void generarEnSegundoPlano(compras ? "por proyecto (compras)" : "por proyecto", destinatario, () =>
+          compras ? reportePorProyectoCompras(body) : reportePorProyecto(body)
         );
       }
-      res.json({
-        message:
-          "El reporte se está generando. En breve recibirás un correo con el reporte solicitado",
-      });
+      res.json({ message: MENSAJE_EN_PROCESO });
     } catch (error) {
       next(error);
     }
   };
-  //TODO GENERAR REPORTE DE CIERRRE (COMPRAS, RENTAS, DEVOLUCIONES, BAJAS JUSTIFICADAS E INJUSTIFICADAS, HOJA RESUMEN,TODO EN UN ARCHIVO...)
-  static reporteCierre = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
-    // const  body = req.body;
-    const { jwtPayload } = res.locals;
 
+  //TODO GENERAR REPORTE DE CIERRRE (COMPRAS, RENTAS, DEVOLUCIONES, BAJAS JUSTIFICADAS E INJUSTIFICADAS, HOJA RESUMEN,TODO EN UN ARCHIVO...)
+  static reporteCierre = async (req: Request, res: Response, next: NextFunction) => {
+    const { jwtPayload } = res.locals;
     try {
-      logger.info(
-        "---- funcionQueryReporteCierre ----",
-        { body: req.body }
-      );
-      funcionQueryReporteCierre(
-        req.body,
-        (
-          await AppDataSource.getRepository(Usuario).findOneOrFail({ where: { id: jwtPayload.ui }, 
-            select: { id: true, correo: true },
-            loadEagerRelations: false /*cache:true,*/,
-          })
-        ).correo
-      );
-      res.json({
-        message:
-          "El reporte se está generando. En breve recibirás un correo con el reporte solicitado",
-      });
+      const destinatario = await destinatarioDe(jwtPayload);
+      void generarEnSegundoPlano("de cierre", destinatario, () => reporteGeneral(req.body));
+      res.json({ message: MENSAJE_EN_PROCESO });
     } catch (error) {
       next(error);
     }
-
   };
 
   //TODO GENERAR REPORTE DE USO (CUANTO TIENE QUE SE REALIZÓ EL ULTIMO MOVIMIENTO QUE NO FUE INVENTARIO. EL ARTICULO NO DEBE ESTAR DADO DE BAJA)

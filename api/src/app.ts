@@ -6,7 +6,7 @@ import { errorMiddlewere } from "./middlewares/manejoErrores";
 import { pasadas } from "./middlewares/pasada";
 import { registrarPeticiones } from "./middlewares/registrarPeticiones";
 import pinoHttp from "pino-http";
-import { pinoBase } from "./helpers/logger";
+import { ocultarToken, pinoBase } from "./helpers/logger";
 import rateLimit from "express-rate-limit";
 import { Sentry, sentryActivo } from "./sentry";
 
@@ -22,6 +22,8 @@ export const crearApp = (opciones: { registrarPeticiones?: boolean } = {}) => {
       pinoHttp({
         logger: pinoBase,
         redact: ["req.headers.auth", "req.headers.authorization", "req.headers.cookie", "res.headers.t"],
+        // El token también puede ir en la URL (`?auth=`): no debe acabar en el log.
+        serializers: { req: (req) => ({ ...req, url: ocultarToken(String(req.url ?? "")) }) },
         customLogLevel: (_req, res, err) => (err || res.statusCode >= 500 ? "error" : res.statusCode >= 400 ? "warn" : "info"),
       })
     );

@@ -17,6 +17,7 @@ import { LogPeticiones } from "./LogPeticiones";
 import { Movimiento } from "./Movimiento";
 import { MovimientoRelacion } from "./MovimientoRelacion";
 import { MovimientoTipo } from "./MovimientoTipo";
+import { Notificacion } from "./Notificacion";
 import { Operacion } from "./Operacion";
 import { OperacionDetalle } from "./OperacionDetalle";
 import { OperacionPrecio } from "./OperacionPrecio";
@@ -39,7 +40,7 @@ import { GeneralSubscriber } from "../subscriber/suscriberLog";
 export const ENTIDADES = [
   Archivo, Area, Bodega, Comentario, FacturaDetalle, FacturaTipo, Grupo, GrupoDetalle,
   InventarioActual, InventarioActualHistorico, InventarioDetalle, LogFuncionamiento, LogGeneral,
-  LogPeticiones, Movimiento, MovimientoRelacion, MovimientoTipo, Operacion, OperacionDetalle, OperacionPrecio, Parametros,
+  LogPeticiones, Movimiento, MovimientoRelacion, MovimientoTipo, Notificacion, Operacion, OperacionDetalle, OperacionPrecio, Parametros,
   PrecioTipo, Producto, ProductoCaracteristica, ProductoClave, ProductoInventariado, ProductoPrecio,
   ProductoTipo, ProductoValidado, Proveedor, Proyecto, Rol, Sesion, Usuario,
 ];

@@ -18,6 +18,27 @@ export const nombreArchivoSeguro = (nombre: unknown): string => {
   return base;
 };
 
+/**
+ * Nombre de un reporte ya generado por el propio API (`GET /file/report/:nombre`): solo el nombre base, sin
+ * directorios, sin archivos ocultos ni caracteres de control, pero SIN sustituir caracteres. Los reportes llevan
+ * espacios y acentos ("Alta Proyecto A_123.xlsx"); con `nombreArchivoSeguro` el nombre cambiaba y la descarga daba
+ * 404 (plan 02 · fase 7). El recorrido de rutas lo impiden `basename` y el `root` de `sendFile`.
+ */
+export const nombreReporteSeguro = (nombre: unknown): string => {
+  if (typeof nombre !== "string") throw new AppError("Nombre de reporte inválido", 400);
+  let decodificado = nombre;
+  try {
+    decodificado = decodeURIComponent(nombre);
+  } catch {
+    /* se usa tal cual */
+  }
+  const base = basename(decodificado.replace(/\\/g, "/"));
+  if (base.length === 0 || base.startsWith(".") || /[\u0000-\u001f\u007f]/.test(base)) {
+    throw new AppError("Nombre de reporte inválido", 400);
+  }
+  return base;
+};
+
 const EXTENSIONES_POR_MIME: Record<string, string> = {
   "image/jpeg": ".jpg",
   "image/png": ".png",
