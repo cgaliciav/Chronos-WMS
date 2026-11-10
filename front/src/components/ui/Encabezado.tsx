@@ -13,7 +13,7 @@ export default function Encabezado({
   extra?: ReactNode
 }) {
   return (
-    <Flex align="center" justify="space-between" gap={16} wrap style={{ marginBottom: 20 }}>
+    <Flex align="center" justify="space-between" gap={8} wrap style={{ marginBottom: 10 }}>
       <Typography.Title level={5} style={{ margin: 0 }}>
         {children}
       </Typography.Title>

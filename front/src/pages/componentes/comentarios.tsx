@@ -143,7 +143,7 @@ const Comentarios = ({
               <Button
                 type="primary"
                 htmlType="submit"
-                style={{ marginRight: 8 }}
+                style={{ marginRight: 4 }}
                 disabled={!componenteHabilitado}
                 loading={loading}
               >

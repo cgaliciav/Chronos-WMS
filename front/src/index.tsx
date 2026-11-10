@@ -1,5 +1,6 @@
-// antd 6 inyecta sus estilos (CSS-in-JS) con el tema de `tema.ts`; aquí solo va su reset.
+// antd 6 inyecta sus estilos (CSS-in-JS) con el tema de `tema.ts`; aquí van su reset y los pocos estilos globales.
 import 'antd/dist/reset.css'
+import './estilos-globales.css'
 
 import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router'

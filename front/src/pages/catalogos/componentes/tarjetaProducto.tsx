@@ -1,6 +1,6 @@
 import { useEffect, useState, type MouseEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { Tag, Spin, Col, Row, Card, Typography, Divider } from 'antd'
+import { Tag, Spin, Col, Row, Card, Typography } from 'antd'
 import { EyeOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import MovimientoPeticiones from 'services/axios/movimientos'
@@ -79,10 +79,13 @@ const TarjetaProducto = ({
 
   return (
     <>
+      {/* Altura fija de cada parte y `height: 100%`: todas las tarjetas de la cuadrícula miden lo mismo. */}
       <Card
         hoverable
         size="small"
-        cover={<ImagenesEnCarrusel archivos={archivos} rutaEnApi="file/catalog/" />}
+        style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}
+        styles={{ body: { flex: 1 } }}
+        cover={<ImagenesEnCarrusel archivos={archivos} rutaEnApi="file/catalog/" cuadrada />}
         title={
           <>
             <Row>
@@ -128,34 +131,41 @@ const TarjetaProducto = ({
         <Row justify="end">
           <Title level={4}> {formatoMonedaMexico(productoPrecios?.[0]?.precio)} </Title>
         </Row>
-        <Paragraph ellipsis={{ rows: 2, expandable: true, symbol: 'ver más' }}>
+        {/* Siempre dos líneas; el texto completo, en el tooltip. */}
+        <Paragraph
+          ellipsis={{ rows: 2, tooltip: descripcion }}
+          style={{ minHeight: `${2 * 1.5715}em` }}
+        >
           {descripcion}
         </Paragraph>
         <Text>Disponible:</Text>
         <Text code>{parseInt(String(cantidad), 10)}</Text>
         <Spin spinning={cargando} size="small">
           {movimiento ? (
-            <Row gutter={4} justify="center">
+            <Row gutter={2} justify="center" wrap={false}>
               <Col span={8}>
-                {' '}
-                <Text type="secondary">
-                  {' '}
+                <Text type="secondary" ellipsis>
                   {movimiento.fecha !== undefined
                     ? dayjs(movimiento.fecha).format('D-MMM-YY')
-                    : ''}{' '}
-                </Text>{' '}
+                    : '\u00a0'}
+                </Text>
               </Col>
               <Col span={8}>
-                {' '}
-                <Text strong> {movimientoTipo ? movimientoTipo.nombre : '-'} </Text>
+                <Text strong ellipsis>
+                  {movimientoTipo ? movimientoTipo.nombre : '-'}
+                </Text>
               </Col>
               <Col span={8}>
-                {' '}
-                <Text> {proyecto ? proyecto.nombre : ''} </Text>{' '}
+                <Text ellipsis={{ tooltip: proyecto?.nombre }}>
+                  {proyecto ? proyecto.nombre : ''}
+                </Text>
               </Col>
             </Row>
           ) : (
-            <Row />
+            // Sin movimientos: se reserva la línea para que la tarjeta mida lo mismo.
+            <Row>
+              <Text>{'\u00a0'}</Text>
+            </Row>
           )}
         </Spin>
 
@@ -170,15 +180,15 @@ const TarjetaProducto = ({
             </Row>
           </Col>
           <Col span={24}>
+            {/* La línea existe siempre (vacía fuera de cuarentena) para no cambiar la altura. */}
             <Row justify="center">
               {disponible === 'cuarentena'
                 ? `Disponible en: ${dayjs(fechaDisponibilidad).format('D MMM YYYY')}`
-                : ''}
+                : '\u00a0'}
             </Row>
           </Col>
         </Row>
       </Card>
-      <Divider />
     </>
   )
 }

@@ -42,7 +42,7 @@ src/tema.ts                 tokens del tema claro de antd 6 (colores, fuente Muk
 
 **La plantilla Clean UI ya no existe**: layout, menú, `ACL`, login y páginas de error son antd puro en `src/app/`;
 no hay Bootstrap, Sass, LESS ni fuentes de iconos (solo `@ant-design/icons`). Estilos: tokens de `src/tema.ts`, `style`
-puntual o CSS Modules.
+puntual o CSS Modules; `src/estilos-globales.css` solo para lo que los tokens no cubren (filas alternas de las tablas).
 
 ## Convenciones
 

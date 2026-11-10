@@ -11,7 +11,7 @@ export default function Tarjeta({ style, styles, ...props }: CardProps) {
   return (
     <Card
       {...props}
-      style={{ marginBottom: 24, ...style }}
+      style={{ marginBottom: 12, ...style }}
       styles={{
         ...estilos,
         title: { whiteSpace: 'normal', overflow: 'visible', ...estilos.title },

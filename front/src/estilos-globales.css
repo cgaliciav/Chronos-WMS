@@ -1,0 +1,16 @@
+/*
+ * Estilos globales que el tema de antd (`tema.ts`) no puede expresar con tokens. Mantén este archivo mínimo: para lo
+ * demás usa tokens, `style` puntual o CSS Modules (front/CLAUDE.md).
+ */
+
+/*
+ * Filas alternas (cebra) en todas las tablas. `of .ant-table-row` cuenta solo filas de datos, así que las filas que antd
+ * intercala (expandidas, de medición) no desordenan la alternancia. No pisa el resaltado al pasar el cursor, las filas
+ * seleccionadas ni la columna ordenada.
+ */
+.ant-table-tbody
+  > tr.ant-table-row:nth-child(even of .ant-table-row):not(:hover):not(.ant-table-row-selected)
+  > td:not(.ant-table-column-sort) {
+  /* Fondo claro del color principal de la marca (plan 03); #eef2fb si antd no expone la variable. */
+  background: var(--ant-color-primary-bg, #eef2fb);
+}

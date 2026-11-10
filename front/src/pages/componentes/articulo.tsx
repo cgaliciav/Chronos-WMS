@@ -36,7 +36,7 @@ const ArticuloDatos = ({
 
   return (
     <>
-      <Row justify="end" style={{ marginTop: '15px' }}>
+      <Row justify="end" style={{ marginTop: '8px' }}>
         <Space>
           <Validacion productoId={productoId} productoValidado={productoValidado} disabled />
           <Tag style={{ fontSize: '130%' }} color={colores[disponible]}>

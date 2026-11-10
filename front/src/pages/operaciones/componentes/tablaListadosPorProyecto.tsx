@@ -1,11 +1,12 @@
 import { useEffect, useState, type MouseEvent } from 'react'
-import { Table, Row, Col, Dropdown, Button, Tag, Typography, type TableProps } from 'antd'
+import { Table, Dropdown, Button, Tag, type TableProps } from 'antd'
 import { PrinterFilled, DownOutlined } from '@ant-design/icons'
 import { notification } from 'helpers/feedback'
 import ReportePeticiones from 'services/axios/reportes'
 import type { ParametrosTabla } from 'types/api'
 import DetalleArticuloOperacionTabla from './detalleArticuloOperacionTabla'
 import type { MovimientoOperacion, PaginacionTabla, TablaListadosPorProyectoProps } from '../tipos'
+import EncabezadoTabla from 'components/ui/EncabezadoTabla'
 
 export type { TablaListadosPorProyectoProps } from '../tipos'
 
@@ -151,16 +152,11 @@ const TablaOperacionesPorProyecto = ({
   }
 
   const colocarHeader = () => (
-    <Row>
-      <Col span={8}>
-        <Typography.Title level={2} ellipsis>
-          {titulo}
-        </Typography.Title>
-      </Col>
-      <Col span={8}>
-        <Row justify="end" />
-      </Col>
-      <Col span={8}>
+    <EncabezadoTabla
+      titulo={titulo}
+      total={pagination.total}
+      totalItems={pagination.totalItems}
+      extra={
         <Dropdown
           menu={{
             items: [
@@ -187,20 +183,13 @@ const TablaOperacionesPorProyecto = ({
             ],
           }}
         >
-          <Button style={{ float: 'right', marginTop: '-16px' }} type="link" size="small">
+          <Button type="link" size="small">
             Reportes
             <DownOutlined />
           </Button>
         </Dropdown>
-        <Row justify="center">
-          <h3>
-            {`TOTAL: ${pagination.total || '-'}${
-              pagination.total !== pagination.totalItems ? ' *filtrado' : ''
-            } `}
-          </h3>
-        </Row>
-      </Col>
-    </Row>
+      }
+    />
   )
 
   return (

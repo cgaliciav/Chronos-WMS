@@ -76,14 +76,14 @@ export default function MainLayout({ children }: { children: ReactNode }) {
           style={{
             background: token.colorBgContainer,
             borderBottom: `1px solid ${token.colorBorderSecondary}`,
-            padding: '0 24px',
+            padding: '0 12px',
             position: 'sticky',
             top: 0,
             zIndex: 10,
           }}
         >
-          <Flex align="center" justify="space-between" style={{ height: '100%' }} gap={16}>
-            <Flex align="center" gap={12} style={{ minWidth: 0 }}>
+          <Flex align="center" justify="space-between" style={{ height: '100%' }} gap={8}>
+            <Flex align="center" gap={6} style={{ minWidth: 0 }}>
               {esMovil ? (
                 <Typography.Link onClick={alternarMenuMovil} aria-label="Abrir menú">
                   ☰
@@ -93,16 +93,16 @@ export default function MainLayout({ children }: { children: ReactNode }) {
                 <strong>{`Ver. ${version} · API ${versionApi}`}</strong> · {nombre}
               </Typography.Text>
             </Flex>
-            <Flex align="center" gap={16}>
+            <Flex align="center" gap={8}>
               <NotificacionesCampana />
               <MenuUsuario />
             </Flex>
           </Flex>
         </Layout.Header>
-        <Layout.Content style={{ padding: '16px 24px' }}>
+        <Layout.Content style={{ padding: '8px 12px' }}>
           {camino.length ? (
             <Breadcrumb
-              style={{ marginBottom: 16 }}
+              style={{ marginBottom: 8 }}
               items={[
                 { key: 'inicio', title: <Link to="/">Inicio</Link> },
                 ...camino.map(entrada => ({
@@ -115,7 +115,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
           {/* La clave reinicia el límite de errores al cambiar de ruta. */}
           <ErrorBoundary key={pathname}>{children}</ErrorBoundary>
         </Layout.Content>
-        <Layout.Footer style={{ padding: '24px', background: 'transparent' }}>
+        <Layout.Footer style={{ padding: '12px', background: 'transparent' }}>
           <PieDePagina />
         </Layout.Footer>
       </Layout>

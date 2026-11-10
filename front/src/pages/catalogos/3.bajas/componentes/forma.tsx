@@ -64,7 +64,7 @@ const FormaBusquedaBajas = ({ handleFinish, cargando }: FormaBusquedaProps<Busqu
       layout="vertical"
       initialValues={{ estado: ['baja'], bodegas: [1] }}
     >
-      <Row gutter={6}>
+      <Row gutter={3}>
         <Col {...colLayoutA}>
           <Form.Item label="Búsqueda" name="textoBusqueda">
             <Input placeholder="Texto de búsqueda " disabled={!habilitadoInterno || cargando} />

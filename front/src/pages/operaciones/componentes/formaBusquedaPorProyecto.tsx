@@ -93,7 +93,7 @@ const FormaBusquedaPorProyecto = ({
 
   return (
     <Form onFinish={handleFinish} form={form} layout="horizontal" initialValues={{ bodegas: [1] }}>
-      <Row gutter={6}>
+      <Row gutter={3}>
         {mostrarProyectosInternos ? (
           <Col {...colLayoutB}>
             <Form.Item

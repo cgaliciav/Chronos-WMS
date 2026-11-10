@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Table, Row, Col, Typography, type TableProps } from 'antd'
+import { Table, type TableProps } from 'antd'
 import type { Grupo, ParametrosTabla } from 'types/api'
 import type { PaginacionTabla, TablaListadosProps } from '../tipos'
+import EncabezadoTabla from 'components/ui/EncabezadoTabla'
 
 export type { TablaListadosProps } from '../tipos'
 
@@ -88,25 +89,7 @@ const TablaListados = ({
   }
 
   const colocarHeader = () => (
-    <Row>
-      <Col span={8}>
-        <Typography.Title level={2} ellipsis>
-          {titulo}
-        </Typography.Title>
-      </Col>
-      <Col span={8}>
-        <Row justify="end" />
-      </Col>
-      <Col span={8}>
-        <Row justify="center">
-          <h3>
-            {`TOTAL: ${pagination.total || '-'}${
-              pagination.total !== pagination.totalItems ? ' *filtrado' : ''
-            } `}
-          </h3>
-        </Row>
-      </Col>
-    </Row>
+    <EncabezadoTabla titulo={titulo} total={pagination.total} totalItems={pagination.totalItems} />
   )
 
   return (

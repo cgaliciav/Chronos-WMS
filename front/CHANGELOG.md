@@ -15,6 +15,31 @@ Los códigos `F<n>` remiten a [`docs/hallazgos-codigo.md`](../docs/hallazgos-cod
 
 Pendiente: fase 7 del plan 01 (pruebas e2e con Playwright, CI y cobertura).
 
+## [4.7.1-d] - 2026-11-10
+
+Ajustes de estilo: interfaz más compacta y tablas y cuadrículas más legibles.
+
+### Cambiado
+
+- **Espaciado a la mitad en toda la app:** `sizeUnit: 2` en `tema.ts` (antd deriva de él todos los márgenes y rellenos;
+  la altura de los controles no cambia), cabecera de 48 px, y rellenos del layout, `Tarjeta`, `Encabezado`, `Comentario`,
+  login y los `gutter` y márgenes fijos de las páginas a la mitad.
+- **Menú lateral:** 34 px por elemento (antes 44).
+- **Título de las tablas:** nuevo `components/ui/EncabezadoTabla` (título, total y acciones en una fila, sin los márgenes
+  de `h2`/`h3`) en los listados por grupo, las operaciones, los listados por proyecto y administración. El menú
+  "Reportes" va junto al total, en vez de flotar con un margen negativo.
+- **Filas alternas** en todas las tablas, con el fondo claro del color principal de la marca
+  (`--ant-color-primary-bg`, plan 03): `src/estilos-globales.css`, que respeta el hover, las filas seleccionadas y la
+  columna ordenada.
+- **Cuadrícula de resultados uniforme** (catálogos y validaciones): imagen cuadrada sin recortar
+  (`ImagenesEnCarrusel cuadrada`), descripción de dos líneas con el texto completo en un tooltip, último movimiento en
+  una línea, línea de cuarentena reservada y tarjetas que llenan la columna. Todas miden lo mismo.
+
+### Corregido
+
+- `docs/front/baseline/capturar.js`: simula `/notifications` y navega sin `#` (las capturas salían con la página de
+  error 500).
+
 ## [4.7.0-d] - 2026-11-10
 
 Plan 03, fase 5.

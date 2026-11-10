@@ -34,7 +34,7 @@ const ArticuloMovimiento = ({ movimiento, loading }: ArticuloMovimientoProps) =>
   return (
     <>
       <Spin spinning={loading}>
-        <Row gutter={{ xs: 4, sm: 8, md: 12, lg: 24, xl: 24 }}>
+        <Row gutter={{ xs: 2, sm: 4, md: 6, lg: 12, xl: 12 }}>
           <Col xl={8} xxl={8} lg={12} md={12} sm={24} xs={24}>
             <ImagenesEnCarrusel
               archivos={archivos}
@@ -44,7 +44,7 @@ const ArticuloMovimiento = ({ movimiento, loading }: ArticuloMovimientoProps) =>
             />
           </Col>
           <Col xl={14} xxl={14} lg={12} md={12} sm={24} xs={24}>
-            <Row justify="end" style={{ marginTop: '15px' }}>
+            <Row justify="end" style={{ marginTop: '8px' }}>
               <Space>
                 <Tag> {productoClaves.length > 0 ? productoClaves[0].barras : '---'} </Tag>
               </Space>
