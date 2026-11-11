@@ -37,5 +37,5 @@ infra/clientes/desplegar.sh --host <ssh> --dir <ruta remota> --cliente sony \
 ```
 
 Con Sony el script **se detiene si hay migraciones pendientes**: aplícalas con
-`docs/api/procedimiento-migracion-produccion.md` o repite con `--permitir-migrar` (y, en staging, `--antes-de-migrar` con
-el snapshot). `--simular` muestra los pasos sin tocar ningún servidor.
+`docs/api/procedimiento-migracion-produccion.md` o repite con `--permitir-migrar`, que a su vez exige `--antes-de-migrar <comando>` (el snapshot de los datos, en staging) o, bajo tu
+responsabilidad, `--sin-snapshot`. `--simular` muestra los pasos sin tocar ningún servidor.

@@ -5,7 +5,9 @@
 # Uso:
 #   desplegar.sh --host <ssh> --dir <ruta remota> --cliente amz|sony --version-web V --version-api V
 #                [--staging] [--sembrar-admin <correo> --admin-nombre <nombre>] [--permitir-migrar]
-#                [--antes-de-migrar <comando local>] [--simular]
+#                [--antes-de-migrar <comando local>] [--sin-snapshot] [--simular]
+#   Sony con --permitir-migrar exige --antes-de-migrar (snapshot de los datos compartidos) o, bajo tu
+#   responsabilidad, --sin-snapshot.
 #
 # Requisito: <dir>/.env ya existe en el servidor (desde amz/.env.example o sony/.env.caddy.example, con secretos).
 # Versiones con sufijo de entorno, p. ej. 4.9.0-s. `--simular` muestra los pasos remotos sin ejecutar nada.
@@ -15,10 +17,10 @@ set -euo pipefail
 
 AQUI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-uso() { sed -n '2,11p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' >&2; }
+uso() { sed -n '2,13p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' >&2; }
 falla() { echo "Error: $*" >&2; exit 1; }
 
-HOST="" DIR="" CLIENTE="" V_WEB="" V_API="" STAGING=0 CORREO="" NOMBRE="" PERMITIR=0 ANTES="" SIMULAR=0
+HOST="" DIR="" CLIENTE="" V_WEB="" V_API="" STAGING=0 CORREO="" NOMBRE="" PERMITIR=0 ANTES="" SIN_SNAPSHOT=0 SIMULAR=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --host) HOST="${2:?falta valor de --host}"; shift 2 ;;
@@ -31,6 +33,7 @@ while [[ $# -gt 0 ]]; do
     --admin-nombre) NOMBRE="${2:?falta valor de --admin-nombre}"; shift 2 ;;
     --permitir-migrar) PERMITIR=1; shift ;;
     --antes-de-migrar) ANTES="${2:?falta valor de --antes-de-migrar}"; shift 2 ;;
+    --sin-snapshot) SIN_SNAPSHOT=1; shift ;;
     --simular) SIMULAR=1; shift ;;
     -h|--help) uso; exit 0 ;;
     *) uso; falla "argumento desconocido: $1" ;;
@@ -44,6 +47,9 @@ patron='^[0-9]+\.[0-9]+\.[0-9]+(-[ds])?$'
 [[ "$V_API" =~ $patron ]] || falla "--version-api '$V_API' no sigue X.Y.Z[-s]"
 if [[ -n "$CORREO" && -z "$NOMBRE" ]]; then falla "--sembrar-admin necesita --admin-nombre"; fi
 if [[ -z "$CORREO" && -n "$NOMBRE" ]]; then falla "--admin-nombre solo tiene sentido con --sembrar-admin"; fi
+if [[ "$CLIENTE" == sony && $PERMITIR -eq 1 && -z "$ANTES" && $SIN_SNAPSHOT -eq 0 ]]; then
+  falla "--cliente sony --permitir-migrar migraría datos compartidos sin copia: añade --antes-de-migrar <snapshot> o, bajo tu responsabilidad, --sin-snapshot"
+fi
 [[ "$DIR" == /* ]] || falla "--dir debe ser una ruta absoluta"
 
 ARCHIVOS=(-f compose.yml)
@@ -77,7 +83,7 @@ echo "== Despliegue de $CLIENTE en $HOST:$DIR (web $V_WEB, api $V_API)$( (( STAG
 remoto '
 set -euo pipefail
 [ -f .env ] || { echo "Error: falta $PWD/.env (cópialo desde infra/clientes/*/.env*.example y llena los secretos)" >&2; exit 1; }
-for clave in DATOS_DIR IMAGEN_WEB IMAGEN_API DOMINIOS DNS_TOKEN ACME_EMAIL DB_DATABASE_NAME DB_PASSWORD DB_ROOT_PASSWORD JWTSECRET CONFIG_CLAVE; do
+for clave in DATOS_DIR IMAGEN_WEB IMAGEN_API DOMINIOS DNS_TOKEN ACME_EMAIL DB_DATABASE_NAME DB_PASSWORD DB_ROOT_PASSWORD JWTSECRET CONFIG_CLAVE SMTP_FROM CLIENTE ENTORNO; do
   grep -Eq "^${clave}=.+" .env || { echo "Error: ${clave} está vacío o falta en .env" >&2; exit 1; }
 done
 datos=$(grep -E "^DATOS_DIR=" .env | tail -n1 | cut -d= -f2-)
@@ -116,10 +122,18 @@ docker compose "$@" up -d --wait mariadb
 if (( SIMULAR )); then
   echo "[simular] migrar.js show (se supone sin pendientes)" >&2
 else
-  set +e
-  SALIDA_SHOW="$(remoto 'docker compose "$@" run --rm -T api node build/migrar.js show </dev/null' "${ARCHIVOS[@]}" 2>&1)"
-  RC_SHOW=$?
-  set -e
+  # En el primer arranque con datos vacíos MariaDB puede tardar en abrir TCP y crear la base/usuario: mientras la
+  # salida no tenga ninguna línea "[ ]"/"[X]" se reintenta (hasta ~60 s) antes de darlo por error.
+  for intento in 1 2 3 4 5 6 7 8 9 10 11 12; do
+    set +e
+    SALIDA_SHOW="$(remoto 'docker compose "$@" run --rm -T api node build/migrar.js show </dev/null' "${ARCHIVOS[@]}" 2>&1)"
+    RC_SHOW=$?
+    set -e
+    (( RC_SHOW == 0 )) && break
+    grep -qE '^\[[ X]\]' <<<"$SALIDA_SHOW" && break
+    echo "== migrar.js show aún no conecta (intento $intento/12); reintento en 5 s" >&2
+    sleep 5
+  done
   echo "$SALIDA_SHOW" | grep -E '^\[[ X]\]' || true
   if (( RC_SHOW == 1 )) && grep -q '^\[ \]' <<<"$SALIDA_SHOW"; then
     if [[ "$CLIENTE" == sony && $PERMITIR -eq 0 ]]; then

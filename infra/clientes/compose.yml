@@ -26,7 +26,10 @@ services:
     ports:
       - "127.0.0.1:${DB_PUERTO_LOCAL:-3309}:3306"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      # Por TCP: durante el primer arranque el entrypoint usa un servidor temporal sin red (--skip-networking) que
+      # responde por socket antes de crear la base y el usuario; así solo es "healthy" el servidor definitivo.
+      # Sirve igual en 10.3 y 10.11 (10.3 no trae healthcheck.sh).
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--protocol=tcp"]
       interval: 10s
       timeout: 5s
       retries: 10
