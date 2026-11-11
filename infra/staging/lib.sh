@@ -25,15 +25,15 @@ VM_NETWORK="default"
 UBUNTU_RELEASE="noble"                   # 24.04, igual que prod
 LIBVIRT_URI="qemu:///system"
 
-STAGING_DIR_REMOTE="/home/cesargv/teleset-almacen"
+STAGING_DIR_REMOTE="${STAGING_DIR_REMOTE:-/home/cesargv/teleset-almacen}"
 
 # Modos de staging con Caddy en Docker (staging-modo.sh, desplegar-caddy.sh). Rutas en la VM.
-AMZ_DIR_REMOTE="/home/cesargv/chronos-amz"          # .env, db_data/, exogrid/ y compose de AMZ
-SONY_CADDY_DIR_REMOTE="/home/cesargv/chronos-sony"  # solo .env y compose; sus datos están en STAGING_DIR_REMOTE
-MODO_FILE_REMOTE="/home/cesargv/staging-modo"       # modo activo: sony-nginx | caddy-amz | caddy-sony | en-transicion
+AMZ_DIR_REMOTE="${AMZ_DIR_REMOTE:-/home/cesargv/chronos-amz}"          # .env, db_data/, exogrid/ y compose de AMZ
+SONY_CADDY_DIR_REMOTE="${SONY_CADDY_DIR_REMOTE:-/home/cesargv/chronos-sony}"  # solo .env y compose; sus datos están en STAGING_DIR_REMOTE
+MODO_FILE_REMOTE="${MODO_FILE_REMOTE:-/home/cesargv/staging-modo}"       # modo activo: sony-nginx | caddy-amz | caddy-sony | en-transicion
 PROYECTO_SONY_V1="teleset-almacen"                  # proyecto docker-compose v1 del stack actual de Sony
 MODOS_VALIDOS="sony-nginx caddy-amz caddy-sony"
-CACHE_DIR="$HOME/staging-cache"
+CACHE_DIR="${CACHE_DIR:-$HOME/staging-cache}"
 
 if [[ -f "$STAGING_DIR/staging.conf" ]]; then
   # shellcheck source=/dev/null
@@ -137,6 +137,10 @@ vm_bash() {
     [[ "${SIMULAR_VERBOSO:-0}" == "1" ]] && awk '{ print "[simular]     | " $0 }' <<<"$script" >&2
     return 0
   fi
+  if [[ "${VM_SSH_LOCAL:-0}" == "1" ]]; then  # pruebas (probar-modos.sh): el "remoto" es esta máquina, con stubs en el PATH
+    bash -c "$script" _ "$@"
+    return
+  fi
   local qargs=""
   (($#)) && qargs=$(printf '%q ' "$@")
   vm_ssh "bash -c $(printf '%q' "$script") _ $qargs"
@@ -145,6 +149,7 @@ vm_bash() {
 # Modo activo según ~/staging-modo en la VM ("desconocido" si el archivo no existe).
 modo_activo() {
   if [[ "$SIMULAR" == "1" ]]; then echo "${STAGING_MODO_SIMULADO:-sony-nginx}"; return 0; fi
+  if [[ "${VM_SSH_LOCAL:-0}" == "1" ]]; then cat "$MODO_FILE_REMOTE" 2>/dev/null || echo desconocido; return 0; fi
   vm_ssh "cat $MODO_FILE_REMOTE 2>/dev/null || echo desconocido"
 }
 
@@ -156,6 +161,14 @@ dir_de_cliente() { # amz|sony → directorio remoto del stack Caddy
   esac
 }
 
-# Contenedores en marcha de cualquiera de los tres stacks (vacío = ninguno). Salida: un nombre por línea.
-# Se usa la etiqueta del proyecto compose: sirve igual con compose v1 y v2.
-VM_CONTENEDORES_STACKS="docker ps --filter label=com.docker.compose.project=$PROYECTO_SONY_V1 --filter label=com.docker.compose.project=chronos-amz --filter label=com.docker.compose.project=chronos-sony --format '{{.Names}}'"
+# Función para los scripts remotos (se antepone al script): una línea "<proyecto> <contenedor>" por cada contenedor en
+# marcha de cualquiera de los tres stacks (vacío = ninguno). Un solo `docker ps` con --format y filtro con grep: repetir
+# `--filter label=…` se combina con Y y no devolvería nada. Sirve igual con compose v1 y v2 (etiqueta del proyecto).
+REMOTO_FUNCS='stacks_en_marcha() { docker ps --format "{{.Label \"com.docker.compose.project\"}} {{.Names}}" | grep -E "^(teleset-almacen|chronos-amz|chronos-sony) " || true; }
+'
+
+# Verifica que hay conexión con la VM (en pruebas locales no aplica).
+vm_verifica_conexion() {
+  [[ "$SIMULAR" == "1" || "${VM_SSH_LOCAL:-0}" == "1" ]] && return 0
+  vm_ssh true || die "No hay SSH a la VM ($(vm_ip)). ¿Está encendida? virsh -c $LIBVIRT_URI start $VM_NAME"
+}

@@ -44,7 +44,7 @@ CLIENTES_DIR="$REPO_ROOT/infra/clientes"
 [[ "$SIMULAR" == "1" ]] && warn "Modo --simular: no se toca la VM ni se crean snapshots."
 
 if [[ "$SIMULAR" != "1" ]]; then
-  vm_ssh true || die "No hay SSH a la VM ($(vm_ip)). ¿Está encendida? virsh -c $LIBVIRT_URI start $VM_NAME"
+  vm_verifica_conexion
   mkdir -p "$CACHE_DIR"
   exec 9>"$CACHE_DIR/.modo.lock"
   flock -n 9 || die "Otro staging-modo.sh está en curso"
@@ -53,6 +53,7 @@ fi
 # Copia a la VM (rsync); con --simular solo lo anuncia.
 copiar() { # origen destino_remoto
   if [[ "$SIMULAR" == "1" ]]; then echo "[simular] rsync $1 -> $VM_USER@<vm>:$2" >&2; return 0; fi
+  if [[ "${VM_SSH_LOCAL:-0}" == "1" ]]; then cp "$1" "$2"; return 0; fi
   vm_rsync -a "$1" "$2"
 }
 
@@ -85,8 +86,9 @@ ss -H -ltn "( sport = :80 or sport = :443 )" || true
     echo "[simular] remoto: grep ^DOMINIOS= $dir/.env (primer dominio) · openssl s_client -connect <ip>:443 -servername <dominio>" >&2
     return 0
   fi
-  dominio=$(vm_ssh "grep -E '^DOMINIOS=' $dir/.env 2>/dev/null | tail -n1 | cut -d= -f2- | cut -d, -f1" || true)
+  dominio=$(vm_bash "leer DOMINIOS de $dir/.env" 'grep -E "^DOMINIOS=" "$1/.env" 2>/dev/null | tail -n1 | cut -d= -f2- | cut -d, -f1 || true' "$dir")
   if [[ -z "$dominio" ]]; then warn "No hay DOMINIOS en $dir/.env"; return 0; fi
+  if [[ "${VM_SSH_LOCAL:-0}" == "1" ]]; then info "Certificado de $dominio: no se consulta en pruebas locales."; return 0; fi
   info "Certificado de $dominio (contra la IP de la VM):"
   salida=$(timeout 15 openssl s_client -connect "$(vm_ip):443" -servername "$dominio" </dev/null 2>/dev/null \
     | openssl x509 -noout -subject -issuer -enddate 2>/dev/null || true)
@@ -98,9 +100,14 @@ preparar() {
   local flags want_amz=1 want_sony=1 dh_hecho=0
   local amz_dominio="" amz_token="" sony_token="" acme_email="" dh_ns="exogrid" dh_token=""
   step "Preparar la VM para los modos Caddy (idempotente)"
+  # leer VARIABLE "pregunta" [secreto]: con STAGING_PREPARAR_STDIN=1 (pruebas) lee de la entrada estándar sin preguntar.
+  leer() {
+    if [[ "${STAGING_PREPARAR_STDIN:-0}" == "1" ]]; then IFS= read -r "$1"; return 0; fi
+    if [[ "${3:-}" == secreto ]]; then read -r -s -p "$2" "$1"; echo; else read -r -p "$2" "$1"; fi
+  }
 
   # A. docker compose v2, carpetas y modo inicial. Devuelve qué .env y login faltan.
-  flags=$(vm_bash "apt-get install docker-compose-v2 (si falta) · mkdir $AMZ_DIR_REMOTE $SONY_CADDY_DIR_REMOTE · modo inicial" '
+  flags=$(vm_bash "apt-get install docker-compose-v2 (si falta) · mkdir $AMZ_DIR_REMOTE $SONY_CADDY_DIR_REMOTE · modo inicial" "$REMOTO_FUNCS"'
 set -euo pipefail
 if ! docker compose version >/dev/null 2>&1; then
   echo "Instalando docker-compose-v2…" >&2
@@ -110,7 +117,7 @@ fi
 docker compose version >&2
 mkdir -p "$1" "$2"
 if [ ! -f "$3" ]; then
-  if systemctl is-active --quiet nginx && [ -n "$(docker ps -q --filter label=com.docker.compose.project=teleset-almacen)" ]; then
+  if systemctl is-active --quiet nginx && stacks_en_marcha | grep -q "^teleset-almacen "; then
     echo sony-nginx > "$3"; echo "Modo inicial registrado: sony-nginx" >&2
   else
     echo "Aviso: no hay ~/staging-modo y el stack de Sony no está en marcha; usa staging-modo.sh <modo>" >&2
@@ -142,24 +149,24 @@ echo "AMZ_ENV=$amz SONY_ENV=$sony DH_LOGIN=$dh"
   if [[ "$SIMULAR" == "1" ]]; then
     echo "[simular] se pedirían por consola: subdominio de AMZ, token de Cloudflare (AMZ), token de Linode (Sony), ACME_EMAIL, DOCKERHUB_NS y token de Docker Hub" >&2
   else
-    [[ -t 0 ]] || die "--preparar pide datos por consola: ejecútalo en una terminal interactiva"
+    [[ -t 0 || "${STAGING_PREPARAR_STDIN:-0}" == "1" ]] || die "--preparar pide datos por consola: ejecútalo en una terminal interactiva"
     if ((want_amz)); then
-      read -r -p "Subdominio de staging de AMZ (DOMINIOS, p. ej. amz-staging.exogrid.xyz): " amz_dominio
-      read -r -s -p "Token de Cloudflare (Zone:DNS:Edit) para AMZ: " amz_token; echo
+      leer amz_dominio "Subdominio de staging de AMZ (DOMINIOS, p. ej. amz-staging.exogrid.xyz): "
+      leer amz_token "Token de Cloudflare (Zone:DNS:Edit) para AMZ: " secreto
       [[ -n "$amz_dominio" && -n "$amz_token" ]] || die "El subdominio y el token de Cloudflare son obligatorios"
     fi
     if ((want_sony)); then
-      read -r -s -p "Token de Linode (Domains: Read/Write) para Sony (staging.telesetalmacen.com): " sony_token; echo
+      leer sony_token "Token de Linode (Domains: Read/Write) para Sony (staging.telesetalmacen.com): " secreto
       [[ -n "$sony_token" ]] || die "El token de Linode es obligatorio"
     fi
     if ((want_amz || want_sony)); then
-      read -r -p "Correo ACME_EMAIL (avisos de Let's Encrypt): " acme_email
-      read -r -p "Espacio de nombres de Docker Hub [exogrid]: " dh_ns
+      leer acme_email "Correo ACME_EMAIL (avisos de Let's Encrypt): "
+      leer dh_ns "Espacio de nombres de Docker Hub [exogrid]: "
       dh_ns="${dh_ns:-exogrid}"
       [[ -n "$acme_email" ]] || die "ACME_EMAIL es obligatorio"
     fi
     if ((!dh_hecho)); then
-      read -r -s -p "Token de Docker Hub de solo lectura (usuario exogrid): " dh_token; echo
+      leer dh_token "Token de Docker Hub de solo lectura (usuario exogrid): " secreto
       [[ -n "$dh_token" ]] || die "El token de Docker Hub es obligatorio"
     fi
   fi
@@ -225,7 +232,7 @@ fi
 if [ "$dh" = 0 ]; then
   printf "%s" "$dh_token" | docker login -u exogrid --password-stdin >&2
 fi
-'
+' "$AMZ_DIR_REMOTE" "$SONY_CADDY_DIR_REMOTE" "$STAGING_DIR_REMOTE" "$want_amz" "$want_sony" "$dh_hecho"
   ok "Preparación terminada. Siguiente: ./staging-modo.sh --estado"
 }
 
@@ -260,7 +267,7 @@ cambiar_modo() {
   fi
 
   step "1/3 Apagar todo y verificar (nada en marcha, 80/443 libres)"
-  vm_bash "echo en-transicion > $MODO_FILE_REMOTE · docker compose -p chronos-amz stop · docker compose -p chronos-sony stop · (cd $STAGING_DIR_REMOTE && docker-compose stop) · sudo systemctl stop nginx · verificar docker ps / procesos mariadbd / ss -ltn 80,443" '
+  vm_bash "echo en-transicion > $MODO_FILE_REMOTE · docker compose -p chronos-amz stop · docker compose -p chronos-sony stop · (cd $STAGING_DIR_REMOTE && docker-compose stop) · sudo systemctl stop nginx · detener cualquier contenedor restante de los 3 stacks · verificar docker ps / procesos mariadbd / ss -ltn 80,443" "$REMOTO_FUNCS"'
 set -euo pipefail
 modo_file="$1"; v1="$2"; destino="$3"
 echo en-transicion > "$modo_file"
@@ -271,8 +278,11 @@ elif [ "$destino" != sony-nginx ]; then
 fi
 [ -d "$v1" ] && (cd "$v1" && docker-compose stop >&2)
 sudo systemctl stop nginx
+# `docker-compose stop` no siempre alcanza contenedores huérfanos del proyecto (p. ej. <hash>_teleset-almacen_frontend_1):
+# se detiene explícitamente cualquier contenedor que siga en marcha de los tres stacks.
+stacks_en_marcha | while read -r _ nombre; do docker stop "$nombre" >&2; done
 # Verificación independiente de los comandos anteriores.
-enmarcha=$(docker ps --filter label=com.docker.compose.project=teleset-almacen --filter label=com.docker.compose.project=chronos-amz --filter label=com.docker.compose.project=chronos-sony --format "{{.Names}}")
+enmarcha=$(stacks_en_marcha)
 if [ -n "$enmarcha" ]; then echo "Error: siguen en marcha: $(echo $enmarcha)" >&2; exit 1; fi
 if pgrep -x mariadbd >/dev/null || pgrep -x mysqld >/dev/null; then
   echo "Error: hay un proceso de MariaDB/MySQL en marcha; no se continúa (riesgo de corromper datos compartidos)" >&2; exit 1

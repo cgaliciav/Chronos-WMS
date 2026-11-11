@@ -3,7 +3,7 @@
 #
 # Uso:
 #   ./desplegar-caddy.sh amz|sony --version-web V --version-api V
-#                        [--sembrar-admin <correo> --admin-nombre <nombre>] [--permitir-migrar] [--simular]
+#                        [--sembrar-admin <correo> --admin-nombre <nombre>] [--permitir-migrar] [--simular | --solo-comprobar]
 #
 # Se NIEGA a desplegar si el modo activo de la VM (~/staging-modo) no es el del cliente (caddy-amz / caddy-sony):
 # lo cambia ./staging-modo.sh. Además comprueba con `docker ps` que no corre nada de los otros stacks ni nginx
@@ -23,7 +23,7 @@ case "$CLIENTE" in
   *) uso; die "el primer argumento debe ser amz o sony" ;;
 esac
 
-V_WEB="" V_API="" CORREO="" NOMBRE="" PERMITIR=0
+V_WEB="" V_API="" CORREO="" NOMBRE="" PERMITIR=0 SOLO_COMPROBAR=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --version-web) V_WEB="${2:?falta valor de --version-web}"; shift 2 ;;
@@ -32,6 +32,7 @@ while [[ $# -gt 0 ]]; do
     --admin-nombre) NOMBRE="${2:?falta valor de --admin-nombre}"; shift 2 ;;
     --permitir-migrar) PERMITIR=1; shift ;;
     --simular) SIMULAR=1; shift ;;
+    --solo-comprobar) SOLO_COMPROBAR=1; shift ;;
     -h|--help) uso; exit 0 ;;
     *) uso; die "argumento desconocido: $1" ;;
   esac
@@ -44,7 +45,13 @@ export SIMULAR
 [[ "$SIMULAR" == "1" ]] && warn "Modo --simular: no se toca la VM; el modo activo se toma de STAGING_MODO_SIMULADO (${STAGING_MODO_SIMULADO:-sony-nginx})."
 
 # 1. El modo activo debe ser el del cliente.
-[[ "$SIMULAR" == "1" ]] || vm_ssh true || die "No hay SSH a la VM ($(vm_ip))"
+vm_verifica_conexion
+if [[ "$SIMULAR" != "1" ]]; then
+  # Mismo candado que staging-modo.sh: no se cambia de modo a mitad de un despliegue.
+  mkdir -p "$CACHE_DIR"
+  exec 9>"$CACHE_DIR/.modo.lock"
+  flock -n 9 || die "Hay un staging-modo.sh o un despliegue en curso"
+fi
 MODO=$(modo_activo)
 if [[ "$MODO" != "$MODO_ESPERADO" ]]; then
   die "El modo activo de staging es '$MODO' y para desplegar $CLIENTE debe ser '$MODO_ESPERADO'. Cámbialo con: infra/staging/staging-modo.sh $MODO_ESPERADO"
@@ -52,16 +59,26 @@ fi
 ok "Modo activo: $MODO"
 
 # 2. Doble comprobación independiente del archivo de modo: nada de los otros stacks en marcha.
-vm_bash "docker ps: no debe haber contenedores de otros stacks · systemctl is-active nginx debe ser inactivo" '
+vm_bash "docker ps: no debe haber contenedores de otros stacks ni procesos MariaDB ajenos · systemctl is-active nginx debe ser inactivo" "$REMOTO_FUNCS"'
 set -euo pipefail
 cliente="$1"
-ajenos=$(docker ps --filter label=com.docker.compose.project=teleset-almacen --filter label=com.docker.compose.project=chronos-amz --filter label=com.docker.compose.project=chronos-sony --format "{{.Names}} {{.Label \"com.docker.compose.project\"}}" | grep -v " chronos-$cliente\$" || true)
+en_marcha=$(stacks_en_marcha)
+ajenos=$(grep -v "^chronos-$cliente " <<<"$en_marcha" || true)
 if [ -n "$ajenos" ]; then
   echo "Error: corren contenedores de otros stacks (riesgo de corromper datos compartidos):" >&2; echo "$ajenos" >&2; exit 1
+fi
+if [ "$cliente" = sony ]; then
+  # chronos-sony y el stack v1 comparten db_data/mysql: solo se admite el MariaDB del propio chronos-sony.
+  procesos=$( (pgrep -x mariadbd; pgrep -x mysqld) 2>/dev/null | wc -l || true)
+  propios=$(grep -c "^chronos-sony .*mariadb" <<<"$en_marcha" || true)
+  if [ "$procesos" -gt "$propios" ]; then
+    echo "Error: hay $procesos proceso(s) MariaDB/MySQL y solo $propios de chronos-sony: no se despliega (riesgo de corromper los datos de Sony)" >&2; exit 1
+  fi
 fi
 if systemctl is-active --quiet nginx; then echo "Error: nginx del host está activo (ocupa el puerto 80)" >&2; exit 1; fi
 ' "$CLIENTE" || die "La VM no está en un estado seguro para desplegar $CLIENTE"
 ok "Los otros stacks y nginx están apagados"
+((SOLO_COMPROBAR)) && { ok "Comprobaciones superadas (--solo-comprobar): no se despliega nada."; exit 0; }
 
 # 3. Snapshot previo a migrar (solo se ejecuta si desplegar.sh llega a migrar).
 SNAP="pre-update-$(date +%Y%m%d-%H%M)-caddy-$CLIENTE"

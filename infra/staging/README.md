@@ -173,7 +173,9 @@ en `~/chronos-amz` (borra antes el volumen `caddy_data` si el certificado de pru
 un certificado válido sin `-k`.
 
 **Volver a lo de antes**: `./staging-modo.sh sony-nginx`; `update-staging.sh` solo funciona en ese modo.
-Las pruebas de estos scripts sin tocar la VM: `--simular` (usa `STAGING_MODO_SIMULADO=caddy-amz` para fingir el modo).
+Sin tocar la VM: `--simular` imprime los pasos (`STAGING_MODO_SIMULADO=caddy-amz` finge el modo); `desplegar-caddy.sh --solo-comprobar`
+ejecuta solo las comprobaciones de seguridad; `./probar-modos.sh` ejecuta los scripts remotos en local con stubs de `docker`,
+`systemctl`, `ss`, `pgrep`, `virsh`… (`--preparar`, cada cambio de modo, rechazos) y debe terminar con 0 fallos.
 
 ## Scripts
 
@@ -187,6 +189,7 @@ Las pruebas de estos scripts sin tocar la VM: `--simular` (usa `STAGING_MODO_SIM
 | `deploy-api-staging.sh` / `deploy-front-staging.sh` | Atajos de `update-staging.sh --api-only` / `--front-only` |
 | `staging-modo.sh` | Alterna la VM entre `sony-nginx`, `caddy-amz` y `caddy-sony`; `--estado`, `--preparar` |
 | `desplegar-caddy.sh` | Despliega AMZ o Sony con Caddy en el modo correspondiente (envuelve `infra/clientes/desplegar.sh`) |
+| `probar-modos.sh` | Pruebas locales (stubs) de `staging-modo.sh` y `desplegar-caddy.sh`, sin VM |
 | `staging-db.sh` | Helper instalado en la VM (`~/teleset-almacen/bin/staging-db`) para SQL como root sin exponer passwords |
 
 ## Troubleshooting
