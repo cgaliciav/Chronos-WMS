@@ -1,6 +1,6 @@
 {
   "name": "chronos-wms-front",
-  "version": "4.7.1-d",
+  "version": "4.8.0-d",
   "private": true,
   "type": "module",
   "engines": {
@@ -49,6 +49,7 @@
     "typescript": "5.9",
     "typescript-eslint": "^8.72.1",
     "vite": "^8.3.6",
+    "vite-plugin-pwa": "^2.0.0",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^5.1.0"
   }

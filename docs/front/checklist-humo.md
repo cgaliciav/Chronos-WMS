@@ -25,6 +25,7 @@ la fase 7, este documento es la red de seguridad. Inventario completo de rutas, 
 | 0.3 | Recargar (F5) en una ruta interna mantiene la sesión (`GET /user/current` responde 200) y la misma ruta. |
 | 0.4 | Un usuario sin rol entra por URL a una ruta protegida (p. ej. `/compras/nuevo`) → `/auth/401`. Una ruta inexistente → `/auth/404`. |
 | 0.5 | Cerrar sesión borra `localStorage.t`, vuelve al login y, tras volver a entrar con otro usuario, el menú refleja **sus** permisos (no los del anterior; hallazgo F4). |
+| 0.6 | Solo con `build`/`preview` (no en `dev`). Con la app abierta, publicar un build nuevo y volver a la pestaña: aparece "Hay una versión nueva". **Actualizar** carga la versión nueva (se ve en la cabecera), y si se ignora el aviso, la versión nueva se aplica al cambiar de página. El login y los datos siguen llegando del API, sin caché del service worker. |
 
 ## 1. `/auth/login`
 

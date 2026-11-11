@@ -5,6 +5,7 @@ import { useUsuarioStore } from 'stores/usuario.store'
 import AuthLayout from './AuthLayout'
 import { RUTA_CAMBIO_PASSWORD } from 'app/auth/rutas'
 import MainLayout from './MainLayout'
+import AvisoActualizacion from 'app/actualizacion/AvisoActualizacion'
 
 export type TipoLayout = 'public' | 'auth' | 'main'
 
@@ -48,6 +49,32 @@ export default function RaizLayout() {
   }, [pathname, search])
 
   const tipo = tipoDeLayout(pathname)
+
+  return (
+    <>
+      {/* Fuera del contenido: el aviso de versión nueva vive en todas las rutas, también en el login. */}
+      <AvisoActualizacion />
+      <ContenidoSegunLayout
+        tipo={tipo}
+        autorizado={autorizado}
+        cargando={cargando}
+        cambioPasswordPendiente={cambioPasswordPendiente}
+      />
+    </>
+  )
+}
+
+function ContenidoSegunLayout({
+  tipo,
+  autorizado,
+  cargando,
+  cambioPasswordPendiente,
+}: {
+  tipo: TipoLayout
+  autorizado: boolean
+  cargando: boolean
+  cambioPasswordPendiente: boolean
+}) {
   const Contenedor = LAYOUTS[tipo]
 
   // Mientras se comprueba la sesión guardada no se muestra nada (ni se manda al login).

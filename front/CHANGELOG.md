@@ -15,6 +15,34 @@ Los códigos `F<n>` remiten a [`docs/hallazgos-codigo.md`](../docs/hallazgos-cod
 
 Pendiente: fase 7 del plan 01 (pruebas e2e con Playwright, CI y cobertura).
 
+## [4.8.0-d] - 2026-11-10
+
+Aviso de versión nueva: el front detecta que hay un despliegue nuevo y avisa (PWA).
+
+### Añadido
+
+- **Service worker (PWA)** con `vite-plugin-pwa` 2.0, solo en el build:
+  - precachea el front, nunca el API;
+  - la pestaña abierta sigue funcionando aunque el despliegue borre los chunks viejos;
+  - la app se puede instalar.
+- **Aviso "Hay una versión nueva"** (`app/actualizacion`):
+  - revisa cada 5 min y al volver a la pestaña;
+  - botón **Actualizar**;
+  - si el usuario lo ignora, la versión nueva se aplica en el siguiente cambio de página, para no perder un
+    formulario a medias.
+- **Recarga única si falla la carga de un chunk** (`vite:preloadError`): cubre a los navegadores que aún no tienen el
+  service worker.
+- Iconos de 192 y 512 px (también maskable) y `apple-touch-icon`, generados desde `resources/images/logo.svg`.
+
+### Cambiado
+
+- El botón **Actualizar** del login (`helpers/limpiarCache`) ahora pide al service worker la versión nueva y la activa.
+  Conserva la precache de workbox y borra el resto de Cache Storage antes de recargar.
+- `public/manifest.json` se sustituye por el `manifest.webmanifest` que genera el plugin, con el mismo nombre y
+  colores.
+- El servidor debe servir `/sw.js` y `/manifest.webmanifest` con `Cache-Control: no-cache`. Queda pendiente para el
+  Caddy que sustituirá al doble nginx.
+
 ## [4.7.1-d] - 2026-11-10
 
 Ajustes de estilo: interfaz más compacta y tablas y cuadrículas más legibles.
