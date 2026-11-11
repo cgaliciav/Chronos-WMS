@@ -33,7 +33,13 @@ los demás, en el servidor.
 ```bash
 ssh amz-prod
 sudo apt-get update && sudo apt-get install -y docker.io docker-compose-v2 rsync
-sudo usermod -aG docker cesargv      # cierra la sesión ssh y vuelve a entrar para que surta efecto
+sudo usermod -aG docker cesargv
+exit
+```
+
+Vuelve a conectarte (`ssh amz-prod`) para que el grupo `docker` surta efecto y entonces:
+
+```bash
 docker compose version               # debe ser v2
 docker login -u exogrid              # pega el token de solo lectura como contraseña
 ```
@@ -44,8 +50,14 @@ con ese usuario.
 ## 3. DNS en Cloudflare
 
 En la zona del propietario crea un registro **A** para el subdominio de AMZ (`<subdominio-amz>`) apuntando a `<IP-AMZ>`,
-con la **nube gris** (sin proxy). El certificado se obtiene por reto DNS, así que no necesita que el servidor sea
-alcanzable para emitirlo, pero sí quieres la IP real de cada cliente. El mismo nombre se escribe luego en `DOMINIOS` del `.env`.
+con la **nube gris** (solo DNS, sin proxy de Cloudflare). Así el tráfico llega directo al servidor y Caddy ve la IP real de
+cada cliente (con la nube naranja vería las IP de Cloudflare). El certificado se obtiene por reto DNS contra la API de Cloudflare
+(con `DNS_TOKEN`), así que no depende de que el servidor sea alcanzable para emitirlo. El mismo nombre se escribe luego en
+`DOMINIOS` del `.env`. Antes de seguir, comprueba que el registro ya resuelve a la IP del servidor:
+
+```bash
+dig +short <subdominio-amz>          # debe imprimir <IP-AMZ>
+```
 
 ## 4. Crear el `.env`
 
@@ -57,12 +69,11 @@ ssh amz-prod 'mkdir -p ~/chronos-amz && mv ~/chronos-amz.env.tmp ~/chronos-amz/.
 ssh amz-prod 'nano ~/chronos-amz/.env'
 ```
 
-Valores a fijar (el resto del archivo ya trae un valor correcto; las líneas con `#` y sin valor hay que descomentarlas):
+Valores a fijar (el resto del archivo ya trae un valor correcto; las líneas con `#` y sin valor hay que descomentarlas). Escribe los valores **sin comillas** (`DATOS_DIR=/srv/chronos-amz`, no `DATOS_DIR="/srv/chronos-amz"`): compose las pasaría tal cual a los contenedores.
 
 | Variable | Valor |
 |---|---|
-| `ENTORNO` | `produccion` |
-| `SENTRY_ENVIRONMENT` | `produccion` |
+| `ENTORNO` | `produccion` (también es el `environment` de Sentry; `SENTRY_ENVIRONMENT` se deja comentada) |
 | `DATOS_DIR` | `/srv/chronos-amz` (aquí vivirán `db_data/` y `exogrid/`) |
 | `DOMINIOS` | `<subdominio-amz>` (el nombre completo del paso 3) |
 | `DNS_PROVEEDOR` / `DNS_TOKEN` | `cloudflare` / el token del paso 3 (real, de 40 caracteres) |
@@ -93,7 +104,7 @@ dos digests en el PR (criterio 9 del diseño: producción usa el mismo digest qu
 
 ## 6. Desplegar
 
-Desde la raíz del repo, en la máquina de build:
+Antes, confirma que `dig +short <subdominio-amz>` imprime `<IP-AMZ>` (paso 3). Desde la raíz del repo, en la máquina de build:
 
 ```bash
 infra/clientes/desplegar.sh --host amz-prod --dir /home/cesargv/chronos-amz --cliente amz \
