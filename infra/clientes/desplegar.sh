@@ -42,7 +42,7 @@ done
 
 [[ -n "$HOST" && -n "$DIR" && -n "$CLIENTE" && -n "$V_WEB" && -n "$V_API" ]] || { uso; falla "faltan argumentos obligatorios"; }
 [[ "$CLIENTE" == amz || "$CLIENTE" == sony ]] || falla "--cliente debe ser amz o sony"
-patron='^[0-9]+\.[0-9]+\.[0-9]+(-[ds])?$'
+patron='^[0-9]+\.[0-9]+\.[0-9]+(-s)?$'
 [[ "$V_WEB" =~ $patron ]] || falla "--version-web '$V_WEB' no sigue X.Y.Z[-s]"
 [[ "$V_API" =~ $patron ]] || falla "--version-api '$V_API' no sigue X.Y.Z[-s]"
 if [[ -n "$CORREO" && -z "$NOMBRE" ]]; then falla "--sembrar-admin necesita --admin-nombre"; fi
@@ -86,7 +86,9 @@ set -euo pipefail
 for clave in DATOS_DIR IMAGEN_WEB IMAGEN_API DOMINIOS DNS_TOKEN ACME_EMAIL DB_DATABASE_NAME DB_PASSWORD DB_ROOT_PASSWORD JWTSECRET CONFIG_CLAVE SMTP_FROM CLIENTE ENTORNO; do
   grep -Eq "^${clave}=.+" .env || { echo "Error: ${clave} está vacío o falta en .env" >&2; exit 1; }
 done
-datos=$(grep -E "^DATOS_DIR=" .env | tail -n1 | cut -d= -f2-)
+# Valor de una clave del .env sin comillas envolventes (simples o dobles).
+valor_env() { grep -E "^$1=" .env | tail -n1 | cut -d= -f2- | sed -E "s/^[\"'"'"']//; s/[\"'"'"']\$//"; }
+datos=$(valor_env DATOS_DIR)
 sudo mkdir -p "$datos/exogrid" "$datos/db_data/mysql"
 [ "$(stat -c %u "$datos/exogrid")" = 1000 ] || sudo chown -R 1000:1000 "$datos/exogrid"
 ' || falla "preparación del servidor"
@@ -100,18 +102,21 @@ else
   rsync -az "${ORIGEN[@]}" "$HOST:$DIR/" || falla "rsync de los compose"
 fi
 
-# 2. Versiones de las imágenes en el .env remoto (se conserva el espacio de nombres) y pull.
+# 2. Pull con las versiones nuevas (variables de entorno, que mandan sobre el .env) y, solo si funciona, se escriben
+#    en el .env remoto (se conserva el espacio de nombres).
 remoto '
 set -euo pipefail
-cambiar() {
-  grep -Eq "^$1=.+:[^:/]+$" .env || { echo "Error: $1 en .env debe tener la forma espacio/nombre:etiqueta" >&2; exit 1; }
-  sed -i -E "s|^($1=.+):[^:/]+\$|\1:$2|" .env
+# nueva_imagen CLAVE VERSIÓN: imprime el valor nuevo (misma imagen, otra etiqueta; admite comillas en el .env).
+nueva_imagen() {
+  grep -Eq "^$1=[\"'"'"']?[^:[:space:]]+:[^:/\"'"'"']+[\"'"'"']?\$" .env || { echo "Error: $1 en .env debe tener la forma espacio/nombre:etiqueta" >&2; exit 1; }
+  sed -nE "s|^$1=[\"'"'"']?(.+):[^:/\"'"'"']+[\"'"'"']?\$|\1:$2|p" .env | tail -n1
 }
-cambiar IMAGEN_WEB "$1"
-cambiar IMAGEN_API "$2"
+web=$(nueva_imagen IMAGEN_WEB "$1")
+api=$(nueva_imagen IMAGEN_API "$2")
 shift 2
-"$@" pull
-' "$V_WEB" "$V_API" docker compose "${ARCHIVOS[@]}" || falla "actualización de imágenes o pull"
+IMAGEN_WEB="$web" IMAGEN_API="$api" "$@" pull
+sed -i -E "s|^IMAGEN_WEB=.*\$|IMAGEN_WEB=$web|; s|^IMAGEN_API=.*\$|IMAGEN_API=$api|" .env
+' "$V_WEB" "$V_API" docker compose "${ARCHIVOS[@]}" || falla "actualización de imágenes o pull (el .env no se tocó si falló el pull)"
 
 # 3. Migraciones: base arriba, `show` (código 1 + líneas "[ ]" = pendientes) y `run` si procede.
 remoto '
@@ -174,7 +179,7 @@ docker compose "$@" up -d
 ' "${ARCHIVOS[@]}" || falla "docker compose up -d"
 
 if (( SIMULAR )); then
-  echo "[simular] curl -sf https://<primer dominio>/ y /api/" >&2
+  echo "[simular] curl -sf https://<primer dominio>/ y /api/ (con -k en staging)" >&2
   RESULTADO="simulado"
   exit 0
 fi
@@ -182,20 +187,28 @@ fi
 echo "== Prueba de humo"
 remoto '
 set -euo pipefail
-dominios=$(grep -E "^DOMINIOS=" .env | tail -n1 | cut -d= -f2-)
-dominio=$(echo "${dominios%%,*}" | tr -d "[:space:]\"")
+valor_env() { grep -E "^$1=" .env | tail -n1 | cut -d= -f2- | sed -E "s/^[\"'"'"']//; s/[\"'"'"']\$//"; }
+dominios=$(valor_env DOMINIOS)
+dominio=$(echo "${dominios%%,*}" | tr -d "[:space:]")
 # `:80` (modo sin TLS) no tiene nombre: se prueba por HTTP local.
 if [[ "$dominio" == :* ]]; then base="http://127.0.0.1${dominio}"; resolver=(); else
   base="https://$dominio"
   # En staging el dominio puede apuntar a otra IP: se resuelve a esta máquina.
   if [ "$1" = 1 ]; then resolver=(--resolve "$dominio:443:127.0.0.1"); else resolver=(); fi
 fi
+# En staging el primer certificado puede ser de la CA de pruebas de Let'"'"'s Encrypt (ACME_CA): no es de confianza, así que
+# se acepta (-k) y más abajo se avisa. En producción la verificación es estricta.
+if [ "$1" = 1 ]; then inseguro=(-k); else inseguro=(); fi
 # El certificado puede tardar en emitirse en el primer arranque: reintenta hasta ~2 min.
 for ruta in / /api/; do
-  curl -sf --retry 12 --retry-delay 10 --retry-all-errors "${resolver[@]}" -o /dev/null "$base$ruta" \
+  curl -sf --retry 12 --retry-delay 10 --retry-all-errors "${inseguro[@]}" "${resolver[@]}" -o /dev/null "$base$ruta" \
     || { echo "Error: $base$ruta no responde" >&2; exit 1; }
   echo "OK $base$ruta"
 done
+if [ "$1" = 1 ] && [[ "$base" == https://* ]] && ! curl -sf --max-time 15 "${resolver[@]}" -o /dev/null "$base/"; then
+  emisor=$(curl -skv --max-time 15 "${resolver[@]}" -o /dev/null "$base/" 2>&1 | grep -i "^\* *issuer:" | head -n1 || true)
+  echo "Aviso: el certificado de $dominio no es de confianza (${emisor:-emisor desconocido}); normal con ACME_CA de pruebas. Quita ACME_CA del .env y vuelve a desplegar para el certificado real." >&2
+fi
 ' "$STAGING" || { RESULTADO="fallo en la prueba de humo"; falla "la prueba de humo falló (revisa: $COMPOSE logs web api)"; }
 
 RESULTADO="ok"

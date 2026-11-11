@@ -172,3 +172,31 @@ vm_verifica_conexion() {
   [[ "$SIMULAR" == "1" || "${VM_SSH_LOCAL:-0}" == "1" ]] && return 0
   vm_ssh true || die "No hay SSH a la VM ($(vm_ip)). ¿Está encendida? virsh -c $LIBVIRT_URI start $VM_NAME"
 }
+
+# ---------- Guarda: el stack v1 de Sony solo corre en el modo sony-nginx ----------
+# update-staging.sh, 03-provision-staging.sh y replicate-prod.sh levantan el stack v1 (docker-compose v1 + nginx del host),
+# que comparte 80/443 y el directorio de datos de MariaDB con los modos Caddy. Si la VM está en caddy-amz o caddy-sony
+# arrancarían una segunda MariaDB sobre los datos de Sony. Se aborta salvo que el modo sea sony-nginx o ~/staging-modo
+# no exista (VM anterior a los modos = sony-nginx). Se omite con --status/--help (solo leen), si aún no hay VM (no hay
+# IP en caché: replicate-prod.sh la crea) o si la VM no responde (el script fallará solo al intentar usarla).
+guarda_modo_sony_nginx() {
+  case "$(basename "$0")" in
+    update-staging.sh|03-provision-staging.sh|replicate-prod.sh) ;;
+    *) return 0 ;;
+  esac
+  local a
+  for a in "$@"; do
+    case "$a" in --status|-h|--help) return 0 ;; esac
+  done
+  [[ "$SIMULAR" == "1" || "${VM_SSH_LOCAL:-0}" == "1" || -s "$VM_IP_FILE" ]] || return 0
+  local modo
+  if ! modo=$(modo_activo 2>/dev/null); then
+    warn "No se pudo leer el modo de la VM (¿apagada?); no se comprueba."
+    return 0
+  fi
+  case "$modo" in
+    sony-nginx|desconocido) return 0 ;;
+  esac
+  die "La VM está en modo '$modo': este script levantaría el stack v1 de Sony (y una segunda MariaDB sobre sus datos). Vuelve con ./staging-modo.sh sony-nginx (--estado muestra el modo)."
+}
+guarda_modo_sony_nginx "$@"

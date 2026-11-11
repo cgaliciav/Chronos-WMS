@@ -166,16 +166,28 @@ antes el snapshot `pre-update-<AAAAMMDD-HHMM>-caddy-<cliente>` (como `update-sta
 migraciones pendientes salvo `--permitir-migrar`.
 
 **Certificado de AMZ.** La primera vez el `.env` de AMZ lleva `ACME_CA=https://acme-staging-v02.api.letsencrypt.org/directory`
-(CA de pruebas, sin límites de uso; el navegador no la confía). Cuando `docker compose logs web` muestre
-`certificate obtained`, quita esa línea del `.env`, ejecuta `docker compose -f compose.yml -f compose.staging.yml up -d web`
-en `~/chronos-amz` (borra antes el volumen `caddy_data` si el certificado de pruebas quedó guardado:
-`docker compose -f compose.yml -f compose.staging.yml rm -sf web && docker volume rm chronos-amz_caddy_data`) y comprueba con `curl -v https://<subdominio>/`
-un certificado válido sin `-k`.
+(CA de pruebas, sin límites de uso; el navegador no la confía). En staging la prueba de humo de `desplegar.sh --staging`
+usa `curl -k` (y resuelve el dominio a la propia VM), así que ese primer despliegue termina en `resultado=ok`; si el
+certificado no es de confianza avisa con el emisor. En producción la verificación es estricta. Cuando `docker compose logs web`
+muestre `certificate obtained`: quita la línea `ACME_CA` del `.env`, borra el certificado de pruebas guardado
+(`docker compose -f compose.yml -f compose.staging.yml rm -sf web && docker volume rm chronos-amz_caddy_data`, en `~/chronos-amz`)
+y vuelve a desplegar con `./desplegar-caddy.sh amz --version-web V --version-api V` (las mismas versiones sirven), para que
+quede registrado `resultado=ok` en `despliegues.log` (el cambio de modo solo enciende un stack Caddy con ese resultado). Comprueba
+con `curl -v https://<subdominio>/` un certificado válido sin `-k`.
+
+**nginx tras reiniciar la VM.** Al entrar a un modo Caddy el script ejecuta `systemctl disable --now nginx` (si no, nginx, que está
+habilitado, arrancaría al reiniciar y pelearía con Caddy por 80/443); `sony-nginx` lo vuelve a habilitar con `enable --now`.
+
+**Guarda en `lib.sh`.** `update-staging.sh`, `03-provision-staging.sh` y `replicate-prod.sh` levantan el stack v1 de Sony (y, con él,
+una MariaDB sobre los datos que `caddy-sony` también usa). Por eso se niegan a correr si el modo activo de la VM no es `sony-nginx`
+(si `~/staging-modo` no existe se asume `sony-nginx`). `--status` y `--help` siempre funcionan, y si la VM está apagada la guarda solo
+avisa. `./staging-modo.sh --estado` lo recuerda cuando el modo es Caddy.
 
 **Volver a lo de antes**: `./staging-modo.sh sony-nginx`; `update-staging.sh` solo funciona en ese modo.
 Sin tocar la VM: `--simular` imprime los pasos (`STAGING_MODO_SIMULADO=caddy-amz` finge el modo); `desplegar-caddy.sh --solo-comprobar`
 ejecuta solo las comprobaciones de seguridad; `./probar-modos.sh` ejecuta los scripts remotos en local con stubs de `docker`,
-`systemctl`, `ss`, `pgrep`, `virsh`… (`--preparar`, cada cambio de modo, rechazos) y debe terminar con 0 fallos.
+`systemctl`, `ss`, `pgrep`, `virsh`, `ssh`, `curl`… (`--preparar`, cada cambio de modo, rechazos, la guarda de `lib.sh` y el camino
+completo de `desplegar.sh`, incluida la prueba de humo con certificado de pruebas) y debe terminar con 0 fallos.
 
 ## Scripts
 

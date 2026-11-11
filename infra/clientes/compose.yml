@@ -58,7 +58,7 @@ services:
       SMTP_FROM: ${SMTP_FROM:-}
       SOPORTE_CORREO: ${SOPORTE_CORREO:-soporte@exogrid.io}
       SENTRY_DSN: ${SENTRY_DSN:-}
-      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-${ENTORNO}}
     volumes:
       # El contenedor corre como `node` (uid 1000): desplegar.sh deja este directorio con ese dueño.
       - ${DATOS_DIR}/exogrid:/code/exogrid

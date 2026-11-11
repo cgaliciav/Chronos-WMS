@@ -13,6 +13,8 @@
 #   ./staging-modo.sh --preparar                            # primera vez (idempotente); pide los tokens por consola
 #   Opciones: --simular (imprime los comandos remotos sin tocar la VM), -y (sin confirmaciones).
 #
+# En los modos Caddy nginx queda deshabilitado (sobrevive a un reinicio de la VM); sony-nginx lo vuelve a habilitar.
+# update-staging.sh, 03-provision-staging.sh y replicate-prod.sh se niegan a correr fuera de sony-nginx (guarda en lib.sh).
 # Para cambiar de modo SIEMPRE se apaga todo (los tres stacks y nginx), se comprueba con `docker ps`, procesos y
 # `ss -ltn` que nada queda en marcha y que 80/443 están libres, y solo entonces se enciende el destino. El modo se
 # guarda en ~/staging-modo de la VM ("en-transicion" mientras dura el cambio, para que desplegar-caddy.sh se niegue).
@@ -63,6 +65,9 @@ estado() {
   modo=$(modo_activo)
   step "Estado de staging ($VM_NAME)"
   info "Modo activo: ${C_BOLD}$modo${C_RESET}"
+  if [[ "$modo" != sony-nginx && "$modo" != desconocido ]]; then
+    info "update-staging.sh, 03-provision-staging.sh y replicate-prod.sh se niegan a correr en este modo (volver: ./staging-modo.sh sony-nginx)."
+  fi
   if [[ "$SIMULAR" == "1" ]]; then
     echo "[simular] remoto: docker ps (nombre, imagen, estado) · systemctl is-active nginx · ss -ltn (80/443)" >&2
   else
@@ -86,7 +91,7 @@ ss -H -ltn "( sport = :80 or sport = :443 )" || true
     echo "[simular] remoto: grep ^DOMINIOS= $dir/.env (primer dominio) · openssl s_client -connect <ip>:443 -servername <dominio>" >&2
     return 0
   fi
-  dominio=$(vm_bash "leer DOMINIOS de $dir/.env" 'grep -E "^DOMINIOS=" "$1/.env" 2>/dev/null | tail -n1 | cut -d= -f2- | cut -d, -f1 || true' "$dir")
+  dominio=$(vm_bash "leer DOMINIOS de $dir/.env" 'grep -E "^DOMINIOS=" "$1/.env" 2>/dev/null | tail -n1 | cut -d= -f2- | cut -d, -f1 | tr -d "[:space:]\"" || true' "$dir")
   if [[ -z "$dominio" ]]; then warn "No hay DOMINIOS en $dir/.env"; return 0; fi
   if [[ "${VM_SSH_LOCAL:-0}" == "1" ]]; then info "Certificado de $dominio: no se consulta en pruebas locales."; return 0; fi
   info "Certificado de $dominio (contra la IP de la VM):"
@@ -161,19 +166,21 @@ echo "AMZ_ENV=$amz SONY_ENV=$sony DH_LOGIN=$dh"
     fi
     if ((want_amz || want_sony)); then
       leer acme_email "Correo ACME_EMAIL (avisos de Let's Encrypt): "
-      leer dh_ns "Espacio de nombres de Docker Hub [exogrid]: "
-      dh_ns="${dh_ns:-exogrid}"
       [[ -n "$acme_email" ]] || die "ACME_EMAIL es obligatorio"
     fi
+    if ((want_amz || want_sony || !dh_hecho)); then
+      leer dh_ns "Espacio de nombres (y usuario) de Docker Hub [exogrid]: "
+      dh_ns="${dh_ns:-exogrid}"
+    fi
     if ((!dh_hecho)); then
-      leer dh_token "Token de Docker Hub de solo lectura (usuario exogrid): " secreto
+      leer dh_token "Token de Docker Hub de solo lectura (usuario $dh_ns): " secreto
       [[ -n "$dh_token" ]] || die "El token de Docker Hub es obligatorio"
     fi
   fi
 
   # D. Generar los .env y entrar a Docker Hub. Los datos entran por stdin, en este orden fijo.
   printf '%s\n' "$amz_dominio" "$amz_token" "$sony_token" "$acme_email" "$dh_ns" "$dh_token" \
-  | vm_bash "crear .env de AMZ/Sony con secretos aleatorios (openssl rand) · docker login -u exogrid --password-stdin" '
+  | vm_bash "crear .env de AMZ/Sony con secretos aleatorios (openssl rand) · docker login -u <espacio de nombres> --password-stdin" '
 set -euo pipefail
 umask 077
 amz="$1"; sony="$2"; v1="$3"; want_amz="$4"; want_sony="$5"; dh="$6"
@@ -230,7 +237,7 @@ if [ "$want_sony" = 1 ]; then
 fi
 
 if [ "$dh" = 0 ]; then
-  printf "%s" "$dh_token" | docker login -u exogrid --password-stdin >&2
+  printf "%s" "$dh_token" | docker login -u "$dh_ns" --password-stdin >&2
 fi
 ' "$AMZ_DIR_REMOTE" "$SONY_CADDY_DIR_REMOTE" "$STAGING_DIR_REMOTE" "$want_amz" "$want_sony" "$dh_hecho"
   ok "Preparación terminada. Siguiente: ./staging-modo.sh --estado"
@@ -267,7 +274,7 @@ cambiar_modo() {
   fi
 
   step "1/3 Apagar todo y verificar (nada en marcha, 80/443 libres)"
-  vm_bash "echo en-transicion > $MODO_FILE_REMOTE · docker compose -p chronos-amz stop · docker compose -p chronos-sony stop · (cd $STAGING_DIR_REMOTE && docker-compose stop) · sudo systemctl stop nginx · detener cualquier contenedor restante de los 3 stacks · verificar docker ps / procesos mariadbd / ss -ltn 80,443" "$REMOTO_FUNCS"'
+  vm_bash "echo en-transicion > $MODO_FILE_REMOTE · docker compose -p chronos-amz stop · docker compose -p chronos-sony stop · (cd $STAGING_DIR_REMOTE && docker-compose stop) · sudo systemctl stop|disable --now nginx · detener cualquier contenedor restante de los 3 stacks · verificar docker ps / procesos mariadbd / ss -ltn 80,443" "$REMOTO_FUNCS"'
 set -euo pipefail
 modo_file="$1"; v1="$2"; destino="$3"
 echo en-transicion > "$modo_file"
@@ -277,7 +284,8 @@ elif [ "$destino" != sony-nginx ]; then
   echo "Error: falta docker compose v2 en la VM; ejecuta ./staging-modo.sh --preparar" >&2; exit 1
 fi
 [ -d "$v1" ] && (cd "$v1" && docker-compose stop >&2)
-sudo systemctl stop nginx
+# En los modos Caddy nginx se DESHABILITA (si no, tras reiniciar la VM arrancaría y pelearía por 80/443 con Caddy).
+if [ "$destino" = sony-nginx ]; then sudo systemctl stop nginx; else sudo systemctl disable --now nginx; fi
 # `docker-compose stop` no siempre alcanza contenedores huérfanos del proyecto (p. ej. <hash>_teleset-almacen_frontend_1):
 # se detiene explícitamente cualquier contenedor que siga en marcha de los tres stacks.
 stacks_en_marcha | while read -r _ nombre; do docker stop "$nombre" >&2; done
@@ -302,13 +310,13 @@ echo "Todo apagado; 80/443 libres." >&2
 
   step "3/3 Encender $destino"
   if [[ -n "$dir" ]]; then etiqueta="cd $dir && docker compose -f compose.yml -f compose.staging.yml up -d (solo si hubo un despliegue correcto)"
-  else etiqueta="cd $STAGING_DIR_REMOTE && docker-compose up -d · sudo systemctl start nginx"; fi
+  else etiqueta="cd $STAGING_DIR_REMOTE && docker-compose up -d · sudo systemctl enable --now nginx"; fi
   vm_bash "$etiqueta · echo $destino > $MODO_FILE_REMOTE" '
 set -euo pipefail
 modo_file="$1"; destino="$2"; v1="$3"; dir="$4"
 if [ "$destino" = sony-nginx ]; then
   (cd "$v1" && docker-compose up -d >&2)
-  sudo systemctl start nginx
+  sudo systemctl enable --now nginx
 else
   cd "$dir"
   [ -f .env ] || { echo "Error: falta $dir/.env; ejecuta ./staging-modo.sh --preparar" >&2; exit 1; }

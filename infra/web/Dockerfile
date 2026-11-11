@@ -22,10 +22,11 @@ RUN if [ -n "$VERSION" ]; then npm pkg set version="$VERSION"; fi \
     && npm run build
 
 # ---------- 2. Caddy con los módulos DNS (cloudflare y linode) ----------
+# Versiones fijadas: las que resolvió el build vigente (caddy list-modules --versions); súbelas a propósito, no por accidente.
 FROM caddy:2.10-builder AS caddy
 RUN xcaddy build \
-    --with github.com/caddy-dns/cloudflare \
-    --with github.com/caddy-dns/linode
+    --with github.com/caddy-dns/cloudflare@v0.2.4 \
+    --with github.com/caddy-dns/linode@v0.8.0
 
 # ---------- 3. Imagen final ----------
 FROM caddy:2.10-alpine
