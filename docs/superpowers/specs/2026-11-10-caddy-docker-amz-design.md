@@ -82,8 +82,10 @@ deja staging listo para ensayar la migración de Sony; **no** cubre la migració
   `api/.env.example` (`TRUST_PROXY`, `CONFIG_CLAVE`, `SMTP_*`, `SMTP_ANULAR`, `ARCHIVOS_PUBLICOS`, …). Migraciones con
   `node build/migrar.js show|run|revert`. El nombre de base por defecto en la imagen es `almacen_sony_migracion`; para
   AMZ se fija por variable.
-- **Las migraciones no insertan datos** (comprobado: ningún `INSERT` en `api/src/migration/`). Una base nueva no tiene
-  `movimiento_tipo`, `rol`, ni otros catálogos que el código da por hechos.
+- **Las migraciones casi no insertan datos.** La única que lo hace es `Configuracion` (`1794338006363`): inserta la configuración
+  por defecto y el rol `CONFIGURACION-EDITAR`, con `INSERT IGNORE`. Una base nueva no tiene `movimiento_tipo`, el resto de los `rol`
+  ni otros catálogos que el código da por hechos; los pone la carga inicial, que identifica los roles por `codigoRol` (así convive
+  con el rol que ya insertó la migración).
 - docker-compose v1 1.29 (apt) en la VM de staging falla al recrear contenedores de imágenes BuildKit
   (`update-staging.sh` lo rodea). Las imágenes de Docker Hub se construirán con buildx.
 - Versionado obligatorio `vX.Y.Z` con sufijos `-d`/`-s` (CLAUDE.md raíz). Idioma: español.
