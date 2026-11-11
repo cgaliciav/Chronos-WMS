@@ -33,6 +33,7 @@ app/
   auth/             ACL.tsx (roles, redirect, defaultRedirect), LoginPage.tsx
   errors/           ErrorPage.tsx (401/404/500/503), ErrorBoundary.tsx
   notificaciones/   NotificacionesCampana.tsx (solo con VITE_NOTIFICACIONES=on; SSE /notifications/stream o sondeo cada 60 s)
+  actualizacion/    AvisoActualizacion.tsx (aviso de versión nueva, PWA), recargaPorChunkPerdido.ts
 stores/             usuario.store.ts, ui.store.ts, notificaciones.store.ts
 services/axios/     apiClient (interceptores: token, renovación, error → notifica y rechaza), conToken(url), PeticionBase<T>,
                     21 servicios por recurso (incluido notificaciones)
@@ -87,6 +88,28 @@ componentes de antd (`Tarjeta`/`Encabezado` de `components/ui`, `Space`, `Flex`,
 
 `deploy-production.sh`: `npm version patch` (package.json + lock), commit y tag git, `npm ci && npm run build`, `rsync` de
 `build/` al servidor y `tar.gz` en `deploy_history/`. `deploy.sh` (pruebas) solo hace rsync de `build/`.
+
+### Aviso de versión nueva (PWA, desde v4.8.0)
+
+`vite-plugin-pwa` (en `vite.config.ts`, modo `prompt`) genera en el build `sw.js` y `manifest.webmanifest`. En
+`npm run dev` no hay service worker. El service worker precachea **solo el front** (JS, CSS, HTML e iconos; nunca
+`/api/` ni los `.map`):
+- la pestaña abierta sigue funcionando aunque el despliegue borre los chunks viejos (`rsync --delete`);
+- la app se puede instalar desde el navegador.
+
+`app/actualizacion/AvisoActualizacion` (montado en `RaizLayout`):
+- pide `sw.js` al servidor cada 5 min y al volver a la pestaña;
+- si cambió, muestra una notificación fija "Hay una versión nueva" con el botón **Actualizar**;
+- si el usuario la ignora, la versión nueva se aplica en el siguiente cambio de ruta.
+
+`recargaPorChunkPerdido` recarga una vez si falla un import dinámico (`vite:preloadError`). Cubre a los navegadores que
+aún no tienen el service worker.
+
+- **Requisito del servidor:** `/sw.js` y `/manifest.webmanifest` sin caché, como `index.html`
+  (`Cache-Control: no-cache`). Pendiente de configurar en el Caddy que sustituirá al doble nginx. Mientras tanto
+  funciona porque el navegador revisa `sw.js` saltándose la caché HTTP.
+- **Retirarlo:** `selfDestroying: true` en `VitePWA` y desplegar. El service worker se desregistra solo en todos los
+  navegadores.
 
 ### Rutas sin `#` y nginx (desde v4.1.0)
 

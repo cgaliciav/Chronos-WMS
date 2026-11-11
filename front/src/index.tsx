@@ -15,9 +15,11 @@ import { iniciarSentry } from './sentry'
 import { useUsuarioStore } from './stores/usuario.store'
 import { iniciarDeteccionViewport } from './stores/ui.store'
 import { useMarcaStore } from './stores/marca.store'
+import { iniciarRecargaPorChunkPerdido } from './app/actualizacion/recargaPorChunkPerdido'
 
 iniciarSentry()
 iniciarDeteccionViewport()
+iniciarRecargaPorChunkPerdido()
 // Con token guardado, recupera la sesión (antes la saga LOAD_CURRENT_ACCOUNT).
 void useUsuarioStore.getState().cargarCuentaActual()
 

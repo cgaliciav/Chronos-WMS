@@ -31,7 +31,8 @@ src/pages/*/tipos.ts        tipos locales de cada área (complementan types/api.
 src/components/             Titulo y ui/ (Tarjeta, Encabezado, Comentario)
 src/helpers/                storage, feedback, fechas, log, limpiarCache, funcionesExtras (mapeoOpciones, filtrarOpcion, idDeEtiquetado…)
 src/app/                    armazón en TS: layouts (Raiz/Main/Auth), menu (menuItems + useMenuItems),
-                            auth (ACL, LoginPage), errors (ErrorPage, ErrorBoundary), notificaciones (campana)
+                            auth (ACL, LoginPage), errors (ErrorPage, ErrorBoundary), notificaciones (campana),
+                            actualizacion (aviso de versión nueva, PWA)
 src/stores/                 usuario.store.ts (sesión, permisos, login/logout), ui.store.ts (menú colapsado, móvil)
 src/services/axios/         TypeScript: apiClient + PeticionBase genérica + 20 clases por recurso; conToken(url)
 src/types/api.ts            tipos de las respuestas del API
@@ -76,6 +77,12 @@ puntual o CSS Modules; `src/estilos-globales.css` solo para lo que los tokens no
 - Formularios con `Form.useForm`. Pruebas de componentes con `renderizar()` de `src/test/renderizar.tsx` (mismo `ConfigProvider`).
 - Estilo: Prettier 3 (`.prettierrc.json`: sin punto y coma, comillas simples, 100 columnas, LF) y ESLint 10
   (`eslint.config.js`: typescript-eslint, @eslint-react, react-hooks).
+
+**PWA:** `vite-plugin-pwa` en modo `prompt`, con service worker solo en el build:
+- `app/actualizacion/AvisoActualizacion` avisa de versión nueva y la aplica con el botón o al cambiar de ruta;
+- el service worker nunca cachea `/api/`;
+- para retirarlo, `selfDestroying: true` y desplegar;
+- detalle en `docs/front/arquitectura.md`.
 
 ## Variables de entorno
 
