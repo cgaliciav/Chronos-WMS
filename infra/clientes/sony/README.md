@@ -19,3 +19,23 @@ Importar: en la app, **Configuración → Importar** con `sony.import.json` (usu
 `CONFIGURACION-EDITAR`), o con `curl -X POST -H "auth: <token>" -H "Content-Type: application/json"
 --data @sony.import.json https://<dominio>/api/config/import`. El procedimiento completo está en
 `docs/api/procedimiento-migracion-produccion.md` ("Plan 03").
+
+## Sony con Caddy en Docker
+
+Con la imagen `chronos-web` Caddy sustituye al nginx del host y al contenedor nginx del front, y obtiene el certificado
+por DNS-01. El stack es `infra/clientes/compose.yml` (+ `compose.staging.yml` en staging) y reutiliza los datos de hoy:
+`DATOS_DIR` apunta a la carpeta que contiene `db_data/mysql` y `exogrid/` (staging: `/home/cesargv/teleset-almacen`),
+con MariaDB 10.3 y la base `almacen_sony_migracion`.
+
+1. En el servidor, en el directorio del despliegue, copia `.env.caddy.example` como `.env` (`chmod 600`) y llena los
+   secretos (`DB_PASSWORD`, `DB_ROOT_PASSWORD`, `JWTSECRET`, `CONFIG_CLAVE`, `DNS_TOKEN` real, `ACME_EMAIL`, `DOMINIOS`).
+2. Despliega (desde la raíz del repo):
+
+```bash
+infra/clientes/desplegar.sh --host <ssh> --dir <ruta remota> --cliente sony \
+  --version-web X.Y.Z-s --version-api X.Y.Z-s [--staging]
+```
+
+Con Sony el script **se detiene si hay migraciones pendientes**: aplícalas con
+`docs/api/procedimiento-migracion-produccion.md` o repite con `--permitir-migrar` (y, en staging, `--antes-de-migrar` con
+el snapshot). `--simular` muestra los pasos sin tocar ningún servidor.

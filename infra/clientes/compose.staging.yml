@@ -1,0 +1,36 @@
+# Se suma a compose.yml en staging (`-f compose.yml -f compose.staging.yml`): mailpit atrapa TODO el correo.
+# Mismo mecanismo que infra/staging/docker-compose.staging.yml: alias de red con el host SMTP real y SMTP_ANULAR.
+services:
+  mailpit:
+    image: axllent/mailpit:v1.21
+    restart: unless-stopped
+    environment:
+      MP_SMTP_BIND_ADDR: 0.0.0.0:2525
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+      MP_MAX_MESSAGES: "5000"
+    ports:
+      # Solo en loopback: se consulta por túnel SSH.
+      - "127.0.0.1:${MAILPIT_PUERTO_LOCAL:-8025}:8025"
+    networks:
+      default:
+        aliases:
+          - smtp.postmarkapp.com
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+
+  api:
+    environment:
+      SMTP_HOST: mailpit
+      SMTP_PORT: "2525"
+      SMTP_USER: staging
+      SMTP_PASS: staging
+      # Gana sobre la configuración guardada en la BD (aunque venga restaurada de producción) y no envía credenciales.
+      SMTP_ANULAR: mailpit:2525
+      SENTRY_ENVIRONMENT: staging
+    depends_on:
+      mailpit:
+        condition: service_started
