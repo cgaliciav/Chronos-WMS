@@ -97,8 +97,16 @@ Del `nginx-staging.conf` (copia del de producción) y `front/nginx.conf`:
 - WebSocket hacia la API.
 - `index.html` con `Cache-Control: no-cache`; `/assets/*` con `public, max-age=31536000, immutable` y 404 si no existe;
   cualquier otra ruta → `index.html` (rutas sin `#`, decisión 15).
-- Si el PWA del front ya existe al implementar (nota pendiente del propietario): `/sw.js` y `/manifest.webmanifest`
-  también con `no-cache`.
+- **PWA del front** (front v4.8.0, `vite-plugin-pwa` en modo `prompt`, `generateSW`; ver `front/vite.config.ts` y
+  `docs/front/arquitectura.md`). El service worker revisa `sw.js` cada 5 min para avisar de versiones nuevas, así que:
+  - `/sw.js` y `/manifest.webmanifest` con `Cache-Control: no-cache`, igual que `index.html`. Así una versión nueva se
+    detecta en minutos y no tras la caché heurística del navegador.
+  - `/manifest.webmanifest` con `Content-Type: application/manifest+json`, fijado explícitamente.
+  - `/sw.js`, `/workbox-*.js` y `/manifest.webmanifest` **nunca** caen al fallback de `index.html`: si faltan,
+    responden 404. Un `sw.js` respondido con HTML rompe el registro del service worker por tipo MIME.
+  - `/workbox-*.js` lleva hash en el nombre: puede ir con caché larga, como `/assets/*`.
+  - El fallback SPA sigue aplicando solo a navegaciones. El service worker ya excluye `/api/` de su `navigateFallback`.
+  - Nada de redirecciones sobre `sw.js`: los navegadores no siguen redirecciones al actualizar un service worker.
 - CORS: hoy nginx añade `Access-Control-Allow-Origin *` encima de `cors()` de Express. En Caddy **no** se repite; lo
   gestiona solo Express (mismo origen en la práctica).
 - La cabecera `X-Environment: staging` se mantiene en staging.
@@ -130,6 +138,13 @@ Del `nginx-staging.conf` (copia del de producción) y `front/nginx.conf`:
   versión y, si se quiere blindar, el digest. El sufijo `-s` vive en la etiqueta y en el changelog, no dentro del build.
 - Caddyfile con variables de entorno (`{$DOMINIO}`, `{$DNS_PROVEEDOR}`, `{$DNS_TOKEN}`, `{$ACME_EMAIL}`, …) para no
   tener un Caddyfile por cliente. Admite varios dominios para el cambio de subdominio a dominio definitivo de AMZ.
+- **Cambio de dominio de AMZ con PWA**: el service worker queda registrado por origen. Si el subdominio viejo
+  redirigiera todo al dominio nuevo, los navegadores con el service worker viejo seguirían mostrando la app desde su
+  precaché: sus llamadas a `/api` recibirían 301 (los POST se rompen) y la actualización de `sw.js` fallaría por la
+  redirección. Por eso, durante la transición **ambos dominios sirven la app completa** en el mismo bloque de Caddy.
+  Solo después de unas semanas se retira el viejo o se redirige, cuando los usuarios ya entren por el nuevo.
+- **Sourcemaps (`*.map`) no se sirven públicamente** (404): el build los genera (`sourcemap: true`) y, si Sentry está
+  configurado, `@sentry/vite-plugin` los sube allí. Hoy nginx sí los sirve; es reversible si hiciera falta.
 - Registros DNS **sin proxy de Cloudflare** (nube gris): IP real del cliente directa y un salto menos que depurar.
 - La carga inicial es un **script idempotente** del API (p. ej. `node build/sembrar.js`), **no** una migración: Sony
   ya tiene esos datos y una migración que inserta tendría que distinguir ambos casos. Los datos (roles, tipos de
@@ -191,3 +206,7 @@ Del `nginx-staging.conf` (copia del de producción) y `front/nginx.conf`:
 8. Con DSN configurado, un error forzado en la API y otro en el front llegan a Sentry con el `environment`, la etiqueta
    `cliente` y el `release` correctos (staging y producción distinguibles con la misma imagen).
 9. La imagen desplegada en producción de AMZ tiene el mismo digest que la probada en staging.
+10. PWA: con una pestaña abierta, desplegar una versión nueva de `chronos-web` hace aparecer el aviso "Hay una versión
+    nueva" en ≤ 5 min; `curl -I` muestra `no-cache` en `/`, `/index.html`, `/sw.js` y `/manifest.webmanifest`, el
+    `Content-Type` correcto del manifest, 404 (no HTML) para un `/sw-inexistente.js` y para `*.map`, y la app se puede
+    instalar desde Chrome.
