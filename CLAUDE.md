@@ -1,11 +1,12 @@
 # Chronos-WMS · guía para agentes
 
-Monorepo del sistema de almacén (WMS) de Teleset/Sony México. Dos aplicaciones independientes:
+Monorepo del sistema de almacén (WMS) de Teleset/Sony México. Dos aplicaciones independientes, más la infraestructura:
 
 | Carpeta | Qué es | Guía propia |
 |---|---|---|
 | `api/` | API REST Node.js + Express 5 + TypeORM 1.1 + MariaDB (TypeScript) | `api/CLAUDE.md` |
 | `front/` | SPA React 19 + antd 6 + Vite, 100 % TypeScript (plan 01: falta la fase 7, pruebas e2e y CI) | `front/CLAUDE.md` |
+| `infra/` | Caddy en Docker (`chronos-web`), imágenes en Docker Hub, compose y despliegue por cliente (AMZ, Sony) y staging local | `infra/web/README.md`, `infra/imagenes/README.md`, `infra/staging/README.md` |
 | `docs/` | Documentación técnica, hallazgos y planes de trabajo | `docs/README.md` |
 
 No hay `node_modules` ni base de datos en este repositorio; cada app se instala y arranca por separado
@@ -59,6 +60,9 @@ grande que incluya la versión.
 - `docs/planes/03-personalizacion-por-cliente.md`: marca y configuración por cliente servidas por el API (`/config`) y
   editables desde el front (`/configuracion`); "Sony" pasa a "Chronos WMS". Fases 0-5 hechas en código; falta que una
   persona ensaye en staging y despliegue con el procedimiento (la marca de Sony se carga desde `infra/clientes/sony`).
+- `docs/superpowers/specs/2026-11-10-caddy-docker-amz-design.md` y `docs/superpowers/plans/2026-11-10-caddy-docker-amz.md`:
+  Caddy en Docker, imágenes en Docker Hub y cliente AMZ (decisión 17). Procedimientos: `docs/infra/`. Falta que una persona
+  ejecute la aceptación en staging y el alta de producción de AMZ.
 
 ## Flujo de trabajo esperado
 

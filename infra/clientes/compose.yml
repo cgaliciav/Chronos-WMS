@@ -1,0 +1,112 @@
+# Stack de un cliente de Chronos WMS: Caddy (web) + API + MariaDB. Una carpeta remota por cliente y entorno, con
+# este archivo, su `.env` (ver amz/.env.example y sony/.env.caddy.example) y, en staging, compose.staging.yml.
+# Lo instala infra/clientes/desplegar.sh. Diseño: docs/superpowers/specs/2026-11-10-caddy-docker-amz-design.md.
+#   - Solo `web` publica puertos al mundo (80, 443 y 443/udp para HTTP/3).
+#   - MariaDB solo escucha en 127.0.0.1 (se usa por túnel SSH).
+#   - DB_SYNCRO=false siempre: el esquema solo lo cambian las migraciones.
+x-registro: &registro
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "5"
+
+services:
+  mariadb:
+    image: ${MARIADB_IMAGEN:-mariadb:10.11}
+    restart: unless-stopped
+    environment:
+      # Con una base nueva crean la base y el usuario en el primer arranque; con un directorio de datos ya
+      # inicializado (Sony) MariaDB los ignora.
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${DB_DATABASE_NAME}
+      MARIADB_USER: ${DB_USER:-chronos}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ${DATOS_DIR}/db_data/mysql:/var/lib/mysql
+    ports:
+      - "127.0.0.1:${DB_PUERTO_LOCAL:-3309}:3306"
+    healthcheck:
+      # Por TCP: durante el primer arranque el entrypoint usa un servidor temporal sin red (--skip-networking) que
+      # responde por socket antes de crear la base y el usuario; así solo es "healthy" el servidor definitivo.
+      # Sirve igual en 10.3 y 10.11 (10.3 no trae healthcheck.sh).
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--protocol=tcp"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    logging: *registro
+
+  api:
+    image: ${IMAGEN_API}
+    restart: unless-stopped
+    environment:
+      JWTSECRET: ${JWTSECRET}
+      DB_HOST: mariadb
+      DB_USER: ${DB_USER:-chronos}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE_NAME: ${DB_DATABASE_NAME}
+      # El esquema lo cambian las migraciones (desplegar.sh), nunca synchronize.
+      DB_SYNCRO: "false"
+      CLIENTE: ${CLIENTE}
+      TRUST_PROXY: ${TRUST_PROXY:-uniquelocal}
+      ARCHIVOS_PUBLICOS: ${ARCHIVOS_PUBLICOS:-false}
+      CONFIG_CLAVE: ${CONFIG_CLAVE:-}
+      SMTP_HOST: ${SMTP_HOST:-smtp.postmarkapp.com}
+      SMTP_PORT: ${SMTP_PORT:-2525}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SOPORTE_CORREO: ${SOPORTE_CORREO:-soporte@exogrid.io}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-${ENTORNO}}
+    volumes:
+      # El contenedor corre como `node` (uid 1000): desplegar.sh deja este directorio con ese dueño.
+      - ${DATOS_DIR}/exogrid:/code/exogrid
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    healthcheck:
+      # Cualquier respuesta HTTP (aunque sea 404) indica que Express escucha.
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4200/').then(()=>process.exit(0),()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging: *registro
+
+  web:
+    image: ${IMAGEN_WEB}
+    restart: unless-stopped
+    environment:
+      DOMINIOS: ${DOMINIOS}
+      DNS_PROVEEDOR: ${DNS_PROVEEDOR:-cloudflare}
+      # Cloudflare valida el formato del token al arrancar: debe ser un token real, no un valor de relleno.
+      DNS_TOKEN: ${DNS_TOKEN:-}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+      # Nunca vacío: una cadena vacía rompe el Caddyfile.
+      ACME_CA: ${ACME_CA:-https://acme-v02.api.letsencrypt.org/directory}
+      API_UPSTREAM: api:4200
+      CLIENTE: ${CLIENTE}
+      ENTORNO: ${ENTORNO}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_started
+    healthcheck:
+      # API de administración de Caddy (solo dentro del contenedor); no depende de TLS ni del dominio.
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:2019/config/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    logging: *registro
+
+volumes:
+  caddy_data:
+  caddy_config:

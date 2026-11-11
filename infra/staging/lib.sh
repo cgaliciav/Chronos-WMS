@@ -25,8 +25,15 @@ VM_NETWORK="default"
 UBUNTU_RELEASE="noble"                   # 24.04, igual que prod
 LIBVIRT_URI="qemu:///system"
 
-STAGING_DIR_REMOTE="/home/cesargv/teleset-almacen"
-CACHE_DIR="$HOME/staging-cache"
+STAGING_DIR_REMOTE="${STAGING_DIR_REMOTE:-/home/cesargv/teleset-almacen}"
+
+# Modos de staging con Caddy en Docker (staging-modo.sh, desplegar-caddy.sh). Rutas en la VM.
+AMZ_DIR_REMOTE="${AMZ_DIR_REMOTE:-/home/cesargv/chronos-amz}"          # .env, db_data/, exogrid/ y compose de AMZ
+SONY_CADDY_DIR_REMOTE="${SONY_CADDY_DIR_REMOTE:-/home/cesargv/chronos-sony}"  # solo .env y compose; sus datos están en STAGING_DIR_REMOTE
+MODO_FILE_REMOTE="${MODO_FILE_REMOTE:-/home/cesargv/staging-modo}"       # modo activo: sony-nginx | caddy-amz | caddy-sony | en-transicion
+PROYECTO_SONY_V1="teleset-almacen"                  # proyecto docker-compose v1 del stack actual de Sony
+MODOS_VALIDOS="sony-nginx caddy-amz caddy-sony"
+CACHE_DIR="${CACHE_DIR:-$HOME/staging-cache}"
 
 if [[ -f "$STAGING_DIR/staging.conf" ]]; then
   # shellcheck source=/dev/null
@@ -114,3 +121,82 @@ smoke_tests() {
   fi
   return "$fail"
 }
+
+# ---------- Modos de staging (Caddy) ----------
+# Con SIMULAR=1 no se toca la VM: vm_bash imprime lo que ejecutaría y modo_activo devuelve
+# $STAGING_MODO_SIMULADO (por defecto sony-nginx).
+SIMULAR="${SIMULAR:-0}"
+
+# uso: vm_bash "etiqueta" 'script bash' [args...]
+# Ejecuta el script en la VM como `bash -c` (los argumentos son $1, $2…). La entrada estándar queda libre para
+# pasar secretos: nunca van en la línea de comandos. La etiqueta resume el comando para --simular.
+vm_bash() {
+  local etiqueta="$1" script="$2"; shift 2
+  if [[ "$SIMULAR" == "1" ]]; then
+    echo "[simular] remoto: $etiqueta" >&2
+    [[ "${SIMULAR_VERBOSO:-0}" == "1" ]] && awk '{ print "[simular]     | " $0 }' <<<"$script" >&2
+    return 0
+  fi
+  if [[ "${VM_SSH_LOCAL:-0}" == "1" ]]; then  # pruebas (probar-modos.sh): el "remoto" es esta máquina, con stubs en el PATH
+    bash -c "$script" _ "$@"
+    return
+  fi
+  local qargs=""
+  (($#)) && qargs=$(printf '%q ' "$@")
+  vm_ssh "bash -c $(printf '%q' "$script") _ $qargs"
+}
+
+# Modo activo según ~/staging-modo en la VM ("desconocido" si el archivo no existe).
+modo_activo() {
+  if [[ "$SIMULAR" == "1" ]]; then echo "${STAGING_MODO_SIMULADO:-sony-nginx}"; return 0; fi
+  if [[ "${VM_SSH_LOCAL:-0}" == "1" ]]; then cat "$MODO_FILE_REMOTE" 2>/dev/null || echo desconocido; return 0; fi
+  vm_ssh "cat $MODO_FILE_REMOTE 2>/dev/null || echo desconocido"
+}
+
+dir_de_cliente() { # amz|sony → directorio remoto del stack Caddy
+  case "$1" in
+    amz) echo "$AMZ_DIR_REMOTE" ;;
+    sony) echo "$SONY_CADDY_DIR_REMOTE" ;;
+    *) die "cliente desconocido: $1" ;;
+  esac
+}
+
+# Función para los scripts remotos (se antepone al script): una línea "<proyecto> <contenedor>" por cada contenedor en
+# marcha de cualquiera de los tres stacks (vacío = ninguno). Un solo `docker ps` con --format y filtro con grep: repetir
+# `--filter label=…` se combina con Y y no devolvería nada. Sirve igual con compose v1 y v2 (etiqueta del proyecto).
+REMOTO_FUNCS='stacks_en_marcha() { docker ps --format "{{.Label \"com.docker.compose.project\"}} {{.Names}}" | grep -E "^(teleset-almacen|chronos-amz|chronos-sony) " || true; }
+'
+
+# Verifica que hay conexión con la VM (en pruebas locales no aplica).
+vm_verifica_conexion() {
+  [[ "$SIMULAR" == "1" || "${VM_SSH_LOCAL:-0}" == "1" ]] && return 0
+  vm_ssh true || die "No hay SSH a la VM ($(vm_ip)). ¿Está encendida? virsh -c $LIBVIRT_URI start $VM_NAME"
+}
+
+# ---------- Guarda: el stack v1 de Sony solo corre en el modo sony-nginx ----------
+# update-staging.sh, 03-provision-staging.sh y replicate-prod.sh levantan el stack v1 (docker-compose v1 + nginx del host),
+# que comparte 80/443 y el directorio de datos de MariaDB con los modos Caddy. Si la VM está en caddy-amz o caddy-sony
+# arrancarían una segunda MariaDB sobre los datos de Sony. Se aborta salvo que el modo sea sony-nginx o ~/staging-modo
+# no exista (VM anterior a los modos = sony-nginx). Se omite con --status/--help (solo leen), si aún no hay VM (no hay
+# IP en caché: replicate-prod.sh la crea) o si la VM no responde (el script fallará solo al intentar usarla).
+guarda_modo_sony_nginx() {
+  case "$(basename "$0")" in
+    update-staging.sh|03-provision-staging.sh|replicate-prod.sh) ;;
+    *) return 0 ;;
+  esac
+  local a
+  for a in "$@"; do
+    case "$a" in --status|-h|--help) return 0 ;; esac
+  done
+  [[ "$SIMULAR" == "1" || "${VM_SSH_LOCAL:-0}" == "1" || -s "$VM_IP_FILE" ]] || return 0
+  local modo
+  if ! modo=$(modo_activo 2>/dev/null); then
+    warn "No se pudo leer el modo de la VM (¿apagada?); no se comprueba."
+    return 0
+  fi
+  case "$modo" in
+    sony-nginx|desconocido) return 0 ;;
+  esac
+  die "La VM está en modo '$modo': este script levantaría el stack v1 de Sony (y una segunda MariaDB sobre sus datos). Vuelve con ./staging-modo.sh sony-nginx (--estado muestra el modo)."
+}
+guarda_modo_sony_nginx "$@"

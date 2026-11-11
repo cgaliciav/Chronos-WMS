@@ -15,6 +15,20 @@ Los códigos `F<n>` remiten a [`docs/hallazgos-codigo.md`](../docs/hallazgos-cod
 
 Pendiente: fase 7 del plan 01 (pruebas e2e con Playwright, CI y cobertura).
 
+## [4.9.0-d] - 2026-11-10
+
+Sentry con el entorno y el cliente leídos en tiempo de ejecución.
+
+### Añadido
+
+- **`/entorno.json`** (`src/entorno.ts`): el front lo pide al arrancar (`cache: 'no-store'`, 2 s de límite; ante error
+  devuelve `{}`) y Sentry usa `entorno` como `environment` y `cliente` como etiqueta. Sin el archivo, `environment` es
+  el modo de Vite y no hay etiqueta. Lo servirá Caddy; un mismo build sirve a varios despliegues.
+
+### Cambiado
+
+- `iniciarSentry(entorno)` recibe el entorno; se inicia sin bloquear el primer render.
+
 ## [4.8.0-d] - 2026-11-10
 
 Aviso de versión nueva: el front detecta que hay un despliegue nuevo y avisa (PWA).

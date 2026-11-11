@@ -9,6 +9,20 @@ La versión vive en `package.json` (la devuelve `/auth/version`, y Sentry la usa
 `desplegar.sh` publica una versión `X.Y.Z-d` como `X.Y.Z` y, si ya no lleva sufijo, sube el parche. Contrato con el
 front: [`docs/api/endpoints.md`](../docs/api/endpoints.md). Plan: [`docs/planes/02-api-relacion-movimientos.md`](../docs/planes/02-api-relacion-movimientos.md).
 
+## [2.89.0-d] - Sin publicar
+
+Carga inicial de una base nueva y Sentry con entorno y cliente (preparación del despliegue de AMZ con Caddy).
+
+### Añadido
+
+- Carga inicial de una base nueva: `node build/sembrar.js --admin-correo <correo> --admin-nombre "<nombre>"` (en desarrollo,
+  `npm run semilla:run`) siembra los catálogos de Sony (`src/semilla/catalogo.json`, con los ids fijos de los tipos de
+  movimiento) y crea un administrador con contraseña temporal. Es idempotente y se niega si la base ya tiene movimientos
+  (`api/README.md`, "Base nueva").
+- Sentry: variables `SENTRY_ENVIRONMENT` (`staging` o `produccion`; si falta, `NODE_ENV`) y `CLIENTE` (p. ej. `amz`), que
+  se envía como etiqueta `cliente` del evento. Sin `SENTRY_DSN` sigue sin inicializarse. El `release` no cambia
+  (`almacen-api@<versión>`).
+
 ## [2.88.0-d] - Sin publicar
 
 Plan 03, fase 5: exportar/importar la configuración y retirada del logo histórico. Procedimiento de despliegue en

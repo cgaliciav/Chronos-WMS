@@ -9,6 +9,9 @@
 | [`api/rendimiento.md`](api/rendimiento.md) | Medición de rendimiento (autocannon) antes y después de la fase 4 y qué se optimizó |
 | [`api/procedimiento-migracion-produccion.md`](api/procedimiento-migracion-produccion.md) | Cómo respaldar, aplicar, verificar y revertir las migraciones en producción |
 | [`../infra/staging/README.md`](../infra/staging/README.md) | Staging local (VM réplica de producción): crearla, refrescar datos y actualizarla con `update-staging.sh` |
+| [`infra/procedimiento-alta-amz.md`](infra/procedimiento-alta-amz.md) | Alta de AMZ en producción: Linode, Docker, DNS, `.env`, promoción de imágenes, despliegue, verificación y rollback |
+| [`infra/cambio-de-dominio.md`](infra/cambio-de-dominio.md) | Cambiar el dominio de un cliente con PWA sin romper a los usuarios (ambos dominios sirven la app) |
+| [`superpowers/specs/2026-11-10-caddy-docker-amz-design.md`](superpowers/specs/2026-11-10-caddy-docker-amz-design.md) | Diseño de Caddy en Docker, imágenes en Docker Hub y despliegue del cliente AMZ |
 | [`front/arquitectura.md`](front/arquitectura.md) | Stack, estructura, flujo de autenticación y convenciones del front |
 | [`../front/CHANGELOG.md`](../front/CHANGELOG.md) | Historial de versiones del front (4.0.0: plan 01, fases 0-6) |
 | [`front/inventario-rutas.md`](front/inventario-rutas.md) | Las rutas del front con componente, roles (menú vs ACL), endpoints y rutas críticas |

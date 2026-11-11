@@ -37,7 +37,7 @@ src/stores/                 usuario.store.ts (sesión, permisos, login/logout), 
 src/services/axios/         TypeScript: apiClient + PeticionBase genérica + 20 clases por recurso; conToken(url)
 src/types/api.ts            tipos de las respuestas del API
 src/router.tsx              67 rutas (createHashRouter + React.lazy); app/layouts/RaizLayout es el elemento raíz
-src/index.tsx               createRoot, ConfigProvider (es_ES + tema.ts), <App>, Sentry (solo con VITE_SENTRY_DSN)
+src/index.tsx               createRoot, ConfigProvider (es_ES + tema.ts), <App>, Sentry (solo con VITE_SENTRY_DSN; entorno y cliente de /entorno.json, `entorno.ts`)
 src/tema.ts                 tokens del tema claro de antd 6 (colores, fuente Mukta, radios) y configuracionTag
 ```
 

@@ -1,0 +1,13 @@
+# Contexto de build de infra/web/Dockerfile: solo hace falta front/ y infra/web/Caddyfile.
+**/node_modules
+**/build
+**/dist
+**/coverage
+**/.env*
+.git
+api
+docs
+infra/staging
+infra/clientes
+front/*.tsbuildinfo
+front/tsconfig.tsbuildinfo

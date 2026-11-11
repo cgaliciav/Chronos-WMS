@@ -11,13 +11,15 @@ import './helpers/fechas'
 import { RegistrarFeedback } from './helpers/feedback'
 import { router } from './router'
 import { configuracionTag, temaConMarca } from './tema'
+import { cargarEntorno } from './entorno'
 import { iniciarSentry } from './sentry'
 import { useUsuarioStore } from './stores/usuario.store'
 import { iniciarDeteccionViewport } from './stores/ui.store'
 import { useMarcaStore } from './stores/marca.store'
 import { iniciarRecargaPorChunkPerdido } from './app/actualizacion/recargaPorChunkPerdido'
 
-iniciarSentry()
+// Sentry se inicia sin bloquear el render: el entorno y el cliente llegan de /entorno.json (nunca rechaza).
+void cargarEntorno().then(iniciarSentry)
 iniciarDeteccionViewport()
 iniciarRecargaPorChunkPerdido()
 // Con token guardado, recupera la sesión (antes la saga LOAD_CURRENT_ACCOUNT).

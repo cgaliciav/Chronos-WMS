@@ -5,6 +5,8 @@ Los ids están fijados en la base de datos de producción. Desde la fase 3 del p
 sueltos en controladores que se sustituyen en la fase 4. El efecto de cada tipo vive en
 `api/src/services/reglas/efectosInventario.ts` (función pura, mismas reglas y mensajes que el `switch` anterior).
 
+En la base de producción los ids 1, 2 y 5 se llaman `COMPRA+`, `ALTA+` y `BAJA+` (esta tabla los marca con `*`).
+
 | id | nombre | Efecto sobre `InventarioActual` (nombres del `switch` anterior a la fase 3) | Requiere proyecto | Notas |
 |---:|---|---|:-:|---|
 | 1 | COMPRA* (legado) | `actualizarInventarioActualCompraOld`: `cantidadAlmacen += n`, `cantidad += n`, disponible | sí | Sustituido por 15. Guarda histórico. |

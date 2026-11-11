@@ -1,6 +1,7 @@
 #cloud-config
 # Plantilla procesada por 01-create-vm.sh (__VM_NAME__, __VM_USER__, __SSH_PUBKEY__).
-# Replica el host de producción: Ubuntu 24.04 + docker.io + docker-compose v1 (apt) + nginx en el host.
+# Replica el host de producción: Ubuntu 24.04 + docker.io + docker-compose v1 (apt) + nginx en el host
+# (más docker-compose-v2 para los modos Caddy de staging-modo.sh).
 hostname: __VM_NAME__
 manage_etc_hosts: true
 timezone: America/Mexico_City
@@ -27,6 +28,7 @@ package_upgrade: true
 packages:
   - docker.io
   - docker-compose
+  - docker-compose-v2   # `docker compose` (v2) para los stacks con Caddy de infra/clientes; v1 sigue para Sony con nginx
   - nginx
   - rsync
   - jq

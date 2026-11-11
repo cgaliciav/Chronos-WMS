@@ -1,6 +1,6 @@
 {
   "name": "almacen-api",
-  "version": "2.88.0-d",
+  "version": "2.89.0-d",
   "description": "Proyecto de Almacen para Sony Mexico usando TypeORM, Express, Multer, Sharp...etc",
   "devDependencies": {
     "@types/cors": "^2.8.19",
@@ -49,6 +49,8 @@
     "migration:show": "ts-node src/migrar.ts show",
     "migration:run": "ts-node src/migrar.ts run",
     "migration:revert": "ts-node src/migrar.ts revert",
+    "semilla:extraer": "ts-node src/semilla/extraerCatalogo.ts",
+    "semilla:run": "ts-node src/sembrar.ts",
     "migration:generate": "ts-node src/test/generarMigracion.ts",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.estricto.json",
     "test": "npm run test:unit && npm run test:int",
