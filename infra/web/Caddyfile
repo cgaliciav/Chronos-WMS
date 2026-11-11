@@ -1,0 +1,81 @@
+# Caddyfile de chronos-web. Todo lo que cambia por cliente/entorno llega por variables de entorno (README.md).
+# Paridad con nginx: spec §6 de docs/superpowers/specs/2026-11-10-caddy-docker-amz-design.md.
+{
+	# Cuenta y CA de ACME. ACME_CA puede apuntar a la CA de pruebas de Let's Encrypt mientras se itera.
+	email "{$ACME_EMAIL}"
+	acme_ca {$ACME_CA}
+	# Certificado por reto DNS-01 (sin abrir el puerto 80 al mundo ni depender del proxy de Cloudflare).
+	# Proveedores compilados: cloudflare y linode. Ambos aceptan el token como argumento en línea.
+	acme_dns {$DNS_PROVEEDOR} {$DNS_TOKEN}
+}
+
+# Una o varias direcciones separadas por coma (varios dominios durante un cambio de dominio con PWA).
+# `:80` = modo de prueba sin TLS.
+{$DOMINIOS} {
+	root * /srv
+	encode zstd gzip
+
+	header X-Environment "{$ENTORNO}"
+
+	# Los sourcemaps no se publican (los sube Sentry en el build si hay credenciales).
+	@mapas path_regexp \.map$
+	handle @mapas {
+		respond 404
+	}
+
+	# API: se quita el prefijo /api. Caddy ya envía X-Forwarded-For/Proto/Host con los datos reales y descarta los
+	# entrantes (sin trusted_proxies); WebSocket funciona sin configuración. Sin CORS aquí: lo gestiona Express.
+	handle_path /api/* {
+		request_body {
+			max_size 100MiB
+		}
+		reverse_proxy {$API_UPSTREAM} {
+			# La petición no se almacena en memoria/disco: fluye hacia el API (como proxy_request_buffering off).
+			flush_interval -1
+			transport http {
+				dial_timeout 60s
+				write_timeout 60s
+				response_header_timeout 60s
+			}
+		}
+	}
+
+	# Entorno para el front. Lo genera Caddy (no es un archivo del build: el service worker lo precachearía y
+	# quedaría desactualizado).
+	handle /entorno.json {
+		header Cache-Control "no-cache"
+		header Content-Type "application/json"
+		respond `{"cliente":"{$CLIENTE}","entorno":"{$ENTORNO}"}` 200
+	}
+
+	# Archivos con hash en el nombre (Vite/Workbox): caché larga; si no existen, 404 (nunca index.html).
+	handle /assets/* {
+		header Cache-Control "public, max-age=31536000, immutable"
+		file_server
+	}
+	handle /workbox-*.js {
+		header Cache-Control "public, max-age=31536000, immutable"
+		file_server
+	}
+
+	# Service worker y manifest: sin caché para detectar versiones nuevas en minutos; nunca caen al fallback SPA
+	# (un sw.js respondido con HTML rompe el registro) y no se redirigen (los navegadores no siguen redirecciones
+	# al actualizar un service worker). `/sw*.js` también cubre un sw.js antiguo con otro nombre: 404, no HTML.
+	handle /sw*.js {
+		header Cache-Control "no-cache"
+		file_server
+	}
+	handle /manifest.webmanifest {
+		header Cache-Control "no-cache"
+		header Content-Type "application/manifest+json"
+		file_server
+	}
+
+	# Todo lo demás: archivos de la raíz (iconos, favicon) o, si no existen, index.html para el router del
+	# navegador (rutas sin `#`). Siempre con revalidación: así cada despliegue carga los assets nuevos.
+	handle {
+		header Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}
