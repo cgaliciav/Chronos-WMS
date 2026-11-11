@@ -47,6 +47,22 @@ Ver `.env.example`. Los secretos nunca se versionan.
 - DB_CACHE=true
 - DB_LOGGING=all 
 
+### Base nueva (cliente nuevo)
+
+Una base vacía con las migraciones aplicadas (`node build/migrar.js run`) necesita los catálogos y un primer
+administrador. `src/semilla/catalogo.json` (tipos de movimiento con sus ids fijos, roles, tipos de precio, factura y
+producto, parámetros) sale de la base de Sony y se versiona; áreas, bodegas, proyectos y proveedores los captura el cliente.
+
+    node build/sembrar.js --admin-correo <correo> --admin-nombre "<nombre>" [--regenerar]
+    # en desarrollo: npm run semilla:run -- --admin-correo <correo> --admin-nombre "<nombre>"
+
+Imprime la contraseña temporal (72 h, cambio obligatorio) y la envía por correo (si el envío falla solo avisa).
+Es idempotente (`INSERT IGNORE`; no cambia la contraseña de un administrador existente salvo con `--regenerar`) y se
+niega a correr si la base ya tiene movimientos. Salida: 0 bien, 2 uso incorrecto, 3 base en uso, 1 otro error.
+
+Para regenerar `catalogo.json` desde una base de Sony (solo lectura): `DB_HOST=... DB_PORT=... DB_USER=... DB_PASSWORD=...
+DB_DATABASE_NAME=... npm run semilla:extraer`, y revisa el diff a mano (no debe haber datos personales).
+
 ### Referencias
 https://medium.com/javascript-in-plain-english/creating-a-rest-api-with-jwt-authentication-and-role-based-authorization-using-typescript-fbfa3cab22a4
 https://typeorm.io/#/

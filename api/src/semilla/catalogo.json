@@ -1,0 +1,1146 @@
+{
+  "movimientoTipo": [
+    {
+      "id": 1,
+      "nombre": "COMPRA+",
+      "estatus": "activo"
+    },
+    {
+      "id": 2,
+      "nombre": "ALTA+",
+      "estatus": "activo"
+    },
+    {
+      "id": 3,
+      "nombre": "PRÉSTAMO",
+      "estatus": "activo"
+    },
+    {
+      "id": 4,
+      "nombre": "DEVOLUCIÓN",
+      "estatus": "activo"
+    },
+    {
+      "id": 5,
+      "nombre": "BAJA+",
+      "estatus": "activo"
+    },
+    {
+      "id": 6,
+      "nombre": "AJUSTE INVENTARIO",
+      "estatus": "activo"
+    },
+    {
+      "id": 7,
+      "nombre": "TRANSFERENCIA ORIGEN",
+      "estatus": "activo"
+    },
+    {
+      "id": 8,
+      "nombre": "BAJA EN INVENTARIO",
+      "estatus": "activo"
+    },
+    {
+      "id": 9,
+      "nombre": "INVENTARIO",
+      "estatus": "activo"
+    },
+    {
+      "id": 10,
+      "nombre": "AJUSTE DE ADMINISTRADOR",
+      "estatus": "activo"
+    },
+    {
+      "id": 11,
+      "nombre": "RENTA EXTERNA",
+      "estatus": "activo"
+    },
+    {
+      "id": 12,
+      "nombre": "TRANSFERENCIA DESTINO",
+      "estatus": "activo"
+    },
+    {
+      "id": 13,
+      "nombre": "BAJA JUSTIFICADA",
+      "estatus": "activo"
+    },
+    {
+      "id": 14,
+      "nombre": "ALTA",
+      "estatus": "activo"
+    },
+    {
+      "id": 15,
+      "nombre": "COMPRA",
+      "estatus": "activo"
+    },
+    {
+      "id": 16,
+      "nombre": "BAJA INJUSTIFICADA",
+      "estatus": "activo"
+    },
+    {
+      "id": 17,
+      "nombre": "BAJA ADMINISTRADOR",
+      "estatus": "activo"
+    }
+  ],
+  "rol": [
+    {
+      "nombre": "ADMINISTRACION",
+      "codigoRol": "ADMINISTRACION",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "ADMINISTRACION-AREAS",
+      "codigoRol": "ADMINISTRACION-AREAS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "ADMINISTRACION-AREASLISTADO",
+      "codigoRol": "ADMINISTRACION-AREASLISTADO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "ADMINISTRACION-AREASNUEVO",
+      "codigoRol": "ADMINISTRACION-AREASNUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "ADMINISTRACION-BODEGAS",
+      "codigoRol": "ADMINISTRACION-BODEGAS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "ADMINISTRACION-BODEGASLISTADO",
+      "codigoRol": "ADMINISTRACION-BODEGASLISTADO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "ADMINISTRACION-BODEGASNUEVO",
+      "codigoRol": "ADMINISTRACION-BODEGASNUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "ADMINISTRACION-PARAMETROS",
+      "codigoRol": "ADMINISTRACION-PARAMETROS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "ADMINISTRACION-PROVEEDORES",
+      "codigoRol": "ADMINISTRACION-PROVEEDORES",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "ADMINISTRACION-PROVEEDORESLISTADO",
+      "codigoRol": "ADMINISTRACION-PROVEEDORESLISTADO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "ADMINISTRACION-PROVEEDORESNUEVO",
+      "codigoRol": "ADMINISTRACION-PROVEEDORESNUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "ADMINISTRACION-PROYECTOS",
+      "codigoRol": "ADMINISTRACION-PROYECTOS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "ADMINISTRACION-PROYECTOSLISTADO",
+      "codigoRol": "ADMINISTRACION-PROYECTOSLISTADO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "ADMINISTRACION-PROYECTOSNUEVO",
+      "codigoRol": "ADMINISTRACION-PROYECTOSNUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "ADMINISTRACION-TITULO",
+      "codigoRol": "ADMINISTRACION-TITULO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "ADMINISTRACION-USUARIOS",
+      "codigoRol": "ADMINISTRACION-USUARIOS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "ADMINISTRACION-USUARIOSCAMBIARPASSWORD",
+      "codigoRol": "ADMINISTRACION-USUARIOSCAMBIARPASSWORD",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "ADMINISTRACION-USUARIOSLISTADO",
+      "codigoRol": "ADMINISTRACION-USUARIOSLISTADO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "ADMINISTRACION-USUARIOSNUEVO",
+      "codigoRol": "ADMINISTRACION-USUARIOSNUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "Administrador",
+      "codigoRol": "ADMINISTRADOR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "ARCHIVO-BORRAR",
+      "codigoRol": "ARCHIVO-BORRAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "AREA-DESHABILITAR",
+      "codigoRol": "AREA-DESHABILITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "AREA-DETALLE",
+      "codigoRol": "AREA-DETALLE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "AREA-EDITAR",
+      "codigoRol": "AREA-EDITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "AREA-HABILITAR",
+      "codigoRol": "AREA-HABILITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "AREA-LISTADETALLE",
+      "codigoRol": "AREA-LISTADETALLE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "AREA-LISTADO",
+      "codigoRol": "AREA-LISTADO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "AREA-LISTASIMPLE",
+      "codigoRol": "AREA-LISTASIMPLE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "AREA-NUEVO",
+      "codigoRol": "AREA-NUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "BODEGA-DESHABILITAR",
+      "codigoRol": "BODEGA-DESHABILITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "BODEGA-DETALLE",
+      "codigoRol": "BODEGA-DETALLE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "BODEGA-EDITAR",
+      "codigoRol": "BODEGA-EDITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "BODEGA-HABILITAR",
+      "codigoRol": "BODEGA-HABILITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "BODEGA-LISTADETALLE",
+      "codigoRol": "BODEGA-LISTADETALLE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "BODEGA-LISTADO",
+      "codigoRol": "BODEGA-LISTADO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "BODEGA-LISTASIMPLE",
+      "codigoRol": "BODEGA-LISTASIMPLE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "BODEGA-NUEVO",
+      "codigoRol": "BODEGA-NUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "CATALOGO",
+      "codigoRol": "CATALOGO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "CATALOGO-BAJAS",
+      "codigoRol": "CATALOGO-BAJAS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "CATALOGO-CODIGOS",
+      "codigoRol": "CATALOGO-CODIGOS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "CATALOGO-FACTURAS",
+      "codigoRol": "CATALOGO-FACTURAS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "CATALOGO-GENERAL",
+      "codigoRol": "CATALOGO-GENERAL",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "CATALOGO-MENU",
+      "codigoRol": "CATALOGO-MENU",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "CATALOGO-PROYECTO",
+      "codigoRol": "CATALOGO-PROYECTO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "CATALOGOS-TITULO",
+      "codigoRol": "CATALOGOS-TITULO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-ARCHIVOBORRAR",
+      "codigoRol": "GRUPOS-ARCHIVOBORRAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-ARCHIVOSUBIR",
+      "codigoRol": "GRUPOS-ARCHIVOSUBIR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-BORRAR",
+      "codigoRol": "GRUPOS-BORRAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-COMENTARIOBORRAR",
+      "codigoRol": "GRUPOS-COMENTARIOBORRAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-COMENTARIONUEVO",
+      "codigoRol": "GRUPOS-COMENTARIONUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-CREARLISTADECATALOGOBAJAS",
+      "codigoRol": "GRUPOS-CREARLISTADECATALOGOBAJAS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-CREARLISTADECATALOGOCODIGOS",
+      "codigoRol": "GRUPOS-CREARLISTADECATALOGOCODIGOS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-CREARLISTADECATALOGOGENERAL",
+      "codigoRol": "GRUPOS-CREARLISTADECATALOGOGENERAL",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-CREARLISTADECATALOGOPROYECTOS",
+      "codigoRol": "GRUPOS-CREARLISTADECATALOGOPROYECTOS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-CREARLISTADEFACTURAS",
+      "codigoRol": "GRUPOS-CREARLISTADEFACTURAS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-CREARLISTADEGRUPO",
+      "codigoRol": "GRUPOS-CREARLISTADEGRUPO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-CREARLISTADEPENDIENTESACTIVOS",
+      "codigoRol": "GRUPOS-CREARLISTADEPENDIENTESACTIVOS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-CREARLISTADEREPORTEOPERACIONES",
+      "codigoRol": "GRUPOS-CREARLISTADEREPORTEOPERACIONES",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-CREARLISTADEREPORTEUSO",
+      "codigoRol": "GRUPOS-CREARLISTADEREPORTEUSO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-DESHABILITAR",
+      "codigoRol": "GRUPOS-DESHABILITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-DETALLE",
+      "codigoRol": "GRUPOS-DETALLE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-EDITAR",
+      "codigoRol": "GRUPOS-EDITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-FINALIZAR",
+      "codigoRol": "GRUPOS-FINALIZAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-HABILITAR",
+      "codigoRol": "GRUPOS-HABILITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-LISTADETALLE",
+      "codigoRol": "GRUPOS-LISTADETALLE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-LISTAINVENTARIOHECHO",
+      "codigoRol": "GRUPOS-LISTAINVENTARIOHECHO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-LISTAINVENTARIOPENDIENTE",
+      "codigoRol": "GRUPOS-LISTAINVENTARIOPENDIENTE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-LISTAMOVIMIENTOS",
+      "codigoRol": "GRUPOS-LISTAMOVIMIENTOS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-LISTAMOVIMIENTOSACTIVOS",
+      "codigoRol": "GRUPOS-LISTAMOVIMIENTOSACTIVOS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-MOVIMIENTOAGREGAROPERACION",
+      "codigoRol": "GRUPOS-MOVIMIENTOAGREGAROPERACION",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-MOVIMIENTONUEVO",
+      "codigoRol": "GRUPOS-MOVIMIENTONUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-MOVIMIENTONUEVOCOMPRA",
+      "codigoRol": "GRUPOS-MOVIMIENTONUEVOCOMPRA",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-NUEVO",
+      "codigoRol": "GRUPOS-NUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-NUEVOCOMPRA",
+      "codigoRol": "GRUPOS-NUEVOCOMPRA",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-NUEVODETALLE",
+      "codigoRol": "GRUPOS-NUEVODETALLE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-NUEVOINVENTARIO",
+      "codigoRol": "GRUPOS-NUEVOINVENTARIO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-QUITARMOVIMIENTO",
+      "codigoRol": "GRUPOS-QUITARMOVIMIENTO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "INVENTARIOACTUAL-BORRAR",
+      "codigoRol": "INVENTARIOACTUAL-BORRAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "INVENTARIOACTUAL-CATALOGOBAJAS",
+      "codigoRol": "INVENTARIOACTUAL-CATALOGOBAJAS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "INVENTARIOACTUAL-CATALOGOCODIGOS",
+      "codigoRol": "INVENTARIOACTUAL-CATALOGOCODIGOS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "INVENTARIOACTUAL-CATALOGOFACTURAS",
+      "codigoRol": "INVENTARIOACTUAL-CATALOGOFACTURAS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "INVENTARIOACTUAL-CATALOGOGENERAL",
+      "codigoRol": "INVENTARIOACTUAL-CATALOGOGENERAL",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "INVENTARIOACTUAL-CATALOGOPROYECTOS",
+      "codigoRol": "INVENTARIOACTUAL-CATALOGOPROYECTOS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "INVENTARIOACTUAL-DETALLE",
+      "codigoRol": "INVENTARIOACTUAL-DETALLE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "INVENTARIOACTUAL-EDITAR",
+      "codigoRol": "INVENTARIOACTUAL-EDITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "INVENTARIOACTUAL-LISTADOMOVIMIENTOSINVENTARIO",
+      "codigoRol": "INVENTARIOACTUAL-LISTADOMOVIMIENTOSINVENTARIO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "MOVIMIENTO-OBTENERGRUPO",
+      "codigoRol": "MOVIMIENTO-OBTENERGRUPO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "MOVIMIENTO-ULTIMOMOVIMIENTO",
+      "codigoRol": "MOVIMIENTO-ULTIMOMOVIMIENTO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION",
+      "codigoRol": "OPERACION",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-ALTANUEVO",
+      "codigoRol": "OPERACION-ALTANUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-ALTAPORGRUPO",
+      "codigoRol": "OPERACION-ALTAPORGRUPO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-ARCHIVOBORRAR",
+      "codigoRol": "OPERACION-ARCHIVOBORRAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-ARCHIVOSUBIR",
+      "codigoRol": "OPERACION-ARCHIVOSUBIR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-AVANZADO",
+      "codigoRol": "OPERACION-AVANZADO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-AVANZADOEDITAR",
+      "codigoRol": "OPERACION-AVANZADOEDITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-BAJACONPROYECTO",
+      "codigoRol": "OPERACION-BAJACONPROYECTO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-BAJACONPROYECTO-LISTADOPORGRUPO",
+      "codigoRol": "OPERACION-BAJACONPROYECTO-LISTADOPORGRUPO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-BAJACONPROYECTO-LISTADOPORPROYECTO",
+      "codigoRol": "OPERACION-BAJACONPROYECTO-LISTADOPORPROYECTO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-BAJACONPROYECTO-NUEVO",
+      "codigoRol": "OPERACION-BAJACONPROYECTO-NUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-BAJASINRPOYECTO",
+      "codigoRol": "OPERACION-BAJASINRPOYECTO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-BAJASINRPOYECTO-LISTADOPORPROYECTO",
+      "codigoRol": "OPERACION-BAJASINRPOYECTO-LISTADOPORPROYECTO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-BAJASINRPOYECTO-NUEVO",
+      "codigoRol": "OPERACION-BAJASINRPOYECTO-NUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-COMENTARIOBORRAR",
+      "codigoRol": "OPERACION-COMENTARIOBORRAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-COMENTARIONUEVO",
+      "codigoRol": "OPERACION-COMENTARIONUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-COMPRA",
+      "codigoRol": "OPERACION-COMPRA",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-COMPRANUEVO",
+      "codigoRol": "OPERACION-COMPRANUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-COMPRAPORGRUPO",
+      "codigoRol": "OPERACION-COMPRAPORGRUPO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-COMPRAPORPROYECTO",
+      "codigoRol": "OPERACION-COMPRAPORPROYECTO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-DEVOLUCION",
+      "codigoRol": "OPERACION-DEVOLUCION",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-DEVOLUCIONNUEVO",
+      "codigoRol": "OPERACION-DEVOLUCIONNUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-DEVOLUCIONPORGRUPO",
+      "codigoRol": "OPERACION-DEVOLUCIONPORGRUPO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-DEVOLUCIONPORPROYECTO",
+      "codigoRol": "OPERACION-DEVOLUCIONPORPROYECTO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-EDITAR",
+      "codigoRol": "OPERACION-EDITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-INVENTARIO",
+      "codigoRol": "OPERACION-INVENTARIO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-INVENTARIONUEVO",
+      "codigoRol": "OPERACION-INVENTARIONUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-INVENTARIOPORGRUPO",
+      "codigoRol": "OPERACION-INVENTARIOPORGRUPO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-PRESTAMO",
+      "codigoRol": "OPERACION-PRESTAMO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-PRESTAMONUEVO",
+      "codigoRol": "OPERACION-PRESTAMONUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-PRESTAMOPORGRUPO",
+      "codigoRol": "OPERACION-PRESTAMOPORGRUPO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-PRESTAMOPORPROYECTO",
+      "codigoRol": "OPERACION-PRESTAMOPORPROYECTO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-PRESTAMOSACTIVOS",
+      "codigoRol": "OPERACION-PRESTAMOSACTIVOS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-PREVIO",
+      "codigoRol": "OPERACION-PREVIO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-PREVIONUEVO",
+      "codigoRol": "OPERACION-PREVIONUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-PREVIOPORGRUPO",
+      "codigoRol": "OPERACION-PREVIOPORGRUPO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-RENTAEXTERNA",
+      "codigoRol": "OPERACION-RENTAEXTERNA",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-RENTAEXTERNAACTIVA",
+      "codigoRol": "OPERACION-RENTAEXTERNAACTIVA",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-RENTAEXTERNANUEVO",
+      "codigoRol": "OPERACION-RENTAEXTERNANUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-RENTAEXTERNAPORGRUPO",
+      "codigoRol": "OPERACION-RENTAEXTERNAPORGRUPO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACION-RENTAEXTERNAPORPROYECTO",
+      "codigoRol": "OPERACION-RENTAEXTERNAPORPROYECTO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "OPERACIONES-TITULO",
+      "codigoRol": "OPERACIONES-TITULO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PARAMETROS-EDITAR",
+      "codigoRol": "PARAMETROS-EDITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PARAMETROS-LISTAR",
+      "codigoRol": "PARAMETROS-LISTAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PRODUCTOCARACTERISTICAS-BORRAR",
+      "codigoRol": "PRODUCTOCARACTERISTICAS-BORRAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PRODUCTOCARACTERISTICAS-EDITAR",
+      "codigoRol": "PRODUCTOCARACTERISTICAS-EDITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PRODUCTOCARACTERISTICAS-NUEVO",
+      "codigoRol": "PRODUCTOCARACTERISTICAS-NUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PRODUCTOCLAVE-NUEVO",
+      "codigoRol": "PRODUCTOCLAVE-NUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PRODUCTOCLAVE-NUEVOAUTOGENERADO",
+      "codigoRol": "PRODUCTOCLAVE-NUEVOAUTOGENERADO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PRODUCTOPRECIO-EDITAR",
+      "codigoRol": "PRODUCTOPRECIO-EDITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PRODUCTOS-ARCHIVOBORRAR",
+      "codigoRol": "PRODUCTOS-ARCHIVOBORRAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PRODUCTOS-ARCHIVOSUBIR",
+      "codigoRol": "PRODUCTOS-ARCHIVOSUBIR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PRODUCTOS-COMENTARIOBORRAR",
+      "codigoRol": "PRODUCTOS-COMENTARIOBORRAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PRODUCTOS-COMENTARIONUEVO",
+      "codigoRol": "PRODUCTOS-COMENTARIONUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PRODUCTOS-EDITAR",
+      "codigoRol": "PRODUCTOS-EDITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PROVEEDOR-COMENTARIOBORRAR",
+      "codigoRol": "PROVEEDOR-COMENTARIOBORRAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PROVEEDOR-COMENTARIONUEVO",
+      "codigoRol": "PROVEEDOR-COMENTARIONUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PROVEEDOR-DESHABILITAR",
+      "codigoRol": "PROVEEDOR-DESHABILITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PROVEEDOR-DETALLE",
+      "codigoRol": "PROVEEDOR-DETALLE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PROVEEDOR-EDITAR",
+      "codigoRol": "PROVEEDOR-EDITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PROVEEDOR-HABILITAR",
+      "codigoRol": "PROVEEDOR-HABILITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PROVEEDOR-LISTADETALLE",
+      "codigoRol": "PROVEEDOR-LISTADETALLE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PROVEEDOR-LISTADINAMICA",
+      "codigoRol": "PROVEEDOR-LISTADINAMICA",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PROVEEDOR-LISTADO",
+      "codigoRol": "PROVEEDOR-LISTADO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PROVEEDOR-LISTASIMPLE",
+      "codigoRol": "PROVEEDOR-LISTASIMPLE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PROVEEDOR-NUEVO",
+      "codigoRol": "PROVEEDOR-NUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PROYECTO-COMENTARIOBORRAR",
+      "codigoRol": "PROYECTO-COMENTARIOBORRAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PROYECTO-COMENTARIONUEVO",
+      "codigoRol": "PROYECTO-COMENTARIONUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PROYECTO-DESHABILITAR",
+      "codigoRol": "PROYECTO-DESHABILITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PROYECTO-DETALLE",
+      "codigoRol": "PROYECTO-DETALLE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PROYECTO-EDITAR",
+      "codigoRol": "PROYECTO-EDITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PROYECTO-HABILITAR",
+      "codigoRol": "PROYECTO-HABILITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PROYECTO-LISTADETALLE",
+      "codigoRol": "PROYECTO-LISTADETALLE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PROYECTO-LISTADO",
+      "codigoRol": "PROYECTO-LISTADO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PROYECTO-LISTASIMPLE",
+      "codigoRol": "PROYECTO-LISTASIMPLE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PROYECTO-LISTASIMPLEEXTERN",
+      "codigoRol": "PROYECTO-LISTASIMPLEEXTERN",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PROYECTO-LISTASIMPLEINTERNA",
+      "codigoRol": "PROYECTO-LISTASIMPLEINTERNA",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "PROYECTO-NUEVO",
+      "codigoRol": "PROYECTO-NUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "REPORTE-CIERRE",
+      "codigoRol": "REPORTE-CIERRE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "REPORTE-FACTURA",
+      "codigoRol": "REPORTE-FACTURA",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "REPORTE-GRUPO",
+      "codigoRol": "REPORTE-GRUPO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "REPORTE-GRUPODETALLE",
+      "codigoRol": "REPORTE-GRUPODETALLE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "REPORTE-PROYECTO",
+      "codigoRol": "REPORTE-PROYECTO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "REPORTE-USO",
+      "codigoRol": "REPORTE-USO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "REPORTES",
+      "codigoRol": "REPORTES",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "REPORTES-CIERRE",
+      "codigoRol": "REPORTES-CIERRE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "REPORTES-DEPURACION",
+      "codigoRol": "REPORTES-DEPURACION",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "REPORTES-MENU",
+      "codigoRol": "REPORTES-MENU",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "REPORTES-MOVIMIENTOS",
+      "codigoRol": "REPORTES-MOVIMIENTOS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "REPORTES-TITULO",
+      "codigoRol": "REPORTES-TITULO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "ROL-LISTADINAMICA",
+      "codigoRol": "ROL-LISTADINAMICA",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "ROL-LISTASIMPLE",
+      "codigoRol": "ROL-LISTASIMPLE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "USUARIO-AREAS",
+      "codigoRol": "USUARIO-AREAS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "USUARIO-BODEGAS",
+      "codigoRol": "USUARIO-BODEGAS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "USUARIO-CAMBIARPASSWORD",
+      "codigoRol": "USUARIO-CAMBIARPASSWORD",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "USUARIO-COMENTARIOBORRAR",
+      "codigoRol": "USUARIO-COMENTARIOBORRAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "USUARIO-COMENTARIONUEVO",
+      "codigoRol": "USUARIO-COMENTARIONUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "USUARIO-DEHABILITAR",
+      "codigoRol": "USUARIO-DEHABILITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "USUARIO-DETALLE",
+      "codigoRol": "USUARIO-DETALLE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "USUARIO-EDITAR",
+      "codigoRol": "USUARIO-EDITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "USUARIO-GENERERARPASSWORD",
+      "codigoRol": "USUARIO-GENERERARPASSWORD",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "USUARIO-HABILITAR",
+      "codigoRol": "USUARIO-HABILITAR",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "USUARIO-LISTADETALLE",
+      "codigoRol": "USUARIO-LISTADETALLE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "USUARIO-LISTADINAMICA",
+      "codigoRol": "USUARIO-LISTADINAMICA",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "USUARIO-LISTASIMPLE",
+      "codigoRol": "USUARIO-LISTASIMPLE",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "USUARIO-LISTASIMPLECOMPLETA",
+      "codigoRol": "USUARIO-LISTASIMPLECOMPLETA",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "USUARIO-NUEVO",
+      "codigoRol": "USUARIO-NUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "USUARIO-PROYECTOS",
+      "codigoRol": "USUARIO-PROYECTOS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "V-CATALOGO-MENU",
+      "codigoRol": "V-CATALOGO-MENU",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "V-CATALOGO-VALIDACIONES",
+      "codigoRol": "V-CATALOGO-VALIDACIONES",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "V-CATALOGOS-TITULO",
+      "codigoRol": "V-CATALOGOS-TITULO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "VALIDACIONES",
+      "codigoRol": "VALIDACIONES",
+      "estatus": "activo"
+    }
+  ],
+  "precioTipo": [
+    {
+      "id": 1,
+      "nombre": "DEPRECIACION"
+    },
+    {
+      "id": 2,
+      "nombre": "COMPRA ORIGEN"
+    },
+    {
+      "id": 3,
+      "nombre": "RENTA INTERNA"
+    },
+    {
+      "id": 4,
+      "nombre": "RENTA EXTERNA"
+    }
+  ],
+  "facturaTipo": [
+    {
+      "id": 1,
+      "nombre": "Fiscal nacional"
+    },
+    {
+      "id": 2,
+      "nombre": "Vale azul"
+    },
+    {
+      "id": 3,
+      "nombre": "Nota de compra"
+    },
+    {
+      "id": 4,
+      "nombre": "Extranjera"
+    },
+    {
+      "id": 5,
+      "nombre": "Ticket"
+    },
+    {
+      "id": 6,
+      "nombre": "Recibo / Comprobante"
+    }
+  ],
+  "productoTipo": [
+    {
+      "id": 1,
+      "nombre": "REGULAR"
+    },
+    {
+      "id": 2,
+      "nombre": "CONSUMIBLE"
+    }
+  ],
+  "parametros": []
+}
