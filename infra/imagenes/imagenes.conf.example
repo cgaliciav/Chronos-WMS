@@ -1,0 +1,5 @@
+# Copia este archivo a imagenes.conf (no se versiona) y complétalo.
+# Usuario u organización de Docker Hub donde se publican chronos-web y chronos-api (obligatorio).
+DOCKERHUB_NS=mi-organizacion
+# DSN de Sentry del front; se incrusta en el bundle (opcional, vacío = Sentry apagado).
+SENTRY_DSN_FRONT=

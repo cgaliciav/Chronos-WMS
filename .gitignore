@@ -10,3 +10,6 @@ Thumbs.db
 .env*
 !.env.example
 !api/.env.test
+
+# Configuración local de infra/imagenes (namespace de Docker Hub)
+infra/imagenes/imagenes.conf
