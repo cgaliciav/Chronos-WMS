@@ -126,6 +126,55 @@ por su cuenta) y `ARCHIVOS_PUBLICOS=true` (paso 3 del procedimiento de migració
 ./03-provision-staging.sh --keep-image --force-restore   # re-restaurar sin cambiar la imagen del backend
 ```
 
+## Modos: Sony con nginx, AMZ con Caddy, Sony con Caddy
+
+La VM puede estar en **un** modo a la vez, porque los tres comparten los puertos 80/443 y `caddy-sony` comparte además
+el directorio de datos de MariaDB de Sony (`~/teleset-almacen/db_data/mysql`): dos servidores MariaDB sobre el mismo
+directorio lo corrompen. El modo activo vive en `~/staging-modo` de la VM.
+
+| Modo | Qué corre | Carpeta en la VM |
+|---|---|---|
+| `sony-nginx` (el de siempre) | docker-compose v1 + nginx del host, HTTP por IP | `~/teleset-almacen` |
+| `caddy-amz` | Caddy + API + MariaDB de AMZ (`compose.yml` + `compose.staging.yml`), HTTPS por DNS-01 de Cloudflare | `~/chronos-amz` (`.env`, `db_data/`, `exogrid/`) |
+| `caddy-sony` | Lo mismo para Sony, reutilizando sus datos; DNS-01 de Linode (`staging.telesetalmacen.com`) | `~/chronos-sony` (solo `.env` y compose; `DATOS_DIR=/home/cesargv/teleset-almacen`) |
+
+```bash
+./staging-modo.sh --preparar            # una vez (idempotente): compose v2, carpetas, .env con secretos, docker login
+./staging-modo.sh --estado              # modo, contenedores, imágenes y vencimiento del certificado
+./staging-modo.sh caddy-amz             # cambia de modo (también sony-nginx y caddy-sony)
+./desplegar-caddy.sh amz --version-web 4.9.0-s --version-api 2.89.0-s \
+    --sembrar-admin correo@ejemplo.com --admin-nombre "Nombre Apellido"
+```
+
+`--preparar` instala `docker-compose-v2` si falta (las VM nuevas ya lo traen por cloud-init; `docker-compose` v1 sigue
+instalado para Sony con nginx), crea las carpetas, copia los compose y genera cada `.env` desde su `.env.example` con
+secretos aleatorios (`openssl rand`) **sin sobrescribir uno existente**. El `.env` de Sony toma `DB_PASSWORD`,
+`DB_ROOT_PASSWORD`, `JWTSECRET` y `CONFIG_CLAVE` del `.env` del stack v1 (mismos datos, mismas credenciales). Pide por
+consola (sin mostrarlos) el token de Cloudflare (AMZ), el de Linode (Sony), el subdominio de AMZ, `ACME_EMAIL`, el
+espacio de nombres de Docker Hub y un token de Docker Hub de solo lectura para `docker login -u exogrid` en la VM. Los
+secretos viajan por la entrada estándar de ssh, nunca por la línea de comandos ni a los logs.
+
+**Cambiar de modo** apaga siempre los tres stacks y nginx, comprueba con `docker ps`, procesos y `ss -ltn` que no queda
+nada en marcha y que 80/443 están libres, toma el snapshot (solo la primera entrada a `caddy-sony`:
+`pre-caddy-sony-<AAAAMMDD-HHMM>`), enciende el destino y guarda el modo. Durante el cambio `~/staging-modo` dice
+`en-transicion`. Si un cliente Caddy aún no tiene un despliegue correcto, el cambio solo registra el modo: lo enciende
+`desplegar-caddy.sh`.
+
+**`desplegar-caddy.sh`** llama a `infra/clientes/desplegar.sh --staging` contra la VM y **se niega** si el modo activo
+no es el del cliente o si `docker ps` muestra contenedores de otro stack o nginx activo. Con `--permitir-migrar` toma
+antes el snapshot `pre-update-<AAAAMMDD-HHMM>-caddy-<cliente>` (como `update-staging.sh`). Sony se detiene si hay
+migraciones pendientes salvo `--permitir-migrar`.
+
+**Certificado de AMZ.** La primera vez el `.env` de AMZ lleva `ACME_CA=https://acme-staging-v02.api.letsencrypt.org/directory`
+(CA de pruebas, sin límites de uso; el navegador no la confía). Cuando `docker compose logs web` muestre
+`certificate obtained`, quita esa línea del `.env`, ejecuta `docker compose -f compose.yml -f compose.staging.yml up -d web`
+en `~/chronos-amz` (borra antes el volumen `caddy_data` si el certificado de pruebas quedó guardado:
+`docker compose -f compose.yml -f compose.staging.yml rm -sf web && docker volume rm chronos-amz_caddy_data`) y comprueba con `curl -v https://<subdominio>/`
+un certificado válido sin `-k`.
+
+**Volver a lo de antes**: `./staging-modo.sh sony-nginx`; `update-staging.sh` solo funciona en ese modo.
+Las pruebas de estos scripts sin tocar la VM: `--simular` (usa `STAGING_MODO_SIMULADO=caddy-amz` para fingir el modo).
+
 ## Scripts
 
 | Script | Qué hace |
@@ -136,6 +185,8 @@ por su cuenta) y `ARCHIVOS_PUBLICOS=true` (paso 3 del procedimiento de migració
 | `03-provision-staging.sh` | Copia a la VM, genera secretos, restaura DB, configura nginx y bloqueo SMTP, levanta stack, smoke tests |
 | `update-staging.sh` | Actualiza staging con el código del repo: API (build, migraciones con snapshot) y front |
 | `deploy-api-staging.sh` / `deploy-front-staging.sh` | Atajos de `update-staging.sh --api-only` / `--front-only` |
+| `staging-modo.sh` | Alterna la VM entre `sony-nginx`, `caddy-amz` y `caddy-sony`; `--estado`, `--preparar` |
+| `desplegar-caddy.sh` | Despliega AMZ o Sony con Caddy en el modo correspondiente (envuelve `infra/clientes/desplegar.sh`) |
 | `staging-db.sh` | Helper instalado en la VM (`~/teleset-almacen/bin/staging-db`) para SQL como root sin exponer passwords |
 
 ## Troubleshooting

@@ -26,6 +26,13 @@ UBUNTU_RELEASE="noble"                   # 24.04, igual que prod
 LIBVIRT_URI="qemu:///system"
 
 STAGING_DIR_REMOTE="/home/cesargv/teleset-almacen"
+
+# Modos de staging con Caddy en Docker (staging-modo.sh, desplegar-caddy.sh). Rutas en la VM.
+AMZ_DIR_REMOTE="/home/cesargv/chronos-amz"          # .env, db_data/, exogrid/ y compose de AMZ
+SONY_CADDY_DIR_REMOTE="/home/cesargv/chronos-sony"  # solo .env y compose; sus datos están en STAGING_DIR_REMOTE
+MODO_FILE_REMOTE="/home/cesargv/staging-modo"       # modo activo: sony-nginx | caddy-amz | caddy-sony | en-transicion
+PROYECTO_SONY_V1="teleset-almacen"                  # proyecto docker-compose v1 del stack actual de Sony
+MODOS_VALIDOS="sony-nginx caddy-amz caddy-sony"
 CACHE_DIR="$HOME/staging-cache"
 
 if [[ -f "$STAGING_DIR/staging.conf" ]]; then
@@ -114,3 +121,41 @@ smoke_tests() {
   fi
   return "$fail"
 }
+
+# ---------- Modos de staging (Caddy) ----------
+# Con SIMULAR=1 no se toca la VM: vm_bash imprime lo que ejecutaría y modo_activo devuelve
+# $STAGING_MODO_SIMULADO (por defecto sony-nginx).
+SIMULAR="${SIMULAR:-0}"
+
+# uso: vm_bash "etiqueta" 'script bash' [args...]
+# Ejecuta el script en la VM como `bash -c` (los argumentos son $1, $2…). La entrada estándar queda libre para
+# pasar secretos: nunca van en la línea de comandos. La etiqueta resume el comando para --simular.
+vm_bash() {
+  local etiqueta="$1" script="$2"; shift 2
+  if [[ "$SIMULAR" == "1" ]]; then
+    echo "[simular] remoto: $etiqueta" >&2
+    [[ "${SIMULAR_VERBOSO:-0}" == "1" ]] && awk '{ print "[simular]     | " $0 }' <<<"$script" >&2
+    return 0
+  fi
+  local qargs=""
+  (($#)) && qargs=$(printf '%q ' "$@")
+  vm_ssh "bash -c $(printf '%q' "$script") _ $qargs"
+}
+
+# Modo activo según ~/staging-modo en la VM ("desconocido" si el archivo no existe).
+modo_activo() {
+  if [[ "$SIMULAR" == "1" ]]; then echo "${STAGING_MODO_SIMULADO:-sony-nginx}"; return 0; fi
+  vm_ssh "cat $MODO_FILE_REMOTE 2>/dev/null || echo desconocido"
+}
+
+dir_de_cliente() { # amz|sony → directorio remoto del stack Caddy
+  case "$1" in
+    amz) echo "$AMZ_DIR_REMOTE" ;;
+    sony) echo "$SONY_CADDY_DIR_REMOTE" ;;
+    *) die "cliente desconocido: $1" ;;
+  esac
+}
+
+# Contenedores en marcha de cualquiera de los tres stacks (vacío = ninguno). Salida: un nombre por línea.
+# Se usa la etiqueta del proyecto compose: sirve igual con compose v1 y v2.
+VM_CONTENEDORES_STACKS="docker ps --filter label=com.docker.compose.project=$PROYECTO_SONY_V1 --filter label=com.docker.compose.project=chronos-amz --filter label=com.docker.compose.project=chronos-sony --format '{{.Names}}'"
