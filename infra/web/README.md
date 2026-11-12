@@ -25,15 +25,38 @@ Fijos en el build: `VITE_API_URL=/api/` y `VITE_NOTIFICACIONES=on`.
 
 | Variable | Ejemplo | Uso |
 |---|---|---|
-| `DOMINIOS` | `amz.ejemplo.mx, otro.ejemplo.mx` | Direcciones del sitio, separadas por coma. `:80` = modo de prueba sin TLS |
-| `DNS_PROVEEDOR` | `cloudflare` / `linode` | Módulo de `acme_dns` (por defecto `cloudflare`) |
+| `DOMINIOS` | `amz.ejemplo.mx, otro.ejemplo.mx` | Direcciones del sitio, separadas por `, ` (coma **y espacio**), todas con el mismo proveedor DNS. `:80` = modo de prueba sin TLS |
+| `DNS_PROVEEDOR` | `cloudflare` / `linode` | Proveedor del reto DNS-01 de `DOMINIOS` (por defecto `cloudflare`) |
 | `DNS_TOKEN` | | Token del proveedor DNS. Cloudflare exige que tenga formato válido (40 caracteres) incluso con `:80` |
+| `DNS_RESOLVERS` | `1.1.1.1 1.0.0.1` | Resolvedores con los que Caddy busca la zona y comprueba la propagación del TXT |
+| `DNS_PROPAGACION_ESPERA` | `0s` / `20s` | Espera fija tras crear el TXT, antes de comprobar |
+| `DNS_PROPAGACION_LIMITE` | `2m` / `-1` | Tiempo máximo de la comprobación de propagación. `-1` la desactiva: la CA valida desde fuera. Hace falta en una red que intercepta el DNS saliente (el staging local: `compose.staging.yml` fija `-1` y `20s`) |
+| `DNS_TOKEN_2` | | Token de un segundo proveedor, para un sitio adicional (ver abajo) |
 | `ACME_EMAIL` | | Cuenta ACME |
 | `ACME_CA` | | CA de ACME; por defecto Let's Encrypt producción. Usa la de pruebas al iterar |
 | `API_UPSTREAM` | `api:4200` | Destino de `/api` (se quita el prefijo) |
 | `CLIENTE`, `ENTORNO` | `amz`, `staging` | Cuerpo de `/entorno.json` y cabecera `X-Environment` |
 
-Los registros DNS van sin proxy de Cloudflare (nube gris). Persiste `/data` (certificados) como volumen.
+Las variables `DNS_*` nunca pueden ir vacías (rompen el Caddyfile); el compose les pone sus valores por defecto. Los
+registros DNS van sin proxy de Cloudflare (nube gris) y no hace falta que el registro A exista en el proveedor del reto:
+puede vivir en otro DNS (p. ej. el router de una red local). Persiste `/data` (certificados) como volumen.
+
+## Reto DNS por sitio y sitios adicionales
+
+El certificado se pide **por sitio** con el snippet `tls_dns <proveedor> <token>`, así que cada dominio puede usar su
+propio proveedor DNS. Además del sitio de `DOMINIOS`, Caddy importa `/etc/caddy/sitios/*.caddy`; el compose monta ahí la
+carpeta `sitios/` del cliente (no versionada; `desplegar.sh` la crea vacía). Ejemplo para un dominio en Linode mientras
+`DOMINIOS` sigue en Cloudflare (`sitios/nuevo.caddy`, con `DNS_TOKEN_2` en el `.env`):
+
+```
+nuevo.ejemplo.mx {
+	import tls_dns linode {$DNS_TOKEN_2}
+	import chronos
+}
+```
+
+`chronos` es el snippet con todas las reglas de la app, idénticas para todos los sitios. Se aplica con
+`docker compose up -d web` (o `docker compose restart web` si solo cambió el archivo).
 
 ## Comportamiento
 

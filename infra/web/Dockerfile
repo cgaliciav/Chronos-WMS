@@ -32,6 +32,8 @@ RUN xcaddy build \
 FROM caddy:2.10-alpine
 COPY --from=caddy /usr/bin/caddy /usr/bin/caddy
 COPY infra/web/Caddyfile /etc/caddy/Caddyfile
+# Sitios adicionales (*.caddy) que monta el compose del cliente; vacío = ninguno.
+RUN mkdir -p /etc/caddy/sitios
 COPY --from=front /app/build /srv
 
 # Valores por defecto; en ejecución los fija el compose del cliente (ver infra/web/README.md).

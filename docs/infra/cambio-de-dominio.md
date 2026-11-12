@@ -4,9 +4,22 @@ AMZ arranca en un subdominio del propietario y más adelante tendrá dominio pro
 semanas **ambos nombres sirven la app completa**.
 
 1. **Nuevo registro DNS.** En la zona que corresponda (con Cloudflare, registro A sin proxy, nube gris) apunta `<dominio-nuevo>`
-   a la IP del servidor (`<IP-AMZ>`). El servidor usa un solo `DNS_PROVEEDOR` y `DNS_TOKEN` (hoy `cloudflare` o `linode`) para el reto DNS de todos los nombres: el
-   token debe tener permiso de edición DNS sobre la zona del dominio nuevo además de la del viejo (amplía el token o crea uno nuevo y cámbialo en el `.env`).
-2. **Añade el dominio nuevo, sin quitar el viejo.** En `~/chronos-amz/.env` del servidor:
+   a la IP del servidor (`<IP-AMZ>`). Elige cómo obtiene Caddy su certificado:
+   - **Mismo proveedor DNS que el viejo** (`cloudflare` o `linode`): el token del `.env` debe tener permiso de edición DNS sobre la
+     zona nueva además de la vieja (amplía el token o crea uno nuevo y cámbialo en el `.env`). Sigue con el paso 2.
+   - **Otro proveedor** (p. ej. el viejo en Cloudflare y el nuevo en Linode): pon el token del nuevo en `DNS_TOKEN_2` del `.env` y
+     crea `~/chronos-amz/sitios/nuevo.caddy` (ver `infra/web/README.md`, "Reto DNS por sitio"):
+
+     ```
+     <dominio-nuevo> {
+     	import tls_dns linode {$DNS_TOKEN_2}
+     	import chronos
+     }
+     ```
+
+     En este caso **no** cambies `DOMINIOS` (sigue con el viejo); aplica con `docker compose up -d web` y continúa en el paso 3.
+     Para retirar el viejo más tarde, pasa el dominio nuevo a `DOMINIOS`/`DNS_PROVEEDOR`/`DNS_TOKEN` y borra `sitios/nuevo.caddy`.
+2. **Añade el dominio nuevo, sin quitar el viejo** (mismo proveedor). En `~/chronos-amz/.env` del servidor:
 
    ```
    DOMINIOS=<dominio-nuevo>, <subdominio-amz>
