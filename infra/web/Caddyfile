@@ -4,14 +4,26 @@
 	# Cuenta y CA de ACME. ACME_CA puede apuntar a la CA de pruebas de Let's Encrypt mientras se itera.
 	email "{$ACME_EMAIL}"
 	acme_ca {$ACME_CA}
-	# Certificado por reto DNS-01 (sin abrir el puerto 80 al mundo ni depender del proxy de Cloudflare).
-	# Proveedores compilados: cloudflare y linode. Ambos aceptan el token como argumento en línea.
-	acme_dns {$DNS_PROVEEDOR} {$DNS_TOKEN}
 }
 
-# Una o varias direcciones separadas por coma (varios dominios durante un cambio de dominio con PWA).
-# `:80` = modo de prueba sin TLS.
-{$DOMINIOS} {
+# Certificado por reto DNS-01 (sin abrir el puerto 80 al mundo ni depender del proxy de Cloudflare), configurado POR
+# SITIO: cada dominio puede usar su propio proveedor y token. Proveedores compilados: cloudflare y linode.
+# Uso: import tls_dns <proveedor> <token>
+#   DNS_RESOLVERS          resolvedores para buscar la zona y comprobar la propagación (por defecto 1.1.1.1 1.0.0.1).
+#   DNS_PROPAGACION_ESPERA espera fija tras crear el TXT antes de comprobar (por defecto 0s).
+#   DNS_PROPAGACION_LIMITE tiempo máximo de la comprobación; -1 la desactiva y deja que la CA valide desde fuera
+#                          (necesario en una red cuyo router intercepta el DNS saliente, como la del staging local).
+(tls_dns) {
+	tls {
+		dns {args[0]} {args[1]}
+		resolvers {$DNS_RESOLVERS:1.1.1.1 1.0.0.1}
+		propagation_delay {$DNS_PROPAGACION_ESPERA:0s}
+		propagation_timeout {$DNS_PROPAGACION_LIMITE:2m}
+	}
+}
+
+# Reglas de Chronos, comunes a todos los dominios del cliente.
+(chronos) {
 	root * /srv
 	encode zstd gzip
 
@@ -79,3 +91,14 @@
 		file_server
 	}
 }
+
+# Una o varias direcciones separadas por coma (varios dominios durante un cambio de dominio con PWA, si comparten
+# proveedor DNS; separadas por ", " con espacio). `:80` = modo de prueba sin TLS (Caddy ignora el bloque tls).
+{$DOMINIOS} {
+	import tls_dns {$DNS_PROVEEDOR} {$DNS_TOKEN}
+	import chronos
+}
+
+# Sitios adicionales del cliente (p. ej. el dominio nuevo con otro proveedor DNS durante un cambio de dominio):
+# archivos *.caddy montados en /etc/caddy/sitios. Sin archivos no se importa nada. Ver README.md.
+import /etc/caddy/sitios/*.caddy

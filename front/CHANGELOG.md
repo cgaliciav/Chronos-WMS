@@ -15,6 +15,23 @@ Los códigos `F<n>` remiten a [`docs/hallazgos-codigo.md`](../docs/hallazgos-cod
 
 Pendiente: fase 7 del plan 01 (pruebas e2e con Playwright, CI y cobertura).
 
+## [4.10.0-d] - 2026-11-12
+
+Imagen `chronos-web` (Caddy): certificado por reto DNS-01 configurado por sitio. Sin cambios en el código del front.
+
+### Añadido
+
+- Snippet `tls_dns <proveedor> <token>` por sitio: cada dominio puede usar su propio proveedor DNS (cloudflare o linode) y
+  `/etc/caddy/sitios/*.caddy` admite sitios adicionales (p. ej. el dominio nuevo de un cliente con otro proveedor durante
+  un cambio de dominio, con `DNS_TOKEN_2`).
+- Variables `DNS_RESOLVERS`, `DNS_PROPAGACION_ESPERA` y `DNS_PROPAGACION_LIMITE`. En staging, `compose.staging.yml` fija
+  `20s` y `-1` (sin comprobación local de propagación): el router de la red del staging local intercepta el DNS saliente
+  y Caddy nunca veía el TXT del reto, aunque Cloudflare ya lo publicaba.
+
+### Cambiado
+
+- Se retira `acme_dns` global (no admite resolvedores ni tiempos de propagación).
+
 ## [4.9.0-d] - 2026-11-10
 
 Sentry con el entorno y el cliente leídos en tiempo de ejecución.
