@@ -186,12 +186,14 @@ dejaría las tablas nuevas (`migrations`, `movimiento_relacion`, `configuracion`
 $P1 stop api frontend
 M="docker exec -i -e MYSQL_PWD=$ROOTPW teleset-almacen-mariadb-1 mysql -uroot"
 $M -e "DROP DATABASE almacen_sony_migracion; CREATE DATABASE almacen_sony_migracion DEFAULT CHARACTER SET latin1 COLLATE latin1_spanish_ci"   # el juego anotado en el paso 0.6
+$M -e "SET GLOBAL innodb_flush_log_at_trx_commit = 2"      # sin esto la restauración tarda ~5 veces más
 gunzip -c ~/respaldo-pre-migracion-<fecha>.sql.gz | $M almacen_sony_migracion
+$M -e "SET GLOBAL innodb_flush_log_at_trx_commit = 1"
 $M -N almacen_sony_migracion -e "SELECT COUNT(*) FROM movimiento; SHOW TABLES LIKE 'migrations'"   # movimientos de antes; sin tabla migrations
 $P1 down && docker-compose up -d        # v1, compose original: 2.63.67 + front-www (contenedores nuevos)
 ```
 
-Alternativa si el dump no sirviera: restaurar el snapshot manual de Linode (se pierde todo lo posterior al snapshot).
+Cuenta con **entre 20 minutos y hora y media** de restauración (tabla del ensayo). Alternativa si el dump no sirviera: restaurar el snapshot manual de Linode (se pierde todo lo posterior al snapshot).
 
 ## Paso 2. Caddy sustituye a nginx
 
@@ -281,7 +283,7 @@ VM libvirt aparte de `chronos-staging`, creada desde el worktree con `infra/stag
 `01-create-vm.sh` + `03-provision-staging.sh` la dejan como producción: 2.63.67, esquema sin migrar, nginx del host por HTTP.
 El correo queda atrapado (mailpit + bloqueo iptables): **nunca los quites**, los datos son reales.
 
-Ensayo del 2026-11-14/15: los tres pasos y las vueltas atrás de los pasos 2 y 3 terminaron bien; la del paso 1 (borrar la base y restaurar el dump) está en ensayo. Snapshots de la VM: `baseline-prod-20261114`,
+Ensayo del 2026-11-14/15: los tres pasos y sus tres vueltas atrás terminaron bien (tras el rollback del paso 1: 54 tablas, ninguna de las nuevas, 715 647 movimientos y 2.63.67 con el front anterior respondiendo). Snapshots de la VM: `baseline-prod-20261114`,
 `paso1-ok-20261114`, `paso2-ok-20261115`, `paso3-ok-20261115`.
 
 Diferencias del ensayo: se añade `-f compose.staging.yml` (mailpit) a los comandos del paso 1 y `--staging` a
@@ -291,6 +293,8 @@ Diferencias del ensayo: se añade `-f compose.staging.yml` (mailpit) a los coman
 |---|---|---|
 | Dump (API detenido, sin `--hex-blob`) | 13 min 7 s, 26 GB | |
 | Migraciones (`migrar.js run`, 715 647 movimientos) | 12 s | |
+| Rollback del paso 1 con `innodb_flush_log_at_trx_commit=1` (como se ensayó) | 94 min | |
+| Restauración del mismo volumen con `innodb_flush_log_at_trx_commit=2` (aprovisionamiento de la VM) | 18 min | |
 | Corte del paso 2 (nginx abajo → Caddy con certificado de Let's Encrypt) | 131 s (incluye 12 s de snapshot de la VM) | |
 | Rollback del paso 2 (Caddy abajo → nginx + paso 1) | 37 s | |
 | Volver a Caddy tras el rollback (certificado ya en `caddy_data`) | 18 s | |
