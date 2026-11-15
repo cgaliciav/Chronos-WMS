@@ -101,6 +101,8 @@ else
   (( STAGING )) && ORIGEN+=("$AQUI/compose.staging.yml")
   rsync -az "${ORIGEN[@]}" "$HOST:$DIR/" || falla "rsync de los compose"
 fi
+# Carpeta de sitios adicionales de Caddy (montada en /etc/caddy/sitios); si no existiera, Docker la crearía como root.
+remoto 'mkdir -p sitios'
 
 # 2. Pull con las versiones nuevas (variables de entorno, que mandan sobre el .env) y, solo si funciona, se escriben
 #    en el .env remoto (se conserva el espacio de nombres).

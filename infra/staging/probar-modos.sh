@@ -158,6 +158,7 @@ espera "registró el modo inicial sony-nginx" test "$(modo 2>/dev/null)" = sony-
 for d in "$AMZ_DIR_REMOTE" "$SONY_CADDY_DIR_REMOTE"; do
   espera "$(basename "$d")/.env existe con modo 600" test "$(stat -c %a "$d/.env" 2>/dev/null)" = 600
   espera "$(basename "$d"): compose.yml y compose.staging.yml copiados" test -f "$d/compose.yml" -a -f "$d/compose.staging.yml"
+  espera "$(basename "$d"): carpeta sitios/ creada (la monta Caddy)" test -d "$d/sitios"
 done
 espera "AMZ: DOMINIOS y token de Cloudflare" grep -q '^DOMINIOS=amz-staging.ejemplo.com$' "$AMZ_DIR_REMOTE/.env"
 espera "AMZ: DNS_TOKEN" grep -q '^DNS_TOKEN=TOKEN-CF-123$' "$AMZ_DIR_REMOTE/.env"

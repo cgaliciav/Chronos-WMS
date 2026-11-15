@@ -82,6 +82,12 @@ services:
       DNS_PROVEEDOR: ${DNS_PROVEEDOR:-cloudflare}
       # Cloudflare valida el formato del token al arrancar: debe ser un token real, no un valor de relleno.
       DNS_TOKEN: ${DNS_TOKEN:-}
+      # Reto DNS-01 por sitio (ver infra/web/README.md). Nunca vacíos: una cadena vacía rompe el Caddyfile.
+      DNS_RESOLVERS: ${DNS_RESOLVERS:-1.1.1.1 1.0.0.1}
+      DNS_PROPAGACION_ESPERA: ${DNS_PROPAGACION_ESPERA:-0s}
+      DNS_PROPAGACION_LIMITE: ${DNS_PROPAGACION_LIMITE:-2m}
+      # Token de un segundo proveedor DNS, para un sitio adicional en sitios/*.caddy (p. ej. durante un cambio de dominio).
+      DNS_TOKEN_2: ${DNS_TOKEN_2:-}
       ACME_EMAIL: ${ACME_EMAIL:-}
       # Nunca vacío: una cadena vacía rompe el Caddyfile.
       ACME_CA: ${ACME_CA:-https://acme-v02.api.letsencrypt.org/directory}
@@ -95,6 +101,8 @@ services:
     volumes:
       - caddy_data:/data
       - caddy_config:/config
+      # Sitios adicionales (*.caddy), no versionados; desplegar.sh crea la carpeta vacía.
+      - ./sitios:/etc/caddy/sitios:ro
     depends_on:
       api:
         condition: service_started

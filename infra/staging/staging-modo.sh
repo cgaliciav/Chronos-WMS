@@ -120,7 +120,7 @@ if ! docker compose version >/dev/null 2>&1; then
   sudo DEBIAN_FRONTEND=noninteractive apt-get install -y docker-compose-v2 >&2
 fi
 docker compose version >&2
-mkdir -p "$1" "$2"
+mkdir -p "$1" "$2" "$1/sitios" "$2/sitios"
 if [ ! -f "$3" ]; then
   if systemctl is-active --quiet nginx && stacks_en_marcha | grep -q "^teleset-almacen "; then
     echo sony-nginx > "$3"; echo "Modo inicial registrado: sony-nginx" >&2

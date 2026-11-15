@@ -134,13 +134,32 @@ docker stop "$API" >/dev/null
 [ "$(codigo "$URL/api/x")" = 502 ] && ok "GET /api/x -> 502" || falla "GET /api/x" "502"
 
 echo "== 9. caddy validate con TLS y ambos proveedores DNS"
+COMUNES=(-e ACME_EMAIL=a@ejemplo.com -e CLIENTE=amz -e ENTORNO=staging -e API_UPSTREAM=api:4200)
 for prov in cloudflare linode; do
-  if docker run --rm -e DOMINIOS=ejemplo.com -e DNS_PROVEEDOR="$prov" -e DNS_TOKEN="$TOKEN_FALSO" -e ACME_EMAIL=a@ejemplo.com \
-      -e CLIENTE=amz -e ENTORNO=staging -e API_UPSTREAM=api:4200 "$IMAGEN" \
+  if docker run --rm -e DOMINIOS=ejemplo.com -e DNS_PROVEEDOR="$prov" -e DNS_TOKEN="$TOKEN_FALSO" "${COMUNES[@]}" "$IMAGEN" \
       caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >"$TMP/validate-$prov.log" 2>&1; then
     ok "caddy validate con $prov"
   else falla "caddy validate con $prov" "configuración válida"; tail -5 "$TMP/validate-$prov.log"; fi
 done
+
+echo "== 10. Reto DNS por sitio: resolvedores, propagación y sitio adicional con otro proveedor"
+# adaptar <args docker...>: JSON de la configuración (última línea de `caddy adapt`; las anteriores son logs).
+adaptar() { docker run --rm "${COMUNES[@]}" "$@" "$IMAGEN" caddy adapt --config /etc/caddy/Caddyfile --adapter caddyfile 2>/dev/null | tail -1; }
+R="$(adaptar -e DOMINIOS=ejemplo.com -e DNS_TOKEN="$TOKEN_FALSO" -e DNS_RESOLVERS="1.1.1.1 1.0.0.1" \
+  -e DNS_PROPAGACION_ESPERA=0s -e DNS_PROPAGACION_LIMITE=2m)"
+contiene "por defecto: resolvedores 1.1.1.1 y 1.0.0.1" '"resolvers":["1.1.1.1","1.0.0.1"]' "$R"
+contiene "por defecto: límite de propagación 2m" '"propagation_timeout":120000000000' "$R"
+R="$(adaptar -e DOMINIOS=ejemplo.com -e DNS_TOKEN="$TOKEN_FALSO" -e DNS_PROPAGACION_ESPERA=20s -e DNS_PROPAGACION_LIMITE=-1)"
+contiene "staging: sin comprobación de propagación (-1)" '"propagation_timeout":-1' "$R"
+contiene "staging: espera de 20 s" '"propagation_delay":20000000000' "$R"
+mkdir -p "$TMP/sitios"
+printf 'nuevo.ejemplo.com {\n\timport tls_dns linode {$DNS_TOKEN_2}\n\timport chronos\n}\n' >"$TMP/sitios/nuevo.caddy"
+R="$(adaptar -e "DOMINIOS=ejemplo.com, otro.ejemplo.com" -e DNS_PROVEEDOR=cloudflare -e DNS_TOKEN="$TOKEN_FALSO" \
+  -e DNS_TOKEN_2=token-linode -v "$TMP/sitios:/etc/caddy/sitios:ro")"
+contiene "DOMINIOS con dos nombres usa cloudflare" '"subjects":["ejemplo.com","otro.ejemplo.com"]' "$R"
+contiene "sitio adicional nuevo.ejemplo.com" '"subjects":["nuevo.ejemplo.com"]' "$R"
+contiene "el sitio adicional usa linode" '"name":"linode"' "$R"
+contiene "el sitio adicional sirve la app (entorno.json)" '{\"cliente\":\"amz\"' "$R"
 
 echo
 if [ "$FALLOS" -gt 0 ]; then echo "RESULTADO: $FALLOS comprobaciones fallaron"; exit 1; fi
