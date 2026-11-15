@@ -186,14 +186,14 @@ dejaría las tablas nuevas (`migrations`, `movimiento_relacion`, `configuracion`
 $P1 stop api frontend
 M="docker exec -i -e MYSQL_PWD=$ROOTPW teleset-almacen-mariadb-1 mysql -uroot"
 $M -e "DROP DATABASE almacen_sony_migracion; CREATE DATABASE almacen_sony_migracion DEFAULT CHARACTER SET latin1 COLLATE latin1_spanish_ci"   # el juego anotado en el paso 0.6
-$M -e "SET GLOBAL innodb_flush_log_at_trx_commit = 2"      # sin esto la restauración tarda ~5 veces más
+$M -e "SET GLOBAL innodb_flush_log_at_trx_commit = 2"      # acelera la carga: 18 min en lugar de ~35 en el ensayo
 gunzip -c ~/respaldo-pre-migracion-<fecha>.sql.gz | $M almacen_sony_migracion
 $M -e "SET GLOBAL innodb_flush_log_at_trx_commit = 1"
 $M -N almacen_sony_migracion -e "SELECT COUNT(*) FROM movimiento; SHOW TABLES LIKE 'migrations'"   # movimientos de antes; sin tabla migrations
 $P1 down && docker-compose up -d        # v1, compose original: 2.63.67 + front-www (contenedores nuevos)
 ```
 
-Cuenta con **entre 20 minutos y hora y media** de restauración (tabla del ensayo). Alternativa si el dump no sirviera: restaurar el snapshot manual de Linode (se pierde todo lo posterior al snapshot).
+Cuenta con **20 a 35 minutos** de restauración (tabla del ensayo). Alternativa si el dump no sirviera: restaurar el snapshot manual de Linode (se pierde todo lo posterior al snapshot).
 
 ## Paso 2. Caddy sustituye a nginx
 
@@ -293,7 +293,7 @@ Diferencias del ensayo: se añade `-f compose.staging.yml` (mailpit) a los coman
 |---|---|---|
 | Dump (API detenido, sin `--hex-blob`) | 13 min 7 s, 26 GB | |
 | Migraciones (`migrar.js run`, 715 647 movimientos) | 12 s | |
-| Rollback del paso 1 con `innodb_flush_log_at_trx_commit=1` (como se ensayó) | 94 min | |
+| Rollback del paso 1 completo con `innodb_flush_log_at_trx_commit=1` (como se ensayó; reloj de la laptop) | 35 min | |
 | Restauración del mismo volumen con `innodb_flush_log_at_trx_commit=2` (aprovisionamiento de la VM) | 18 min | |
 | Corte del paso 2 (nginx abajo → Caddy con certificado de Let's Encrypt) | 131 s (incluye 12 s de snapshot de la VM) | |
 | Rollback del paso 2 (Caddy abajo → nginx + paso 1) | 37 s | |
