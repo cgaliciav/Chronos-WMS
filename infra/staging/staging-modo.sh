@@ -161,7 +161,7 @@ echo "AMZ_ENV=$amz SONY_ENV=$sony DH_LOGIN=$dh"
       [[ -n "$amz_dominio" && -n "$amz_token" ]] || die "El subdominio y el token de Cloudflare son obligatorios"
     fi
     if ((want_sony)); then
-      leer sony_token "Token de Linode (Domains: Read/Write) para Sony (staging.telesetalmacen.com): " secreto
+      leer sony_token "Token de Linode (Domains: Read/Write) para Sony ($SONY_CADDY_DOMINIO): " secreto
       [[ -n "$sony_token" ]] || die "El token de Linode es obligatorio"
     fi
     if ((want_amz || want_sony)); then
@@ -179,13 +179,13 @@ echo "AMZ_ENV=$amz SONY_ENV=$sony DH_LOGIN=$dh"
   fi
 
   # D. Generar los .env y entrar a Docker Hub. Los datos entran por stdin, en este orden fijo.
-  printf '%s\n' "$amz_dominio" "$amz_token" "$sony_token" "$acme_email" "$dh_ns" "$dh_token" \
+  printf '%s\n' "$amz_dominio" "$amz_token" "$sony_token" "$acme_email" "$dh_ns" "$dh_token" "$SONY_CADDY_DOMINIO" \
   | vm_bash "crear .env de AMZ/Sony con secretos aleatorios (openssl rand) · docker login -u <espacio de nombres> --password-stdin" '
 set -euo pipefail
 umask 077
 amz="$1"; sony="$2"; v1="$3"; want_amz="$4"; want_sony="$5"; dh="$6"
 IFS= read -r amz_dominio; IFS= read -r amz_token; IFS= read -r sony_token
-IFS= read -r acme_email; IFS= read -r dh_ns; IFS= read -r dh_token
+IFS= read -r acme_email; IFS= read -r dh_ns; IFS= read -r dh_token; IFS= read -r sony_dominio
 
 # poner CLAVE VALOR: reemplaza (o descomenta) CLAVE= en .env sin pasar el valor por la línea de comandos.
 poner() {
@@ -231,7 +231,7 @@ if [ "$want_sony" = 1 ]; then
   cp .env.caddy.example .env; chmod 600 .env
   poner DATOS_DIR "$v1"
   for c in DB_PASSWORD DB_ROOT_PASSWORD JWTSECRET CONFIG_CLAVE; do poner "$c" "$(valor_v1 "$c")"; done
-  poner DOMINIOS "staging.telesetalmacen.com"; poner DNS_TOKEN "$sony_token"; poner ACME_EMAIL "$acme_email"
+  poner DOMINIOS "$sony_dominio"; poner DNS_TOKEN "$sony_token"; poner ACME_EMAIL "$acme_email"
   imagenes
   echo "Sony: $sony/.env creado (credenciales copiadas de $v1/.env, DATOS_DIR=$v1)." >&2
 fi

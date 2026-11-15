@@ -30,6 +30,7 @@ STAGING_DIR_REMOTE="${STAGING_DIR_REMOTE:-/home/cesargv/teleset-almacen}"
 # Modos de staging con Caddy en Docker (staging-modo.sh, desplegar-caddy.sh). Rutas en la VM.
 AMZ_DIR_REMOTE="${AMZ_DIR_REMOTE:-/home/cesargv/chronos-amz}"          # .env, db_data/, exogrid/ y compose de AMZ
 SONY_CADDY_DIR_REMOTE="${SONY_CADDY_DIR_REMOTE:-/home/cesargv/chronos-sony}"  # solo .env y compose; sus datos están en STAGING_DIR_REMOTE
+SONY_CADDY_DOMINIO="${SONY_CADDY_DOMINIO:-staging.telesetalmacen.com}"   # dominio del modo caddy-sony (DNS-01 de Linode)
 MODO_FILE_REMOTE="${MODO_FILE_REMOTE:-/home/cesargv/staging-modo}"       # modo activo: sony-nginx | caddy-amz | caddy-sony | en-transicion
 PROYECTO_SONY_V1="teleset-almacen"                  # proyecto docker-compose v1 del stack actual de Sony
 MODOS_VALIDOS="sony-nginx caddy-amz caddy-sony"
