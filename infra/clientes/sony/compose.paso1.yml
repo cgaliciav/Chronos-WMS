@@ -1,0 +1,68 @@
+# Paso 1 de la migración de Sony (docs/infra/procedimiento-migracion-sony-caddy.md): la versión nueva del API y del
+# front TODAVÍA detrás del nginx del host, con los mismos puertos que el stack de siempre (34400 API, 34401 front).
+# Es transitorio: en el paso 2 lo sustituye infra/clientes/compose.yml (Caddy). Lee el mismo `.env` que ese compose.
+#
+#   docker compose -p teleset-almacen -f compose.paso1.yml --env-file ~/chronos-sony/.env up -d
+#
+# `-p teleset-almacen` es obligatorio: el `.env` trae COMPOSE_PROJECT_NAME=chronos-sony y sin él se crearía un segundo
+# proyecto (otra MariaDB sobre los mismos datos). En staging se suma `-f compose.staging.yml` (mailpit).
+# Solo con compose v2: docker-compose v1 falla al recrear contenedores con Docker 29 (KeyError ContainerConfig).
+services:
+  mariadb:
+    image: ${MARIADB_IMAGEN:-mariadb:10.3}
+    restart: unless-stopped
+    volumes:
+      - ${DATOS_DIR}/db_data/mysql:/var/lib/mysql
+    ports:
+      # Solo loopback (antes 0.0.0.0:3308): Docker publica saltándose ufw.
+      - "127.0.0.1:${DB_PUERTO_LOCAL:-3308}:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--protocol=tcp"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  api:
+    image: ${IMAGEN_API}
+    restart: unless-stopped
+    environment:
+      JWTSECRET: ${JWTSECRET}
+      DB_HOST: mariadb
+      DB_USER: ${DB_USER:-almacen_usr}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE_NAME: ${DB_DATABASE_NAME}
+      DB_SYNCRO: "false"
+      CLIENTE: ${CLIENTE}
+      TRUST_PROXY: ${TRUST_PROXY:-uniquelocal}
+      ARCHIVOS_PUBLICOS: ${ARCHIVOS_PUBLICOS:-false}
+      CONFIG_CLAVE: ${CONFIG_CLAVE:-}
+      SMTP_HOST: ${SMTP_HOST:-smtp.postmarkapp.com}
+      SMTP_PORT: ${SMTP_PORT:-2525}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SOPORTE_CORREO: ${SOPORTE_CORREO:-soporte@exogrid.io}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-${ENTORNO}}
+    volumes:
+      - ${DATOS_DIR}/exogrid:/code/exogrid
+    ports:
+      - "127.0.0.1:34400:4200"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+
+  frontend:
+    image: nginx:1.25-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:34401:80"
+    volumes:
+      # Build del front extraído de la imagen chronos-web (paso 1.6 del procedimiento) y copia de front/nginx.conf
+      # (rutas sin `#`: cualquier ruta que no sea un archivo devuelve index.html).
+      - ${DATOS_DIR}/front-nuevo:/usr/share/nginx/html:ro
+      - ${DATOS_DIR}/front-nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      api:
+        condition: service_started

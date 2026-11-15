@@ -12,3 +12,6 @@
 
 # Caché local con dump, archivos e imagen (~40 GB)
 #CACHE_DIR="$HOME/staging-cache"
+
+# Dominio del modo caddy-sony (otra VM de ensayo necesita el suyo)
+#SONY_CADDY_DOMINIO="staging.telesetalmacen.com"

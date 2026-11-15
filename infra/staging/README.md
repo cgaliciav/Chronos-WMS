@@ -150,7 +150,7 @@ directorio lo corrompen. El modo activo vive en `~/staging-modo` de la VM.
 instalado para Sony con nginx), crea las carpetas, copia los compose y genera cada `.env` desde su `.env.example` con
 secretos aleatorios (`openssl rand`) **sin sobrescribir uno existente**. El `.env` de Sony toma `DB_PASSWORD`,
 `DB_ROOT_PASSWORD`, `JWTSECRET` y `CONFIG_CLAVE` del `.env` del stack v1 (mismos datos, mismas credenciales). Pide por
-consola (sin mostrarlos) el token de Cloudflare (AMZ), el de Linode (Sony), el subdominio de AMZ, `ACME_EMAIL`, el
+consola (sin mostrarlos) el token de Cloudflare (AMZ), el de Linode (Sony; dominio `SONY_CADDY_DOMINIO` de `staging.conf`, por defecto `staging.telesetalmacen.com`), el subdominio de AMZ, `ACME_EMAIL`, el
 espacio de nombres de Docker Hub y un token de Docker Hub de solo lectura para `docker login -u exogrid` en la VM. Los
 secretos viajan por la entrada estándar de ssh, nunca por la línea de comandos ni a los logs.
 

@@ -71,6 +71,7 @@ cut -d' ' -f2 <<<"$salida"
 EOF
 cat >"$BIN/sudo" <<'EOF'
 #!/usr/bin/env bash
+[ "$1" = -n ] && shift
 [ "$1" = chown ] && exit 0   # el dueño real no importa en pruebas
 exec env "$@"
 EOF
