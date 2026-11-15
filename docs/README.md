@@ -10,6 +10,7 @@
 | [`api/procedimiento-migracion-produccion.md`](api/procedimiento-migracion-produccion.md) | Cómo respaldar, aplicar, verificar y revertir las migraciones en producción |
 | [`../infra/staging/README.md`](../infra/staging/README.md) | Staging local (VM réplica de producción): crearla, refrescar datos y actualizarla con `update-staging.sh` |
 | [`infra/procedimiento-alta-amz.md`](infra/procedimiento-alta-amz.md) | Alta de AMZ en producción: Linode, Docker, DNS, `.env`, promoción de imágenes, despliegue, verificación y rollback |
+| [`infra/procedimiento-migracion-sony-caddy.md`](infra/procedimiento-migracion-sony-caddy.md) | Sony en producción: versión actual (migraciones), Caddy en lugar de nginx y MariaDB 10.11, en tres pasos con verificación y rollback; resultados del ensayo |
 | [`infra/cambio-de-dominio.md`](infra/cambio-de-dominio.md) | Cambiar el dominio de un cliente con PWA sin romper a los usuarios (ambos dominios sirven la app) |
 | [`superpowers/specs/2026-11-10-caddy-docker-amz-design.md`](superpowers/specs/2026-11-10-caddy-docker-amz-design.md) | Diseño de Caddy en Docker, imágenes en Docker Hub y despliegue del cliente AMZ |
 | [`front/arquitectura.md`](front/arquitectura.md) | Stack, estructura, flujo de autenticación y convenciones del front |
