@@ -89,8 +89,20 @@ done
 # Valor de una clave del .env sin comillas envolventes (simples o dobles).
 valor_env() { grep -E "^$1=" .env | tail -n1 | cut -d= -f2- | sed -E "s/^[\"'"'"']//; s/[\"'"'"']\$//"; }
 datos=$(valor_env DATOS_DIR)
-sudo mkdir -p "$datos/exogrid" "$datos/db_data/mysql"
-[ "$(stat -c %u "$datos/exogrid")" = 1000 ] || sudo chown -R 1000:1000 "$datos/exogrid"
+# El volumen montado en /code/exogrid tapa las carpetas que crea la imagen: el API necesita las cinco en el servidor.
+# Sin sudo cuando ya existen con el dueño correcto (Sony: sudo pide contraseña); con sudo solo si hace falta.
+carpetas=("$datos/db_data/mysql" "$datos/exogrid")
+for sub in archivos reportes uploads auxiliares imgproductos; do carpetas+=("$datos/exogrid/$sub"); done
+for carpeta in "${carpetas[@]}"; do
+  [ -d "$carpeta" ] || mkdir -p "$carpeta" 2>/dev/null || sudo -n mkdir -p "$carpeta" \
+    || { echo "Error: no se pudo crear $carpeta (créala a mano o permite sudo sin contraseña)" >&2; exit 1; }
+done
+for carpeta in "${carpetas[@]:1}"; do
+  [ "$(stat -c %u "$carpeta")" = 1000 ] && continue
+  sudo -n chown -R 1000:1000 "$datos/exogrid" \
+    || { echo "Error: $carpeta no es del uid 1000 y sudo pide contraseña: sudo chown -R 1000:1000 $datos/exogrid" >&2; exit 1; }
+  break
+done
 ' || falla "preparación del servidor"
 
 # 1. Archivos de compose.
