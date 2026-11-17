@@ -9,6 +9,19 @@ La versión vive en `package.json` (la devuelve `/auth/version`, y Sentry la usa
 `desplegar.sh` publica una versión `X.Y.Z-d` como `X.Y.Z` y, si ya no lleva sufijo, sube el parche. Contrato con el
 front: [`docs/api/endpoints.md`](../docs/api/endpoints.md). Plan: [`docs/planes/02-api-relacion-movimientos.md`](../docs/planes/02-api-relacion-movimientos.md).
 
+## [2.92.1-d] - Sin publicar
+
+Roles que faltaban en el catálogo de carga inicial (hallazgo F23).
+
+### Corregido
+
+- En una base sembrada con `src/semilla/catalogo.json` (p. ej. un cliente nuevo), un usuario que no fuera ADMINISTRADOR
+  no podía abrir casi ninguna pantalla: faltaban 102 códigos de rol que exigen el front (`<ACL>`, menú) o rutas del API
+  (`MOVIMIENTO-HISTORIAL`, `MOVIMIENTO-DETALLE`, `COMENTARIO-NUEVO`…). La migración `RolesFaltantes` los crea donde no
+  existan (no asigna roles a nadie) y el catálogo ya los incluye.
+- Prueba `semilla/rolesDelCatalogo.test.ts`: falla si una ruta del API o una pantalla del front usa un rol que no está
+  en el catálogo.
+
 ## [2.92.0-d] - Sin publicar
 
 Plan 04 · bloque C: transformación de productos (decisión 20).
