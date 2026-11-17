@@ -4,6 +4,9 @@ exports[`fase 6 · forma de las respuestas coinciden con la instantánea grabada
 {
   "GET /activity/:id (alta)": {
     "cantidad": "number",
+    "consumible": "boolean",
+    "efectoAlmacen": "number",
+    "efectoCantidad": "number",
     "estatus": "string",
     "fecha": "string",
     "grupos": [
@@ -113,6 +116,9 @@ exports[`fase 6 · forma de las respuestas coinciden con la instantánea grabada
   },
   "GET /activity/:id (devolución)": {
     "cantidad": "number",
+    "consumible": "boolean",
+    "efectoAlmacen": "number",
+    "efectoCantidad": "number",
     "estatus": "string",
     "fecha": "string",
     "grupos": [
@@ -210,6 +216,9 @@ exports[`fase 6 · forma de las respuestas coinciden con la instantánea grabada
         "id": "number",
         "origen": {
           "cantidad": "number",
+          "consumible": "boolean",
+          "efectoAlmacen": "number",
+          "efectoCantidad": "number",
           "estatus": "string",
           "fecha": "string",
           "id": "number",
@@ -236,6 +245,9 @@ exports[`fase 6 · forma de las respuestas coinciden con la instantánea grabada
   },
   "GET /activity/:id (préstamo)": {
     "cantidad": "number",
+    "consumible": "boolean",
+    "efectoAlmacen": "number",
+    "efectoCantidad": "number",
     "estatus": "string",
     "fecha": "string",
     "grupos": [
@@ -332,6 +344,9 @@ exports[`fase 6 · forma de las respuestas coinciden con la instantánea grabada
         "cantidad": "number",
         "derivado": {
           "cantidad": "number",
+          "consumible": "boolean",
+          "efectoAlmacen": "number",
+          "efectoCantidad": "number",
           "estatus": "string",
           "fecha": "string",
           "id": "number",
@@ -360,6 +375,9 @@ exports[`fase 6 · forma de las respuestas coinciden con la instantánea grabada
   "GET /activity/:id/chain": {
     "movimiento": {
       "cantidad": "number",
+      "consumible": "boolean",
+      "efectoAlmacen": "number",
+      "efectoCantidad": "number",
       "estatus": "string",
       "fecha": "string",
       "id": "number",
@@ -389,6 +407,9 @@ exports[`fase 6 · forma de las respuestas coinciden con la instantánea grabada
         "cantidad": "number",
         "derivado": {
           "cantidad": "number",
+          "consumible": "boolean",
+          "efectoAlmacen": "number",
+          "efectoCantidad": "number",
           "estatus": "string",
           "fecha": "string",
           "id": "number",
@@ -421,6 +442,9 @@ exports[`fase 6 · forma de las respuestas coinciden con la instantánea grabada
   },
   "GET /activity/get-group/:id": {
     "cantidad": "number",
+    "consumible": "boolean",
+    "efectoAlmacen": "number",
+    "efectoCantidad": "number",
     "estatus": "string",
     "fecha": "string",
     "grupos": [
@@ -446,6 +470,9 @@ exports[`fase 6 · forma de las respuestas coinciden con la instantánea grabada
   "GET /activity/history-by-current-inventory/:id": [
     {
       "cantidad": "number",
+      "consumible": "boolean",
+      "efectoAlmacen": "number",
+      "efectoCantidad": "number",
       "estatus": "string",
       "fecha": "string",
       "grupos": [
@@ -524,6 +551,9 @@ exports[`fase 6 · forma de las respuestas coinciden con la instantánea grabada
   ],
   "GET /activity/prior-activity/:id": {
     "cantidad": "number",
+    "consumible": "boolean",
+    "efectoAlmacen": "number",
+    "efectoCantidad": "number",
     "estatus": "string",
     "fecha": "string",
     "id": "number",
@@ -863,6 +893,9 @@ exports[`fase 6 · forma de las respuestas coinciden con la instantánea grabada
     "results": [
       {
         "cantidad": "number",
+        "consumible": "boolean",
+        "efectoAlmacen": "number",
+        "efectoCantidad": "number",
         "estatus": "string",
         "fecha": "string",
         "grupos": [
@@ -981,6 +1014,9 @@ exports[`fase 6 · forma de las respuestas coinciden con la instantánea grabada
     "results": [
       {
         "cantidad": "number",
+        "consumible": "boolean",
+        "efectoAlmacen": "number",
+        "efectoCantidad": "number",
         "estatus": "string",
         "fecha": "string",
         "grupos": [
@@ -1231,6 +1267,9 @@ exports[`fase 6 · forma de las respuestas coinciden con la instantánea grabada
   },
   "PUT /groups/activity (devolución)": {
     "cantidad": "number",
+    "consumible": "boolean",
+    "efectoAlmacen": "number",
+    "efectoCantidad": "number",
     "estatus": "string",
     "fecha": "string",
     "id": "number",
@@ -1362,6 +1401,9 @@ exports[`fase 6 · forma de las respuestas coinciden con la instantánea grabada
   },
   "PUT /groups/activity (préstamo)": {
     "cantidad": "number",
+    "consumible": "boolean",
+    "efectoAlmacen": "number",
+    "efectoCantidad": "number",
     "estatus": "string",
     "fecha": "string",
     "id": "number",
@@ -1483,6 +1525,9 @@ exports[`fase 6 · forma de las respuestas coinciden con la instantánea grabada
   },
   "PUT /groups/activity-purchase": {
     "cantidad": "number",
+    "consumible": "boolean",
+    "efectoAlmacen": "number",
+    "efectoCantidad": "number",
     "estatus": "string",
     "fecha": "string",
     "id": "number",

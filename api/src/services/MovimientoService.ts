@@ -16,6 +16,7 @@ import {
   TIPOS_CON_SALDO,
   TIPOS_ENTRADA,
   TIPOS_ORIGEN,
+  TIPOS_BAJA_LIBRE,
   TIPOS_REGRESO,
   tiposAdmitidosEnListado,
 } from "../entity/common/MovimientoTipoId";
@@ -34,7 +35,18 @@ import { AppError } from "../helpers/errorClases";
 import { idOpcional, idSeguro } from "../helpers/ids";
 import LogGeneralController from "../controllers/LogGeneral.Controller";
 import { crearBaseOperacion } from "../controllers/Operacion.Controller";
-import { aplicarEfecto, esInvertible, EstadoInventario, revertirEfecto } from "./reglas/efectosInventario";
+import { ProductoTipoId } from "../entity/common/ProductoTipoId";
+import {
+  aplicarEfecto,
+  deltasEntre,
+  DeltasInventario,
+  esInvertible,
+  EstadoInventario,
+  revertirDeltas,
+  revertirEfecto,
+  seDeshaceConDeltas,
+  unidadesFueraDeBajaLibre,
+} from "./reglas/efectosInventario";
 import { OrigenAbierto, Plan, planificarRelaciones, RelacionSolicitada } from "./reglas/planificarRelaciones";
 import { logger } from "../helpers/logger";
 
@@ -147,6 +159,19 @@ const bloquearInventario = async (manager: EntityManager, inventarioActualId: nu
   return { inventario: entities[0], productoId: raw[0].ia_productoId as number | null };
 };
 
+/** ¿El producto es CONSUMIBLE (expendable, decisión 18)? Se lee con el inventario ya bloqueado. */
+const esProductoConsumible = async (manager: EntityManager, productoId: number | null) => {
+  if (productoId === null) return false;
+  const [fila] = await manager.query("SELECT productoTipoId FROM producto WHERE id = ?", [productoId]);
+  return fila !== undefined && Number(fila.productoTipoId) === ProductoTipoId.CONSUMIBLE;
+};
+
+/** Deltas guardados en el movimiento (null en los anteriores al plan 04). */
+const deltasDe = (efectoCantidad: unknown, efectoAlmacen: unknown): DeltasInventario | null =>
+  efectoCantidad === null || efectoCantidad === undefined || efectoAlmacen === null || efectoAlmacen === undefined
+    ? null
+    : { cantidad: Number(efectoCantidad), cantidadAlmacen: Number(efectoAlmacen) };
+
 const estadoDe = (inv: InventarioActual): EstadoInventario => ({
   cantidad: Number(inv.cantidad),
   cantidadAlmacen: Number(inv.cantidadAlmacen),
@@ -239,10 +264,24 @@ export default class MovimientoService {
    */
   static resolverRelaciones = async (
     manager: EntityManager,
-    datos: { inventarioActualId: number; proyectoId: number | null; tipo: number; cantidad: number; relaciones?: RelacionSolicitada[] | null; strict?: boolean },
+    datos: {
+      inventarioActualId: number;
+      proyectoId: number | null;
+      tipo: number;
+      cantidad: number;
+      relaciones?: RelacionSolicitada[] | null;
+      strict?: boolean;
+      /** Bajas sin proyecto: unidades que salen de lo que está fuera del almacén (ver `unidadesFueraDeBajaLibre`). */
+      unidadesFuera?: number;
+      consumible?: boolean;
+    },
     consultas: ConsultasRelacion = consultasRelacion
   ): Promise<Plan> => {
-    const necesitaDatos = esTipo(TIPOS_REGRESO, datos.tipo) || datos.tipo === T.TRANSFERENCIA_DESTINO || esTipo([T.BAJA_EN_INVENTARIO, T.BAJA_ADMINISTRADOR], datos.tipo);
+    const necesitaDatos =
+      !datos.consumible &&
+      (esTipo(TIPOS_REGRESO, datos.tipo) ||
+        datos.tipo === T.TRANSFERENCIA_DESTINO ||
+        (esTipo(TIPOS_BAJA_LIBRE, datos.tipo) && datos.unidadesFuera !== 0));
     if (!necesitaDatos) {
       return planificarRelaciones({ ...datos, abiertos: [], pendienteLegado: 0 });
     }
@@ -295,7 +334,10 @@ export default class MovimientoService {
       }
       movimiento.cantidad = cantidad;
 
-      const nuevoEstado = aplicarEfecto(tipo, estadoDe(inventario), cantidad);
+      const consumible = await esProductoConsumible(manager, productoId);
+      const estadoAnterior = estadoDe(inventario);
+      const nuevoEstado = aplicarEfecto(tipo, estadoAnterior, cantidad, { consumible });
+      const deltas = deltasEntre(estadoAnterior, nuevoEstado);
       const plan = await MovimientoService.resolverRelaciones(manager, {
         inventarioActualId,
         proyectoId,
@@ -303,6 +345,8 @@ export default class MovimientoService {
         cantidad,
         relaciones: datos.relaciones,
         strict: datos.strict,
+        unidadesFuera: esTipo(TIPOS_BAJA_LIBRE, tipo) ? unidadesFueraDeBajaLibre(tipo, estadoAnterior, cantidad) : undefined,
+        consumible,
       });
 
       if (datos.compra !== undefined) {
@@ -320,6 +364,9 @@ export default class MovimientoService {
       movimiento.sesion = { id: sesionId } as Sesion;
       movimiento.sesionId = sesionId;
       movimiento.legado = false;
+      movimiento.consumible = consumible;
+      movimiento.efectoCantidad = deltas.cantidad;
+      movimiento.efectoAlmacen = deltas.cantidadAlmacen;
       movimiento.estatus = EstatusEstado.ACTIVO;
       await manager.save(movimiento);
 
@@ -399,9 +446,12 @@ export default class MovimientoService {
    *  - 409 si es ORIGEN de alguna relación (deshaga antes sus derivados).
    *  - Sus relaciones como derivado se borran (CASCADE) y el saldo de sus orígenes se recupera.
    *  - Salidas, regresos y altas se deshacen con su efecto inverso aunque no sean el último movimiento.
-   *  - Compras y bajas (fijan valores absolutos) solo si son el último movimiento con operación: se restaura la
-   *    instantánea LIGADA a ese movimiento (o, para movimientos legados, la última instantánea del inventario).
-   *  - 409 si después hay una compra o baja (deshágala primero).
+   *  - Las bajas por cantidad y los movimientos de consumibles (plan 04) se deshacen restando los deltas que
+   *    guardaron, también aunque no sean el último movimiento.
+   *  - Compras y bajas anteriores al plan 04 (fijan valores absolutos) solo si son el último movimiento con
+   *    operación: se restaura la instantánea LIGADA a ese movimiento (o, para movimientos legados, la última
+   *    instantánea del inventario).
+   *  - 409 si después hay una compra o una baja antigua (deshágala primero).
    */
   static deshacer = async (movimientoId: number | string, sesionId: number) => {
     const id = idSeguro(movimientoId, "movimientoId");
@@ -432,14 +482,19 @@ export default class MovimientoService {
         return { id };
       }
       const tipo = Number(operacion.movimientoTipo.id);
-      const posteriores: { id: number; tipo: number }[] = (
+      const posteriores: { id: number; tipo: number; conDeltas: boolean }[] = (
         await manager.query(
-          `SELECT m.id, o.movimientoTipoId AS tipo FROM movimiento m INNER JOIN operacion o ON o.id = m.operacionId
+          `SELECT m.id, o.movimientoTipoId AS tipo, m.consumible, m.efectoCantidad, m.efectoAlmacen
+             FROM movimiento m INNER JOIN operacion o ON o.id = m.operacionId
             WHERE m.inventarioActualId = ? AND m.id > ? ORDER BY m.id`,
           [inventarioActualId, id]
         )
-      ).map((f: any) => ({ id: Number(f.id), tipo: Number(f.tipo) }));
-      const bloqueante = posteriores.find((p) => !esInvertible(p.tipo));
+      ).map((f: any) => ({
+        id: Number(f.id),
+        tipo: Number(f.tipo),
+        conDeltas: seDeshaceConDeltas(Number(f.tipo), Number(f.consumible) === 1, deltasDe(f.efectoCantidad, f.efectoAlmacen)),
+      }));
+      const bloqueante = posteriores.find((p) => !esInvertible(p.tipo) && !p.conDeltas);
       if (bloqueante) {
         throw new AppError(`No se puede deshacer: después hay una compra o baja (movimiento ${bloqueante.id}); deshágala primero`, 409);
       }
@@ -451,8 +506,11 @@ export default class MovimientoService {
         .getMany();
       const instantaneasABorrar = [...ligadas];
 
+      const deltas = deltasDe(movimiento.efectoCantidad, movimiento.efectoAlmacen);
       let nuevo: Partial<InventarioActual> | null;
-      if (esInvertible(tipo)) {
+      if (deltas !== null && seDeshaceConDeltas(tipo, movimiento.consumible === true, deltas)) {
+        nuevo = revertirDeltas(tipo, estadoDe(inventario), deltas);
+      } else if (esInvertible(tipo)) {
         nuevo = revertirEfecto(tipo, estadoDe(inventario), Number(movimiento.cantidad));
         if (movimiento.legado && posteriores.length === 0) {
           // Mantiene alineada la pila de instantáneas heredada (la usaba el `quitar` anterior).

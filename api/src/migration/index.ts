@@ -5,5 +5,6 @@ import { MovimientoRelacion1794084035404 } from "./1794084035404-MovimientoRelac
 import { Notificacion1794327605255 } from "./1794327605255-Notificacion";
 import { PasswordTemporal1794336939132 } from "./1794336939132-PasswordTemporal";
 import { Configuracion1794338006363 } from "./1794338006363-Configuracion";
+import { ConsumiblesYBajasPorCantidad1794932436077 } from "./1794932436077-ConsumiblesYBajasPorCantidad";
 
-export const MIGRACIONES: Function[] = [Baseline1794083852310, MovimientoRelacion1794084035404, Notificacion1794327605255, PasswordTemporal1794336939132, Configuracion1794338006363];
+export const MIGRACIONES: Function[] = [Baseline1794083852310, MovimientoRelacion1794084035404, Notificacion1794327605255, PasswordTemporal1794336939132, Configuracion1794338006363, ConsumiblesYBajasPorCantidad1794932436077];

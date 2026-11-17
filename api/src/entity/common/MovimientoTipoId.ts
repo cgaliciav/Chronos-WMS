@@ -36,8 +36,12 @@ export const TIPOS_SALIDA: number[] = [T.PRESTAMO, T.RENTA_EXTERNA, T.TRANSFEREN
 export const TIPOS_ORIGEN: number[] = [...TIPOS_SALIDA, T.COMPRA];
 /** Consumen saldo de un origen del mismo inventario y proyecto. */
 export const TIPOS_REGRESO: number[] = [T.DEVOLUCION, T.TRANSFERENCIA_ORIGEN, T.BAJA_JUSTIFICADA, T.BAJA_INJUSTIFICADA, T.BAJA_LEGADO];
-/** Bajas que cierran el inventario completo sin proyecto. */
+/** Bajas sin proyecto: descuentan primero del almacén y, por el excedente, cierran salidas abiertas (decisión 19). */
 export const TIPOS_BAJA_LIBRE: number[] = [T.BAJA_EN_INVENTARIO, T.BAJA_ADMINISTRADOR];
+/** Bajas con proyecto: descuentan primero de lo que está fuera del almacén. */
+export const TIPOS_BAJA_PROYECTO: number[] = [T.BAJA_JUSTIFICADA, T.BAJA_INJUSTIFICADA, T.BAJA_LEGADO];
+/** Todas las bajas: descuentan `cantidad` unidades de `cantidadAlmacen` (decisión 19). */
+export const TIPOS_BAJA: number[] = [...TIPOS_BAJA_PROYECTO, ...TIPOS_BAJA_LIBRE];
 /**
  * No son movimientos de almacén (decisión 12): un inventario o un ajuste no mueve artículos. El API ya no registra
  * operaciones ni crea listados con estos tipos; solo existen en datos antiguos (y se pueden deshacer).

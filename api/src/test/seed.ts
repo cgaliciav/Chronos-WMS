@@ -30,6 +30,7 @@ export const SEMILLA = {
   proveedorId: 1,
   facturaTipoId: 1,
   productoTipoId: 1,
+  productoTipoConsumibleId: 2,
 };
 
 /** Los 17 tipos de movimiento con los ids fijos de producción (docs/api/tipos-de-movimiento.md). */
@@ -106,7 +107,10 @@ export const sembrar = async (connection: DataSource) => {
     await repo(PrecioTipo).save(
       ["DEPRECIACION", "COMPRA ORIGEN", "RENTA INTERNA", "RENTA EXTERNA"].map((nombre, i) => Object.assign(new PrecioTipo(), { id: i + 1, nombre }))
     );
-    await repo(ProductoTipo).save(Object.assign(new ProductoTipo(), { id: SEMILLA.productoTipoId, nombre: "GENERAL" }));
+    await repo(ProductoTipo).save([
+      Object.assign(new ProductoTipo(), { id: SEMILLA.productoTipoId, nombre: "GENERAL" }),
+      Object.assign(new ProductoTipo(), { id: SEMILLA.productoTipoConsumibleId, nombre: "CONSUMIBLE" }), // lo crea la migración del plan 04
+    ]);
     await repo(Parametros).save(PARAMETROS.map(([llave, valor], i) => Object.assign(new Parametros(), { id: i + 1, llave, valor })));
   } finally {
     console.log = silenciar;
