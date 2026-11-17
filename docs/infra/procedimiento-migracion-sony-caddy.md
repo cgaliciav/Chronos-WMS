@@ -237,8 +237,10 @@ cd ~/teleset-almacen && $P1 up -d
 
 ## Paso 3. MariaDB 10.3 → 10.11
 
-> **Pendiente antes de ejecutar este paso:** los comandos usan `root` con contraseña (`$ROOTPW`) y en producción no hay
-> ese acceso (ver "Estado de partida"). Falta ensayar en `chronos-ensayo` el camino sin contraseña root.
+En producción no hay contraseña `root` (ver "Estado de partida"), y no hace falta: desde 10.4 el plugin `unix_socket` viene
+integrado, así que con 10.11 `root` entra **por socket desde dentro del contenedor, sin contraseña**. Ensayado el 2026-11-17
+en `chronos-ensayo` con `root` configurado como en producción. Con 10.3 no se puede fijar `innodb_fast_shutdown=0` (requiere
+`root`); el apagado normal de `docker compose stop` es limpio ("Shutdown complete" en el log) y bastó en el ensayo.
 
 Solo con los pasos 1 y 2 verificados. El directorio de datos actualizado **no** lo puede abrir 10.3: la vuelta atrás es la copia en frío.
 
@@ -250,8 +252,8 @@ Solo con los pasos 1 y 2 verificados. El directorio de datos actualizado **no** 
 
    ```bash
    cd ~/chronos-sony && docker compose stop web api
-   docker compose exec -e MYSQL_PWD="$ROOTPW" mariadb mysql -uroot -e "SET GLOBAL innodb_fast_shutdown=0"
    docker compose stop mariadb
+   docker logs --tail 3 chronos-sony-mariadb-1       # "InnoDB: Shutdown completed" y "mysqld: Shutdown complete"
    sudo cp -a ~/teleset-almacen/db_data/mysql ~/teleset-almacen/db_data/mysql-10.3
    ```
 
@@ -259,10 +261,10 @@ Solo con los pasos 1 y 2 verificados. El directorio de datos actualizado **no** 
 
    ```bash
    docker compose up -d --wait mariadb
-   docker compose exec -e MYSQL_PWD="$ROOTPW" mariadb mariadb-upgrade -uroot
-   docker compose exec -e MYSQL_PWD="$ROOTPW" mariadb mariadb -uroot -e "SELECT VERSION()"
+   docker compose exec mariadb mariadb -uroot -N -e "SELECT CURRENT_USER(), VERSION()"   # root@localhost, 10.11.x (sin contraseña)
+   docker compose exec mariadb mariadb-upgrade -uroot
    docker compose restart mariadb && docker compose up -d --wait
-   docker compose logs --since 2m mariadb | grep -F '[ERROR]'    # nada
+   docker compose logs --since 30s mariadb | grep -F '[ERROR]'   # nada
    ```
 
    En el **primer** arranque con 10.11, antes de `mariadb-upgrade`, el log trae `[ERROR] Incorrect definition of table
@@ -317,3 +319,5 @@ Diferencias del ensayo: se añade `-f compose.staging.yml` (mailpit) a los coman
 | Paso 3: copia en frío (32 GB) | 142 s | |
 | Paso 3: primer arranque con 10.11 + `mariadb-upgrade` | 41 s + 6 s | |
 | Rollback del paso 3 (volver al directorio 10.3) | 17 s | |
+| Rollback del paso 1 con `almacen_usr`, sin `root` (2026-11-17) | 35 min 39 s | |
+| Paso 3 sin contraseña `root` (2026-11-17): apagado normal / copia en frío / arranque 10.11 / `mariadb-upgrade` | 2 s / 218 s / 18 s / 5 s | |
