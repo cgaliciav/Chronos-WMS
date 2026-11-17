@@ -37,12 +37,24 @@ export interface Rol extends NombreEstatus {
   codigoRol: string
 }
 
+/**
+ * Qué artículos ve y opera un usuario (decisión 21): `general` todos; `produccion` los comprados por sus proyectos o
+ * cuyo último movimiento es de ellos; `usuario` aquellos en cuyos movimientos es responsable o quien registró.
+ */
+export type ModoVisibilidad = 'general' | 'produccion' | 'usuario'
+export const OPCIONES_MODO_VISIBILIDAD: { value: ModoVisibilidad; label: string }[] = [
+  { value: 'general', label: 'General: todos los artículos' },
+  { value: 'produccion', label: 'Producción exclusiva: solo los de sus proyectos' },
+  { value: 'usuario', label: 'Usuario exclusivo: solo los de sus movimientos' },
+]
+
 export interface Usuario {
   id: number
   nombre: string
   correo: string
   estatus: Estatus
   vencimiento?: string
+  modoVisibilidad?: ModoVisibilidad
   roles?: Rol[]
   areas?: Area[]
   bodegas?: Bodega[]

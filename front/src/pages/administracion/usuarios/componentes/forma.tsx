@@ -9,6 +9,7 @@ import RolPeticiones from 'services/axios/roles'
 import BodegaPeticiones from 'services/axios/bodegas'
 import ProyectoPeticiones from 'services/axios/proyectos'
 import type { ElementoListado } from 'services/axios'
+import { OPCIONES_MODO_VISIBILIDAD } from 'types/api'
 import type { PropsForma, ValoresFormaUsuario } from '../../tipos'
 
 const formItemLayout = {
@@ -118,7 +119,7 @@ const FormaUsuario = ({
       <Form
         form={form}
         onFinish={handleFinish}
-        initialValues={valoresIniciales}
+        initialValues={{ modoVisibilidad: 'general', ...valoresIniciales }}
         {...formItemLayout}
       >
         <Form.Item
@@ -246,6 +247,18 @@ const FormaUsuario = ({
           >
             {mapeoOpciones(listadoProyectosInternos)}
           </Select>
+        </Form.Item>
+
+        <Form.Item
+          label="Visibilidad"
+          name="modoVisibilidad"
+          tooltip="Producción exclusiva: solo ve los artículos comprados por sus proyectos o cuyo último movimiento es de ellos. Usuario exclusivo: solo ve los artículos en cuyos movimientos es responsable o quien registró. Lo que no ve tampoco lo puede operar. Los administradores siempre ven todo."
+          rules={[{ required: true, message: 'Indica qué artículos puede ver el usuario' }]}
+        >
+          <Select
+            disabled={!habilitadoInterno || guardando || !habilitado}
+            options={OPCIONES_MODO_VISIBILIDAD}
+          />
         </Form.Item>
 
         <Form.Item label="Proyectos Externos" name="proyectosExternos">

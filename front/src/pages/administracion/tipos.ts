@@ -7,6 +7,7 @@ import type { Dayjs } from 'dayjs'
 import type {
   Area,
   Bodega,
+  ModoVisibilidad,
   ParametrosTabla,
   Proveedor,
   Proyecto,
@@ -104,6 +105,8 @@ export interface ValoresFormaUsuario {
   bodegas: number[]
   proyectosInternos?: number[]
   proyectosExternos?: number[]
+  /** Por defecto `general`. */
+  modoVisibilidad?: ModoVisibilidad
 }
 
 export interface ValoresCambiarPassword {
