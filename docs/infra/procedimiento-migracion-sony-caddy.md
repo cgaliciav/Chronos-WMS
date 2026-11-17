@@ -6,12 +6,12 @@ en cuál falló algo:
 
 | Paso | Cambia | No cambia | Vuelta atrás |
 |---|---|---|---|
-| 1. Versión | Esquema (5 migraciones), API 2.89.0, front 4.9.0, marca de Sony | nginx del host, certificados, MariaDB 10.3 | Restaurar el dump + stack anterior |
+| 1. Versión | Esquema (5 migraciones), API 2.89.0, front 4.10.0, marca de Sony | nginx del host, certificados, MariaDB 10.3 | Restaurar el dump + stack anterior |
 | 2. Caddy | Servidor web: Caddy sustituye a los dos nginx; certificado por DNS-01 de Linode | Datos, versión de la app | Apagar Caddy, encender nginx + paso 1 |
 | 3. MariaDB | 10.3 → 10.11 | Todo lo demás | Copia en frío del directorio de datos |
 
 Convenciones: `<…>` es un valor que decides tú y **nunca** se escribe en el repositorio. "(laptop)" = máquina del
-propietario, en la raíz del repo; lo demás, en `ssh linode-prod`. Sustituye `2.89.0` y `4.9.0` si hay versiones más nuevas.
+propietario, en la raíz del repo; lo demás, en `ssh linode-prod`. Sustituye `2.89.0` y `4.10.0` si hay versiones más nuevas.
 Ninguna sesión automatizada ejecuta estos pasos contra producción: los ejecuta una persona.
 
 ## Estado de partida (leído el 2026-11-14)
@@ -36,7 +36,7 @@ Ninguna sesión automatizada ejecuta estos pasos contra producción: los ejecuta
 
    ```bash
    infra/imagenes/promover.sh api 2.89.0
-   infra/imagenes/promover.sh web 4.9.0
+   infra/imagenes/promover.sh web 4.10.0
    ```
 
 3. **Compose v2 y acceso a Docker Hub** en el servidor:
@@ -45,7 +45,7 @@ Ninguna sesión automatizada ejecuta estos pasos contra producción: los ejecuta
    sudo apt-get update && sudo apt-get install -y docker-compose-v2
    docker compose version                 # v2; docker-compose v1 sigue instalado
    docker login -u exogrid                # token de solo lectura
-   docker pull exogrid/chronos-api:2.89.0 && docker pull exogrid/chronos-web:4.9.0
+   docker pull exogrid/chronos-api:2.89.0 && docker pull exogrid/chronos-web:4.10.0
    ```
 
 4. **`.env` del stack nuevo.** (laptop) `scp infra/clientes/sony/.env.caddy.example linode-prod:~/chronos-sony.env.tmp`; en el servidor:
@@ -60,7 +60,7 @@ Ninguna sesión automatizada ejecuta estos pasos contra producción: los ejecuta
    | Variable | Valor |
    |---|---|
    | `ENTORNO` | `produccion` |
-   | `IMAGEN_WEB` / `IMAGEN_API` | `exogrid/chronos-web:4.9.0` / `exogrid/chronos-api:2.89.0` |
+   | `IMAGEN_WEB` / `IMAGEN_API` | `exogrid/chronos-web:4.10.0` / `exogrid/chronos-api:2.89.0` |
    | `MARIADB_IMAGEN` | `mariadb:10.3` (cambia en el paso 3) |
    | `DATOS_DIR` | `/home/cesargv/teleset-almacen` |
    | `DB_PUERTO_LOCAL` | `3308` |
@@ -72,6 +72,7 @@ Ninguna sesión automatizada ejecuta estos pasos contra producción: los ejecuta
    | `SMTP_USER` / `SMTP_PASS` | credenciales de Postmark (hoy van dentro del código viejo) |
    | `DOMINIOS` | `www.telesetalmacen.com` |
    | `DNS_PROVEEDOR` / `DNS_TOKEN` | `linode` / token con *Domains: Read/Write* |
+   | `DNS_PROPAGACION_ESPERA` / `DNS_PROPAGACION_LIMITE` | `5m` / `-1` (descomentadas). Los servidores de nombres de Linode tardan minutos en coincidir: con los valores por defecto el reto DNS-01 falla (ver "Ensayo") |
    | `ACME_EMAIL` | correo de contacto de Let's Encrypt; `ACME_CA` comentada |
 
    Sin comillas en los valores. No debe existir `SMTP_ANULAR`.
@@ -86,7 +87,7 @@ Ninguna sesión automatizada ejecuta estos pasos contra producción: los ejecuta
 
    ```bash
    cd ~/teleset-almacen
-   docker create --name web-tmp exogrid/chronos-web:4.9.0 && docker cp web-tmp:/srv ./front-nuevo && docker rm web-tmp
+   docker create --name web-tmp exogrid/chronos-web:4.10.0 && docker cp web-tmp:/srv ./front-nuevo && docker rm web-tmp
    find front-nuevo -name '*.map' -delete      # los sourcemaps no se publican (Caddy los bloquea; este nginx no)
    ls front-nuevo/index.html front-nuevo/sw.js
    ```
@@ -171,7 +172,7 @@ P1="docker compose -p teleset-almacen -f compose.paso1.yml --env-file $HOME/chro
 
    En la app: **Configuración → Importar** con `/tmp/sony.import.json`.
 7. **Verificación del paso 1** (no sigas al paso 2 hasta completarla):
-   - El acceso dice "Bienvenido a Sony Almacén México"; la versión mostrada es 4.9.0.
+   - El acceso dice "Bienvenido a Sony Almacén México"; la versión mostrada es 4.10.0.
    - Catálogo e inventario cargan; las fotos y miniaturas se ven.
    - Subir una foto a un producto y un archivo a una operación; generar un reporte por grupo (lleva el logo de Sony) y descargarlo.
    - Registrar un préstamo y su devolución de prueba: aparecen en `movimiento_relacion` y `GET /activity/<id>/chain` da el saldo.
@@ -210,7 +211,7 @@ Cuenta con **20 a 35 minutos** de restauración (tabla del ensayo). Alternativa 
 
    ```bash
    infra/clientes/desplegar.sh --host linode-prod --dir /home/cesargv/chronos-sony --cliente sony \
-     --version-web 4.9.0 --version-api 2.89.0
+     --version-web 4.10.0 --version-api 2.89.0
    ```
 
    El primer arranque tarda un par de minutos mientras Caddy obtiene el certificado. Termina con `OK https://www.telesetalmacen.com/` y `/api/`.
@@ -286,6 +287,12 @@ El correo queda atrapado (mailpit + bloqueo iptables): **nunca los quites**, los
 Ensayo del 2026-11-14/15: los tres pasos y sus tres vueltas atrás terminaron bien (tras el rollback del paso 1: 54 tablas, ninguna de las nuevas, 715 647 movimientos y 2.63.67 con el front anterior respondiendo). Snapshots de la VM: `baseline-prod-20261114`,
 `paso1-ok-20261114`, `paso2-ok-20261115`, `paso3-ok-20261115`.
 
+El paso 2 se ensayó con web 4.9.0-s (`acme_dns` global). El 2026-11-16 se repitió el despliegue con web 4.10.0-s (reto DNS-01
+por sitio): con Linode el reto **falló** con `20s`/`-1` (Let's Encrypt consultó antes de que el TXT estuviera en todos los
+servidores de nombres) y con los valores por defecto `0s`/`2m` (la comprobación agotó el tiempo; en esa red además el router
+intercepta el DNS), y **funcionó** con `5m`/`-1`. Por eso el `.env` de Sony fija esos dos valores; el corte del paso 2 dura
+unos 5 min más que en la tabla. Los intentos fallidos pueden dejar registros TXT `_acme-challenge` huérfanos en la zona.
+
 Diferencias del ensayo: se añade `-f compose.staging.yml` (mailpit) a los comandos del paso 1 y `--staging` a
 `desplegar.sh`; `ENTORNO=staging`; etiquetas `-s`; dominio `ensayo.telesetalmacen.com` (`SONY_CADDY_DOMINIO` en `staging.conf`).
 
@@ -296,6 +303,7 @@ Diferencias del ensayo: se añade `-f compose.staging.yml` (mailpit) a los coman
 | Rollback del paso 1 completo con `innodb_flush_log_at_trx_commit=1` (como se ensayó; reloj de la laptop) | 35 min | |
 | Restauración del mismo volumen con `innodb_flush_log_at_trx_commit=2` (aprovisionamiento de la VM) | 18 min | |
 | Corte del paso 2 (nginx abajo → Caddy con certificado de Let's Encrypt) | 131 s (incluye 12 s de snapshot de la VM) | |
+| Emisión del certificado con web 4.10.0 y `DNS_PROPAGACION_ESPERA=5m`, `DNS_PROPAGACION_LIMITE=-1` (CA de pruebas, 2026-11-16) | 313 s | |
 | Rollback del paso 2 (Caddy abajo → nginx + paso 1) | 37 s | |
 | Volver a Caddy tras el rollback (certificado ya en `caddy_data`) | 18 s | |
 | Paso 3: apagado limpio | 12 s | |
