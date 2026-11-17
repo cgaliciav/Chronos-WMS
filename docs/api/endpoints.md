@@ -249,3 +249,19 @@ Una sección por fila: `marca`, `correo`, `reportes`, `regional` (campos y valor
 |---|---|---|---|
 | POST | `/reports/by-group` · `/by-project` · `/by-project-final` | REPORTE-GRUPO · -PROYECTO · -CIERRE | generan Excel en segundo plano en `RUTA_REPORTES`; se descargan por `GET /file/report/:nombre` |
 | POST | `/reports/by-use` · `/by-group-detail` · `/by-invoice` · `/by-inventory` | REPORTE-* | `501 No implementado` |
+
+## Alcance de datos por usuario (plan 04 bloque B, decisión 21)
+
+`usuario.modoVisibilidad` limita en el servidor qué artículos ve y opera cada usuario. `checkRole` deja el alcance en
+`res.locals.alcance` y la regla vive en `api/src/services/alcance.ts`. El rol ADMINISTRADOR siempre tiene alcance general.
+
+| Modo | Ve y opera |
+|---|---|
+| `general` | Todo (comportamiento anterior). |
+| `produccion` | Artículos con una COMPRA (1, 15) de alguno de sus proyectos asignados, o cuyo último movimiento con operación es de uno de ellos. Sin proyectos asignados no ve nada. Solo registra operaciones y compras con esos proyectos (403 con otro). |
+| `usuario` | Artículos en cuyos movimientos es quien registró (sesión del movimiento) o responsable de la operación (`usuariosIds`), en cualquier momento de su historial. |
+
+Respuestas para lo que queda fuera del alcance: los listados y reportes lo omiten; el detalle, historial, cadena, edición y
+deshacer responden **404**; el escaneo por código en `PUT /groups/activity` responde el mismo **400** que un código que no
+existe. `POST /user/new` y `PUT /user/edit` aceptan `modoVisibilidad`; `GET /user/current` lo devuelve.
+

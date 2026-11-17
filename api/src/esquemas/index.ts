@@ -90,6 +90,8 @@ export const usuarioNuevoSchema = z
     proyectosIds: ids.default([]),
     bodegasIds: ids.default([]),
     areasIds: ids.default([]),
+    /** Qué productos ve y opera (decisión 21). Sin indicar: `general` en el alta; en la edición se conserva. */
+    modoVisibilidad: z.enum(["general", "produccion", "usuario"]).optional(),
   })
   .strip();
 

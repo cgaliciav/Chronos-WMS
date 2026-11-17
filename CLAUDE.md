@@ -62,7 +62,7 @@ grande que incluya la versión.
   persona ensaye en staging y despliegue con el procedimiento (la marca de Sony se carga desde `infra/clientes/sony`).
 - `docs/planes/04-expendables-visibilidad-transformacion.md`: expendables (consumibles sin pendiente), cantidades y
   bajas por cantidad (bloque A), modos de visibilidad por usuario (bloque B) y transformación de productos (bloque C).
-  Decisiones 18-21. En curso: bloque A.
+  Decisiones 18-21. Bloques A y B hechos en código; falta el bloque C y que una persona ensaye en staging.
 - `docs/superpowers/specs/2026-11-10-caddy-docker-amz-design.md` y `docs/superpowers/plans/2026-11-10-caddy-docker-amz.md`:
   Caddy en Docker, imágenes en Docker Hub y cliente AMZ (decisión 17). Procedimientos: `docs/infra/`. Falta que una persona
   ejecute la aceptación en staging y el alta de producción de AMZ.

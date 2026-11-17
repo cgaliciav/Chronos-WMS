@@ -9,6 +9,28 @@ La versión vive en `package.json` (la devuelve `/auth/version`, y Sentry la usa
 `desplegar.sh` publica una versión `X.Y.Z-d` como `X.Y.Z` y, si ya no lleva sufijo, sube el parche. Contrato con el
 front: [`docs/api/endpoints.md`](../docs/api/endpoints.md). Plan: [`docs/planes/02-api-relacion-movimientos.md`](../docs/planes/02-api-relacion-movimientos.md).
 
+## [2.91.0-d] - Sin publicar
+
+Plan 04 · bloque B: modos de visibilidad por usuario (decisión 21).
+
+### Añadido
+
+- `usuario.modoVisibilidad` (`general`, `produccion`, `usuario`; migración `UsuarioModoVisibilidad`, por defecto `general`).
+  `POST /user/new` y `PUT /user/edit` aceptan `modoVisibilidad` (en la edición, sin indicarlo se conserva) y
+  `GET /user/current` lo devuelve.
+- **Producción exclusiva** (`produccion`): el usuario solo ve los artículos que compró alguno de sus proyectos asignados
+  o cuyo último movimiento es de uno de ellos. Solo opera a nombre de esos proyectos (403 con otro).
+- **Usuario exclusivo** (`usuario`): solo ve los artículos en cuyos movimientos es responsable o quien registró.
+- El alcance se aplica en el servidor (`services/alcance.ts`): catálogos, listados de movimientos, préstamos activos,
+  creación de listados desde búsquedas, reportes, detalle e historial (404), edición de artículo e inventario (404),
+  escaneo por código (mismo 400 que un código inexistente), agregar operación y deshacer (404).
+- El rol ADMINISTRADOR ignora el modo. Los usuarios existentes quedan en `general`: nada cambia para ellos.
+
+### Limitaciones conocidas
+
+- Las cabeceras de los listados (`/groups/list-antd`, `/groups/:id`) no se filtran: muestran nombre, proyecto y número de
+  líneas, pero sus líneas sí se filtran. Los archivos (`/file/:id`) se sirven por id solo con token.
+
 ## [2.90.0-d] - Sin publicar
 
 Plan 04 · bloque A: expendables y bajas por cantidad (decisiones 18 y 19).

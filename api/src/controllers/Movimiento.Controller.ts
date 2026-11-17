@@ -8,6 +8,7 @@ import CommonController from "./common/Common.Controller";
 import OperacionController from "./Operacion.Controller";
 import MovimientoService from "../services/MovimientoService";
 import { parametro } from "../helpers/ids";
+import { alcanceDe, exigirInventarioVisible, exigirMovimientoVisible } from "../services/alcance";
 
 // Registrar, deshacer y relacionar operaciones vive en services/MovimientoService.ts (plan 02 fase 3).
 // Tipos de movimiento: entity/common/MovimientoTipoId.ts y docs/api/tipos-de-movimiento.md.
@@ -110,6 +111,7 @@ class MovimientoController {
   /** GET /activity/:id/chain — movimiento, sus orígenes, sus derivados y su saldo pendiente. */
   static obtenerCadena = async (req: Request, res: Response, next: NextFunction) => {
     try {
+      await exigirMovimientoVisible(alcanceDe(res.locals), parametro(req, "id"));
       res.json(await MovimientoService.cadena(parametro(req, "id")));
     } catch (error) {
       next(error);
@@ -119,6 +121,7 @@ class MovimientoController {
   /** GET /activity/open-by-inventory/:inventarioActualId?proyectoId= — salidas con saldo pendiente. */
   static obtenerAbiertosPorInventario = async (req: Request, res: Response, next: NextFunction) => {
     try {
+      await exigirInventarioVisible(alcanceDe(res.locals), parametro(req, "inventarioActualId"));
       res.json(await MovimientoService.abiertosPorInventario(parametro(req, "inventarioActualId"), req.query.proyectoId as string | undefined));
     } catch (error) {
       next(error);
@@ -132,6 +135,7 @@ class MovimientoController {
   ) => {
     const id = parametro(req, "id"); //inventarioActualId
     try {
+      await exigirInventarioVisible(alcanceDe(res.locals), id);
       res.json(
         await AppDataSource.getRepository(Movimiento)
           .createQueryBuilder("movimiento")
@@ -158,6 +162,7 @@ class MovimientoController {
   ) => {
     const id = parametro(req, "id"); //inventarioActualId
     try {
+      await exigirInventarioVisible(alcanceDe(res.locals), id);
       res.json(
         await AppDataSource.getRepository(Movimiento)
           .createQueryBuilder("movimiento")
@@ -187,6 +192,7 @@ class MovimientoController {
     const id = parametro(req, "id");
 
     try {
+      await exigirMovimientoVisible(alcanceDe(res.locals), id);
       const movimiento: Movimiento | null = await CommonController.obtenerIdQuery(funcionQueryId(id));
       if (movimiento == null) throw new AppError(`No existe el movimiento ${id}`, 404);
       res.json({ ...movimiento, saldoPendiente: await MovimientoService.saldoPendiente(movimiento.id) });
@@ -202,6 +208,7 @@ class MovimientoController {
   ) => {
     const id = parametro(req, "id"); //movimientoId
     try {
+      await exigirMovimientoVisible(alcanceDe(res.locals), id);
       res.json(
         await AppDataSource.getRepository(Movimiento)
           .createQueryBuilder("movimiento")

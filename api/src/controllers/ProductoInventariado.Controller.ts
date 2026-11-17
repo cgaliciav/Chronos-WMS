@@ -6,6 +6,7 @@ import { ProductoInventariado, InventarioEstado } from "../entity/ProductoInvent
 import { Sesion } from "../entity/Sesion";
 import { idSeguro, parametro } from "../helpers/ids";
 import { logger } from "../helpers/logger";
+import { alcanceDe, exigirProductoVisible } from "../services/alcance";
 
 export default class ProductoInventariadoController {
   static guardar = async (
@@ -98,6 +99,7 @@ export default class ProductoInventariadoController {
     logger.info("ProductoInventariadoController - DETALLE", { param: req.params });
     const id = parametro(req, "id");
     try {
+      await exigirProductoVisible(alcanceDe(res.locals), id);
       const respuesta = await AppDataSource.getRepository(Producto).findOneByOrFail({ id: idSeguro(id) });      
       res.json(respuesta.productoInventarios);
     } catch (error) {

@@ -26,6 +26,8 @@ src/data-source.ts      AppDataSource (TypeORM 1.x) con opcionesDataSource() des
                         MIGRACIONES, SUSCRIPTORES); conectarORM() la inicializa y avisa si hay migraciones pendientes
 src/migration/          migraciones (baseline idempotente, MovimientoRelacion, Notificacion) e index.ts con la lista MIGRACIONES
 src/services/           MovimientoService (registrar/deshacer/relacionar, transaccional), guardasRelacion,
+                        alcance (visibilidad por usuario, decisión 21: toda consulta u operación sobre artículos pasa el
+                        `alcanceDe(res.locals)` a las consultas o llama a `exigir*Visible`),
                         NotificacionService (crear/listar/marcar, emisor para SSE, vencimientos y retención cada 6 h),
                         ConfiguracionService (configuración por cliente del plan 03: caché 30 s, secreto SMTP cifrado, imágenes,
                         exportar/importar; ejemplo de cliente en infra/clientes/sony), PasswordService,

@@ -26,6 +26,11 @@ const T = MovimientoTipoId;
 
 /** Crean saldo en el almacén (aumentan `cantidadAlmacen`); nunca son derivados. */
 export const TIPOS_ENTRADA: number[] = [T.COMPRA_LEGADO, T.ALTA_LEGADO, T.ALTA, T.COMPRA];
+/**
+ * Entradas que hacen a un producto "de la producción" (decisión 21): quien tiene el modo de visibilidad `produccion` ve
+ * siempre lo que compró alguno de sus proyectos, aunque después se preste a otro.
+ */
+export const TIPOS_ENTRADA_DE_PRODUCCION: number[] = [T.COMPRA_LEGADO, T.COMPRA];
 /** Salen del almacén hacia un proyecto (disminuyen `cantidad`). */
 export const TIPOS_SALIDA: number[] = [T.PRESTAMO, T.RENTA_EXTERNA, T.TRANSFERENCIA_DESTINO];
 /**

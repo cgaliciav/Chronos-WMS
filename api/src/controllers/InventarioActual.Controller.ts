@@ -13,6 +13,7 @@ import InventarioActualHistoricoController from "./InventarioActualHistorico.Con
 import ProductoController from "./Producto.Controller";
 import { MovimientoTipoId as T } from "../entity/common/MovimientoTipoId";
 import { logger } from "../helpers/logger";
+import { Alcance, alcanceDe, aplicarAlcance, exigirInventarioVisible } from "../services/alcance";
 
 const queryBusqueda = () => {
     return (
@@ -71,8 +72,8 @@ const queryBusquedaCatalogo = ({
     bodegaIds,
     estados,
     con_foto,
-}: { textoBusqueda?: string; areasIds?: (number | string)[]; bodegaIds?: (number | string)[]; estados?: string[]; con_foto?: boolean }) => {
-    const query = queryBusqueda().where("precioTipo.id=2");
+}: { textoBusqueda?: string; areasIds?: (number | string)[]; bodegaIds?: (number | string)[]; estados?: string[]; con_foto?: boolean }, alcance?: Alcance) => {
+    const query = aplicarAlcance(queryBusqueda().where("precioTipo.id=2"), alcance);
     andWhereIn(query, "area.id", idsSeguros(areasIds ?? [], "areasIds"), "areasIds");
     andWhereIn(query, "inventarioActual.disponible", estados ?? [], "estados");
 
@@ -100,9 +101,9 @@ const queryBusquedaCatalogo = ({
 
 };
 
-const queryBusquedaCodigos = (codigosBusqueda: (number | string)[]) => {
+const queryBusquedaCodigos = (codigosBusqueda: (number | string)[], alcance?: Alcance) => {
 
-    return (
+    return aplicarAlcance(
         queryBusqueda()
             .where(new Brackets(qb => {
                 // LIKE parametrizado por código (hallazgo C2)
@@ -115,7 +116,8 @@ const queryBusquedaCodigos = (codigosBusqueda: (number | string)[]) => {
                 })
                 return qb
             }))
-            .andWhere("precioTipo.id=2")
+            .andWhere("precioTipo.id=2"),
+        alcance
     )
 
 }
@@ -126,7 +128,7 @@ const queryBusquedaProyecto = ({
     bodegaIds,
     proyectoId,
     movimientosTipoIds
-}: { textoBusqueda?: string; areasIds?: (number | string)[]; bodegaIds?: (number | string)[]; proyectoId?: number | string; movimientosTipoIds?: (number | string)[] }) => {
+}: { textoBusqueda?: string; areasIds?: (number | string)[]; bodegaIds?: (number | string)[]; proyectoId?: number | string; movimientosTipoIds?: (number | string)[] }, alcance?: Alcance) => {
 
     // queryBusquedaOperacion
     const query = queryBusquedaOperacion()
@@ -135,6 +137,7 @@ const queryBusquedaProyecto = ({
     andWhereIn(query, "area.id", idsSeguros(areasIds ?? [], "areasIds"), "areasIds");
     andWhereIn(query, "bodega.id", idsSeguros(bodegaIds ?? [], "bodegaIds"), "bodegaIds");
     andWhereIn(query, "movimientoTipo.id", idsSeguros(movimientosTipoIds ?? [], "movimientosTipoIds"), "movimientosTipoIds");
+    aplicarAlcance(query, alcance);
     const texto = textoBusquedaBooleana(textoBusqueda);
     if (texto !== null) {
         query.andWhere(new Brackets(qb =>
@@ -235,7 +238,8 @@ class InventarioActualController {
         return registro
     }
 
-    static obtenerInventarioActualDeCodigo = async (codigo: string) => {
+    /** Con `alcance`, un artículo que el usuario no ve responde igual que uno que no existe (decisión 21). */
+    static obtenerInventarioActualDeCodigo = async (codigo: string, alcance?: Alcance) => {
 
         if (typeof codigo !== "string" || codigo.trim().length < 4) {
             throw new AppError("Código inválido", 400);
@@ -260,6 +264,7 @@ class InventarioActualController {
         } else {
             qry.where("productoClaves.barras LIKE :codigo", { codigo: `%${codigo}` })
         }
+        aplicarAlcance(qry, alcance);
         const registros = await qry.getMany();
         if (registros.length > 1) {
             throw new AppError(`Hay mas de un artículo con el código ${codigo}`, 400)
@@ -281,6 +286,7 @@ class InventarioActualController {
         const { inventarioActualId } = req.body;
         const { jwtPayload } = res.locals;
         try {
+            await exigirInventarioVisible(alcanceDe(res.locals), inventarioActualId);
             await InventarioActualController.quitar(
                 await AppDataSource.getRepository(InventarioActual).findOneOrFail({ where: { id: idSeguro(inventarioActualId, "inventarioActualId") },  relations: { producto: true } }),
                 jwtPayload.si
@@ -294,6 +300,7 @@ class InventarioActualController {
     static obtenerId = async (req: Request, res: Response, next: NextFunction) => {
         const id = parametro(req, "id");
         try {
+            await exigirInventarioVisible(alcanceDe(res.locals), id);
             const resp = await CommonController.obtenerIdQuery(
                 fnQueryId(id)
             )
@@ -319,6 +326,7 @@ class InventarioActualController {
             ...body } = req.body;
         const { jwtPayload } = res.locals;
         try {
+            await exigirInventarioVisible(alcanceDe(res.locals), inventarioActualId);
             const inventarioActual = await AppDataSource.getRepository(InventarioActual).findOneOrFail({ where: { id: idSeguro(inventarioActualId, "inventarioActualId") },  relations: { bodega: true } });
             inventarioActual.bodega = await AppDataSource.getRepository(Bodega).findOneByOrFail({ id: idSeguro(bodegaId, "bodegaId") });
             // cantidad, cantidadAlmacen y disponible solo cambian con movimientos (hallazgo H6)
@@ -347,7 +355,7 @@ class InventarioActualController {
             const { pageSize } = pagination;
             const starts = pageSize * page - pageSize;
 
-            const qry = queryBusquedaCatalogo(body);
+            const qry = queryBusquedaCatalogo(body, alcanceDe(res.locals));
             const conteoTotal = await qry.getCount();
             qry.skip(starts).take(pageSize);
 
@@ -385,7 +393,7 @@ class InventarioActualController {
             const { pageSize } = pagination;
             const starts = pageSize * page - pageSize;
 
-            const qry = queryBusquedaCodigos(codigos);
+            const qry = queryBusquedaCodigos(codigos, alcanceDe(res.locals));
             const conteoTotal = await qry.getCount();
 
             qry.skip(starts).take(pageSize);
@@ -417,7 +425,7 @@ class InventarioActualController {
             const { pageSize } = pagination;
             const starts = pageSize * page - pageSize;
 
-            const qry = queryBusquedaCatalogo({ ...body, estados: [InventarioDisponible.BAJA] });
+            const qry = queryBusquedaCatalogo({ ...body, estados: [InventarioDisponible.BAJA] }, alcanceDe(res.locals));
             const conteoTotal = await qry.getCount();
             qry.skip(starts).take(pageSize);
 
@@ -449,7 +457,7 @@ class InventarioActualController {
             const { pageSize } = pagination;
             const starts = pageSize * page - pageSize;
 
-            const qry = queryBusquedaProyecto(body);
+            const qry = queryBusquedaProyecto(body, alcanceDe(res.locals));
             const conteoTotal = await qry.getCount();
             qry.skip(starts).take(pageSize);
 
@@ -489,6 +497,7 @@ class InventarioActualController {
         try {
             // Dentro del try: un id inválido lanzaba fuera de él y la petición se quedaba colgada (fase 5).
             const id = idSeguro(req.body?.inventarioActualId ?? parametroOpcional(req, "id"), "inventarioActualId");
+            await exigirInventarioVisible(alcanceDe(res.locals), id);
             res.json(
                 await AppDataSource.getRepository(Operacion)
                     .createQueryBuilder("operacion")
