@@ -58,6 +58,7 @@ const BajasOperacion = () => {
     ColumnasOperaciones.foto(setArchivosImagenes, setMostrarModalImagenes),
     ColumnasOperaciones.producto,
     ColumnasOperaciones.clave,
+    ColumnasOperaciones.cantidad,
     ColumnasOperaciones.almacen,
     ColumnasOperaciones.operacion,
     ColumnasOperaciones.almacenista,
@@ -141,7 +142,7 @@ const BajasOperacion = () => {
     try {
       await GrupoPeticiones.agregarMovimiento({
         codigo: valores.clave,
-        cantidad: 1,
+        cantidad: valores.cantidad ?? 1,
         // Las líneas son del tipo del listado (13 o 16). Solo los listados antiguos de BAJA* (5) eligen por línea.
         movimientoTipoId: movimientoTipoId === 5 ? Number(valores.tipoBaja) : movimientoTipoId,
         proyectoId,

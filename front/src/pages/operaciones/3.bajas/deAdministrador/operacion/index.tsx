@@ -58,6 +58,7 @@ const BajasAdministradorOperacion = () => {
     ColumnasOperaciones.foto(setArchivosImagenes, setMostrarModalImagenes),
     ColumnasOperaciones.producto,
     ColumnasOperaciones.clave,
+    ColumnasOperaciones.cantidad,
     ColumnasOperaciones.almacen,
     ColumnasOperaciones.operacion,
     ColumnasOperaciones.almacenista,
@@ -139,7 +140,7 @@ const BajasAdministradorOperacion = () => {
     try {
       await GrupoPeticiones.agregarMovimiento({
         codigo: valores.clave,
-        cantidad: 1,
+        cantidad: valores.cantidad ?? 1,
         movimientoTipoId, // baja administrador
         grupoId: grupo.id,
       })

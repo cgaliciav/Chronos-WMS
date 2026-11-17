@@ -116,12 +116,14 @@ export interface TablaListadosPorProyectoProps {
 /** Valores de `componentes/formaPDBP` (préstamo, devolución, baja y previo). */
 export interface ValoresBusquedaPDBP {
   clave?: string
+  /** Unidades de la operación (valor inicial `1`; vuelve a `1` tras cada lectura). */
+  cantidad?: number
   /** Solo con `mostrarBajas`: `'13'` justificada, `'16'` injustificada (ids de `movimiento_tipo`). */
   tipoBaja?: '13' | '16'
 }
 
 export interface FormaBusquedaPDBPProps {
-  /** Si devuelve (o resuelve) un valor verdadero, se limpia el campo `clave`. */
+  /** Si devuelve (o resuelve) un valor verdadero, se limpia el campo `clave` y la cantidad vuelve a `1`. */
   handleFinish: (valores: ValoresBusquedaPDBP) => unknown
   cargando?: boolean
   habilitado?: boolean

@@ -69,6 +69,12 @@ export type Proveedor = NombreEstatus
 export type FacturaTipo = NombreEstatus
 export type PrecioTipo = NombreEstatus
 export type ProductoTipo = NombreEstatus
+/** Ids fijos de `producto_tipo`. El CONSUMIBLE es el "expendable": al prestarlo se da por consumido (decisión 18). */
+export const PRODUCTO_TIPO = { REGULAR: 1, CONSUMIBLE: 2 } as const
+export const OPCIONES_PRODUCTO_TIPO = [
+  { value: PRODUCTO_TIPO.REGULAR, label: 'Regular' },
+  { value: PRODUCTO_TIPO.CONSUMIBLE, label: 'Expendable' },
+]
 export type MovimientoTipo = NombreEstatus
 
 export interface ProductoClave {
@@ -144,7 +150,10 @@ export interface Movimiento {
   fecha?: string
   relacionesOrigen?: RelacionMovimiento[]
   relacionesDerivadas?: RelacionMovimiento[]
-  saldoPendiente?: Numerico
+  /** Unidades aún sin devolver de una salida; `null` en movimientos anteriores a la fase 3 o sin saldo. */
+  saldoPendiente?: Numerico | null
+  /** El producto era expendable al registrar el movimiento: no deja pendiente de devolución (plan 04). */
+  consumible?: boolean
 }
 
 export interface GrupoDetalle {

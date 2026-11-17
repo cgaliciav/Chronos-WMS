@@ -1,5 +1,5 @@
 // Forma para préstamo, devolución, baja y previo: básicamente un campo de texto con la clave.
-import { Button, Form, Input, Row, Col, Radio } from 'antd'
+import { Button, Form, Input, InputNumber, Row, Col, Radio } from 'antd'
 import type { FormaBusquedaPDBPProps, ValoresBusquedaPDBP } from '../tipos'
 
 export type { FormaBusquedaPDBPProps, ValoresBusquedaPDBP } from '../tipos'
@@ -33,16 +33,25 @@ const FormaBusquedaPDBP = ({
 
   const manejoFinish = async (valores: ValoresBusquedaPDBP) => {
     if (await handleFinish(valores)) {
-      form.setFieldsValue({ clave: '' })
+      form.setFieldsValue({ clave: '', cantidad: 1 })
     }
   }
 
   return (
-    <Form onFinish={manejoFinish} form={form} layout="horizontal">
+    <Form onFinish={manejoFinish} form={form} layout="horizontal" initialValues={{ cantidad: 1 }}>
       <Row gutter={3}>
         <Col {...colLayoutA}>
           <Form.Item label="Clave" name="clave">
             <Input placeholder="Ingresa un código" disabled={disable} />
+          </Form.Item>
+        </Col>
+        <Col>
+          <Form.Item
+            label="Cantidad"
+            name="cantidad"
+            rules={[{ required: true, message: 'Indica la cantidad' }]}
+          >
+            <InputNumber min={0.0001} step={1} disabled={disable} style={{ width: 90 }} />
           </Form.Item>
         </Col>
         {mostrarBajas ? (
