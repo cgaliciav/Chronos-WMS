@@ -271,8 +271,14 @@ existe. `POST /user/new` y `PUT /user/edit` aceptan `modoVisibilidad`; `GET /use
 |---|---|---|---|
 | PUT | `/groups/activity-transform` | GRUPOS-TRANSFORMAR | `{ codigo, cantidad, proyectoId, usuariosIds?, grupoId, productos: [{ titulo, descripcion?, cantidad, productoTipoId?, areaId?, precio? }] }` (1 a 50 productos) |
 
-Responde `{ origen, derivados }`: el movimiento TRANSFORMACIÓN (18) del artículo original y los movimientos ALTA POR
+| GET | `/activity/transformations-by-inventory/:inventarioActualId` | MOVIMIENTO-HISTORIAL | — |
+
+`PUT /groups/activity-transform` responde `{ origen, derivados }`: el movimiento TRANSFORMACIÓN (18) del artículo original y los movimientos ALTA POR
 TRANSFORMACIÓN (19) de los productos creados. `grupoId` es un listado de tipo 18 (`POST /groups/new-details` con
 `movimientoTipoId: 18`). Errores: 400 si la producción no tiene esas unidades del artículo; 403 si el usuario está en
 modo producción y el proyecto no es suyo. Detalle en `docs/api/tipos-de-movimiento.md`.
+
+`GET /activity/transformations-by-inventory/:id` responde `{ origenes, derivados }`; cada elemento lleva `titulo`,
+`codigo`, `inventarioActualId`, `cantidad` (unidades del producto creado), `cantidadOriginal` (unidades usadas del
+original), `proyecto`, `fecha` y los ids de los dos movimientos.
 

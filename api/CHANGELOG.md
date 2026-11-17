@@ -23,6 +23,8 @@ Plan 04 · bloque C: transformación de productos (decisión 20).
   por cantidad) y **19 ALTA POR TRANSFORMACIÓN** (crea el producto nuevo a cargo de la producción, como una compra: se
   devuelve al almacén con una devolución). Relación `transformacion` en `movimiento_relacion` entre el 18 y cada 19
   (`GET /activity/:id/chain` la devuelve). Migración `Transformacion`.
+- `GET /activity/transformations-by-inventory/:inventarioActualId` (rol `MOVIMIENTO-HISTORIAL`): `{ origenes, derivados }`,
+  los artículos de los que salió un producto y los productos creados a partir de él.
 - Los listados de tipo 18 admiten líneas 18 y 19. En modo producción exclusiva, los productos creados por transformación
   cuentan como comprados por la producción.
 

@@ -80,6 +80,19 @@ describe("plan 04 · bloque C · transformación", () => {
       [derivados[1].id, 7, "transformacion"],
     ]);
 
+    // El detalle de cada artículo dice de dónde salió y en qué se transformó.
+    const delOriginal = (await api.get(`/activity/transformations-by-inventory/${original.inventarioActualId}`)).body;
+    expect(delOriginal.origenes).toEqual([]);
+    expect(delOriginal.derivados.map((d: any) => [d.titulo, d.cantidad, d.cantidadOriginal, d.inventarioActualId, d.proyecto])).toEqual([
+      ["Silla (antes banco)", 1, 1, derivados[0].inventarioActual.id, "PROYECTO A"],
+      ["Extensiones cortas", 7, 1, derivados[1].inventarioActual.id, "PROYECTO A"],
+    ]);
+    const delNuevo = (await api.get(`/activity/transformations-by-inventory/${derivados[1].inventarioActual.id}`)).body;
+    expect(delNuevo.derivados).toEqual([]);
+    expect(delNuevo.origenes).toEqual([
+      expect.objectContaining({ inventarioActualId: original.inventarioActualId, codigo: original.codigo, cantidad: 7, cantidadOriginal: 1 }),
+    ]);
+
     // El producto nuevo se devuelve al almacén como cualquier compra.
     const codigoNuevo = productos[1].barras;
     expect((await operar(codigoNuevo, 4, 5)).status).toBe(200);
