@@ -26,6 +26,10 @@ Ninguna sesión automatizada ejecuta estos pasos contra producción: los ejecuta
 - `exogrid/` tiene las cinco carpetas que el API necesita (`archivos`, `reportes`, `uploads`, `auxiliares`,
   `imgproductos`), con dueño uid 1000. El volumen tapa las que crea la imagen: **si falta alguna, el API falla** al
   subir archivos o generar reportes.
+- **No hay acceso `root` a MariaDB** (comprobado el 2026-11-16): `root@localhost` exige el plugin `unix_socket`, que esta
+  10.3 no tiene cargado, y por TCP no se conoce la contraseña. Los pasos 0 a 2 usan `almacen_usr`, que tiene
+  `ALL PRIVILEGES` sobre `almacen_sony_migracion` (alcanza para el dump, las migraciones y borrar/crear la base en el
+  rollback). El paso 3 sí necesita `root`.
 - `sudo` pide contraseña: los comandos con `sudo` de este documento los teclea una persona en una terminal.
 - Disco: 66 GB libres (el dump comprimido ocupa ~31 GB).
 
@@ -98,15 +102,15 @@ Ninguna sesión automatizada ejecuta estos pasos contra producción: los ejecuta
    cd ~/teleset-almacen
    for d in archivos reportes uploads auxiliares imgproductos; do stat -c '%n %u' exogrid/$d; done   # las cinco, uid 1000
    df -h / | tail -1                                         # > 40 GB libres
-   read -rs ROOTPW; echo                                     # contraseña root de MariaDB (no se muestra)
-   docker exec -e MYSQL_PWD="$ROOTPW" teleset-almacen_mariadb_1 mysql -uroot -e "SHOW GRANTS FOR 'almacen_usr'@'%'"
-   docker exec -e MYSQL_PWD="$ROOTPW" teleset-almacen_mariadb_1 mysql -uroot -N -e "SHOW CREATE DATABASE almacen_sony_migracion"
+   DBPW="$(grep -E '^DB_PASSWORD=' ~/chronos-sony/.env | cut -d= -f2-)"    # contraseña de almacen_usr (no se muestra)
+   docker exec -e MYSQL_PWD="$DBPW" teleset-almacen_mariadb_1 mysql -ualmacen_usr -e "SHOW GRANTS"
+   docker exec -e MYSQL_PWD="$DBPW" teleset-almacen_mariadb_1 mysql -ualmacen_usr -N -e "SHOW CREATE DATABASE almacen_sony_migracion"
    ```
 
-   Anota el juego de caracteres de la base (en la copia de staging: `latin1` / `latin1_spanish_ci`): lo necesita el rollback del paso 1.
+   Anota el juego de caracteres de la base (en producción, el 2026-11-16: `latin1` / `latin1_spanish_ci`): lo necesita el rollback del paso 1.
 
    El usuario del API necesita `CREATE`, `ALTER`, `INDEX`, `REFERENCES`, `CREATE VIEW` y `DROP` sobre
-   `almacen_sony_migracion` (`ALL PRIVILEGES` los incluye). Si no los tiene, concédelos antes de migrar.
+   `almacen_sony_migracion` (`ALL PRIVILEGES` los incluye; en producción los tiene, comprobado el 2026-11-16).
 7. **Aviso a los usuarios** de la ventana, y **snapshot manual de Linode** (Cloud Manager, Backups, Take Snapshot) justo antes de empezar.
 
 En adelante, en el servidor. **El paso 1 usa compose v2 (`docker compose`)**: `docker-compose` v1 falla al recrear
@@ -116,6 +120,7 @@ stack anterior y, en el rollback, para crearlo de nuevo desde cero.
 ```bash
 cd ~/teleset-almacen
 P1="docker compose -p teleset-almacen -f compose.paso1.yml --env-file $HOME/chronos-sony/.env"
+DBPW="$(grep -E '^DB_PASSWORD=' ~/chronos-sony/.env | cut -d= -f2-)"    # contraseña de almacen_usr
 ```
 
 ## Paso 1. Versión nueva detrás de nginx
@@ -126,11 +131,10 @@ P1="docker compose -p teleset-almacen -f compose.paso1.yml --env-file $HOME/chro
    docker-compose stop frontend backend
    ```
 
-2. **Dump completo** y comprobación. Mismas opciones que el dump con el que se restauran las VM de staging (probado al restaurar):
+2. **Dump completo** y comprobación. Mismo usuario y opciones que el dump con el que se restauran las VM de staging (probado al restaurar):
 
    ```bash
-   read -rs ROOTPW; echo
-   docker exec -e MYSQL_PWD="$ROOTPW" teleset-almacen_mariadb_1 mysqldump -uroot --single-transaction --quick --routines --triggers --events --hex-blob \
+   docker exec -e MYSQL_PWD="$DBPW" teleset-almacen_mariadb_1 mysqldump -ualmacen_usr --single-transaction --quick --routines --triggers --events --hex-blob \
      --max-allowed-packet=512M almacen_sony_migracion | gzip > ~/respaldo-pre-migracion-$(date +%Y%m%d-%H%M).sql.gz
    ls -lh ~/respaldo-pre-migracion-*.sql.gz        # 26-31 GB
    gzip -t ~/respaldo-pre-migracion-*.sql.gz && zcat ~/respaldo-pre-migracion-*.sql.gz | tail -n 1   # "-- Dump completed on …"
@@ -185,16 +189,16 @@ dejaría las tablas nuevas (`migrations`, `movimiento_relacion`, `configuracion`
 
 ```bash
 $P1 stop api frontend
-M="docker exec -i -e MYSQL_PWD=$ROOTPW teleset-almacen-mariadb-1 mysql -uroot"
-$M -e "DROP DATABASE almacen_sony_migracion; CREATE DATABASE almacen_sony_migracion DEFAULT CHARACTER SET latin1 COLLATE latin1_spanish_ci"   # el juego anotado en el paso 0.6
-$M -e "SET GLOBAL innodb_flush_log_at_trx_commit = 2"      # acelera la carga: 18 min en lugar de ~35 en el ensayo
-gunzip -c ~/respaldo-pre-migracion-<fecha>.sql.gz | $M almacen_sony_migracion
-$M -e "SET GLOBAL innodb_flush_log_at_trx_commit = 1"
-$M -N almacen_sony_migracion -e "SELECT COUNT(*) FROM movimiento; SHOW TABLES LIKE 'migrations'"   # movimientos de antes; sin tabla migrations
+export MYSQL_PWD="$DBPW"      # la contraseña lleva caracteres especiales: se pasa por entorno, no dentro de una variable de comando
+M() { docker exec -i -e MYSQL_PWD teleset-almacen-mariadb-1 mysql -ualmacen_usr "$@"; }
+M -e "DROP DATABASE almacen_sony_migracion; CREATE DATABASE almacen_sony_migracion DEFAULT CHARACTER SET latin1 COLLATE latin1_spanish_ci"   # el juego anotado en el paso 0.6
+gunzip -c ~/respaldo-pre-migracion-<fecha>.sql.gz | M almacen_sony_migracion
+M -N almacen_sony_migracion -e "SELECT COUNT(*) FROM movimiento; SHOW TABLES LIKE 'migrations'"   # movimientos de antes; sin tabla migrations
 $P1 down && docker-compose up -d        # v1, compose original: 2.63.67 + front-www (contenedores nuevos)
 ```
 
-Cuenta con **20 a 35 minutos** de restauración (tabla del ensayo). Alternativa si el dump no sirviera: restaurar el snapshot manual de Linode (se pierde todo lo posterior al snapshot).
+Cuenta con **unos 35 minutos** de restauración (tabla del ensayo). Con acceso `root` se acortaría a ~18 min con
+`SET GLOBAL innodb_flush_log_at_trx_commit = 2` antes de restaurar (y `= 1` después); `almacen_usr` no puede cambiarlo. Alternativa si el dump no sirviera: restaurar el snapshot manual de Linode (se pierde todo lo posterior al snapshot).
 
 ## Paso 2. Caddy sustituye a nginx
 
@@ -232,6 +236,9 @@ cd ~/teleset-almacen && $P1 up -d
 ```
 
 ## Paso 3. MariaDB 10.3 → 10.11
+
+> **Pendiente antes de ejecutar este paso:** los comandos usan `root` con contraseña (`$ROOTPW`) y en producción no hay
+> ese acceso (ver "Estado de partida"). Falta ensayar en `chronos-ensayo` el camino sin contraseña root.
 
 Solo con los pasos 1 y 2 verificados. El directorio de datos actualizado **no** lo puede abrir 10.3: la vuelta atrás es la copia en frío.
 
