@@ -39,6 +39,7 @@ export const TIPOS_MOVIMIENTO: [number, string][] = [
   [6, "AJUSTE INVENTARIO"], [7, "TRANSFERENCIA ORIGEN"], [8, "BAJA EN INVENTARIO"], [9, "INVENTARIO"],
   [10, "AJUSTE DE ADMINISTRADOR"], [11, "RENTA EXTERNA"], [12, "TRANSFERENCIA DESTINO"],
   [13, "BAJA JUSTIFICADA"], [14, "ALTA"], [15, "COMPRA"], [16, "BAJA INJUSTIFICADA"], [17, "BAJA ADMINISTRADOR"],
+  [18, "TRANSFORMACIÓN"], [19, "ALTA POR TRANSFORMACIÓN"], // los crea la migración del plan 04 bloque C
 ];
 
 const PARAMETROS: [string, string][] = [

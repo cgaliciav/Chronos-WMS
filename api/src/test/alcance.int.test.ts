@@ -152,6 +152,25 @@ describe("plan 04 · bloque B · visibilidad por usuario", () => {
       expect(await visibles(deProduccionB, [compraPropia.codigo])).toEqual([compraPropia.codigo]);
     });
 
+    it("ve siempre los productos que creó por transformación, aunque después pasen a otra producción (bloque C)", async () => {
+      const original = await alta(2);
+      expect((await operar(admin, original.codigo, 3, 1, B)).status).toBe(200);
+      const res = await admin.put("/groups/activity-transform").send({
+        codigo: original.codigo, cantidad: 1, proyectoId: B, usuariosIds: [SEMILLA.adminId], grupoId: await grupo(18, B),
+        productos: [{ titulo: "Producto transformado por B", cantidad: 1 }],
+      });
+      expect(res.status).toBe(200);
+      const nuevoId = res.body.derivados[0].inventarioActual.id;
+      const [{ barras }] = await AppDataSource.query(
+        "SELECT pc.barras FROM producto_clave pc INNER JOIN inventario_actual ia ON ia.productoId = pc.productoId WHERE ia.id = ?",
+        [nuevoId]
+      );
+      expect((await operar(admin, barras, 4, 1, B)).status).toBe(200);
+      expect((await operar(admin, barras, 3, 1, A)).status).toBe(200);
+      expect(await visibles(deProduccionB, [barras])).toEqual([barras]);
+      expect((await deProduccionB.get(`/current-inventory/${nuevoId}`)).status).toBe(200);
+    });
+
     it("los listados de movimientos y los préstamos activos solo muestran sus artículos", async () => {
       const mio = await alta();
       const ajeno = await alta();

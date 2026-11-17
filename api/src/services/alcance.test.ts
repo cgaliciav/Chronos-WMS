@@ -20,7 +20,7 @@ describe("alcance de datos por usuario (decisión 21)", () => {
     const sql = plano(sqlAlcance(produccion([3, 9]), "inventarioActual.id"));
     expect(sql).toContain("alc_m.inventarioActualId = inventarioActual.id");
     expect(sql).toContain("alc_o.proyectoId IN (3, 9)");
-    expect(sql).toContain("alc_o.movimientoTipoId IN (1, 15)");
+    expect(sql).toContain("alc_o.movimientoTipoId IN (1, 15, 19)");
     expect(sql).toContain("SELECT MAX(alc_u.id) FROM movimiento alc_u WHERE alc_u.inventarioActualId = inventarioActual.id AND alc_u.operacionId IS NOT NULL");
     expect(esRestringido(produccion([3]))).toBe(true);
   });

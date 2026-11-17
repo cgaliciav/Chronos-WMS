@@ -9,6 +9,28 @@ La versión vive en `package.json` (la devuelve `/auth/version`, y Sentry la usa
 `desplegar.sh` publica una versión `X.Y.Z-d` como `X.Y.Z` y, si ya no lleva sufijo, sube el parche. Contrato con el
 front: [`docs/api/endpoints.md`](../docs/api/endpoints.md). Plan: [`docs/planes/02-api-relacion-movimientos.md`](../docs/planes/02-api-relacion-movimientos.md).
 
+## [2.92.0-d] - Sin publicar
+
+Plan 04 · bloque C: transformación de productos (decisión 20).
+
+### Añadido
+
+- `PUT /groups/activity-transform` (rol `GRUPOS-TRANSFORMAR`): `cantidad` unidades del artículo `codigo`, que tiene la
+  producción `proyectoId`, se transforman en uno o más `productos` nuevos (`titulo`, `descripcion`, `cantidad` y,
+  opcionales, `productoTipoId`, `areaId`, `precio`; lo que falta se hereda del original). Todo en una transacción.
+  Responde `{ origen, derivados }`.
+- Tipos de movimiento **18 TRANSFORMACIÓN** (descuenta del pendiente de la producción las unidades usadas, como una baja
+  por cantidad) y **19 ALTA POR TRANSFORMACIÓN** (crea el producto nuevo a cargo de la producción, como una compra: se
+  devuelve al almacén con una devolución). Relación `transformacion` en `movimiento_relacion` entre el 18 y cada 19
+  (`GET /activity/:id/chain` la devuelve). Migración `Transformacion`.
+- Los listados de tipo 18 admiten líneas 18 y 19. En modo producción exclusiva, los productos creados por transformación
+  cuentan como comprados por la producción.
+
+### Restricciones
+
+- Solo se transforma lo que tiene la producción (prestado o comprado por ella); lo que está en el almacén se presta antes.
+- Los tipos 18 y 19 solo se registran desde `activity-transform` y **no se deshacen** (409): se corrige con bajas.
+
 ## [2.91.0-d] - Sin publicar
 
 Plan 04 · bloque B: modos de visibilidad por usuario (decisión 21).

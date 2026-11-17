@@ -18,6 +18,7 @@ import {
   TIPOS_ORIGEN,
   TIPOS_BAJA_LIBRE,
   TIPOS_REGRESO,
+  TIPOS_TRANSFORMACION,
   tiposAdmitidosEnListado,
 } from "../entity/common/MovimientoTipoId";
 import { Grupo } from "../entity/Grupo";
@@ -26,6 +27,7 @@ import { InventarioActualHistorico } from "../entity/InventarioActualHistorico";
 import { LogTipo } from "../entity/LogGeneral";
 import { Movimiento } from "../entity/Movimiento";
 import { MovimientoRelacion } from "../entity/MovimientoRelacion";
+import { RelacionTipo } from "../entity/common/RelacionTipo";
 import { OperacionDetalle } from "../entity/OperacionDetalle";
 import { Producto } from "../entity/Producto";
 import { InventarioEstado, ProductoInventariado } from "../entity/ProductoInventariado";
@@ -141,6 +143,8 @@ const INVENTARIADO: Record<number, [string, InventarioEstado] | null> = {
   [T.PRESTAMO]: ["OPERACION PRESTAMO", InventarioEstado.INVENTARIO_POSITIVO],
   [T.DEVOLUCION]: ["OPERACION DEVOLUCION", InventarioEstado.INVENTARIO_POSITIVO],
   [T.RENTA_EXTERNA]: ["OPERACION RENTA EXTERNA", InventarioEstado.INVENTARIO_POSITIVO],
+  [T.TRANSFORMACION]: ["OPERACION TRANSFORMACION", InventarioEstado.INVENTARIO_NEGATIVO],
+  [T.ALTA_POR_TRANSFORMACION]: ["OPERACION ALTA POR TRANSFORMACION", InventarioEstado.INVENTARIO_POSITIVO],
 };
 
 const advertir = (mensaje: string, datos: unknown) => {
@@ -482,6 +486,10 @@ export default class MovimientoService {
         return { id };
       }
       const tipo = Number(operacion.movimientoTipo.id);
+      if (esTipo(TIPOS_TRANSFORMACION, tipo)) {
+        // Deshacerla exigiría borrar los productos creados; en esta versión se corrige con bajas (decisión 20).
+        throw new AppError("Las transformaciones no se pueden deshacer: corrija con una baja de los productos creados", 409);
+      }
       const posteriores: { id: number; tipo: number; conDeltas: boolean }[] = (
         await manager.query(
           `SELECT m.id, o.movimientoTipoId AS tipo, m.consumible, m.efectoCantidad, m.efectoAlmacen
@@ -620,6 +628,23 @@ export default class MovimientoService {
       saldo: Number(f.saldo),
     }));
   };
+
+  /**
+   * Liga un producto nuevo con el artículo del que salió (decisión 20): origen = movimiento TRANSFORMACIÓN (18) del
+   * original, derivado = ALTA POR TRANSFORMACIÓN (19) del producto nuevo. Dentro de la transacción de la transformación.
+   */
+  static relacionarTransformacion = async (manager: EntityManager, origenId: number, derivadoId: number, cantidad: number, sesionId: number) => {
+    const relacion = new MovimientoRelacion();
+    relacion.origen = { id: origenId } as Movimiento;
+    relacion.derivado = { id: derivadoId } as Movimiento;
+    relacion.cantidad = Number(cantidad);
+    relacion.tipo = RelacionTipo.TRANSFORMACION;
+    relacion.sesionId = sesionId;
+    return manager.save(relacion);
+  };
+
+  /** ¿Es un tipo de transformación (18, 19)? Solo se registran desde PUT /groups/activity-transform. */
+  static esTipoDeTransformacion = (tipo: number | string | undefined | null) => esTipo(TIPOS_TRANSFORMACION, tipo);
 
   /** Tipos que crean el artículo: solo se registran desde PUT /groups/activity-purchase. */
   static esTipoDeEntrada = (tipo: number | string | undefined | null) => esTipo(TIPOS_ENTRADA, tipo);

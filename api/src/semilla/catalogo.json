@@ -84,6 +84,16 @@
       "id": 17,
       "nombre": "BAJA ADMINISTRADOR",
       "estatus": "activo"
+    },
+    {
+      "id": 18,
+      "nombre": "TRANSFORMACIÓN",
+      "estatus": "activo"
+    },
+    {
+      "id": 19,
+      "nombre": "ALTA POR TRANSFORMACIÓN",
+      "estatus": "activo"
     }
   ],
   "rol": [
@@ -440,6 +450,11 @@
     {
       "nombre": "GRUPOS-MOVIMIENTONUEVO",
       "codigoRol": "GRUPOS-MOVIMIENTONUEVO",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "Transformar productos",
+      "codigoRol": "GRUPOS-TRANSFORMAR",
       "estatus": "activo"
     },
     {

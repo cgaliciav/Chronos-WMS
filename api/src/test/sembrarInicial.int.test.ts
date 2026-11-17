@@ -44,7 +44,7 @@ describe("carga inicial de una base nueva", () => {
     const r = await sembrarInicial(conexion, CATALOGO, OPCIONES);
 
     const tipos = await conexion.query("SELECT id, nombre FROM movimiento_tipo ORDER BY id");
-    expect(tipos.map((t: { id: number }) => Number(t.id))).toEqual(Array.from({ length: 17 }, (_, i) => i + 1));
+    expect(tipos.map((t: { id: number }) => Number(t.id))).toEqual(Array.from({ length: 19 }, (_, i) => i + 1)); // 18 y 19: transformación (plan 04)
     expect(tipos.map((t: { nombre: string }) => t.nombre)).toEqual(CATALOGO.movimientoTipo.map((t) => t.nombre));
 
     for (const { codigoRol } of CATALOGO.rol) {
