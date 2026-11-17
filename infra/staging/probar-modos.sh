@@ -337,6 +337,10 @@ contiene "$SAL" "no es de confianza" && ok_ "avisa que el certificado no es de c
 contiene "$SAL" "Pretend Pear" && ok_ "el aviso incluye el emisor" || mal "el aviso no incluye el emisor"
 espera "las pruebas de humo usaron -k y --resolve a 127.0.0.1" grep -q -- "-k --resolve amz-prueba.ejemplo.com:443:127.0.0.1" "$S/curl.log"
 espera "DATOS_DIR con comillas: se crearon las carpetas en la ruta sin comillas" test -d "$DATOS/db_data/mysql" -a -d "$DATOS/exogrid"
+# El volumen de /code/exogrid tapa las carpetas de la imagen: sin estas cinco fallan imágenes, reportes e importaciones
+for sub in archivos reportes uploads auxiliares imgproductos; do
+  espera "exogrid/$sub creada y del uid 1000 (la usa el API)" bash -c "[[ -d '$DATOS/exogrid/$sub' && \$(stat -c %u '$DATOS/exogrid/$sub') == 1000 ]]"
+done
 espera "el dominio con comillas se resolvió sin ellas" grep -q "https://amz-prueba.ejemplo.com/" "$S/curl.log"
 espera "el pull vio las versiones nuevas por variables de entorno" grep -qx "IMAGEN_WEB=exogrid/chronos-web:4.9.0-s IMAGEN_API=exogrid/chronos-api:2.89.0-s" "$S/pulls.log"
 espera "el .env quedó con las etiquetas nuevas" bash -c "grep -qx 'IMAGEN_WEB=exogrid/chronos-web:4.9.0-s' '$DEST/.env' && grep -qx 'IMAGEN_API=exogrid/chronos-api:2.89.0-s' '$DEST/.env'"
