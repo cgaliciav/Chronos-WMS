@@ -3,7 +3,7 @@ import GrupoController from "../controllers/Grupo.Controller";
 import { checkJwt } from "../middlewares/verificarJwt";
 import { checkRole } from "../middlewares/verificarRol";
 import { validarBody } from "../middlewares/validar";
-import { actividadCompraSchema, actividadSchema, agregarOperacionSchema, quitarMovimientoSchema } from "../esquemas";
+import { actividadCompraSchema, actividadTransformarSchema, actividadSchema, agregarOperacionSchema, quitarMovimientoSchema } from "../esquemas";
 import { soloDigitos } from "../middlewares/rutas";
 
 const router = Router();
@@ -36,6 +36,7 @@ router.post("/active-activity-list",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS
 
 router.put("/activity",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-MOVIMIENTONUEVO"]),validarBody(actividadSchema)],GrupoController.agregarMovimiento)
 router.put("/activity-purchase",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-MOVIMIENTONUEVOCOMPRA"]),validarBody(actividadCompraSchema)],GrupoController.agregarMovimientoCompra)
+router.put("/activity-transform",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-TRANSFORMAR"]),validarBody(actividadTransformarSchema)],GrupoController.transformar)
 router.put("/activity-add-transaction",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-MOVIMIENTOAGREGAROPERACION"]),validarBody(agregarOperacionSchema)],GrupoController.agregarOperacionAMovimiento)
 router.delete("/activity",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-QUITARMOVIMIENTO"]),validarBody(quitarMovimientoSchema)],GrupoController.quitarMovimiento)
 

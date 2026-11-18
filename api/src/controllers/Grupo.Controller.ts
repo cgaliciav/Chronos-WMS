@@ -7,6 +7,7 @@ import {
   InventarioDisponible,
 } from "../entity/InventarioActual";
 import { Movimiento } from "../entity/Movimiento";
+import { Producto } from "../entity/Producto";
 import { Sesion } from "../entity/Sesion";
 import { AppError } from "../helpers/errorClases";
 import { andWhereIn, aplicarFiltros, columnaSegura, construirFiltros, direccionSegura } from "../helpers/filtrosTabla";
@@ -24,7 +25,10 @@ import MovimientoService from "../services/MovimientoService";
 import { exigirProyectoEditable } from "../services/guardasRelacion";
 import { MovimientoTipoId as T, TIPOS_ORIGEN, tiposAdmitidosEnListado } from "../entity/common/MovimientoTipoId";
 import ProductoController from "./Producto.Controller";
-import { autogenerarCodigo } from "./ProductoClave.Controller";
+import { autogenerarCodigo, autogenerarCodigos } from "./ProductoClave.Controller";
+
+/** `precio_tipo` 2 = COMPRA ORIGEN: el precio original del artículo (decisión 13). */
+const PRECIO_TIPO_COMPRA_ORIGEN = 2;
 import { Alcance, alcanceDe, exigirMovimientoVisible, exigirProyectoPermitido, sqlAlcance } from "../services/alcance";
 
 // Filtros de las tablas antd, parametrizados (hallazgos C1/C3). Las llaves traen alias ("grupo.nombre", "proyecto.id").
@@ -1058,6 +1062,9 @@ class GrupoController {
         );
       if (movimientoTipoId !== undefined && movimientoTipoId !== null) exigirProyectoPermitido(alcance, proyectoId);
       let movimiento: Movimiento;
+      if (MovimientoService.esTipoDeTransformacion(movimientoTipoId)) {
+        throw new AppError("Las transformaciones se registran desde su propia pantalla", 400);
+      }
       if (movimientoTipoId === undefined || movimientoTipoId === null) {
         // Línea de listado sin operación: no afecta al inventario.
         movimiento = await MovimientoController.guardar(
@@ -1119,7 +1126,7 @@ class GrupoController {
     const { jwtPayload } = res.locals;
     try {
       // Se valida el tipo ANTES de crear nada (antes quedaban productos huérfanos con un tipo inválido).
-      if (!MovimientoService.esTipoDeEntrada(movimientoTipoId)) {
+      if (!MovimientoService.esTipoDeEntrada(movimientoTipoId) || MovimientoService.esTipoDeTransformacion(movimientoTipoId)) {
         throw new AppError("Tipo de movimiento inválido", 400);
       }
       exigirProyectoPermitido(alcanceDe(res.locals), proyectoId);
@@ -1161,6 +1168,74 @@ class GrupoController {
     }
   };
 
+  /**
+   * PUT /groups/activity-transform (decisión 20). `cantidad` unidades del artículo, que tiene la producción, se
+   * transforman en uno o más productos nuevos. En UNA transacción: TRANSFORMACIÓN (18) sobre el original (descuenta del
+   * pendiente de la producción), y por cada producto nuevo su alta (producto + inventario), su ALTA POR TRANSFORMACIÓN
+   * (19, queda a cargo de la producción como una compra) y la relación `transformacion` con el original.
+   */
+  static transformar = async (req: Request, res: Response, next: NextFunction) => {
+    const { codigo, cantidad, proyectoId, usuariosIds, grupoId, productos } = req.body as {
+      codigo: string; cantidad: number; proyectoId: number; usuariosIds?: number[] | null; grupoId: number;
+      productos: { titulo: string; descripcion: string; cantidad: number; productoTipoId?: number; areaId?: number; precio?: number | null }[];
+    };
+    const { jwtPayload } = res.locals;
+    try {
+      const alcance = alcanceDe(res.locals);
+      const original = await InventarioActualController.obtenerInventarioActualDeCodigo(codigo, alcance);
+      exigirProyectoPermitido(alcance, proyectoId);
+      // Lo que no se indique de cada producto nuevo se hereda del original.
+      const [base] = await AppDataSource.query(
+        `SELECT p.id AS productoId, p.areaId, p.productoTipoId, ia.bodegaId
+           FROM inventario_actual ia INNER JOIN producto p ON p.id = ia.productoId WHERE ia.id = ?`,
+        [original.id]
+      );
+      const productoOriginal = await AppDataSource.getRepository(Producto).findOne({
+        where: { id: Number(base.productoId) },
+        relations: { productoPrecios: { precioTipo: true } },
+        loadEagerRelations: false,
+      });
+      const precioOriginal = (productoOriginal?.productoPrecios ?? []).find((pp) => pp.precioTipo?.id === PRECIO_TIPO_COMPRA_ORIGEN);
+      const moneda = precioOriginal?.moneda ?? "MXP";
+      const codigos = await autogenerarCodigos(productos.length);
+
+      const resultado = await MovimientoService.enTransaccion(async (manager) => {
+        // Primero el original: su bloqueo serializa dos transformaciones simultáneas del mismo artículo.
+        const origen = await MovimientoService.registrarOperacion(
+          { tipo: T.TRANSFORMACION, cantidad, inventarioActualId: original.id, proyectoId, usuariosIds, sesionId: jwtPayload.si, grupoId },
+          manager
+        );
+        const derivados: Movimiento[] = [];
+        for (const [i, nuevo] of productos.entries()) {
+          const inventarioActual = await crearBaseInventarioActual(0, base.bodegaId, jwtPayload.si);
+          inventarioActual.producto = await ProductoController.guardar(
+            nuevo.titulo,
+            nuevo.descripcion,
+            nuevo.areaId ?? base.areaId,
+            nuevo.productoTipoId ?? base.productoTipoId,
+            [],
+            nuevo.precio ?? Number(precioOriginal?.precio ?? 0),
+            [codigos[i]],
+            jwtPayload.si,
+            moneda,
+            manager
+          );
+          const inventarioGuardado = await manager.save(inventarioActual);
+          const alta = await MovimientoService.registrarOperacion(
+            { tipo: T.ALTA_POR_TRANSFORMACION, cantidad: nuevo.cantidad, inventarioActualId: inventarioGuardado.id, proyectoId, usuariosIds, sesionId: jwtPayload.si, grupoId },
+            manager
+          );
+          await MovimientoService.relacionarTransformacion(manager, origen.id, alta.id, nuevo.cantidad, jwtPayload.si);
+          derivados.push(alta);
+        }
+        return { origen, derivados };
+      });
+      res.json(resultado);
+    } catch (error) {
+      next(error);
+    }
+  };
+
   // ** agregarOperacionAMovimiento
   static agregarOperacionAMovimiento = async (
     req: Request,
@@ -1173,7 +1248,7 @@ class GrupoController {
     try {
       // LA SESION DEL MOVIMIENTO DEBE SER LA DEL ULTIMO QUE LA MODIFICA.
       // El grupo se queda con la sesion de quien lo creó. cada Movimiento
-      if (MovimientoService.esTipoDeEntrada(movimientoTipoId)) {
+      if (MovimientoService.esTipoDeEntrada(movimientoTipoId) || MovimientoService.esTipoDeTransformacion(movimientoTipoId)) {
         throw new AppError("No se pueden realizar operaciones de creacion de artículos en este listado", 400);
       }
       const alcance = alcanceDe(res.locals);

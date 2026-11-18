@@ -128,6 +128,17 @@ class MovimientoController {
     }
   };
 
+  /** GET /activity/transformations-by-inventory/:inventarioActualId — de qué artículos salió y en qué productos se transformó. */
+  static obtenerTransformaciones = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const alcance = alcanceDe(res.locals);
+      await exigirInventarioVisible(alcance, parametro(req, "inventarioActualId"));
+      res.json(await MovimientoService.transformacionesPorInventario(parametro(req, "inventarioActualId"), alcance));
+    } catch (error) {
+      next(error);
+    }
+  };
+
   static obtenerUltimoMovimiento = async (
     req: Request,
     res: Response,

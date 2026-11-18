@@ -14,6 +14,7 @@ import ClavesProducto from 'pages/componentes/claves'
 import PreciosProducto from 'pages/componentes/precios'
 import ArticuloDatos from 'pages/componentes/articulo'
 import Movimientos from 'pages/componentes/movimientos'
+import Transformaciones from 'pages/componentes/transformaciones'
 import Inventarios from 'pages/componentes/inventarios'
 import type { InventarioDetalle } from '../../tipos'
 
@@ -129,6 +130,11 @@ const ArticuloDetalle = () => {
                       key: 'movimientos',
                       label: 'Movimientos',
                       children: <Movimientos inventarioActualId={id} loading={cargando} />,
+                    },
+                    {
+                      key: 'transformaciones',
+                      label: 'Transformaciones',
+                      children: <Transformaciones inventarioActualId={id} loading={cargando} />,
                     },
                     {
                       key: 'inventarios',

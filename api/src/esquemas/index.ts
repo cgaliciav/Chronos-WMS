@@ -41,6 +41,36 @@ export const actividadSchema = z
   })
   .strip();
 
+/**
+ * PUT /groups/activity-transform (decisión 20): `cantidad` unidades del artículo `codigo`, que tiene la producción
+ * `proyectoId`, se transforman en uno o más productos nuevos. Lo que no se indica de cada producto (área, tipo, precio)
+ * se hereda del original.
+ */
+export const actividadTransformarSchema = z
+  .object({
+    codigo: z.string().trim().min(4).max(40),
+    cantidad,
+    proyectoId: id,
+    usuariosIds: ids.optional().nullable(),
+    grupoId: id,
+    productos: z
+      .array(
+        z
+          .object({
+            titulo: texto(255),
+            descripcion: z.string().trim().max(5000).default(""),
+            cantidad,
+            productoTipoId: idOpcional,
+            areaId: idOpcional,
+            precio: dinero.optional().nullable(),
+          })
+          .strip()
+      )
+      .min(1)
+      .max(50),
+  })
+  .strip();
+
 /** PUT /groups/activity-purchase */
 export const actividadCompraSchema = z
   .object({

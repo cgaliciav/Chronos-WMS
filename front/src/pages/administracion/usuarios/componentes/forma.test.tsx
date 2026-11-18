@@ -43,8 +43,13 @@ describe('FormaUsuario · visibilidad (plan 04, decisión 21)', () => {
 
   const guardar = async () => {
     const boton = screen.getByRole('button', { name: /guardar/i })
-    await waitFor(() => expect(boton).toBeEnabled())
-    await userEvent.click(boton)
+    // El formulario se habilita al llegar las listas; el `Spin` que lo cubre tarda un render más en soltar el puntero.
+    await waitFor(() => {
+      expect(boton).toBeEnabled()
+      expect(document.querySelector('.ant-spin-blur')).toBeNull()
+    })
+    // Sin comprobar `pointer-events`: antd anima la salida del `Spin` y jsdom no la resuelve siempre a tiempo.
+    await userEvent.setup({ pointerEventsCheck: 0 }).click(boton)
   }
 
   it('por defecto envía el modo general', async () => {

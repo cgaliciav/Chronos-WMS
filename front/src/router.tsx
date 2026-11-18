@@ -86,6 +86,12 @@ export const RUTAS: Array<[ruta: string, cargar: Cargador]> = [
   ['/previo/nuevo', () => import('pages/operaciones/8.previo/nuevo')],
   ['/previo/por-grupo', () => import('pages/operaciones/8.previo/listado/porGrupo')],
   ['/previo/operacion', () => import('pages/operaciones/8.previo/operacion')],
+  ['/transformaciones/nuevo', () => import('pages/operaciones/9.transformaciones/nuevo')],
+  [
+    '/transformaciones/por-grupo',
+    () => import('pages/operaciones/9.transformaciones/listado/porGrupo'),
+  ],
+  ['/transformaciones/operacion', () => import('pages/operaciones/9.transformaciones/operacion')],
   ['/movimientos/detalle', () => import('pages/operaciones/movimiento')],
   ['/reportes/por-usuario', () => import('pages/reportes/6.porUsuario')],
   ['/reportes/de-cierre', () => import('pages/reportes/3.cierreProyecto')],
