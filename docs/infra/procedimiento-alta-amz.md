@@ -9,9 +9,9 @@ los demás, en el servidor.
 
 ## Antes de empezar
 
-- Las imágenes `exogrid/chronos-api:2.89.0-s` y `exogrid/chronos-web:4.9.0-s` están publicadas en Docker Hub
+- Las imágenes `exogrid/chronos-api:2.89.0-s` y `exogrid/chronos-web:4.10.0-s` están publicadas en Docker Hub
   (repositorios privados) y la aceptación en staging (modo `caddy-amz`) terminó bien. Si hay versiones más nuevas,
-  sustituye `2.89.0` y `4.9.0` en todo el documento.
+  sustituye `2.89.0` y `4.10.0` en todo el documento.
 - Tienes `infra/imagenes/imagenes.conf` en la máquina de build (`cp infra/imagenes/imagenes.conf.example infra/imagenes/imagenes.conf`
   y `DOCKERHUB_NS=exogrid`).
 - Tienes a mano: un token de Docker Hub **de solo lectura**, un token de Cloudflare con permiso `Zone · DNS · Edit` sobre
@@ -19,7 +19,16 @@ los demás, en el servidor.
 
 ## 1. Crear el Linode
 
-1. Cloud Manager, Create Linode: Ubuntu 24.04 LTS, región y plan a tu elección (mínimo 4 GB de RAM), etiqueta `chronos-amz`.
+1. Cloud Manager, Create Linode: Ubuntu 24.04 LTS o posterior (el alta se hizo en 26.04), región a tu elección, plan de
+   **2 GB de RAM como mínimo**, etiqueta `chronos-amz`. Con 2 GB el stack recién desplegado deja unos 1,3 GB disponibles;
+   con 1 GB (Nanode) el margen es escaso, sobre todo durante el despliegue, que arranca un segundo proceso Node para las
+   migraciones y la siembra (no se llegó a probar). Añade además 2 GB de swap:
+
+```bash
+sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
+echo "/swapfile none swap sw 0 0" | sudo tee -a /etc/fstab
+```
+
 2. Activa **Backups** (snapshots diarios, a las 3 am, máximo 3). Es la política de respaldo de AMZ. El volcado
    periódico de la base a un bucket es una mejora planeada para después del arranque; no existe todavía.
 3. Cloud Firewall: crea uno que permita entrada **solo** TCP 22, 80 y 443 (y UDP 443 si quieres HTTP/3) y asígnalo al Linode.
@@ -44,8 +53,12 @@ docker compose version               # debe ser v2
 docker login -u exogrid              # pega el token de solo lectura como contraseña
 ```
 
-El script de despliegue usa `sudo` sin contraseña para crear las carpetas de datos: comprueba que `sudo -n true` funciona
-con ese usuario.
+Crea la carpeta de datos a nombre del usuario del despliegue (uid 1000). Así `desplegar.sh` crea dentro `db_data/` y
+`exogrid/` sin `sudo`; solo recurre a `sudo -n` (sin contraseña) si la carpeta no existe o no es suya:
+
+```bash
+sudo mkdir -p /srv/chronos-amz && sudo chown cesargv:cesargv /srv/chronos-amz
+```
 
 ## 3. DNS en Cloudflare
 
@@ -56,8 +69,13 @@ cada cliente (con la nube naranja vería las IP de Cloudflare). El certificado s
 `DOMINIOS` del `.env`. Antes de seguir, comprueba que el registro ya resuelve a la IP del servidor:
 
 ```bash
-dig +short <subdominio-amz>          # debe imprimir <IP-AMZ>
+dig +short <subdominio-amz> @1.1.1.1 # debe imprimir <IP-AMZ>
 ```
+
+Pregunta a un resolvedor público (`@1.1.1.1`) o hazlo desde el servidor: si consultaste el nombre antes de crear el
+registro, tu red guarda la respuesta negativa hasta 30 minutos y la máquina de build seguirá sin resolverlo. Eso no
+impide desplegar (la prueba de humo corre en el servidor); para probar desde la máquina de build mientras tanto usa
+`curl --resolve <subdominio-amz>:443:<IP-AMZ> https://<subdominio-amz>/`.
 
 ## 4. Crear el `.env`
 
@@ -76,7 +94,7 @@ Valores a fijar (el resto del archivo ya trae un valor correcto; las líneas con
 | `ENTORNO` | `produccion` (también es el `environment` de Sentry; `SENTRY_ENVIRONMENT` se deja comentada) |
 | `DATOS_DIR` | `/srv/chronos-amz` (aquí vivirán `db_data/` y `exogrid/`) |
 | `DOMINIOS` | `<subdominio-amz>` (el nombre completo del paso 3) |
-| `DNS_PROVEEDOR` / `DNS_TOKEN` | `cloudflare` / el token del paso 3 (real, de 40 caracteres) |
+| `DNS_PROVEEDOR` / `DNS_TOKEN` | `cloudflare` / el token del paso 3 (real: 40 caracteres, o 53 con prefijo `cfut_` en los tokens nuevos; Caddy acepta ambos) |
 | `ACME_EMAIL` | correo de contacto para Let's Encrypt |
 | `ACME_CA` | **déjala comentada** (Let's Encrypt producción) |
 | `DB_PASSWORD`, `DB_ROOT_PASSWORD` | `openssl rand -hex 16` cada una |
@@ -93,14 +111,18 @@ Guarda `DB_PASSWORD`, `DB_ROOT_PASSWORD`, `JWTSECRET` y `CONFIG_CLAVE` en el ges
 ## 5. Promover las imágenes (máquina de build)
 
 ```bash
-infra/imagenes/promover.sh web 4.9.0
+infra/imagenes/promover.sh web 4.10.0
 infra/imagenes/promover.sh api 2.89.0
 ```
 
 Cada uno añade la etiqueta `X.Y.Z` al **mismo digest** que `X.Y.Z-s` (sin reconstruir) e imprime el digest. Comprueba que
-el digest de `4.9.0` es el de `4.9.0-s`, y lo mismo con la API; el script ya aborta si no coinciden. Falla si `-s` no
+el digest de `4.10.0` es el de `4.10.0-s`, y lo mismo con la API; el script ya aborta si no coinciden. Falla si `-s` no
 existe o si la etiqueta de producción ya está publicada (en ese caso sube la versión; no se sobrescribe). Anota los
 dos digests en el PR (criterio 9 del diseño: producción usa el mismo digest que staging).
+
+Si la etiqueta de producción ya existe porque se promovió antes (pasó en el alta: `chronos-api:2.89.0` y
+`chronos-web:4.10.0` ya estaban publicadas), sáltate este paso y úsala tal cual. Compruébalo con
+`docker buildx imagetools inspect exogrid/chronos-web:4.10.0`.
 
 ## 6. Desplegar
 
@@ -108,7 +130,7 @@ Antes, confirma que `dig +short <subdominio-amz>` imprime `<IP-AMZ>` (paso 3). D
 
 ```bash
 infra/clientes/desplegar.sh --host amz-prod --dir /home/cesargv/chronos-amz --cliente amz \
-  --version-web 4.9.0 --version-api 2.89.0 \
+  --version-web 4.10.0 --version-api 2.89.0 \
   --sembrar-admin <correo-del-administrador> --admin-nombre "<Nombre Apellido>"
 ```
 
@@ -122,7 +144,11 @@ SMTP funciona). Cópiala en ese momento: dura 72 horas y exige cambio al primer 
 se niega a correr si la base ya tiene movimientos (el script se detiene con "la base ya está en uso"); no repitas
 `--sembrar-admin` en despliegues posteriores.
 
-El primer arranque puede tardar un par de minutos mientras Caddy obtiene el certificado.
+**En el primer despliegue la prueba de humo puede fallar** (`Error: https://<subdominio-amz>/ no responde`): Caddy
+tarda en obtener el certificado (unos 5 minutos en el alta) y el script no espera tanto. No es un fallo del despliegue:
+la base ya quedó migrada y sembrada. Espera a que el registro de Caddy diga `certificate obtained successfully`
+(`docker compose logs web | grep -i "certificate obtained"`) y repite el comando **sin** `--sembrar-admin` ni
+`--admin-nombre`; la segunda pasada no cambia nada, pasa la prueba de humo y deja `resultado=ok` en `despliegues.log`.
 
 ## 7. Verificación
 
