@@ -4,6 +4,7 @@ import { mapeoOpciones } from 'helpers/funcionesExtras'
 import AreaPeticiones from 'services/axios/areas'
 import BodegaPeticiones from 'services/axios/bodegas'
 import type { ElementoListado } from 'services/axios'
+import { OPCIONES_PRODUCTO_TIPO, PRODUCTO_TIPO } from 'types/api'
 import type { Numerico } from 'types/api'
 import { filtrarOpcion } from 'helpers/funcionesExtras'
 import { formatearImporte, leerImporte, useMonedas } from 'helpers/moneda'
@@ -26,6 +27,8 @@ export interface ValoresArticulo {
   moneda: string
   area: number
   bodega: number
+  /** Id de `producto_tipo`: regular o expendable (por defecto regular). */
+  tipo?: number
 }
 
 export interface FormaEdicionArticuloProps {
@@ -168,7 +171,7 @@ const FormaEdicionArticulo = ({
         layout="horizontal"
         form={form}
         onFinish={handleFinish}
-        initialValues={valoresIniciales}
+        initialValues={{ tipo: PRODUCTO_TIPO.REGULAR, ...valoresIniciales }}
         style={{ width: '100%' }}
       >
         <Form.Item
@@ -198,6 +201,14 @@ const FormaEdicionArticulo = ({
           ]}
         >
           <TextArea disabled={guardando || !habilitado} rows={4} />
+        </Form.Item>
+        <Form.Item
+          label="Tipo"
+          name="tipo"
+          tooltip="Un expendable se da por consumido al prestarse: no deja pendiente de devolución. Si se devuelve, vuelve a sumar a las existencias."
+          rules={[{ required: true, message: 'Indica el tipo de artículo' }]}
+        >
+          <Select disabled={guardando || !habilitado} options={OPCIONES_PRODUCTO_TIPO} />
         </Form.Item>
         <Form.Item
           label="Cantidad"

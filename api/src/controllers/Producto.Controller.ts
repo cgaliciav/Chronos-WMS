@@ -1,7 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import { EntityManager } from "typeorm";
 import { AppDataSource } from "../data-source";
-import { idSeguro } from "../helpers/ids";
+import { idOpcional, idSeguro } from "../helpers/ids";
+import { AppError } from "../helpers/errorClases";
 import { Area } from "../entity/Area";
 import { Producto } from "../entity/Producto";
 import { ProductoTipo } from "../entity/ProductoTipo";
@@ -193,9 +194,19 @@ class ProductoController {
         loadEagerRelations: false,
       });
       producto.area = await AppDataSource.getRepository(Area).findOneByOrFail({ id: idSeguro(areaId, "areaId") });
-      producto.productoTipo = await AppDataSource.getRepository(ProductoTipo).findOneByOrFail(
-        { id: idSeguro(productoTipoId, "productoTipoId") }
-      );
+      // Sin `productoTipoId` se conserva el tipo. Cambiarlo altera cómo cuentan las existencias (decisión 18): un
+      // consumible no deja unidades "fuera", así que solo se permite con todas las unidades en el almacén.
+      const tipoId = idOpcional(productoTipoId, "productoTipoId");
+      if (tipoId !== undefined && tipoId !== producto.productoTipo?.id) {
+        const [inventario] = await AppDataSource.query(
+          "SELECT cantidad, cantidadAlmacen FROM inventario_actual WHERE productoId = ?",
+          [producto.id]
+        );
+        if (inventario && Number(inventario.cantidad) !== Number(inventario.cantidadAlmacen)) {
+          throw new AppError("NO SE PUEDE CAMBIAR EL TIPO DEL PRODUCTO MIENTRAS TENGA UNIDADES FUERA DEL ALMACÉN", 400);
+        }
+        producto.productoTipo = await AppDataSource.getRepository(ProductoTipo).findOneByOrFail({ id: tipoId });
+      }
       const resp = await CommonController.editarConRegistro(
         AppDataSource.getRepository(Producto),
         producto,

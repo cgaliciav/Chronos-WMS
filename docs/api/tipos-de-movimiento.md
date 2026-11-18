@@ -13,19 +13,19 @@ En la base de producción los ids 1, 2 y 5 se llaman `COMPRA+`, `ALTA+` y `BAJA+
 | 2 | ALTA* (legado) | `actualizarInventarioActualAlta` | sí | Sustituido por 14. **No** guarda histórico. |
 | 3 | PRÉSTAMO | `actualizarInventarioActualPrestamo`: `cantidad -= n`; si llega a 0 → `no-disponible` | sí | Origen de devoluciones/bajas. |
 | 4 | DEVOLUCIÓN | `actualizarInventarioActualDevolucion`: `cantidad += n` (≤ `cantidadAlmacen`) | sí | Se relaciona con salidas del mismo proyecto (`movimiento_relacion`). |
-| 5 | BAJA* (legado) | `actualizarInventarioActualBaja`: todo a 0, `disponible = baja` | sí | Sustituido por 13/16. Ya no se crean listados de tipo 5 (decisión 11); los antiguos admiten líneas 13 y 16. |
+| 5 | BAJA* (legado) | baja por cantidad con proyecto: `cantidadAlmacen -= n` (primero de lo que está fuera); `baja` al llegar a 0 | sí | Sustituido por 13/16. Ya no se crean listados de tipo 5 (decisión 11); los antiguos admiten líneas 13 y 16. |
 | 6 | AJUSTE INVENTARIO | **sin caso en el `switch`** (no modifica inventario) | — | **No es un movimiento (decisión 12): el API lo rechaza.** |
 | 7 | TRANSFERENCIA ORIGEN | igual que DEVOLUCIÓN (regresa al almacén desde el proyecto origen) | sí | Siempre debe ir acompañado de un 12. |
-| 8 | BAJA EN INVENTARIO | `actualizarInventarioActualBajaSinProyecto`: todo a 0, `baja` | no | Se usa al cerrar inventarios. |
+| 8 | BAJA EN INVENTARIO | baja por cantidad sin proyecto: `cantidadAlmacen -= n` (primero del almacén); `baja` al llegar a 0 | no | Se usa al cerrar inventarios. |
 | 9 | INVENTARIO | sin caso en el `switch` | — | **No es un movimiento (decisión 12): el API lo rechaza.** Era el tipo del inventario físico, retirado (decisión 10). |
 | 10 | AJUSTE DE ADMINISTRADOR | sin caso en el `switch` | — | **No es un movimiento (decisión 12): el API lo rechaza.** |
 | 11 | RENTA EXTERNA | `actualizarInventarioActualRentaExterna`: como préstamo | sí (externo) | |
 | 12 | TRANSFERENCIA DESTINO | igual que PRÉSTAMO (sale hacia el proyecto destino) | sí | Pareja de 7. |
-| 13 | BAJA JUSTIFICADA | `actualizarInventarioActualBaja` | sí | Intercambiable con 16 en `Operacion.modificar`. |
+| 13 | BAJA JUSTIFICADA | baja por cantidad con proyecto | sí | Intercambiable con 16 en `Operacion.modificar`. |
 | 14 | ALTA | `actualizarInventarioActualAlta` | sí | Crea producto + inventario (`agregarMovimientoCompra`). Desde la fase 3 guarda histórico. |
 | 15 | COMPRA | `actualizarInventarioActualCompra`: `cantidadAlmacen += n`, `cantidad = 0`, `no-disponible` | sí | Única con `OperacionDetalle` (precios). El artículo nace "no disponible" hasta su primera devolución al almacén, por eso es **origen** de esa devolución. Desde la fase 3 guarda histórico. |
-| 16 | BAJA INJUSTIFICADA | `actualizarInventarioActualBaja` | sí | |
-| 17 | BAJA ADMINISTRADOR | `actualizarInventarioActualBajaSinProyecto` | no | |
+| 16 | BAJA INJUSTIFICADA | baja por cantidad con proyecto | sí | |
+| 17 | BAJA ADMINISTRADOR | baja por cantidad sin proyecto | no | |
 
 ## Clasificación (`MovimientoTipoId.ts`, fase 3)
 
@@ -35,7 +35,9 @@ En la base de producción los ids 1, 2 y 5 se llaman `COMPRA+`, `ALTA+` y `BAJA+
 | `TIPOS_SALIDA` | 3, 11, 12 | Disminuyen `cantidad`. |
 | `TIPOS_ORIGEN` | 3, 11, 12, **15** | Abren un saldo pendiente de regreso (la compra también, ver arriba). |
 | `TIPOS_REGRESO` | 4, 7, 13, 16, 5 | Consumen saldo de orígenes del mismo inventario y proyecto (`movimiento_relacion`). El 7 es además origen de su 12. |
-| `TIPOS_BAJA_LIBRE` | 8, 17 | Cierran el inventario completo y todas sus salidas abiertas (`cierre-inventario`). |
+| `TIPOS_BAJA_LIBRE` | 8, 17 | Bajas sin proyecto: descuentan primero del almacén; las unidades que salen de lo prestado cierran salidas abiertas por FIFO (`cierre-inventario`). |
+| `TIPOS_BAJA_PROYECTO` | 13, 16, 5 | Bajas con proyecto: descuentan primero de lo que está fuera del almacén. |
+| `TIPOS_BAJA` | 13, 16, 5, 8, 17 | Todas las bajas (se deshacen con los deltas que guardan). |
 | `TIPOS_NO_MOVIMIENTO` | 6, 9, 10 | No son movimientos (decisión 12): no se registran ni se usan como tipo de listado. Los antiguos se pueden deshacer. |
 | `TIPOS_LISTADO_NO_PERMITIDOS` | 5, 6, 9, 10 | Tipos con los que ya no se crean listados. `tiposAdmitidosEnListado(t)` = `[t]`, o `[13, 16]` para los listados antiguos de tipo 5 (decisión 11). |
 | `TIPOS_CON_SALDO` | 3, 7, 11, 12, 15 | Filas de la vista `v_movimiento_saldo`. |
@@ -43,3 +45,36 @@ En la base de producción los ids 1, 2 y 5 se llaman `COMPRA+`, `ALTA+` y `BAJA+
 Al **deshacer** (`DELETE /groups/activity`): 3, 4, 7, 11, 12, 14, 2 (y 6, 9, 10) se revierten con su efecto inverso aunque
 no sean el último movimiento; 1, 15, 5, 8, 13, 16, 17 fijan valores absolutos y solo se deshacen siendo el último,
 restaurando la instantánea ligada.
+
+## Bajas por cantidad (plan 04, decisión 19)
+
+Una baja descuenta **solo las `n` unidades indicadas** de `cantidadAlmacen`; el artículo queda `baja` cuando no le quedan
+unidades (o si ya estaba en 0/0). Pedir más unidades de las que existen da 400.
+
+- **Con proyecto (13, 16, 5):** toman primero las unidades que están fuera del almacén (`cantidadAlmacen − cantidad`) y
+  se relacionan con las salidas del proyecto, como antes.
+- **Sin proyecto (8, 17):** toman primero las del almacén. Solo las unidades que salen de lo prestado cierran salidas
+  abiertas (FIFO). Con `n = cantidadAlmacen` el resultado es el de antes: todo a 0 y todas las salidas cerradas.
+
+Cada movimiento nuevo guarda en `movimiento.efectoCantidad` y `efectoAlmacen` el cambio con signo que aplicó. Con esos
+deltas se deshacen las bajas aunque haya movimientos posteriores. Las bajas anteriores (deltas `NULL`) se siguen
+deshaciendo con su instantánea y solo si son el último movimiento.
+
+## Expendables: productos CONSUMIBLES (plan 04, decisión 18)
+
+Un producto de tipo CONSUMIBLE (`producto_tipo` 2, `ProductoTipoId.CONSUMIBLE`) se da por consumido al salir. El
+movimiento guarda `consumible = 1` (instantánea del tipo en ese momento) y la vista `v_movimiento_saldo` lo excluye: no
+abre saldo, no aparece en préstamos activos ni genera avisos de vencimiento, y nunca se relaciona con otro movimiento.
+
+| Tipo | Efecto en un consumible |
+|---|---|
+| 3 PRÉSTAMO, 11 RENTA EXTERNA | `cantidad -= n` y `cantidadAlmacen -= n`. Al llegar a 0 queda `no-disponible`, nunca `baja`. |
+| 4 DEVOLUCIÓN | `cantidad += n` y `cantidadAlmacen += n`, sin exigir préstamo previo ni límite. |
+| 15 COMPRA | No cambia existencias: queda a nombre de la producción, ya consumida. Lo que se devuelva suma. |
+| 14 ALTA (1, 2) | Igual que en un producto regular: suma a ambas existencias. |
+| 13, 16, 5, 8, 17 bajas | Descuentan del almacén (`n ≤ cantidad`). |
+| 7, 12 transferencias | 400: los expendables no se transfieren entre proyectos. |
+
+Deshacer un movimiento de consumible resta sus deltas, aunque no sea el último. Cambiar el tipo de un producto
+(`PUT /item/edit`) solo se permite con todas sus unidades en el almacén; sin `productoTipoId` la edición conserva el tipo.
+

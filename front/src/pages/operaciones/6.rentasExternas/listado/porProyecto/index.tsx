@@ -24,6 +24,7 @@ const RentasExternasListadoPorProyecto = () => {
     ColumnasOperaciones.foto(setArchivosImagenes, setMostrarModalImagenes),
     ColumnasOperaciones.producto,
     ColumnasOperaciones.clave,
+    ColumnasOperaciones.cantidad,
     ColumnasOperaciones.almacen,
     ColumnasOperaciones.operacion,
     ColumnasOperaciones.almacenista,

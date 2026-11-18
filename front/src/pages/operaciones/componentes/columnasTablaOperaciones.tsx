@@ -16,6 +16,10 @@ export interface ColumnasOperacionesComunes {
   ) => ColumnaOperacion
   producto: ColumnaOperacion
   clave: ColumnaOperacion
+  /** Unidades del movimiento; marca los expendables. */
+  cantidad: ColumnaOperacion
+  /** Unidades aún sin devolver de una salida (préstamos y rentas activas). */
+  pendiente: ColumnaOperacion
   proyecto: ColumnaOperacion
   almacen: ColumnaOperacion
   operacion: ColumnaOperacion
@@ -93,6 +97,40 @@ const ColumnasOperaciones: ColumnasOperacionesComunes = {
       </div>
     ),
     ...obtenerPropsBusquedaInput(),
+  },
+  cantidad: {
+    title: 'Cantidad',
+    dataIndex: 'cantidad',
+    key: 'movimiento.cantidad',
+    width: '110px',
+    align: 'right',
+    render: (cantidad: MovimientoOperacion['cantidad'], record: MovimientoOperacion) => (
+      <>
+        {Number(cantidad)}
+        {record.consumible ? (
+          <Tag color="gold" style={{ marginInlineStart: 6, marginInlineEnd: 0 }}>
+            Expendable
+          </Tag>
+        ) : null}
+      </>
+    ),
+  },
+  pendiente: {
+    title: 'Pendiente',
+    dataIndex: 'saldoPendiente',
+    key: 'saldoPendiente',
+    width: '100px',
+    align: 'right',
+    render: (saldo: MovimientoOperacion['saldoPendiente'], record: MovimientoOperacion) => {
+      // Los movimientos anteriores a la fase 3 no tienen saldo calculado: siguen pendientes por su cantidad.
+      const pendiente =
+        saldo === null || saldo === undefined ? Number(record.cantidad) : Number(saldo)
+      return (
+        <Typography.Text strong>
+          {pendiente} de {Number(record.cantidad)}
+        </Typography.Text>
+      )
+    },
   },
   proyecto: {
     title: 'Proyecto',

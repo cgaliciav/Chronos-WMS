@@ -190,6 +190,37 @@ describe("resolverRelaciones", () => {
     expect((await fallo(resolver(consultas([pa]), { tipo: T.BAJA_ADMINISTRADOR, cantidad: 1, relaciones: [{ origenId: pa.movimientoId, cantidad: 1 }] }))).statusCode).toBe(400);
   });
 
+  it("bajas libres por cantidad: solo las unidades que salen de lo prestado cierran salidas, por FIFO (decisión 19)", async () => {
+    const pa = origen({ saldo: 2 });
+    const pb = origen({ saldo: 3, proyectoId: PB });
+    const baja = (unidadesFuera: number, c = consultas([pb, pa])) =>
+      MovimientoService.resolverRelaciones(manager, { inventarioActualId: INV, proyectoId: null, tipo: T.BAJA_EN_INVENTARIO, cantidad: 5, unidadesFuera }, c);
+    const delAlmacen = consultas([pa, pb]);
+    expect((await baja(0, delAlmacen)).relaciones).toEqual([]);
+    expect(delAlmacen.origenesAbiertos).not.toHaveBeenCalled();
+    expect((await baja(3)).relaciones).toEqual([
+      { origenId: pa.movimientoId, cantidad: 2, tipo: RelacionTipo.CIERRE_INVENTARIO },
+      { origenId: pb.movimientoId, cantidad: 1, tipo: RelacionTipo.CIERRE_INVENTARIO },
+    ]);
+    expect((await baja(9)).relaciones.map((r) => r.cantidad)).toEqual([2, 3]); // lo que excede es saldo legado
+  });
+
+  it("consumibles (decisión 18): ningún movimiento se relaciona ni consulta saldos; las relaciones explícitas se rechazan", async () => {
+    const p = origen({ saldo: 2 });
+    for (const tipo of [T.PRESTAMO, T.DEVOLUCION, T.BAJA_JUSTIFICADA, T.BAJA_EN_INVENTARIO]) {
+      const c = consultas([p]);
+      const plan = await MovimientoService.resolverRelaciones(manager, { inventarioActualId: INV, proyectoId: PA, tipo, cantidad: 1, consumible: true }, c);
+      expect(plan).toEqual({ relaciones: [], cubiertoPorLegado: 0, sinOrigen: false });
+      expect(c.origenesAbiertos).not.toHaveBeenCalled();
+    }
+    const conRelacion = MovimientoService.resolverRelaciones(
+      manager,
+      { inventarioActualId: INV, proyectoId: PA, tipo: T.DEVOLUCION, cantidad: 1, consumible: true, relaciones: [{ origenId: p.movimientoId, cantidad: 1 }] },
+      consultas([p])
+    );
+    expect((await fallo(conRelacion)).statusCode).toBe(400);
+  });
+
   it("salidas, entradas y administrativos no consultan la BD y no admiten relaciones explícitas", async () => {
     for (const tipo of [T.PRESTAMO, T.RENTA_EXTERNA, T.ALTA, T.COMPRA, T.INVENTARIO]) {
       const c = consultas([origen({ saldo: 1 })]);

@@ -15,6 +15,7 @@ import Comentarios from 'pages/componentes/comentarios'
 import SubirArchivos from 'pages/componentes/subirArchivos'
 import InventarioAcualPeticiones from 'services/axios/inventarioActual'
 import ProductoPeticiones from 'services/axios/productos'
+import { PRODUCTO_TIPO } from 'types/api'
 import type { ProductoArticulo } from 'pages/componentes/tipos'
 import type { InventarioDetalle } from '../../tipos'
 import FormaEdicionArticulo, { type ValoresArticulo } from './componentes/formaEdicionArticulo'
@@ -44,6 +45,7 @@ const obtenerValoresIniciales = (
     precio: productoPrecios?.[0]?.precio,
     area: area?.id,
     bodega: bodega?.id,
+    tipo: producto.productoTipo?.id ?? PRODUCTO_TIPO.REGULAR,
     id: inventario.id ? inventario.id : 0,
   }
 }
@@ -106,7 +108,7 @@ const EditarArticuloDetalle = () => {
         titulo: valores.titulo,
         descripcion: valores.descripcion,
         areaId: valores.area,
-        productoTipoId: 1,
+        productoTipoId: valores.tipo,
       }),
     ])
       .then(resp => {

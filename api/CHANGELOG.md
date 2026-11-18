@@ -9,6 +9,28 @@ La versión vive en `package.json` (la devuelve `/auth/version`, y Sentry la usa
 `desplegar.sh` publica una versión `X.Y.Z-d` como `X.Y.Z` y, si ya no lleva sufijo, sube el parche. Contrato con el
 front: [`docs/api/endpoints.md`](../docs/api/endpoints.md). Plan: [`docs/planes/02-api-relacion-movimientos.md`](../docs/planes/02-api-relacion-movimientos.md).
 
+## [2.90.0-d] - Sin publicar
+
+Plan 04 · bloque A: expendables y bajas por cantidad (decisiones 18 y 19).
+
+### Añadido
+
+- **Expendables:** los productos de tipo CONSUMIBLE (`producto_tipo` 2) se dan por consumidos al prestarse (bajan la
+  existencia disponible y la total) y no dejan pendiente de devolución: no aparecen en préstamos activos ni generan avisos
+  de vencimiento. Lo que se devuelve vuelve a sumar. Una COMPRA de expendable no suma existencias; un ALTA sí. No se
+  transfieren (7, 12). Detalle en `docs/api/tipos-de-movimiento.md`.
+- `movimiento.consumible`, `movimiento.efectoCantidad` y `movimiento.efectoAlmacen` (migración
+  `ConsumiblesYBajasPorCantidad`, que además asegura el tipo CONSUMIBLE y recrea `v_movimiento_saldo` sin consumibles).
+  Los movimientos los devuelven en sus respuestas.
+
+### Cambiado
+
+- **Bajas por cantidad:** una baja descuenta solo las unidades indicadas (antes dejaba el artículo en 0/0 con cualquier
+  cantidad). El artículo queda dado de baja al llegar a cero. Las bajas nuevas se deshacen aunque haya movimientos
+  posteriores.
+- `PUT /item/edit`: `productoTipoId` es opcional (sin él se conserva el tipo) y cambiarlo exige que todas las unidades
+  estén en el almacén.
+
 ## [2.89.0-d] - Sin publicar
 
 Carga inicial de una base nueva y Sentry con entorno y cliente (preparación del despliegue de AMZ con Caddy).

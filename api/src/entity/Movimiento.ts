@@ -37,6 +37,24 @@ export class Movimiento {
     @Column({ default: false })
     legado:boolean;
 
+    /**
+     * true si el producto era CONSUMIBLE (expendable, decisión 18) al registrar el movimiento: lo que sale se da por
+     * consumido y no abre saldo en `v_movimiento_saldo`. Es una instantánea: no cambia si luego cambia el tipo del producto.
+     */
+    @Column({ default: false })
+    consumible:boolean;
+
+    /**
+     * Cambio con signo que el movimiento aplicó a `inventario_actual.cantidad` y `cantidadAlmacen` (plan 04). Con ellos se
+     * deshacen las bajas por cantidad y los movimientos de consumibles. NULL en los movimientos anteriores y en las
+     * líneas de listado sin operación.
+     */
+    @Column({type:"numeric", precision:15 , scale:4, nullable:true, transformer: numericTransformer })
+    efectoCantidad:number|null;
+
+    @Column({type:"numeric", precision:15 , scale:4, nullable:true, transformer: numericTransformer })
+    efectoAlmacen:number|null;
+
     @ManyToOne(type => Sesion, sesion => sesion.movimientos,{eager:true})
     sesion:Sesion;
 

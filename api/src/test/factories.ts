@@ -70,7 +70,7 @@ export const crearGrupoDetalle = async (
  */
 export const crearArticulo = async (
   api: ReturnType<typeof clienteAdmin>,
-  opciones: { grupoId: number; cantidad?: number; movimientoTipoId?: 15 | 14 | 1 | 2; precio?: number; codigo?: string; proyectoId?: number }
+  opciones: { grupoId: number; cantidad?: number; movimientoTipoId?: 15 | 14 | 1 | 2; precio?: number; codigo?: string; proyectoId?: number; productoTipoId?: number }
 ) => {
   const codigo = opciones.codigo ?? codigoUnico();
   const cantidad = opciones.cantidad ?? 1;
@@ -87,7 +87,7 @@ export const crearArticulo = async (
     descripcion: `Artículo de prueba ${codigo}`,
     areaId: SEMILLA.areaId,
     moneda: "MXP",
-    productoTipoId: SEMILLA.productoTipoId,
+    productoTipoId: opciones.productoTipoId ?? SEMILLA.productoTipoId,
     productoCaracteristicas: [],
     productoPrecioOriginal: precio,
     productoCodigos: [{ barras: codigo, barrasTipo: "Prueba" }],

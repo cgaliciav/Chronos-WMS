@@ -140,13 +140,15 @@ describe("fase 3 · relación entre movimientos", () => {
     expect(devolucion.status).toBe(200);
     expect(await relacionesDe(devolucion.body.id)).toEqual([{ origenId: compra.movimiento.id, cantidad: 2, tipo: "devolucion" }]);
 
-    const baja = await operar(compra.codigo, 8, 1, null as any);
+    const baja = await operar(compra.codigo, 8, 2, null as any); // baja de todas las unidades
     expect(baja.status).toBe(200);
     expect(await inventarioDe(compra.inventarioActualId)).toMatchObject({ cantidad: 0, cantidadAlmacen: 0, disponible: "baja" });
 
     const antesDeLaBaja = await api.delete("/groups/activity").send({ movimientoId: devolucion.body.id });
     expect(antesDeLaBaja.status).toBe(409);
-    expect(antesDeLaBaja.body.message).toMatch(/compra o baja/);
+    expect(antesDeLaBaja.body.message).toMatch(/deshaga primero la baja/);
+    const laCompra = await api.delete("/groups/activity").send({ movimientoId: compra.movimiento.id });
+    expect(laCompra.status).toBe(409); // la compra es origen de la devolución y no es el último movimiento
 
     expect((await api.delete("/groups/activity").send({ movimientoId: baja.body.id })).status).toBe(200);
     expect(await inventarioDe(compra.inventarioActualId)).toMatchObject({ cantidad: 2, cantidadAlmacen: 2, disponible: "disponible" });

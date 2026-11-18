@@ -40,6 +40,13 @@ export interface EntradaPlan {
   pendienteLegado: number;
   relaciones?: RelacionSolicitada[] | null;
   strict?: boolean;
+  /**
+   * Bajas sin proyecto (8, 17): unidades de la baja que salen de lo que está fuera del almacén (decisión 19). Solo esa
+   * parte cierra salidas abiertas. Sin indicar, la baja cierra todas las salidas por su saldo completo.
+   */
+  unidadesFuera?: number;
+  /** Producto CONSUMIBLE (expendable, decisión 18): sus movimientos no abren ni consumen saldo. */
+  consumible?: boolean;
 }
 
 export interface RelacionPlaneada {
@@ -176,19 +183,28 @@ const planTransferenciaDestino = (e: EntradaPlan): Plan => {
   return { relaciones, cubiertoPorLegado: 0, sinOrigen: false };
 };
 
-/** Bajas sin proyecto: cierran todas las salidas abiertas del inventario por su saldo completo (trazabilidad). */
+/**
+ * Bajas sin proyecto: las unidades que salen de lo que está fuera del almacén cierran salidas abiertas del inventario
+ * por orden FIFO (trazabilidad). Lo que no cubren las salidas con relación corresponde a movimientos legados.
+ */
 const planBajaLibre = (e: EntradaPlan): Plan => {
   if (e.relaciones?.length) throw new AppError("Las bajas sin proyecto no admiten relaciones explícitas", 400);
-  const relaciones = [...e.abiertos]
-    .filter((o) => esTipo(TIPOS_ORIGEN, o.movimientoTipoId))
-    .sort(fifo)
-    .map((o) => ({ origenId: o.movimientoId, cantidad: o.saldo, tipo: RelacionTipo.CIERRE_INVENTARIO }));
+  const elegibles = e.abiertos.filter((o) => esTipo(TIPOS_ORIGEN, o.movimientoTipoId));
+  if (e.unidadesFuera === undefined) {
+    const relaciones = [...elegibles].sort(fifo).map((o) => ({ origenId: o.movimientoId, cantidad: o.saldo, tipo: RelacionTipo.CIERRE_INVENTARIO }));
+    return { relaciones, cubiertoPorLegado: 0, sinOrigen: false };
+  }
+  const { relaciones } = repartirFifo(e.unidadesFuera, elegibles, RelacionTipo.CIERRE_INVENTARIO);
   return { relaciones, cubiertoPorLegado: 0, sinOrigen: false };
 };
 
 export const planificarRelaciones = (e: EntradaPlan): Plan => {
   const tipo = Number(e.tipo);
   const entrada = { ...e, tipo, cantidad: Number(e.cantidad) };
+  if (e.consumible) {
+    if (e.relaciones?.length) throw new AppError("Los movimientos de expendables no se relacionan con otros movimientos", 400);
+    return { relaciones: [], cubiertoPorLegado: 0, sinOrigen: false };
+  }
   if (esTipo(TIPOS_REGRESO, tipo)) return planRegreso(entrada);
   if (tipo === T.TRANSFERENCIA_DESTINO) return planTransferenciaDestino(entrada);
   if (esTipo(TIPOS_BAJA_LIBRE, tipo)) return planBajaLibre(entrada);

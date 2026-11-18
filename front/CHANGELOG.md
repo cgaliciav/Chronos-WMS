@@ -15,6 +15,24 @@ Los códigos `F<n>` remiten a [`docs/hallazgos-codigo.md`](../docs/hallazgos-cod
 
 Pendiente: fase 7 del plan 01 (pruebas e2e con Playwright, CI y cobertura).
 
+## [4.11.0-d] - Sin publicar
+
+Plan 04 · bloque A: cantidades en las operaciones y expendables (decisiones 18 y 19). Requiere el API v2.90.0.
+
+### Añadido
+
+- **Cantidad** en préstamo, devolución, bajas (también de administrador), renta externa y previo: junto a la clave se
+  captura cuántas unidades se operan (por defecto 1; vuelve a 1 tras cada lectura). Antes siempre se enviaba 1. Permite
+  prestar X unidades y devolver solo una parte, y dar de baja solo algunas unidades de un artículo.
+- **Expendables:** al dar de alta o editar un artículo se elige su tipo, Regular o Expendable. Un expendable se da por
+  consumido al prestarse y no queda pendiente de devolución; si se devuelve, vuelve a sumar a las existencias.
+- Columna **Cantidad** en las tablas de movimientos (marca los expendables) y columna **Pendiente** («2 de 5») en
+  préstamos activos, rentas activas y el reporte por usuario.
+
+### Cambiado
+
+- La edición de un artículo ya no lo convierte en regular: envía el tipo elegido.
+
 ## [4.10.0-d] - 2026-11-12
 
 Imagen `chronos-web` (Caddy): certificado por reto DNS-01 configurado por sitio. Sin cambios en el código del front.

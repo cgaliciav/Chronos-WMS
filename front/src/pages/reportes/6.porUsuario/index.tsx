@@ -24,6 +24,8 @@ const ReportePorUsuario = () => {
     ColumnasOperaciones.foto(setArchivosImagenes, setMostrarModalImagenes),
     ColumnasOperaciones.producto,
     ColumnasOperaciones.clave,
+    ColumnasOperaciones.cantidad,
+    ColumnasOperaciones.pendiente,
     ColumnasOperaciones.proyecto,
     ColumnasOperaciones.operacion,
     ColumnasOperaciones.almacenista,

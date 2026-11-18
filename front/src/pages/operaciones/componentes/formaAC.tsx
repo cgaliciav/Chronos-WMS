@@ -11,6 +11,7 @@ import Comentarios from 'pages/componentes/comentarios'
 import SubirArchivos from 'pages/componentes/subirArchivos'
 import GrupoPeticiones from 'services/axios/grupos'
 import InventarioAcualPeticiones from 'services/axios/inventarioActual'
+import { PRODUCTO_TIPO } from 'types/api'
 import type { Area, Bodega, Numerico, Producto } from 'types/api'
 import type { FormaNuevoItemACProps } from '../tipos'
 
@@ -110,7 +111,7 @@ const FormaNuevoItemAC = ({
       descripcion,
       areaId,
       moneda,
-      productoTipoId: 1, // siempre es producto "regular"
+      productoTipoId: valores.tipo ?? PRODUCTO_TIPO.REGULAR,
       productoCaracteristicas: [], // se crea sin características
       productoPrecioOriginal,
     })
