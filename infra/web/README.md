@@ -27,7 +27,7 @@ Fijos en el build: `VITE_API_URL=/api/` y `VITE_NOTIFICACIONES=on`.
 |---|---|---|
 | `DOMINIOS` | `amz.ejemplo.mx, otro.ejemplo.mx` | Direcciones del sitio, separadas por `, ` (coma **y espacio**), todas con el mismo proveedor DNS. `:80` = modo de prueba sin TLS |
 | `DNS_PROVEEDOR` | `cloudflare` / `linode` | Proveedor del reto DNS-01 de `DOMINIOS` (por defecto `cloudflare`) |
-| `DNS_TOKEN` | | Token del proveedor DNS. Cloudflare exige que tenga formato válido (40 caracteres) incluso con `:80` |
+| `DNS_TOKEN` | | Token del proveedor DNS. Cloudflare exige que tenga formato válido (40 caracteres, o 53 con el prefijo `cfut_` de los tokens nuevos) incluso con `:80` |
 | `DNS_RESOLVERS` | `1.1.1.1 1.0.0.1` | Resolvedores con los que Caddy busca la zona y comprueba la propagación del TXT |
 | `DNS_PROPAGACION_ESPERA` | `0s` / `20s` | Espera fija tras crear el TXT, antes de comprobar |
 | `DNS_PROPAGACION_LIMITE` | `2m` / `-1` | Tiempo máximo de la comprobación de propagación. `-1` la desactiva: la CA valida desde fuera. Hace falta en una red que intercepta el DNS saliente (el staging local: `compose.staging.yml` fija `-1` y `20s`) |

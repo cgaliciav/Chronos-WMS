@@ -61,8 +61,9 @@ grande que incluya la versión.
   editables desde el front (`/configuracion`); "Sony" pasa a "Chronos WMS". Fases 0-5 hechas en código; falta que una
   persona ensaye en staging y despliegue con el procedimiento (la marca de Sony se carga desde `infra/clientes/sony`).
 - `docs/superpowers/specs/2026-11-10-caddy-docker-amz-design.md` y `docs/superpowers/plans/2026-11-10-caddy-docker-amz.md`:
-  Caddy en Docker, imágenes en Docker Hub y cliente AMZ (decisión 17). Procedimientos: `docs/infra/`. Falta que una persona
-  ejecute la aceptación en staging y el alta de producción de AMZ.
+  Caddy en Docker, imágenes en Docker Hub y cliente AMZ (decisión 17). Procedimientos: `docs/infra/`. El alta de producción de AMZ
+  se hizo el 2026-11-17 (web `v4.10.0`, api `v2.89.0`, Linode de 2 GB) siguiendo `docs/infra/procedimiento-alta-amz.md`;
+  falta que una persona ejecute la aceptación en staging.
 - `docs/infra/procedimiento-migracion-sony-caddy.md`: migración de producción de Sony a la versión actual, Caddy y
   MariaDB 10.11 en tres pasos (ensayada en la VM `chronos-ensayo`). La ejecuta una persona; ninguna sesión automatizada toca `linode-prod`.
 
