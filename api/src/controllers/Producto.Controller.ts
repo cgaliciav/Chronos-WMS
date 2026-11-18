@@ -10,6 +10,7 @@ import CommonController from "./common/Common.Controller";
 import ProductoCaracteristicaController from "./ProductoCaracteristica.Controller";
 import ProductoClaveController from "./ProductoClave.Controller";
 import ProductoPrecioController from "./ProductoPrecio.Controller";
+import { alcanceDe, exigirProductoVisible } from "../services/alcance";
 
 const crearBaseProducto = async (
   titulo: string,
@@ -189,6 +190,7 @@ class ProductoController {
     const { areaId, productoTipoId, productoId, ...body } = req.body;
     const { jwtPayload } = res.locals;
     try {
+      await exigirProductoVisible(alcanceDe(res.locals), productoId);
       const producto = await AppDataSource.getRepository(Producto).findOneOrFail({ where: { id: idSeguro(productoId, "productoId") }, 
         relations: { area: true, productoTipo: true },
         loadEagerRelations: false,

@@ -18,6 +18,7 @@ import {
   TIPOS_ORIGEN,
   TIPOS_BAJA_LIBRE,
   TIPOS_REGRESO,
+  TIPOS_TRANSFORMACION,
   tiposAdmitidosEnListado,
 } from "../entity/common/MovimientoTipoId";
 import { Grupo } from "../entity/Grupo";
@@ -26,6 +27,7 @@ import { InventarioActualHistorico } from "../entity/InventarioActualHistorico";
 import { LogTipo } from "../entity/LogGeneral";
 import { Movimiento } from "../entity/Movimiento";
 import { MovimientoRelacion } from "../entity/MovimientoRelacion";
+import { RelacionTipo } from "../entity/common/RelacionTipo";
 import { OperacionDetalle } from "../entity/OperacionDetalle";
 import { Producto } from "../entity/Producto";
 import { InventarioEstado, ProductoInventariado } from "../entity/ProductoInventariado";
@@ -49,6 +51,7 @@ import {
 } from "./reglas/efectosInventario";
 import { OrigenAbierto, Plan, planificarRelaciones, RelacionSolicitada } from "./reglas/planificarRelaciones";
 import { logger } from "../helpers/logger";
+import { Alcance, sqlAlcance } from "./alcance";
 
 const redondear = (n: number) => Math.round(n * 10000) / 10000;
 
@@ -141,6 +144,8 @@ const INVENTARIADO: Record<number, [string, InventarioEstado] | null> = {
   [T.PRESTAMO]: ["OPERACION PRESTAMO", InventarioEstado.INVENTARIO_POSITIVO],
   [T.DEVOLUCION]: ["OPERACION DEVOLUCION", InventarioEstado.INVENTARIO_POSITIVO],
   [T.RENTA_EXTERNA]: ["OPERACION RENTA EXTERNA", InventarioEstado.INVENTARIO_POSITIVO],
+  [T.TRANSFORMACION]: ["OPERACION TRANSFORMACION", InventarioEstado.INVENTARIO_NEGATIVO],
+  [T.ALTA_POR_TRANSFORMACION]: ["OPERACION ALTA POR TRANSFORMACION", InventarioEstado.INVENTARIO_POSITIVO],
 };
 
 const advertir = (mensaje: string, datos: unknown) => {
@@ -482,6 +487,10 @@ export default class MovimientoService {
         return { id };
       }
       const tipo = Number(operacion.movimientoTipo.id);
+      if (esTipo(TIPOS_TRANSFORMACION, tipo)) {
+        // Deshacerla exigiría borrar los productos creados; en esta versión se corrige con bajas (decisión 20).
+        throw new AppError("Las transformaciones no se pueden deshacer: corrija con una baja de los productos creados", 409);
+      }
       const posteriores: { id: number; tipo: number; conDeltas: boolean }[] = (
         await manager.query(
           `SELECT m.id, o.movimientoTipoId AS tipo, m.consumible, m.efectoCantidad, m.efectoAlmacen
@@ -620,6 +629,64 @@ export default class MovimientoService {
       saldo: Number(f.saldo),
     }));
   };
+
+  /**
+   * Liga un producto nuevo con el artículo del que salió (decisión 20): origen = movimiento TRANSFORMACIÓN (18) del
+   * original, derivado = ALTA POR TRANSFORMACIÓN (19) del producto nuevo. Dentro de la transacción de la transformación.
+   */
+  static relacionarTransformacion = async (manager: EntityManager, origenId: number, derivadoId: number, cantidad: number, sesionId: number) => {
+    const relacion = new MovimientoRelacion();
+    relacion.origen = { id: origenId } as Movimiento;
+    relacion.derivado = { id: derivadoId } as Movimiento;
+    relacion.cantidad = Number(cantidad);
+    relacion.tipo = RelacionTipo.TRANSFORMACION;
+    relacion.sesionId = sesionId;
+    return manager.save(relacion);
+  };
+
+  /**
+   * Transformaciones de un artículo (GET /activity/transformations-by-inventory/:id, decisión 20): `origenes` son los
+   * artículos de los que salió este producto; `derivados`, los productos creados a partir de él. `cantidad` son las
+   * unidades del producto creado y `cantidadOriginal` las unidades del original que se usaron en esa transformación.
+   * Con un alcance restringido solo aparecen los artículos que el usuario ve.
+   */
+  static transformacionesPorInventario = async (inventarioActualId: number | string, alcance?: Alcance | null) => {
+    const inventario = idSeguro(inventarioActualId, "inventarioActualId");
+    const condicion = sqlAlcance(alcance, "ia.id");
+    const consultar = (propio: "mo" | "md", otro: "mo" | "md") =>
+      AppDataSource.query(
+        `SELECT r.id, r.cantidad, r.fecha, mo.id AS movimientoOrigenId, md.id AS movimientoDerivadoId, mo.cantidad AS cantidadOriginal,
+                ia.id AS inventarioActualId, p.titulo, pr.nombre AS proyecto,
+                (SELECT MIN(pc.barras) FROM producto_clave pc WHERE pc.productoId = p.id) AS codigo
+           FROM movimiento_relacion r
+           INNER JOIN movimiento mo ON mo.id = r.origenId
+           INNER JOIN movimiento md ON md.id = r.derivadoId
+           INNER JOIN inventario_actual ia ON ia.id = ${otro}.inventarioActualId
+           INNER JOIN producto p ON p.id = ia.productoId
+           LEFT JOIN operacion o ON o.id = md.operacionId
+           LEFT JOIN proyecto pr ON pr.id = o.proyectoId
+          WHERE r.tipo = ? AND ${propio}.inventarioActualId = ? ${condicion === null ? "" : `AND (${condicion})`}
+          ORDER BY r.id`,
+        [RelacionTipo.TRANSFORMACION, inventario]
+      );
+    const forma = (filas: any[]) =>
+      filas.map((f) => ({
+        id: Number(f.id),
+        fecha: f.fecha,
+        cantidad: Number(f.cantidad),
+        cantidadOriginal: Number(f.cantidadOriginal),
+        movimientoOrigenId: Number(f.movimientoOrigenId),
+        movimientoDerivadoId: Number(f.movimientoDerivadoId),
+        inventarioActualId: Number(f.inventarioActualId),
+        titulo: f.titulo as string,
+        codigo: (f.codigo ?? null) as string | null,
+        proyecto: (f.proyecto ?? null) as string | null,
+      }));
+    return { origenes: forma(await consultar("md", "mo")), derivados: forma(await consultar("mo", "md")) };
+  };
+
+  /** ¿Es un tipo de transformación (18, 19)? Solo se registran desde PUT /groups/activity-transform. */
+  static esTipoDeTransformacion = (tipo: number | string | undefined | null) => esTipo(TIPOS_TRANSFORMACION, tipo);
 
   /** Tipos que crean el artículo: solo se registran desde PUT /groups/activity-purchase. */
   static esTipoDeEntrada = (tipo: number | string | undefined | null) => esTipo(TIPOS_ENTRADA, tipo);

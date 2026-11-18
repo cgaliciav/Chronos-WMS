@@ -18,6 +18,7 @@ import CommonController, { ResultadoTabla } from "./common/Common.Controller";
 import { aplicarFiltros, columnaSegura, construirFiltros, direccionSegura } from "../helpers/filtrosTabla";
 import { logger } from "../helpers/logger";
 import { idSeguro, parametro } from "../helpers/ids";
+import { ModoVisibilidad } from "../entity/common/ModoVisibilidad";
 
 // Filtros de la tabla de usuarios, parametrizados (hallazgo C1). `estatusExtendido` es una columna calculada.
 const ESTATUS_EXTENDIDO = 'if(usuario.estatus="inactivo","inactivo",if(usuario.vencimiento <= current_timestamp() ,"vencido","activo"))';
@@ -212,10 +213,12 @@ class UsuarioController{
       bodegasIds, 
       areasIds, 
       vencimiento, 
+      modoVisibilidad,
       ...body } = req.body;
     try {
       const usuario = new Usuario();
       usuario.vencimiento = new Date(vencimiento);
+      usuario.modoVisibilidad = modoVisibilidad ?? ModoVisibilidad.GENERAL;
       // Temporal: el usuario debe cambiarla al entrar por primera vez (hallazgo L2)
       const password = asignarPasswordTemporal(usuario);
       usuario.roles = await AppDataSource.getRepository(Rol).findBy({ id: In(rolesIds) });
@@ -252,13 +255,15 @@ class UsuarioController{
       id,
       proyectosIds, 
       bodegasIds, 
-      areasIds } = req.body;
+      areasIds,
+      modoVisibilidad } = req.body;
     try {
       const usuario:Usuario=await AppDataSource.getRepository(Usuario).findOneByOrFail({ id: idSeguro(id) });
       usuario.nombre= nombre;
       usuario.correo= correo;
       usuario.roles = await AppDataSource.getRepository(Rol).findBy({ id: In(rolesIds) });
       usuario.vencimiento = new Date(vencimiento);
+      if (modoVisibilidad !== undefined) usuario.modoVisibilidad = modoVisibilidad;
       usuario.proyectos = await AppDataSource.getRepository(Proyecto).findBy({ id: In(proyectosIds) });
       usuario.bodegas = await AppDataSource.getRepository(Bodega).findBy({ id: In(bodegasIds) });
       usuario.areas = await AppDataSource.getRepository(Area).findBy({ id: In(areasIds) });

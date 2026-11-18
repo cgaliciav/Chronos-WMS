@@ -20,6 +20,19 @@ const autogenerarCodigo=async()=>{
 
 }
 
+/**
+ * `n` códigos autogenerados distintos para crear varios productos en una misma transacción (transformaciones): dentro de
+ * ella `autogenerarCodigo` devolvería siempre el mismo, porque lee el último id confirmado.
+ */
+const autogenerarCodigos=async(n:number)=>{
+    const [lastreg]=await AppDataSource.getRepository(ProductoClave).find({order:{id:"DESC"}, take:1})
+    const base=(lastreg?.id ?? 0)+5000;
+    return Array.from({length:n},(_,i)=>({
+        barras: (base+i).toString().padStart(10, "0"),
+        barrasTipo:'Autogenerada'
+    }))
+}
+
 class ProductoClaveController{
 
     // XXX NO SE DEBEN BORRAR NI EDITAR CODIGOS ASIGNADOS.
@@ -118,4 +131,4 @@ class ProductoClaveController{
 }
 
 export default ProductoClaveController;
-export {autogenerarCodigo};
+export {autogenerarCodigo, autogenerarCodigos};

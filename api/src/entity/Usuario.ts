@@ -10,6 +10,8 @@ import { EstatusEstado } from "./common/NombreEstatus";
 import { Length, IsEmail } from "class-validator";
 import * as bcrypt from "bcryptjs";
 
+import { ModoVisibilidad } from "./common/ModoVisibilidad";
+
 @Entity()
 export class Usuario {
 
@@ -43,6 +45,13 @@ export class Usuario {
 
     @Column()
     vencimiento: Date;
+
+    /**
+     * Qué productos ve y opera el usuario (decisión 21): `general` (todos), `produccion` (los de sus proyectos) o
+     * `usuario` (aquellos en cuyos movimientos aparece). La regla vive en `services/alcance.ts`.
+     */
+    @Column({ type: "enum", enum: ModoVisibilidad, default: ModoVisibilidad.GENERAL })
+    modoVisibilidad: ModoVisibilidad;
 
     @Column({type:"enum" , enum: EstatusEstado ,  default:EstatusEstado.ACTIVO})
     estatus:EstatusEstado;

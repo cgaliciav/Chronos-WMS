@@ -84,12 +84,18 @@ const alta: Efecto = (e, n) => ({
   disponible: InventarioDisponible.DISPONIBLE,
 });
 
+const compra: Efecto = (e, n) => ({ cantidad: 0, cantidadAlmacen: redondear(e.cantidadAlmacen + n), disponible: InventarioDisponible.NO_DISPONIBLE });
+
 const EFECTOS: Record<number, Efecto> = {
   [T.COMPRA_LEGADO]: alta,
   [T.ALTA_LEGADO]: alta,
   [T.ALTA]: alta,
   // El artículo comprado queda "en el proyecto": no disponible hasta su primera devolución al almacén.
-  [T.COMPRA]: (e, n) => ({ cantidad: 0, cantidadAlmacen: redondear(e.cantidadAlmacen + n), disponible: InventarioDisponible.NO_DISPONIBLE }),
+  [T.COMPRA]: (e, n) => compra(e, n),
+  // El producto creado por transformación queda a cargo de la producción, igual que una compra (decisión 20).
+  [T.ALTA_POR_TRANSFORMACION]: (e, n) => compra(e, n),
+  // Las unidades transformadas dejan de existir: baja por cantidad de lo que tiene la producción.
+  [T.TRANSFORMACION]: bajaProyecto,
   [T.PRESTAMO]: salida,
   [T.RENTA_EXTERNA]: salida,
   [T.TRANSFERENCIA_DESTINO]: salida,
@@ -123,12 +129,17 @@ const noSeTransfiere: Efecto = () => {
   throw new AppError("LOS EXPENDABLES NO SE TRANSFIEREN ENTRE PROYECTOS: SE CONSUMEN AL PRESTARSE", 400);
 };
 
+const compraConsumible = (e: EstadoInventario): EstadoInventario => ({ ...e, disponible: e.cantidad > 0 ? e.disponible : InventarioDisponible.NO_DISPONIBLE });
+
 const EFECTOS_CONSUMIBLE: Record<number, Efecto> = {
   [T.COMPRA_LEGADO]: alta,
   [T.ALTA_LEGADO]: alta,
   [T.ALTA]: alta,
   // La compra queda a nombre de la producción, ya consumida: no suma existencias. Lo que se devuelva sí suma.
-  [T.COMPRA]: (e) => ({ ...e, disponible: e.cantidad > 0 ? e.disponible : InventarioDisponible.NO_DISPONIBLE }),
+  [T.COMPRA]: (e) => compraConsumible(e),
+  [T.ALTA_POR_TRANSFORMACION]: (e) => compraConsumible(e),
+  // Lo que la producción transforma de un consumible ya se dio por consumido al salir: no hay existencias que descontar.
+  [T.TRANSFORMACION]: (e) => ({ ...e }),
   [T.PRESTAMO]: consumo,
   [T.RENTA_EXTERNA]: consumo,
   [T.DEVOLUCION]: alta,

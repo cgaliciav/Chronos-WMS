@@ -23,6 +23,7 @@ import { Proyecto } from "../entity/Proyecto";
 import { Usuario } from "../entity/Usuario";
 import sharp, { Sharp } from "sharp";
 import { logger } from "./logger";
+import type { Alcance } from "../services/alcance";
 
 /**
  * Sufijo único del nombre de un reporte: milisegundos + 3 cifras aleatorias. Antes `Math.random() * 1e6`, que podía
@@ -736,16 +737,17 @@ async function agregarHojaMovimientos(
     usuariosIds?: number[],
     filters?: any,
     campoOrden?: string | string[],
-    direccion?: string
+    direccion?: string,
+    alcance?: Alcance
   },
   t0: number
 ) {
   const { areasId, bodegasId, proyectosId, tiposMovimientosId,
-    usuariosIds, filters, campoOrden = 'movimiento.id', direccion = 'DESC'
+    usuariosIds, filters, campoOrden = 'movimiento.id', direccion = 'DESC', alcance
   } = movementsParams;
 
 
-  const qry = funcionQueryListadoMovimientos().where(
+  const qry = funcionQueryListadoMovimientos(alcance).where(
     "proyecto.id IN (:...proyectosId) and movimientoTipo.id IN (:...tiposMovimientosId)",
     { proyectosId, tiposMovimientosId }
   );
@@ -867,12 +869,13 @@ async function agregarHojaPrestamosActivos(
     usuariosIds?: number[],
     filters?: any,
     campoOrden?: string | string[],
-    direccion?: string
+    direccion?: string,
+    alcance?: Alcance
   },
   t0: number
 ) {
   const { areasId = [], bodegasId = [], proyectosId,
-    usuariosIds = [], filters, campoOrden = 'movimiento.id', direccion = 'DESC'
+    usuariosIds = [], filters, campoOrden = 'movimiento.id', direccion = 'DESC', alcance
   } = movementsParams;
 
 
@@ -880,7 +883,8 @@ async function agregarHojaPrestamosActivos(
     proyectosId[0],
     usuariosIds,
     areasId,
-    bodegasId
+    bodegasId,
+    alcance
   );
 
   if (filters) {
@@ -977,11 +981,13 @@ const reporteGeneral = async (body: {
   bodegasId?: number[],
   filters?: any,
   campoOrden?: string | string[],
-  direccion?: string
+  direccion?: string,
+  /** Alcance de quien pide el reporte (decisión 21); lo fija el controlador. */
+  alcance?: Alcance
 }) => {
   logger.debug("...............reporteGeneral................", body);
   const { proyectoId, conFoto,
-    usuariosIds = [], fechaInicio, fechaFin, areasId = [], bodegasId, filters, campoOrden, direccion
+    usuariosIds = [], fechaInicio, fechaFin, areasId = [], bodegasId, filters, campoOrden, direccion, alcance
   } = body
 
   const proyecto = await AppDataSource.getRepository(Proyecto).findOne({ where: { id: idSeguro(proyectoId, "proyectoId") }, 
@@ -1027,7 +1033,7 @@ const reporteGeneral = async (body: {
     {
       proyectosId: [proyectoId],
       tiposMovimientosId: [T.COMPRA_LEGADO, T.COMPRA],
-      usuariosIds, fechaInicio, fechaFin, areasId, bodegasId, filters, campoOrden, direccion
+      usuariosIds, fechaInicio, fechaFin, areasId, bodegasId, filters, campoOrden, direccion, alcance
     },
     t0
   );
@@ -1041,7 +1047,7 @@ const reporteGeneral = async (body: {
     {
       proyectosId: [proyectoId],
       tiposMovimientosId: [T.PRESTAMO],
-      usuariosIds, fechaInicio, fechaFin, areasId, bodegasId, filters, campoOrden, direccion
+      usuariosIds, fechaInicio, fechaFin, areasId, bodegasId, filters, campoOrden, direccion, alcance
     },
     t0
   );
@@ -1055,7 +1061,7 @@ const reporteGeneral = async (body: {
     {
       proyectosId: [proyectoId],
       tiposMovimientosId: [T.DEVOLUCION],
-      usuariosIds, fechaInicio, fechaFin, areasId, bodegasId, filters, campoOrden, direccion
+      usuariosIds, fechaInicio, fechaFin, areasId, bodegasId, filters, campoOrden, direccion, alcance
     },
     t0
   );
@@ -1069,7 +1075,7 @@ const reporteGeneral = async (body: {
     {
       proyectosId: [proyectoId],
       tiposMovimientosId: [T.BAJA_JUSTIFICADA],
-      usuariosIds, fechaInicio, fechaFin, areasId, bodegasId, filters, campoOrden, direccion
+      usuariosIds, fechaInicio, fechaFin, areasId, bodegasId, filters, campoOrden, direccion, alcance
     },
     t0
   );
@@ -1083,7 +1089,7 @@ const reporteGeneral = async (body: {
     {
       proyectosId: [proyectoId],
       tiposMovimientosId: [T.BAJA_INJUSTIFICADA],
-      usuariosIds, fechaInicio, fechaFin, areasId, bodegasId, filters, campoOrden, direccion
+      usuariosIds, fechaInicio, fechaFin, areasId, bodegasId, filters, campoOrden, direccion, alcance
     },
     t0
   );
@@ -1097,7 +1103,7 @@ const reporteGeneral = async (body: {
     {
       proyectosId: [proyectoId],
       tiposMovimientosId: [],
-      usuariosIds, fechaInicio, fechaFin, areasId, bodegasId, filters, campoOrden, direccion
+      usuariosIds, fechaInicio, fechaFin, areasId, bodegasId, filters, campoOrden, direccion, alcance
     },
     t0
   );
@@ -1215,7 +1221,7 @@ const generarReportePorGrupo = async (body: any, variante: VarianteGrupo) => {
 
   // obtener los datos del usuario que genero el grupo a partir de la sesion del usuario
 
-  const qry = funcionQueryListadoMovimientos().where("grupo.id=:grupoId", {
+  const qry = funcionQueryListadoMovimientos(body.alcance).where("grupo.id=:grupoId", {
     grupoId,
   });
   aplicarFiltros(qry, condicionesWhereAndGrupo(filters));
@@ -1393,7 +1399,7 @@ const reportePorProyecto = async (body: any) => {
     ? movimientoTipoId
     : [movimientoTipoId];
 
-  const qry = funcionQueryListadoMovimientos().where(
+  const qry = funcionQueryListadoMovimientos(body.alcance).where(
     "proyecto.id=:proyectoId and movimientoTipo.id IN (:...tiposMovimineto)",
     { proyectoId, tiposMovimineto }
   );
@@ -1548,7 +1554,7 @@ const reportePorProyectoCompras = async (body: any) => {
     ? movimientoTipoId
     : [movimientoTipoId];
 
-  const qry = funcionQueryListadoMovimientos().where(
+  const qry = funcionQueryListadoMovimientos(body.alcance).where(
     "proyecto.id=:proyectoId and movimientoTipo.id IN (:tiposMovimineto)",
     { proyectoId, tiposMovimineto }
   );
@@ -1713,7 +1719,8 @@ const reportePorPrestamosRentasActivas = async (body: any) => {
     proyectoId,
     usuariosIds,
     areasIds,
-    bodegasIds
+    bodegasIds,
+    body.alcance
   );
 
   aplicarFiltros(qry, condicionesWhereAndPrestamosActivos(filters));

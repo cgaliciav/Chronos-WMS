@@ -62,6 +62,7 @@ const UsuarioEditar = () => {
         proyectosIds: (values.proyectosInternos ?? []).concat(values.proyectosExternos ?? []),
         bodegasIds: values.bodegas,
         areasIds: values.areas,
+        modoVisibilidad: values.modoVisibilidad ?? 'general',
       })
       if (respuesta !== undefined) {
         navigate('/usuarios/listado')
@@ -153,6 +154,7 @@ const UsuarioEditar = () => {
             proyectosExternos: proyectos.filter(item => item.esExterno).map(elem => elem.id),
             proyectosInternos: proyectos.filter(item => !item.esExterno).map(elem => elem.id),
             roles: (usuario.roles ?? []).map(elem => elem.id),
+            modoVisibilidad: usuario.modoVisibilidad ?? 'general',
           }}
         />
         <Divider />

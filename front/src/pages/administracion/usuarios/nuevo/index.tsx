@@ -28,6 +28,7 @@ const UsuarioNuevo = () => {
         proyectosIds,
         bodegasIds: values.bodegas,
         areasIds: values.areas,
+        modoVisibilidad: values.modoVisibilidad ?? 'general',
       })
       if (respuesta !== undefined) {
         navigate('/usuarios/listado')

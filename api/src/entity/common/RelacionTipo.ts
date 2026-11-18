@@ -4,4 +4,6 @@ export enum RelacionTipo {
   BAJA = "baja",
   TRANSFERENCIA = "transferencia",
   CIERRE_INVENTARIO = "cierre-inventario",
+  /** Origen = TRANSFORMACIÓN (18) del artículo original; derivado = ALTA POR TRANSFORMACIÓN (19) de un producto nuevo. Une inventarios distintos. */
+  TRANSFORMACION = "transformacion",
 }

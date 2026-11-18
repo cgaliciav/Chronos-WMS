@@ -15,6 +15,30 @@ Los códigos `F<n>` remiten a [`docs/hallazgos-codigo.md`](../docs/hallazgos-cod
 
 Pendiente: fase 7 del plan 01 (pruebas e2e con Playwright, CI y cobertura).
 
+## [4.13.0-d] - Sin publicar
+
+Plan 04 · bloque C: transformación de productos (decisión 20). Requiere el API v2.92.0.
+
+### Añadido
+
+- Menú **Transformaciones** (rol `GRUPOS-TRANSFORMAR`): «Nueva Transformación» crea el listado de la producción y en su
+  pantalla se captura el artículo que se transforma, las unidades usadas y uno o más productos nuevos (título,
+  descripción, cantidad y tipo). Los productos nuevos quedan a cargo de la producción hasta que los devuelva. Rutas
+  `/transformaciones/nuevo`, `/transformaciones/operacion` y `/transformaciones/por-grupo`.
+- Pestaña **Transformaciones** en el detalle del artículo: de qué artículos salió («Se creó a partir de») y en qué
+  productos se transformó («Se transformó en»), con enlace a cada uno.
+
+## [4.12.0-d] - Sin publicar
+
+Plan 04 · bloque B: modos de visibilidad por usuario (decisión 21). Requiere el API v2.91.0.
+
+### Añadido
+
+- Campo **Visibilidad** en el alta y la edición de usuarios: General (todos los artículos), Producción exclusiva (solo los
+  artículos comprados por sus proyectos o cuyo último movimiento es de ellos) o Usuario exclusivo (solo los artículos en
+  cuyos movimientos es responsable o quien registró). El filtro lo aplica el API en catálogos, listados, reportes y
+  operaciones; los administradores siempre ven todo.
+
 ## [4.11.0-d] - Sin publicar
 
 Plan 04 · bloque A: cantidades en las operaciones y expendables (decisiones 18 y 19). Requiere el API v2.90.0.

@@ -37,12 +37,24 @@ export interface Rol extends NombreEstatus {
   codigoRol: string
 }
 
+/**
+ * Qué artículos ve y opera un usuario (decisión 21): `general` todos; `produccion` los comprados por sus proyectos o
+ * cuyo último movimiento es de ellos; `usuario` aquellos en cuyos movimientos es responsable o quien registró.
+ */
+export type ModoVisibilidad = 'general' | 'produccion' | 'usuario'
+export const OPCIONES_MODO_VISIBILIDAD: { value: ModoVisibilidad; label: string }[] = [
+  { value: 'general', label: 'General: todos los artículos' },
+  { value: 'produccion', label: 'Producción exclusiva: solo los de sus proyectos' },
+  { value: 'usuario', label: 'Usuario exclusivo: solo los de sus movimientos' },
+]
+
 export interface Usuario {
   id: number
   nombre: string
   correo: string
   estatus: Estatus
   vencimiento?: string
+  modoVisibilidad?: ModoVisibilidad
   roles?: Rol[]
   areas?: Area[]
   bodegas?: Bodega[]
@@ -76,6 +88,8 @@ export const OPCIONES_PRODUCTO_TIPO = [
   { value: PRODUCTO_TIPO.CONSUMIBLE, label: 'Expendable' },
 ]
 export type MovimientoTipo = NombreEstatus
+/** Ids fijos de `movimiento_tipo` que el front necesita por nombre (el resto llega del API). */
+export const MOVIMIENTO_TIPO = { TRANSFORMACION: 18, ALTA_POR_TRANSFORMACION: 19 } as const
 
 export interface ProductoClave {
   id: number
@@ -154,6 +168,33 @@ export interface Movimiento {
   saldoPendiente?: Numerico | null
   /** El producto era expendable al registrar el movimiento: no deja pendiente de devolución (plan 04). */
   consumible?: boolean
+}
+
+/** Respuesta de `PUT /groups/activity-transform`: el movimiento del original y los de los productos creados. */
+export interface ResultadoTransformacion {
+  origen: Movimiento
+  derivados: Movimiento[]
+}
+
+/** Un artículo relacionado por una transformación (`GET /activity/transformations-by-inventory/:id`). */
+export interface TransformacionArticulo {
+  id: number
+  fecha: string
+  /** Unidades del producto creado. */
+  cantidad: number
+  /** Unidades del artículo original que se usaron. */
+  cantidadOriginal: number
+  inventarioActualId: number
+  titulo: string
+  codigo: string | null
+  proyecto: string | null
+}
+
+export interface TransformacionesArticulo {
+  /** Artículos de los que salió este producto. */
+  origenes: TransformacionArticulo[]
+  /** Productos creados a partir de este artículo. */
+  derivados: TransformacionArticulo[]
 }
 
 export interface GrupoDetalle {
