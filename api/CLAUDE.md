@@ -20,6 +20,7 @@ src/index.ts            bootstrap: ./entorno, conectarORM(), crearApp({ registra
 src/app.ts              crearApp(): express + cors + helmet + express.json + rutas + errorMiddlewere (sin listen; lo usan las pruebas);
                         con registrarPeticiones añade pino-http y LogPeticiones (solo index.ts)
 src/migrar.ts           migraciones sin ts-node (node build/migrar.js show|run|revert)
+src/reporteProceso.ts   proceso hijo que genera UN reporte Excel y termina (decisión 27); lo lanza services/ReporteService
 src/entity/index.ts     ENTIDADES y SUSCRIPTORES explícitos (úsalos en lugar de globs)
 src/test/               env.ts, conexion.ts, seed.ts (SEMILLA), factories.ts, resetDb.ts, *.int.test.ts
 src/data-source.ts      AppDataSource (TypeORM 1.x) con opcionesDataSource() desde el entorno y listas explícitas (ENTIDADES,
@@ -32,6 +33,8 @@ src/services/           MovimientoService (registrar/deshacer/relacionar, transa
                         ConfiguracionService (configuración por cliente del plan 03: caché 30 s, secreto SMTP cifrado, imágenes,
                         exportar/importar; ejemplo de cliente en infra/clientes/sony), PasswordService,
                         CorreoService (transporte bd/anulado/entorno y plantillas; helpers/enviarMail.ts es su fachada),
+                        ReporteService (cola de reportes, uno a la vez, generados en el proceso hijo con memoria y tiempo
+                        limitados; los generadores se registran por nombre en helpers/generadoresReporte.ts),
                         reglas/efectosInventario.ts, reglas/planificarRelaciones.ts y reglas/notificaciones.ts (puras)
 src/routes/*.Routes.ts  un router por recurso; cada ruta lleva [checkJwt, checkRole([...])]; los ids numéricos usan
                         `"/x/:id", soloDigitos("id")` (middlewares/rutas.ts): Express 5 no admite `:id([0-9]+)`
@@ -104,6 +107,9 @@ Documentación detallada: `docs/api/modelo-de-datos.md`, `docs/api/tipos-de-movi
   `numeric` añade el transformer.
 - Rutas que sirve el navegador sin cabeceras (`<img>`, descargas) usan `checkJwtArchivos` (acepta `?auth=`);
   `GET /notifications/stream` (EventSource) usa `checkJwtConsulta` (igual, pero sin la excepción de `ARCHIVOS_PUBLICOS`).
+- Reportes Excel: nunca los generes dentro de una petición ni con una promesa suelta. Registra el generador en
+  `helpers/generadoresReporte.ts` y pídelo con `pedirReporte` (`controllers/Reportes.Controller.ts`): entra a la cola
+  y corre en el proceso de reportes. Su cuerpo debe ser serializable (viaja a otro proceso).
 - Para avisar a un usuario: `NotificacionService.crear(usuarioId, { titulo, mensaje, tipo, url, clave })` (`clave` evita
   repetir un aviso). Las tareas en segundo plano (reportes) no deben rechazar: captura y notifica el error.
 - Usa `MovimientoTipoId` y las clases `TIPOS_*` (`src/entity/common/MovimientoTipoId.ts`) en vez de números
@@ -122,7 +128,7 @@ Documentación detallada: `docs/api/modelo-de-datos.md`, `docs/api/tipos-de-movi
 Ver `.env.example`. Imprescindibles: `JWTSECRET`, `SALT_ROUNDS`, `DB_HOST/PORT/USER/PASSWORD/DATABASE_NAME`,
 `DB_SYNCRO` (**`false`**: el esquema lo cambian las migraciones), `DB_LOGGING`,
 `PORT_ALMACEN_API`, rutas de archivos (`RUTA_ARCHIVOS`, `RUTA_REPORTES`, `UPLOADS`, `ARCHIVOS_AUXILIARES`,
-`IMAGENES_IMPORTACION`), `SMTP_*`, `SMTP_ANULAR` (pruebas y staging), `SOPORTE_CORREO`, `CONFIG_CLAVE`, `DIAS_CUARENTENA`, `HORAS_PASSWORD_TEMPORAL`, `CACHE_ARCHIVOS_DIAS`, `REPORTES_DIAS`, `LOG_NIVEL`
+`IMAGENES_IMPORTACION`), `SMTP_*`, `SMTP_ANULAR` (pruebas y staging), `SOPORTE_CORREO`, `CONFIG_CLAVE`, `DIAS_CUARENTENA`, `HORAS_PASSWORD_TEMPORAL`, `CACHE_ARCHIVOS_DIAS`, `REPORTES_DIAS`, `REPORTES_MEMORIA_MB`, `REPORTES_MINUTOS_MAX`, `REPORTES_PROCESO`, `LOG_NIVEL`
 (o `LOG_CONSOLE_VERBOSE`).
 `ENV_FILE=.env.test npm run migration:show` apunta `src/migrar.ts` a otro archivo de variables.
 

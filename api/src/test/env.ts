@@ -12,5 +12,8 @@ for (const ruta of ["RUTA_ARCHIVOS", "RUTA_REPORTES", "UPLOADS", "ARCHIVOS_AUXIL
   if (valor && !isAbsolute(valor)) process.env[ruta] = resolve(__dirname, "../..", valor) + (valor.endsWith("/") ? "/" : "");
 }
 
+// Los reportes se generan dentro del proceso de pruebas; `reporteProceso.int.test.ts` prueba el proceso hijo.
+process.env.REPORTES_PROCESO ??= "interno";
+
 // Las pruebas de integración hacen varias peticiones HTTP reales contra MariaDB.
 if (typeof jest !== "undefined") jest.setTimeout(30000);
