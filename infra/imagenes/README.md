@@ -44,7 +44,13 @@ Imprime la etiqueta y el digest. Plataforma: `linux/amd64`.
 infra/imagenes/promover.sh api 2.89.0   # chronos-api:2.89.0-s -> chronos-api:2.89.0
 ```
 
-Falla si `X.Y.Z-s` no existe o si `X.Y.Z` ya existe. Imprime el digest, que debe coincidir con el de `-s`.
+Falla si `X.Y.Z-s` no existe o si `X.Y.Z` ya existe. Imprime el digest, que debe coincidir con el de `-s`: la copia
+es exacta (`--prefer-index=false`).
+
+Las etiquetas de producción promovidas hasta el 2026-11-19 (api `2.89.0` y `2.93.0`, web `4.10.0` y `4.14.2`) se
+publicaron sin esa opción: son un índice que envuelve el mismo manifiesto que su `-s`, así que su digest de primer
+nivel es distinto aunque la imagen sea la misma. Para comprobarlo, `docker buildx imagetools inspect --raw <etiqueta>`
+lista dentro del índice el digest de la `-s`.
 
 ## Verificar una imagen
 
