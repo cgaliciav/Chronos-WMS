@@ -3,13 +3,15 @@ import multer from "multer";
 import ConfiguracionController from "../controllers/Configuracion.Controller";
 import { checkJwt } from "../middlewares/verificarJwt";
 import { checkRole } from "../middlewares/verificarRol";
+import { CODIGO_CONFIGURACION } from "../services/perfiles";
 
 /**
  * Configuración por cliente (plan 03 §2.2). `GET /config/public*` no lleva token: lo necesita la pantalla de login y
- * solo contiene lo que se muestra en ella. El resto exige `ADMINISTRADOR` o `CONFIGURACION-EDITAR`.
+ * solo contiene lo que se muestra en ella. El resto exige `CONFIGURACION-EDITAR`, que tiene el perfil Superadministrador
+ * (decisión 22): `ADMINISTRADOR` no basta.
  */
 const router = Router();
-const ROLES = ["ADMINISTRADOR", "CONFIGURACION-EDITAR"];
+const ROLES = [CODIGO_CONFIGURACION];
 // Imágenes de marca en memoria (se normalizan con sharp y se guardan en `Archivo`): 2 MiB como máximo
 const subida = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024, files: 1 } });
 

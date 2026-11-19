@@ -9,6 +9,7 @@ import type {
   Bodega,
   ModoVisibilidad,
   ParametrosTabla,
+  Perfil,
   Proveedor,
   Proyecto,
   ResultadoTabla,
@@ -98,9 +99,13 @@ export interface ValoresFormaProyecto {
 
 export interface ValoresFormaUsuario {
   nombre: string
-  correo: string
+  /** Vacío con `sinCorreo`: el API inventa uno. */
+  correo?: string
   fechaVencimiento: Dayjs
-  roles: number[]
+  /** Obligatorio salvo con `sinCorreo`. */
+  perfil?: Perfil
+  /** Usuario sin correo (decisión 23): no entra al sistema ni recibe correos; se guarda con el perfil `sin-acceso`. */
+  sinCorreo?: boolean
   areas: number[]
   bodegas: number[]
   proyectosInternos?: number[]

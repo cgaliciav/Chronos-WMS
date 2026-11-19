@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { Perfil } from "../entity/common/Perfil";
+import { PERFILES_ASIGNABLES } from "../services/perfiles";
 
 /** Esquemas zod de los cuerpos de petición (asignación masiva e inyección por objeto: hallazgos H6, M2). */
 
@@ -114,9 +116,11 @@ const fecha = z.union([z.string().min(4), z.date()]);
 export const usuarioNuevoSchema = z
   .object({
     nombre: texto(255),
-    correo: z.string().trim().email().max(100),
+    /** Obligatorio salvo con el perfil `sin-acceso` (usuario sin correo, decisión 23): ahí lo inventa el API. */
+    correo: z.string().trim().email().max(100).optional(),
     vencimiento: fecha,
-    rolesIds: ids.default([]),
+    /** De él salen los permisos (decisión 22). Los roles sueltos ya no se asignan. */
+    perfil: z.enum(PERFILES_ASIGNABLES),
     proyectosIds: ids.default([]),
     bodegasIds: ids.default([]),
     areasIds: ids.default([]),
@@ -125,8 +129,18 @@ export const usuarioNuevoSchema = z
   })
   .strip();
 
-/** PUT /user/edit */
-export const usuarioEditarSchema = usuarioNuevoSchema.extend({ id }).strip();
+/** El correo solo puede faltar con el perfil `sin-acceso`; en la edición sin `perfil` lo decide el controlador. */
+const correoSegunPerfil = (u: { perfil?: string; correo?: string }) => u.perfil === Perfil.SIN_ACCESO || u.perfil === undefined || !!u.correo;
+const SIN_CORREO = { message: "El correo es obligatorio", path: ["correo"] };
+
+/** POST /user/new con la regla del correo. */
+export const usuarioNuevoValidadoSchema = usuarioNuevoSchema.refine(correoSegunPerfil, SIN_CORREO);
+
+/** PUT /user/edit — sin `perfil` se conserva el que tiene (así sigue un usuario `personalizado`). */
+export const usuarioEditarSchema = usuarioNuevoSchema
+  .extend({ id, perfil: z.enum(PERFILES_ASIGNABLES).optional() })
+  .strip()
+  .refine(correoSegunPerfil, SIN_CORREO);
 
 /** PUT /user/renewpassword */
 export const regenerarPasswordSchema = z.object({ email: z.string().trim().email().max(100) }).strip();

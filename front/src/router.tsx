@@ -4,6 +4,7 @@ import { Spin } from 'antd'
 import RaizLayout from 'app/layouts/RaizLayout'
 import ErrorPage from 'app/errors/ErrorPage'
 import { useUsuarioStore } from 'stores/usuario.store'
+import { primeraRutaPermitida } from 'app/menu/useMenuItems'
 import { convertirEnlaceHash } from 'helpers/enlacesHash'
 
 type Cargador = () => Promise<{ default: ComponentType }>
@@ -103,10 +104,16 @@ export const RUTAS: Array<[ruta: string, cargar: Cargador]> = [
   ['/auth/503', () => Promise.resolve({ default: () => <ErrorPage code={503} /> })],
 ]
 
-/** `/` lleva al catálogo de validaciones o al general según los permisos (como antes). */
+/**
+ * `/` lleva al catálogo de validaciones o al general según los permisos (como antes); quien no puede abrir el
+ * catálogo general (perfiles Visita y Encargado de Producción) va a la primera pantalla de su menú.
+ */
 function RedireccionInicial() {
   const permisos = useUsuarioStore(estado => estado.permisos)
-  const destino = permisos.includes('VALIDACIONES') ? '/catalogo/validaciones' : '/catalogo/general'
+  let destino = '/catalogo/general'
+  if (permisos.includes('VALIDACIONES')) destino = '/catalogo/validaciones'
+  else if (!permisos.includes('ADMINISTRADOR') && !permisos.includes('V-CATALOGO-GENERAL'))
+    destino = primeraRutaPermitida(permisos) ?? destino
   return <Navigate to={destino} replace />
 }
 

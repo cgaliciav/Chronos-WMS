@@ -1,8 +1,7 @@
-import { Button, Card, Flex, Form, Input, Space, Typography } from 'antd'
+import { Button, Card, Flex, Form, Input, Typography } from 'antd'
 import { useNavigate } from 'react-router'
 import { version } from '../../../package.json'
 import Titulo from 'components/Titulo'
-import { limpiarCache } from 'helpers/limpiarCache'
 import { useVersionApi } from 'app/layouts/useVersionApi'
 import { useMarcaStore } from 'stores/marca.store'
 import { useUsuarioStore } from 'stores/usuario.store'
@@ -58,10 +57,7 @@ export default function LoginPage() {
         <Typography.Text type="secondary" style={{ textAlign: 'center' }}>
           {textoAyudaLogin}
         </Typography.Text>
-        <Space>
-          <Typography.Text>{`Versión: ${version}`}</Typography.Text>
-          <Button onClick={() => void limpiarCache()}>Actualizar</Button>
-        </Space>
+        <Typography.Text>{`Versión: ${version}`}</Typography.Text>
         <Typography.Text strong>{`Versión API: ${versionApi}`}</Typography.Text>
       </Flex>
     </Flex>

@@ -6,9 +6,25 @@ import { menuItems, type EntradaMenu } from './menuItems'
 
 type ElementoMenu = NonNullable<MenuProps['items']>[number]
 
-/** ¿Puede ver la entrada? `ADMINISTRADOR` ve todo; el resto necesita el `role` de la entrada. */
+/** Roles que `ADMINISTRADOR` no sustituye: la Configuración es solo del perfil Superadministrador (decisión 22). */
+export const ROLES_SIN_ATAJO_ADMINISTRADOR = ['CONFIGURACION-EDITAR']
+
+/** ¿Puede ver la entrada? `ADMINISTRADOR` ve todo salvo la Configuración; el resto necesita el `role` de la entrada. */
 export function entradaPermitida(entrada: EntradaMenu, permisos: string[]): boolean {
-  return permisos.includes('ADMINISTRADOR') || permisos.includes(entrada.role)
+  if (permisos.includes(entrada.role)) return true
+  return permisos.includes('ADMINISTRADOR') && !ROLES_SIN_ATAJO_ADMINISTRADOR.includes(entrada.role)
+}
+
+/** Primera pantalla del menú que el usuario puede abrir (para la redirección inicial). */
+export function primeraRutaPermitida(permisos: string[]): string | undefined {
+  const buscar = (entradas: EntradaMenu[]): string | undefined => {
+    for (const entrada of entradas) {
+      const ruta = entrada.children ? buscar(entrada.children) : entrada.url
+      if (ruta) return ruta
+    }
+    return undefined
+  }
+  return buscar(filtrarMenu(menuItems, permisos))
 }
 
 /** Filtra el menú por permisos (recursivo) y quita los submenús que se quedan vacíos. */

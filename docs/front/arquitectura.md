@@ -39,7 +39,7 @@ services/axios/     apiClient (interceptores: token, renovación, error → noti
                     21 servicios por recurso (incluido notificaciones)
 types/api.ts        tipos de las respuestas del API
 components/         Titulo.tsx; ui/ Tarjeta, Encabezado, Comentario
-helpers/            storage, feedback, fechas, log, limpiarCache, funcionesExtras
+helpers/            storage, feedback, fechas, log, funcionesExtras
 pages/
   administracion/   usuarios, proyectos, proveedores, areas, bodegas (+ tipos.ts)
   catalogos/        1.general … 7.inventarioVisual, articulos (detalle/editar/validado) (+ tipos.ts)

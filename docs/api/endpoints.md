@@ -24,6 +24,18 @@ del usuario. `ADMIN` = `ADMINISTRADOR` (siempre incluido salvo que se indique). 
 - Token sin firma válida o ausente → `401`; registro inexistente → `404 REGISTRO NO ENCONTRADO`.
 - Las columnas `numeric` (`cantidad`, `cantidadAlmacen`, precios, totales) llegan como **número** en el JSON (antes string `"5.0000"`).
 
+**Cambios de v2.93.0 (perfiles y usuarios sin correo, decisiones 22 y 23):**
+- ⚠ `POST /user/new` exige `perfil` (`superadministrador | administrador | encargado-produccion | visita | sin-acceso`) y
+  ya no acepta `rolesIds`. `PUT /user/edit` acepta `perfil` (opcional: sin él se conserva; al asignar uno se retiran los
+  roles sueltos). `correo` es obligatorio salvo con `sin-acceso`, donde el API inventa `nombre@fake.exogrid.io`.
+  `POST /user/new` responde además `correo` y `perfil`.
+- Solo un Superadministrador asigna o edita a un Superadministrador (`403`); nadie cambia su propio perfil (`400`).
+- `GET /user/current` añade `perfil`; `roles` son los códigos efectivos del perfil (los usa el front en menú y ACL).
+  Los listados y `GET /user/:id` incluyen `perfil`.
+- ⚠ `/config` (salvo `/config/public*`) exige `CONFIGURACION-EDITAR`, que solo tiene el Superadministrador.
+- Un usuario `sin-acceso` no inicia sesión (`401`) ni admite `PUT /user/renewpassword` (`400`), y no recibe correos.
+- `POST /groups/list-by-group-antd` en modo PRODUCCIÓN EXCLUSIVA solo trae los listados de las producciones del usuario.
+
 **Cambios de la fase 3 del plan 02 (coordinar con el front, plan 01):** todos son compatibles hacia atrás salvo
 los marcados con ⚠.
 - `PUT /groups/activity` y `PUT /groups/activity-add-transaction` aceptan dos campos opcionales:
