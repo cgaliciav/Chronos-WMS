@@ -24,8 +24,6 @@ const listadoTipoMovimientos = [
   { id: 16, nombre: 'Baja Injustificada' },
   { id: 11, nombre: 'Renta Externa' },
   { id: 15, nombre: 'Compra' },
-  { id: 7, nombre: 'Transferencia Origen' },
-  { id: 12, nombre: 'Transferencia Destino' },
 ]
 
 const FormaBusquedaProyecto = ({
@@ -60,7 +58,13 @@ const FormaBusquedaProyecto = ({
         setHabilitadoInterno(true)
         const tempBusqueda = leerJSON<BusquedaPorProyecto | null>('catalogoProyecto.busqueda', null)
         if (tempBusqueda !== undefined && tempBusqueda !== null) {
-          form.setFieldsValue({ ...tempBusqueda, bodegas: [1] })
+          // Una búsqueda guardada con una operación que ya no se ofrece (transferencias) se restaura sin ella.
+          const tipoMovimiento = listadoTipoMovimientos.some(
+            tipo => tipo.id === tempBusqueda.tipoMovimiento,
+          )
+            ? tempBusqueda.tipoMovimiento
+            : undefined
+          form.setFieldsValue({ ...tempBusqueda, tipoMovimiento, bodegas: [1] })
         }
       })
     // eslint-disable-next-line react-hooks/exhaustive-deps

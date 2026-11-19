@@ -15,6 +15,13 @@ Los códigos `F<n>` remiten a [`docs/hallazgos-codigo.md`](../docs/hallazgos-cod
 
 Pendiente: fase 7 del plan 01 (pruebas e2e con Playwright, CI y cobertura).
 
+## [4.14.2-d] - Sin publicar
+
+### Cambiado
+
+- Búsqueda por proyecto: el selector **Operación** solo ofrece Préstamo, Devolución, Baja Justificada, Baja
+  Injustificada, Renta Externa y Compra (se quitan Transferencia Origen y Transferencia Destino).
+
 ## [4.14.1-d] - Sin publicar
 
 ### Eliminado
