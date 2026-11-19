@@ -99,7 +99,17 @@ Después de subir, asigna la bodega y las áreas nuevas a los usuarios para que 
 
 La carga es para una base nueva. Para repetirla en staging (modo `caddy-amz` de la VM, `infra/staging/README.md`):
 
-1. Si configuraste la marca de AMZ en `/configuracion`, expórtala antes (`GET /config/export`), porque vive en la base.
+1. La marca y el resto de `/configuracion` viven en la base, en la tabla `configuracion`. Para no perderlas, respáldalas
+   antes de apagar. En la VM, en `~/chronos-amz` y con el stack encendido:
+
+   ```bash
+   docker compose -f compose.yml -f compose.staging.yml exec -T mariadb sh -c \
+     'mariadb-dump -uroot -p"$MARIADB_ROOT_PASSWORD" --no-create-info --replace chronos_amz configuracion' \
+     > configuracion-respaldo-$(date +%Y%m%d).sql
+   ```
+
+   El respaldo no necesita un token. `--replace` hace que, al restaurar, sus filas reemplacen las que crea la siembra.
+   También puedes exportar la marca desde el API (`GET /config/export`) e importarla al final.
 2. En la VM, en `~/chronos-amz`:
    - Apaga el stack: `docker compose -f compose.yml -f compose.staging.yml down`.
    - Aparta la base, sin borrarla: `mv db_data db_data.carga-v1-$(date +%Y%m%d)`.
@@ -108,7 +118,15 @@ La carga es para una base nueva. Para repetirla en staging (modo `caddy-amz` de 
    `./desplegar-caddy.sh amz --version-web <V> --version-api <V> --sembrar-admin <correo> --admin-nombre "<Nombre>"`
    con las versiones que ya corren. Las migraciones y la siembra crean el esquema, los catálogos y el administrador
    con contraseña temporal.
-4. Entra, cambia la contraseña del administrador y vuelve a importar la marca si la exportaste.
+4. Restaura la configuración y reinicia el API, por si tiene la anterior en caché:
+
+   ```bash
+   docker compose -f compose.yml -f compose.staging.yml exec -T mariadb sh -c \
+     'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" chronos_amz' < configuracion-respaldo-<AAAAMMDD>.sql
+   docker compose -f compose.yml -f compose.staging.yml restart api
+   ```
+
+   Entra y cambia la contraseña temporal del administrador. `subir.mjs` no acepta una contraseña temporal.
 5. Aparta el `estado-amz-stage.exogrid.xyz.json` anterior y ejecuta `subir.mjs`.
 
 ## Ensayo en local
