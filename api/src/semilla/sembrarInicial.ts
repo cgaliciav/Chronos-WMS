@@ -5,6 +5,7 @@
  * Los catálogos salen de `catalogo.json` (generado por `extraerCatalogo.ts`); áreas, bodegas, proyectos y
  * proveedores los captura el cliente.
  */
+import { Perfil } from "../entity/common/Perfil";
 import { DataSource, EntityManager } from "typeorm";
 import { EstatusEstado } from "../entity/common/NombreEstatus";
 import { Rol } from "../entity/Rol";
@@ -81,6 +82,7 @@ export async function sembrarInicial(conexion: DataSource, catalogo: Catalogo, o
         vencimiento,
         estatus: EstatusEstado.ACTIVO,
         roles: [rolAdmin],
+        perfil: Perfil.SUPERADMINISTRADOR,
       });
       passwordTemporal = asignarPasswordTemporal(admin);
       await manager.save(admin);

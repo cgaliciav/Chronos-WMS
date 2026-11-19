@@ -78,3 +78,24 @@ abre saldo, no aparece en préstamos activos ni genera avisos de vencimiento, y 
 Deshacer un movimiento de consumible resta sus deltas, aunque no sea el último. Cambiar el tipo de un producto
 (`PUT /item/edit`) solo se permite con todas sus unidades en el almacén; sin `productoTipoId` la edición conserva el tipo.
 
+## Transformación de productos: tipos 18 y 19 (plan 04, decisión 20)
+
+Una producción transforma unidades de un artículo que tiene (prestado o comprado por ella) en uno o más productos nuevos:
+de 1 extensión salen 7, o un banco se convierte en silla. Se registra **solo** con `PUT /groups/activity-transform`, en
+una transacción:
+
+| id | Nombre | Efecto | Clase |
+|---:|---|---|---|
+| 18 | TRANSFORMACIÓN | Sobre el original: baja por cantidad con proyecto (`cantidadAlmacen -= n`, de lo que está fuera). Consume saldo de las salidas de esa producción (relación `baja`); sin saldo suficiente, 400. | `TIPOS_REGRESO`, `TIPOS_BAJA_PROYECTO` |
+| 19 | ALTA POR TRANSFORMACIÓN | Crea el producto nuevo como una COMPRA: `cantidad = 0`, `cantidadAlmacen += n`, `no-disponible`, a cargo de la producción (abre saldo). Se devuelve al almacén con una DEVOLUCIÓN (4). | `TIPOS_ENTRADA`, `TIPOS_ORIGEN`, `TIPOS_ENTRADA_DE_PRODUCCION` |
+
+- Cada 19 queda ligado al 18 con una fila de `movimiento_relacion` de tipo `transformacion` (origen = 18, derivado = 19,
+  cantidad = unidades del producto nuevo). Es la única relación que une **inventarios distintos**.
+- El producto nuevo hereda área, almacén, tipo y precio original del artículo transformado, salvo que se indiquen; su
+  código se autogenera.
+- `TIPOS_TRANSFORMACION` = 18, 19: `PUT /groups/activity`, `activity-purchase` y `activity-add-transaction` los rechazan,
+  y `DELETE /groups/activity` responde 409 (no se deshacen en esta versión).
+- Expendables: transformar un expendable no descuenta existencias (ya se consumió al prestarse) y un producto nuevo
+  expendable nace en 0/0 sin pendiente.
+- Un listado de tipo 18 admite líneas 18 y 19 (`tiposAdmitidosEnListado`).
+

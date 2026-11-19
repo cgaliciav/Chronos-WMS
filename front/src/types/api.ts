@@ -37,12 +37,57 @@ export interface Rol extends NombreEstatus {
   codigoRol: string
 }
 
+/**
+ * Qué artículos ve y opera un usuario (decisión 21): `general` todos; `produccion` los comprados por sus proyectos o
+ * cuyo último movimiento es de ellos; `usuario` aquellos en cuyos movimientos es responsable o quien registró.
+ */
+export type ModoVisibilidad = 'general' | 'produccion' | 'usuario'
+export const OPCIONES_MODO_VISIBILIDAD: { value: ModoVisibilidad; label: string }[] = [
+  { value: 'general', label: 'General: todos los artículos' },
+  { value: 'produccion', label: 'Producción exclusiva: solo los de sus proyectos' },
+  { value: 'usuario', label: 'Usuario exclusivo: solo los de sus movimientos' },
+]
+
+/**
+ * Perfil del usuario (decisión 22): de él salen todos sus permisos (los traduce el API). `personalizado` es de usuarios
+ * anteriores a los perfiles (conservan sus roles sueltos) y `sin-acceso` de los usuarios sin correo (decisión 23).
+ */
+export type Perfil =
+  | 'superadministrador'
+  | 'administrador'
+  | 'encargado-produccion'
+  | 'visita'
+  | 'sin-acceso'
+  | 'personalizado'
+export const ETIQUETA_PERFIL: Record<Perfil, string> = {
+  superadministrador: 'Superadministrador',
+  administrador: 'Administrador',
+  'encargado-produccion': 'Encargado de Producción',
+  visita: 'Visita',
+  'sin-acceso': 'Sin correo (sin acceso)',
+  personalizado: 'Personalizado (roles anteriores)',
+}
+/** Perfiles que se eligen en el formulario, con lo que permite cada uno. */
+export const OPCIONES_PERFIL: { value: Perfil; label: string; descripcion: string }[] = [
+  { value: 'superadministrador', label: 'Superadministrador', descripcion: 'Puede hacer todo en el sistema' },
+  { value: 'administrador', label: 'Administrador', descripcion: 'Todo, excepto la Configuración' },
+  {
+    value: 'encargado-produccion',
+    label: 'Encargado de Producción',
+    descripcion:
+      'Búsqueda por proyecto, compras y listados por proyecto de préstamos, devoluciones y bajas (sin registrarlos)',
+  },
+  { value: 'visita', label: 'Visita', descripcion: 'Solo ve el listado de préstamos activos' },
+]
+
 export interface Usuario {
   id: number
   nombre: string
   correo: string
   estatus: Estatus
   vencimiento?: string
+  perfil?: Perfil
+  modoVisibilidad?: ModoVisibilidad
   roles?: Rol[]
   areas?: Area[]
   bodegas?: Bodega[]
@@ -76,6 +121,8 @@ export const OPCIONES_PRODUCTO_TIPO = [
   { value: PRODUCTO_TIPO.CONSUMIBLE, label: 'Expendable' },
 ]
 export type MovimientoTipo = NombreEstatus
+/** Ids fijos de `movimiento_tipo` que el front necesita por nombre (el resto llega del API). */
+export const MOVIMIENTO_TIPO = { TRANSFORMACION: 18, ALTA_POR_TRANSFORMACION: 19 } as const
 
 export interface ProductoClave {
   id: number
@@ -154,6 +201,33 @@ export interface Movimiento {
   saldoPendiente?: Numerico | null
   /** El producto era expendable al registrar el movimiento: no deja pendiente de devolución (plan 04). */
   consumible?: boolean
+}
+
+/** Respuesta de `PUT /groups/activity-transform`: el movimiento del original y los de los productos creados. */
+export interface ResultadoTransformacion {
+  origen: Movimiento
+  derivados: Movimiento[]
+}
+
+/** Un artículo relacionado por una transformación (`GET /activity/transformations-by-inventory/:id`). */
+export interface TransformacionArticulo {
+  id: number
+  fecha: string
+  /** Unidades del producto creado. */
+  cantidad: number
+  /** Unidades del artículo original que se usaron. */
+  cantidadOriginal: number
+  inventarioActualId: number
+  titulo: string
+  codigo: string | null
+  proyecto: string | null
+}
+
+export interface TransformacionesArticulo {
+  /** Artículos de los que salió este producto. */
+  origenes: TransformacionArticulo[]
+  /** Productos creados a partir de este artículo. */
+  derivados: TransformacionArticulo[]
 }
 
 export interface GrupoDetalle {

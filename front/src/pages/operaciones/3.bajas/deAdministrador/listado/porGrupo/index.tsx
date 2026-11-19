@@ -94,7 +94,7 @@ const BajasListado = () => {
   ]
 
   return (
-    <ACL roles={['OPERACION-BajasPORGRUPO', 'ADMINISTRADOR']} redirect>
+    <ACL roles={['OPERACION-BAJASPORGRUPO', 'ADMINISTRADOR']} redirect>
       <Titulo texto="Listado Bajas" />
       <Encabezado>Listados de Bajas</Encabezado>
       <Tarjeta>

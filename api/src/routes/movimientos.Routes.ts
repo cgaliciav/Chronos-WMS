@@ -14,6 +14,7 @@ router.get("/:id", soloDigitos("id"), [checkJwt,checkRole(["ADMINISTRADOR","MOVI
 router.get("/history-by-current-inventory/:id", soloDigitos("id"), [checkJwt,checkRole(["ADMINISTRADOR","MOVIMIENTO-HISTORIAL"])],MovimientoController.obtenerHistorialMovimiento)
 // Plan 02 fase 3: relación entre movimientos
 router.get("/:id/chain", soloDigitos("id"), [checkJwt,checkRole(["ADMINISTRADOR","MOVIMIENTO-DETALLE"])],MovimientoController.obtenerCadena)
+router.get("/transformations-by-inventory/:inventarioActualId", soloDigitos("inventarioActualId"), [checkJwt,checkRole(["ADMINISTRADOR","MOVIMIENTO-HISTORIAL"])],MovimientoController.obtenerTransformaciones)
 router.get("/open-by-inventory/:inventarioActualId", soloDigitos("inventarioActualId"), [checkJwt,checkRole(["ADMINISTRADOR","MOVIMIENTO-HISTORIAL"])],MovimientoController.obtenerAbiertosPorInventario)
 
 export default router;

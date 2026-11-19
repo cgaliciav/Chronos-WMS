@@ -26,6 +26,8 @@ src/data-source.ts      AppDataSource (TypeORM 1.x) con opcionesDataSource() des
                         MIGRACIONES, SUSCRIPTORES); conectarORM() la inicializa y avisa si hay migraciones pendientes
 src/migration/          migraciones (baseline idempotente, MovimientoRelacion, Notificacion) e index.ts con la lista MIGRACIONES
 src/services/           MovimientoService (registrar/deshacer/relacionar, transaccional), guardasRelacion,
+                        alcance (visibilidad por usuario, decisión 21: toda consulta u operación sobre artículos pasa el
+                        `alcanceDe(res.locals)` a las consultas o llama a `exigir*Visible`),
                         NotificacionService (crear/listar/marcar, emisor para SSE, vencimientos y retención cada 6 h),
                         ConfiguracionService (configuración por cliente del plan 03: caché 30 s, secreto SMTP cifrado, imágenes,
                         exportar/importar; ejemplo de cliente en infra/clientes/sony), PasswordService,
@@ -33,7 +35,8 @@ src/services/           MovimientoService (registrar/deshacer/relacionar, transa
                         reglas/efectosInventario.ts, reglas/planificarRelaciones.ts y reglas/notificaciones.ts (puras)
 src/routes/*.Routes.ts  un router por recurso; cada ruta lleva [checkJwt, checkRole([...])]; los ids numéricos usan
                         `"/x/:id", soloDigitos("id")` (middlewares/rutas.ts): Express 5 no admite `:id([0-9]+)`
-src/middlewares/        verificarJwt (cabecera `auth`; checkJwtArchivos y checkJwtConsulta aceptan `?auth=`), verificarRol (roles + áreas/bodegas/proyectos en res.locals), manejoErrores (AppError → JSON {code,message}), pasada (log)
+src/middlewares/        verificarJwt (cabecera `auth`; checkJwtArchivos y checkJwtConsulta aceptan `?auth=`), verificarRol (permisos del perfil del usuario
+                        según services/perfiles.ts, decisión 22, + áreas/bodegas/proyectos en res.locals), manejoErrores (AppError → JSON {code,message}), pasada (log)
 src/controllers/        clases con métodos estáticos (req,res,next); parsean, llaman a servicios o hacen CRUD y responden.
                         Los movimientos ya pasan por src/services; el resto de la lógica sigue en controladores
 src/controllers/common/Common.Controller.ts  CRUD genérico: listaTabla(Qry/And), nuevo, editar, habilitar/deshabilitar/finalizar, comentarios, archivos

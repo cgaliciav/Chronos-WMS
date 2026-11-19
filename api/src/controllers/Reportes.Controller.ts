@@ -15,6 +15,7 @@ import {
 } from "../helpers/excelFunctions";
 import { logger } from "../helpers/logger";
 import NotificacionService from "../services/NotificacionService";
+import { alcanceDe } from "../services/alcance";
 
 /** Quien pidió el reporte: recibe la notificación (plan 02 · fase 7) y el correo. */
 interface Destinatario {
@@ -83,7 +84,8 @@ class ReporteController {
     const { jwtPayload } = res.locals;
     try {
       const destinatario = await destinatarioDe(jwtPayload);
-      const datos = { ...body, nombreAlmacenista: jwtPayload.u };
+      // `alcance` siempre lo fija el servidor (decisión 21); nunca se toma del cuerpo de la petición.
+      const datos = { ...body, nombreAlmacenista: jwtPayload.u, alcance: alcanceDe(res.locals) };
       void generarEnSegundoPlano(body.fotoGrande ? "por grupo (foto grande)" : "por grupo", destinatario, () =>
         body.fotoGrande ? reportePorGrupoFotoGrande(datos) : reportePorGrupo(datos)
       );
@@ -94,7 +96,8 @@ class ReporteController {
   };
 
   static reportePorProyecto = async (req: Request, res: Response, next: NextFunction) => {
-    const { activos = false, ...body } = req.body;
+    const { activos = false, ...cuerpo } = req.body;
+    const body = { ...cuerpo, alcance: alcanceDe(res.locals) };
     const { jwtPayload } = res.locals;
     try {
       const destinatario = await destinatarioDe(jwtPayload);
@@ -114,9 +117,10 @@ class ReporteController {
 
   static reporteCierre = async (req: Request, res: Response, next: NextFunction) => {
     const { jwtPayload } = res.locals;
+    const alcance = alcanceDe(res.locals);
     try {
       const destinatario = await destinatarioDe(jwtPayload);
-      void generarEnSegundoPlano("de cierre", destinatario, () => reporteGeneral(req.body));
+      void generarEnSegundoPlano("de cierre", destinatario, () => reporteGeneral({ ...req.body, alcance }));
       res.json({ message: MENSAJE_EN_PROCESO });
     } catch (error) {
       next(error);

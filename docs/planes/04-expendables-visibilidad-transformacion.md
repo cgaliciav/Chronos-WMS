@@ -1,5 +1,12 @@
 # Plan 04 · Expendables, cantidades, visibilidad exclusiva y transformación
 
+> **Estado (2026-11-17):** bloques A, B y C hechos en código (API v2.92.0-d, front v4.13.0-d), con pruebas unitarias, de
+> integración y verificación en navegador contra la base de pruebas. Falta que una persona ensaye en staging y despliegue.
+> Diferencias con lo planeado: no se añadió `GET /product-types/list` (el front usa los ids fijos 1 y 2); la pantalla de
+> operación no muestra la existencia antes de registrar (la tabla del listado muestra la cantidad de cada línea); la guarda
+> de cambio de tipo de producto comprueba las existencias sin bloqueo; se añadió
+> `GET /activity/transformations-by-inventory/:id` para la pestaña de transformaciones del artículo.
+
 ## Contexto
 
 Se necesitan con urgencia cinco capacidades: expendables sin pendiente de devolución, préstamo y devolución

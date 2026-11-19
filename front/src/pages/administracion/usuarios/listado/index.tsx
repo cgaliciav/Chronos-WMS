@@ -1,4 +1,5 @@
 import Titulo from 'components/Titulo'
+import { ETIQUETA_PERFIL } from 'types/api'
 import Encabezado from 'components/ui/Encabezado'
 import Tarjeta from 'components/ui/Tarjeta'
 import { Popconfirm, Tag, Tooltip } from 'antd'
@@ -28,6 +29,14 @@ const UsuariosListado = () => {
       dataIndex: 'correo',
       sorter: true,
       ...obtenerPropsBusquedaInput(),
+      // El correo inventado de un usuario sin correo (decisión 23) no se muestra.
+      render: (correo: UsuarioListado['correo'], record) =>
+        record.perfil === 'sin-acceso' ? <Tag>SIN CORREO</Tag> : correo,
+    },
+    {
+      title: 'Perfil',
+      dataIndex: 'perfil',
+      render: (perfil: UsuarioListado['perfil']) => ETIQUETA_PERFIL[perfil ?? 'personalizado'],
     },
     {
       title: 'Estado',
@@ -88,6 +97,8 @@ const UsuariosListado = () => {
             </Tag>
           </Tooltip>
           <Popconfirm
+            // Un usuario sin correo no entra al sistema: no tiene contraseña que restablecer.
+            disabled={record.perfil === 'sin-acceso'}
             title="¿Estas seguro que quieres cambiar la contraseña del usuario?"
             onConfirm={() => AccionesTablaUsuarios.regenerarUsuario(record.correo)}
             onCancel={() => {}}

@@ -62,7 +62,10 @@ grande que incluya la versión.
   persona ensaye en staging y despliegue con el procedimiento (la marca de Sony se carga desde `infra/clientes/sony`).
 - `docs/planes/04-expendables-visibilidad-transformacion.md`: expendables (consumibles sin pendiente), cantidades y
   bajas por cantidad (bloque A), modos de visibilidad por usuario (bloque B) y transformación de productos (bloque C).
-  Decisiones 18-21. En curso: bloque A.
+  Decisiones 18-21. Bloques A, B y C hechos en código; falta que una persona ensaye en staging y despliegue.
+- Perfiles de usuario y usuarios sin correo (decisiones 22 y 23, sin plan propio): los permisos salen de `usuario.perfil`
+  (`api/src/services/perfiles.ts`); al añadir una pantalla o ruta a un perfil hay que poner el código del menú, el del
+  `<ACL>` y el de cada ruta del API que llama. Hecho en código; falta ensayo en staging y despliegue.
 - `docs/superpowers/specs/2026-11-10-caddy-docker-amz-design.md` y `docs/superpowers/plans/2026-11-10-caddy-docker-amz.md`:
   Caddy en Docker, imágenes en Docker Hub y cliente AMZ (decisión 17). Procedimientos: `docs/infra/`. El alta de producción de AMZ
   se hizo el 2026-11-17 (web `v4.10.0`, api `v2.89.0`, Linode de 2 GB) siguiendo `docs/infra/procedimiento-alta-amz.md`;

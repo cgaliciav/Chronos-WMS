@@ -7,7 +7,6 @@ import { Area } from "../entity/Area";
 import { Bodega } from "../entity/Bodega";
 import { EstatusEstado } from "../entity/common/NombreEstatus";
 import { Proyecto } from "../entity/Proyecto";
-import { Rol } from "../entity/Rol";
 import { Usuario } from "../entity/Usuario";
 import EnviarMail from "../helpers/enviarMail";
 import { AppError } from "../helpers/errorClases";
@@ -18,6 +17,37 @@ import CommonController, { ResultadoTabla } from "./common/Common.Controller";
 import { aplicarFiltros, columnaSegura, construirFiltros, direccionSegura } from "../helpers/filtrosTabla";
 import { logger } from "../helpers/logger";
 import { idSeguro, parametro } from "../helpers/ids";
+import { ModoVisibilidad } from "../entity/common/ModoVisibilidad";
+import { Perfil } from "../entity/common/Perfil";
+import { baseCorreoFalso, codigosDePerfil, DOMINIO_SIN_CORREO, esCorreoFalso } from "../services/perfiles";
+
+/** Correo inventado y libre para un usuario sin correo (decisión 23): `nombre@fake…`, `nombre.2@fake…`, … */
+const correoFalsoLibre = async (nombre: string) => {
+  const base = baseCorreoFalso(nombre);
+  for (let n = 1; n < 1000; n++) {
+    const correo = `${base}${n === 1 ? "" : `.${n}`}@${DOMINIO_SIN_CORREO}`;
+    if (!(await AppDataSource.getRepository(Usuario).existsBy({ correo }))) return correo;
+  }
+  throw new AppError("No se pudo generar el correo del usuario", 409);
+};
+
+/** Solo un Superadministrador da, quita o edita el perfil Superadministrador; nadie cambia su propio perfil. */
+const exigirPuedeAsignarPerfil = (locals: Record<string, any>, actual: Perfil | null, nuevo: Perfil, usuarioId?: number) => {
+  if ((actual === Perfil.SUPERADMINISTRADOR || nuevo === Perfil.SUPERADMINISTRADOR) && locals.perfil !== Perfil.SUPERADMINISTRADOR) {
+    throw new AppError("SOLO UN SUPERADMINISTRADOR PUEDE ASIGNAR O EDITAR A UN SUPERADMINISTRADOR", 403);
+  }
+  if (usuarioId !== undefined && usuarioId === Number(locals.jwtPayload.ui) && actual !== nuevo) {
+    throw new AppError("NO PUEDE CAMBIAR SU PROPIO PERFIL", 400);
+  }
+};
+
+/** El correo que se guarda: inventado para `sin-acceso`; para el resto, el indicado (nunca del dominio inventado). */
+const correoSegunPerfil = async (perfil: Perfil, nombre: string, correo: string | undefined, correoActual?: string) => {
+  if (perfil === Perfil.SIN_ACCESO) return correoActual && esCorreoFalso(correoActual) ? correoActual : correoFalsoLibre(nombre);
+  if (!correo) throw new AppError("El correo es obligatorio", 400);
+  if (esCorreoFalso(correo)) throw new AppError(`El dominio ${DOMINIO_SIN_CORREO} es solo para usuarios sin correo`, 400);
+  return correo;
+};
 
 // Filtros de la tabla de usuarios, parametrizados (hallazgo C1). `estatusExtendido` es una columna calculada.
 const ESTATUS_EXTENDIDO = 'if(usuario.estatus="inactivo","inactivo",if(usuario.vencimiento <= current_timestamp() ,"vencido","activo"))';
@@ -137,7 +167,8 @@ class UsuarioController{
     .then(usuario=>{
       const {roles,...usuarioSinRoles}=usuario;
       // `cambiarPassword` solo aparece con contraseña temporal: el front lleva al usuario a cambiarla (L2).
-      res.json({ ...usuarioSinRoles,roles:roles.map(r=>r.codigoRol), ...(jwtPayload.cp ? { cambiarPassword: true } : {}) });
+      // Los permisos salen del perfil (decisión 22); el front los usa en el menú y en los `<ACL>`.
+      res.json({ ...usuarioSinRoles,roles:codigosDePerfil(usuario.perfil, roles.map(r=>r.codigoRol)), ...(jwtPayload.cp ? { cambiarPassword: true } : {}) });
     })
     .catch(error=> next(error));
   }
@@ -207,18 +238,23 @@ class UsuarioController{
   //areas,bodegas, proyectos
   static nuevo = async (req: Request, res: Response,next:NextFunction) => {
     const { 
-      rolesIds, 
       proyectosIds, 
       bodegasIds, 
       areasIds, 
       vencimiento, 
+      modoVisibilidad,
+      perfil,
       ...body } = req.body;
     try {
+      exigirPuedeAsignarPerfil(res.locals, null, perfil);
+      body.correo = await correoSegunPerfil(perfil, body.nombre, body.correo);
       const usuario = new Usuario();
+      usuario.perfil = perfil;
       usuario.vencimiento = new Date(vencimiento);
+      usuario.modoVisibilidad = modoVisibilidad ?? ModoVisibilidad.GENERAL;
       // Temporal: el usuario debe cambiarla al entrar por primera vez (hallazgo L2)
       const password = asignarPasswordTemporal(usuario);
-      usuario.roles = await AppDataSource.getRepository(Rol).findBy({ id: In(rolesIds) });
+      usuario.roles = [];
       usuario.proyectos = await AppDataSource.getRepository(Proyecto).findBy({ id: In(proyectosIds) });
       usuario.bodegas = await AppDataSource.getRepository(Bodega).findBy({ id: In(bodegasIds) });
       usuario.areas = await AppDataSource.getRepository(Area).findBy({ id: In(areasIds) });
@@ -231,10 +267,13 @@ class UsuarioController{
       )
       res.json({
         nombre:usuarioCreado.nombre,
-        vencimiento:usuarioCreado.vencimiento
+        vencimiento:usuarioCreado.vencimiento,
+        correo:usuarioCreado.correo,
+        perfil:usuarioCreado.perfil,
       });
   
-      EnviarMail.correoNuevoUsuario(body.correo,password);
+      // Un usuario sin correo no entra al sistema: su contraseña temporal no se entrega a nadie.
+      if (perfil !== Perfil.SIN_ACCESO) EnviarMail.correoNuevoUsuario(body.correo,password);
       } catch (error) {
         next(error)
       }
@@ -247,18 +286,24 @@ class UsuarioController{
     const { 
       nombre,
       correo, 
-      rolesIds, 
       vencimiento,
       id,
       proyectosIds, 
       bodegasIds, 
-      areasIds } = req.body;
+      areasIds,
+      modoVisibilidad,
+      perfil } = req.body;
     try {
       const usuario:Usuario=await AppDataSource.getRepository(Usuario).findOneByOrFail({ id: idSeguro(id) });
+      const perfilNuevo: Perfil = perfil ?? usuario.perfil;
+      exigirPuedeAsignarPerfil(res.locals, usuario.perfil, perfilNuevo, usuario.id);
       usuario.nombre= nombre;
-      usuario.correo= correo;
-      usuario.roles = await AppDataSource.getRepository(Rol).findBy({ id: In(rolesIds) });
+      usuario.correo= await correoSegunPerfil(perfilNuevo, nombre, correo, usuario.correo);
+      // Al recibir un perfil se retiran los roles sueltos; un usuario `personalizado` que no cambia de perfil los conserva.
+      if (perfilNuevo !== Perfil.PERSONALIZADO) usuario.roles = [];
+      usuario.perfil = perfilNuevo;
       usuario.vencimiento = new Date(vencimiento);
+      if (modoVisibilidad !== undefined) usuario.modoVisibilidad = modoVisibilidad;
       usuario.proyectos = await AppDataSource.getRepository(Proyecto).findBy({ id: In(proyectosIds) });
       usuario.bodegas = await AppDataSource.getRepository(Bodega).findBy({ id: In(bodegasIds) });
       usuario.areas = await AppDataSource.getRepository(Area).findBy({ id: In(areasIds) });
@@ -322,9 +367,10 @@ class UsuarioController{
         throw new AppError("Correo requerido", 400);
       }
       const usuario = await AppDataSource.getRepository(Usuario).findOneOrFail({
-        select: { id: true, nombre: true, correo: true, password: true, vencimiento: true, estatus: true },
+        select: { id: true, nombre: true, correo: true, password: true, vencimiento: true, estatus: true, perfil: true },
         where: { correo: email },
       });
+      if (usuario.perfil === Perfil.SIN_ACCESO) throw new AppError("ESTE USUARIO NO TIENE CORREO NI ACCESO AL SISTEMA", 400);
       usuario.sesionId = si;
       const password = asignarPasswordTemporal(usuario); // temporal: debe cambiarla al entrar (hallazgo L2)
       await AppDataSource.getRepository(Usuario).save(usuario);

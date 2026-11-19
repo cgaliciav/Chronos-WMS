@@ -22,12 +22,13 @@ const UsuarioNuevo = () => {
       const proyectosIds = (values.proyectosInternos ?? []).concat(values.proyectosExternos ?? [])
       const respuesta = await UsuarioPeticiones.nuevo({
         nombre: values.nombre,
-        correo: values.correo,
-        rolesIds: values.roles,
+        correo: values.sinCorreo ? undefined : values.correo,
+        perfil: values.sinCorreo ? 'sin-acceso' : values.perfil,
         vencimiento: values.fechaVencimiento.format('YYYY-MM-DD HH:mm:ss'),
         proyectosIds,
         bodegasIds: values.bodegas,
         areasIds: values.areas,
+        modoVisibilidad: values.modoVisibilidad ?? 'general',
       })
       if (respuesta !== undefined) {
         navigate('/usuarios/listado')

@@ -9,6 +9,96 @@ La versión vive en `package.json` (la devuelve `/auth/version`, y Sentry la usa
 `desplegar.sh` publica una versión `X.Y.Z-d` como `X.Y.Z` y, si ya no lleva sufijo, sube el parche. Contrato con el
 front: [`docs/api/endpoints.md`](../docs/api/endpoints.md). Plan: [`docs/planes/02-api-relacion-movimientos.md`](../docs/planes/02-api-relacion-movimientos.md).
 
+## [2.93.0-d] - Sin publicar
+
+Perfiles de usuario (decisión 22) y usuarios sin correo (decisión 23). Requiere el front v4.14.0.
+
+### Añadido
+
+- `usuario.perfil` (migración `PerfilDeUsuario`): `superadministrador`, `administrador`, `encargado-produccion`, `visita`,
+  `sin-acceso` o `personalizado`. Los permisos salen del perfil (`services/perfiles.ts`): `checkRole` y
+  `GET /user/current` traducen el perfil a códigos de rol, así que un perfil nunca queda incompleto y no depende de la
+  tabla `rol`. Solo `personalizado` (usuarios anteriores) sigue usando sus roles sueltos.
+  - **Superadministrador:** todo. **Administrador:** todo menos la Configuración. **Encargado de Producción:** búsqueda
+    por proyecto, compras completas, reportes y listados por proyecto de préstamos, devoluciones y bajas con proyecto
+    (sin registrarlos). **Visita:** solo el listado de préstamos activos.
+  - La migración pasa a `superadministrador` a quien tenía el rol `ADMINISTRADOR`; el resto queda `personalizado`.
+- Usuarios **sin correo** (perfil `sin-acceso`): el API inventa `nombre@fake.exogrid.io`, no envía la contraseña, rechaza
+  su inicio de sesión y `PUT /user/renewpassword`, y `CorreoService` nunca envía a ese dominio. Siguen saliendo en las
+  listas de usuarios para asignarlos como responsables.
+- En modo PRODUCCIÓN EXCLUSIVA `POST /groups/list-by-group-antd` solo lista los listados de las producciones del usuario.
+
+### Cambiado
+
+- ⚠ `/config` (salvo `/config/public*`) exige `CONFIGURACION-EDITAR`; `ADMINISTRADOR` ya no basta.
+- ⚠ `POST /user/new` exige `perfil` y ya no acepta `rolesIds`; `PUT /user/edit` acepta `perfil` (sin él conserva el
+  actual) y al asignar uno retira los roles sueltos. `correo` solo puede faltar con `sin-acceso`.
+- Solo un Superadministrador asigna o edita a un Superadministrador (403) y nadie cambia su propio perfil (400).
+- La carga inicial (`sembrar`) crea al primer administrador con perfil `superadministrador`.
+
+### Corregido
+
+- Rol `OPERACION-BAJASPORGRUPO` (el front lo pedía mal escrito y no existía): lo crea la migración y está en el catálogo.
+
+## [2.92.1-d] - Sin publicar
+
+Roles que faltaban en el catálogo de carga inicial (hallazgo F23).
+
+### Corregido
+
+- En una base sembrada con `src/semilla/catalogo.json` (p. ej. un cliente nuevo), un usuario que no fuera ADMINISTRADOR
+  no podía abrir casi ninguna pantalla: faltaban 102 códigos de rol que exigen el front (`<ACL>`, menú) o rutas del API
+  (`MOVIMIENTO-HISTORIAL`, `MOVIMIENTO-DETALLE`, `COMENTARIO-NUEVO`…). La migración `RolesFaltantes` los crea donde no
+  existan (no asigna roles a nadie) y el catálogo ya los incluye.
+- Prueba `semilla/rolesDelCatalogo.test.ts`: falla si una ruta del API o una pantalla del front usa un rol que no está
+  en el catálogo.
+
+## [2.92.0-d] - Sin publicar
+
+Plan 04 · bloque C: transformación de productos (decisión 20).
+
+### Añadido
+
+- `PUT /groups/activity-transform` (rol `GRUPOS-TRANSFORMAR`): `cantidad` unidades del artículo `codigo`, que tiene la
+  producción `proyectoId`, se transforman en uno o más `productos` nuevos (`titulo`, `descripcion`, `cantidad` y,
+  opcionales, `productoTipoId`, `areaId`, `precio`; lo que falta se hereda del original). Todo en una transacción.
+  Responde `{ origen, derivados }`.
+- Tipos de movimiento **18 TRANSFORMACIÓN** (descuenta del pendiente de la producción las unidades usadas, como una baja
+  por cantidad) y **19 ALTA POR TRANSFORMACIÓN** (crea el producto nuevo a cargo de la producción, como una compra: se
+  devuelve al almacén con una devolución). Relación `transformacion` en `movimiento_relacion` entre el 18 y cada 19
+  (`GET /activity/:id/chain` la devuelve). Migración `Transformacion`.
+- `GET /activity/transformations-by-inventory/:inventarioActualId` (rol `MOVIMIENTO-HISTORIAL`): `{ origenes, derivados }`,
+  los artículos de los que salió un producto y los productos creados a partir de él.
+- Los listados de tipo 18 admiten líneas 18 y 19. En modo producción exclusiva, los productos creados por transformación
+  cuentan como comprados por la producción.
+
+### Restricciones
+
+- Solo se transforma lo que tiene la producción (prestado o comprado por ella); lo que está en el almacén se presta antes.
+- Los tipos 18 y 19 solo se registran desde `activity-transform` y **no se deshacen** (409): se corrige con bajas.
+
+## [2.91.0-d] - Sin publicar
+
+Plan 04 · bloque B: modos de visibilidad por usuario (decisión 21).
+
+### Añadido
+
+- `usuario.modoVisibilidad` (`general`, `produccion`, `usuario`; migración `UsuarioModoVisibilidad`, por defecto `general`).
+  `POST /user/new` y `PUT /user/edit` aceptan `modoVisibilidad` (en la edición, sin indicarlo se conserva) y
+  `GET /user/current` lo devuelve.
+- **Producción exclusiva** (`produccion`): el usuario solo ve los artículos que compró alguno de sus proyectos asignados
+  o cuyo último movimiento es de uno de ellos. Solo opera a nombre de esos proyectos (403 con otro).
+- **Usuario exclusivo** (`usuario`): solo ve los artículos en cuyos movimientos es responsable o quien registró.
+- El alcance se aplica en el servidor (`services/alcance.ts`): catálogos, listados de movimientos, préstamos activos,
+  creación de listados desde búsquedas, reportes, detalle e historial (404), edición de artículo e inventario (404),
+  escaneo por código (mismo 400 que un código inexistente), agregar operación y deshacer (404).
+- El rol ADMINISTRADOR ignora el modo. Los usuarios existentes quedan en `general`: nada cambia para ellos.
+
+### Limitaciones conocidas
+
+- Las cabeceras de los listados (`/groups/list-antd`, `/groups/:id`) no se filtran: muestran nombre, proyecto y número de
+  líneas, pero sus líneas sí se filtran. Los archivos (`/file/:id`) se sirven por id solo con token.
+
 ## [2.90.0-d] - Sin publicar
 
 Plan 04 · bloque A: expendables y bajas por cantidad (decisiones 18 y 19).

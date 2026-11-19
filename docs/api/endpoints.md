@@ -24,6 +24,18 @@ del usuario. `ADMIN` = `ADMINISTRADOR` (siempre incluido salvo que se indique). 
 - Token sin firma válida o ausente → `401`; registro inexistente → `404 REGISTRO NO ENCONTRADO`.
 - Las columnas `numeric` (`cantidad`, `cantidadAlmacen`, precios, totales) llegan como **número** en el JSON (antes string `"5.0000"`).
 
+**Cambios de v2.93.0 (perfiles y usuarios sin correo, decisiones 22 y 23):**
+- ⚠ `POST /user/new` exige `perfil` (`superadministrador | administrador | encargado-produccion | visita | sin-acceso`) y
+  ya no acepta `rolesIds`. `PUT /user/edit` acepta `perfil` (opcional: sin él se conserva; al asignar uno se retiran los
+  roles sueltos). `correo` es obligatorio salvo con `sin-acceso`, donde el API inventa `nombre@fake.exogrid.io`.
+  `POST /user/new` responde además `correo` y `perfil`.
+- Solo un Superadministrador asigna o edita a un Superadministrador (`403`); nadie cambia su propio perfil (`400`).
+- `GET /user/current` añade `perfil`; `roles` son los códigos efectivos del perfil (los usa el front en menú y ACL).
+  Los listados y `GET /user/:id` incluyen `perfil`.
+- ⚠ `/config` (salvo `/config/public*`) exige `CONFIGURACION-EDITAR`, que solo tiene el Superadministrador.
+- Un usuario `sin-acceso` no inicia sesión (`401`) ni admite `PUT /user/renewpassword` (`400`), y no recibe correos.
+- `POST /groups/list-by-group-antd` en modo PRODUCCIÓN EXCLUSIVA solo trae los listados de las producciones del usuario.
+
 **Cambios de la fase 3 del plan 02 (coordinar con el front, plan 01):** todos son compatibles hacia atrás salvo
 los marcados con ⚠.
 - `PUT /groups/activity` y `PUT /groups/activity-add-transaction` aceptan dos campos opcionales:
@@ -249,3 +261,36 @@ Una sección por fila: `marca`, `correo`, `reportes`, `regional` (campos y valor
 |---|---|---|---|
 | POST | `/reports/by-group` · `/by-project` · `/by-project-final` | REPORTE-GRUPO · -PROYECTO · -CIERRE | generan Excel en segundo plano en `RUTA_REPORTES`; se descargan por `GET /file/report/:nombre` |
 | POST | `/reports/by-use` · `/by-group-detail` · `/by-invoice` · `/by-inventory` | REPORTE-* | `501 No implementado` |
+
+## Alcance de datos por usuario (plan 04 bloque B, decisión 21)
+
+`usuario.modoVisibilidad` limita en el servidor qué artículos ve y opera cada usuario. `checkRole` deja el alcance en
+`res.locals.alcance` y la regla vive en `api/src/services/alcance.ts`. El rol ADMINISTRADOR siempre tiene alcance general.
+
+| Modo | Ve y opera |
+|---|---|
+| `general` | Todo (comportamiento anterior). |
+| `produccion` | Artículos con una COMPRA (1, 15) de alguno de sus proyectos asignados, o cuyo último movimiento con operación es de uno de ellos. Sin proyectos asignados no ve nada. Solo registra operaciones y compras con esos proyectos (403 con otro). |
+| `usuario` | Artículos en cuyos movimientos es quien registró (sesión del movimiento) o responsable de la operación (`usuariosIds`), en cualquier momento de su historial. |
+
+Respuestas para lo que queda fuera del alcance: los listados y reportes lo omiten; el detalle, historial, cadena, edición y
+deshacer responden **404**; el escaneo por código en `PUT /groups/activity` responde el mismo **400** que un código que no
+existe. `POST /user/new` y `PUT /user/edit` aceptan `modoVisibilidad`; `GET /user/current` lo devuelve.
+
+## Transformación de productos (plan 04 bloque C, decisión 20)
+
+| Método | Ruta | Rol | Cuerpo |
+|---|---|---|---|
+| PUT | `/groups/activity-transform` | GRUPOS-TRANSFORMAR | `{ codigo, cantidad, proyectoId, usuariosIds?, grupoId, productos: [{ titulo, descripcion?, cantidad, productoTipoId?, areaId?, precio? }] }` (1 a 50 productos) |
+
+| GET | `/activity/transformations-by-inventory/:inventarioActualId` | MOVIMIENTO-HISTORIAL | — |
+
+`PUT /groups/activity-transform` responde `{ origen, derivados }`: el movimiento TRANSFORMACIÓN (18) del artículo original y los movimientos ALTA POR
+TRANSFORMACIÓN (19) de los productos creados. `grupoId` es un listado de tipo 18 (`POST /groups/new-details` con
+`movimientoTipoId: 18`). Errores: 400 si la producción no tiene esas unidades del artículo; 403 si el usuario está en
+modo producción y el proyecto no es suyo. Detalle en `docs/api/tipos-de-movimiento.md`.
+
+`GET /activity/transformations-by-inventory/:id` responde `{ origenes, derivados }`; cada elemento lleva `titulo`,
+`codigo`, `inventarioActualId`, `cantidad` (unidades del producto creado), `cantidadOriginal` (unidades usadas del
+original), `proyecto`, `fecha` y los ids de los dos movimientos.
+

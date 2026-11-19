@@ -1,4 +1,5 @@
 import { Tag, Popconfirm, Typography, Badge } from 'antd'
+import ACL from 'app/auth/ACL'
 import { DeleteOutlined, DollarOutlined, EyeOutlined } from '@ant-design/icons'
 import { conToken, urlDelApi } from 'services/axios'
 import { obtenerPropsBusquedaInput } from 'pages/componentes/filtrosTablas'
@@ -176,24 +177,31 @@ const ColumnasOperaciones: ColumnasOperacionesComunes = {
     width: '20%',
     render: (movimientoId: number, record: MovimientoOperacion) => (
       <span>
-        <Tag color="blue">
-          <Link to={`/movimientos/detalle?uid=${movimientoId}`}>
-            <EyeOutlined />
-          </Link>
-        </Tag>
-
-        <Tag>
-          <Link to={`/articulos/detalle?uid=${record.inventarioActual?.id}`}>
-            <EyeOutlined />
-          </Link>
-        </Tag>
-
-        {editarPrecio && (
-          <Tag color="green">
-            <Link to={`/articulos/editar/detalle?uid=${record.inventarioActual?.id}&p=precios`}>
-              <DollarOutlined />
+        {/* Quien no puede abrir el detalle (perfil Visita) no ve el enlace. */}
+        <ACL roles={['DETALLE-MOVIMIENTO', 'ADMINISTRADOR']}>
+          <Tag color="blue">
+            <Link to={`/movimientos/detalle?uid=${movimientoId}`}>
+              <EyeOutlined />
             </Link>
           </Tag>
+        </ACL>
+
+        <ACL roles={['V-ARTICULOS-DETALLE', 'ADMINISTRADOR']}>
+          <Tag>
+            <Link to={`/articulos/detalle?uid=${record.inventarioActual?.id}`}>
+              <EyeOutlined />
+            </Link>
+          </Tag>
+        </ACL>
+
+        {editarPrecio && (
+          <ACL roles={['V-EDITAR-ARTICULOS-DETALLE', 'ADMINISTRADOR']}>
+            <Tag color="green">
+              <Link to={`/articulos/editar/detalle?uid=${record.inventarioActual?.id}&p=precios`}>
+                <DollarOutlined />
+              </Link>
+            </Tag>
+          </ACL>
         )}
 
         {quitarMovimiento ? (

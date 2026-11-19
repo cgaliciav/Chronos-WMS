@@ -56,12 +56,13 @@ const UsuarioEditar = () => {
       const respuesta = await UsuarioPeticiones.editar({
         id,
         nombre: values.nombre,
-        correo: values.correo,
-        rolesIds: values.roles,
+        correo: values.sinCorreo ? undefined : values.correo,
+        perfil: values.sinCorreo ? 'sin-acceso' : values.perfil,
         vencimiento: values.fechaVencimiento.format('YYYY-MM-DD HH:mm:ss'),
         proyectosIds: (values.proyectosInternos ?? []).concat(values.proyectosExternos ?? []),
         bodegasIds: values.bodegas,
         areasIds: values.areas,
+        modoVisibilidad: values.modoVisibilidad ?? 'general',
       })
       if (respuesta !== undefined) {
         navigate('/usuarios/listado')
@@ -146,13 +147,16 @@ const UsuarioEditar = () => {
           habilitado={usuario.estatus !== 'inactivo'}
           valores={{
             nombre: usuario.nombre,
-            correo: usuario.correo,
+            // El correo inventado de un usuario sin correo no se muestra ni se edita.
+            correo: usuario.perfil === 'sin-acceso' ? undefined : usuario.correo,
+            sinCorreo: usuario.perfil === 'sin-acceso',
+            perfil: usuario.perfil === 'sin-acceso' ? undefined : usuario.perfil,
             fechaVencimiento: dayjs(usuario.vencimiento),
             areas: (usuario.areas ?? []).map(elem => elem.id),
             bodegas: (usuario.bodegas ?? []).map(elem => elem.id),
             proyectosExternos: proyectos.filter(item => item.esExterno).map(elem => elem.id),
             proyectosInternos: proyectos.filter(item => !item.esExterno).map(elem => elem.id),
-            roles: (usuario.roles ?? []).map(elem => elem.id),
+            modoVisibilidad: usuario.modoVisibilidad ?? 'general',
           }}
         />
         <Divider />

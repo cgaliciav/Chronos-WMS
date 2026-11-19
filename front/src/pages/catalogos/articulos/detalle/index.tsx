@@ -1,4 +1,5 @@
 import { useEffect, useState, type MouseEvent } from 'react'
+import { tieneAlgunRol, useUsuarioStore } from 'stores/usuario.store'
 import { useLocation, Link } from 'react-router'
 import { Col, Divider, Row, Skeleton, Spin, Tabs, Tag } from 'antd'
 import QueryString from 'query-string'
@@ -14,6 +15,7 @@ import ClavesProducto from 'pages/componentes/claves'
 import PreciosProducto from 'pages/componentes/precios'
 import ArticuloDatos from 'pages/componentes/articulo'
 import Movimientos from 'pages/componentes/movimientos'
+import Transformaciones from 'pages/componentes/transformaciones'
 import Inventarios from 'pages/componentes/inventarios'
 import type { InventarioDetalle } from '../../tipos'
 
@@ -23,6 +25,10 @@ const ArticuloDetalle = () => {
   const [cargando, setCargando] = useState(true)
   // `null` hasta que responde el API; si la respuesta llega sin producto se sigue mostrando el esqueleto (F36).
   const [inventarioActual, setInventarioActual] = useState<InventarioDetalle | null>(null)
+
+  const puedeVerInventarios = useUsuarioStore(estado =>
+    tieneAlgunRol(estado.permisos, ['ADMINISTRADOR', 'VALIDACIONES']),
+  )
 
   const location = useLocation()
 
@@ -131,10 +137,20 @@ const ArticuloDetalle = () => {
                       children: <Movimientos inventarioActualId={id} loading={cargando} />,
                     },
                     {
-                      key: 'inventarios',
-                      label: 'Inventarios',
-                      children: <Inventarios productoId={producto.id} loading={cargando} />,
+                      key: 'transformaciones',
+                      label: 'Transformaciones',
+                      children: <Transformaciones inventarioActualId={id} loading={cargando} />,
                     },
+                    // El inventariado solo lo consulta quien valida (`/item-balance` exige ese permiso).
+                    ...(puedeVerInventarios
+                      ? [
+                          {
+                            key: 'inventarios',
+                            label: 'Inventarios',
+                            children: <Inventarios productoId={producto.id} loading={cargando} />,
+                          },
+                        ]
+                      : []),
                   ]}
                 />
               </Col>

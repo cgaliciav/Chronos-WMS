@@ -3,7 +3,7 @@ import UsuarioController from "../controllers/Usuario.Controller";
 import { checkJwt } from "../middlewares/verificarJwt";
 import { checkRole } from "../middlewares/verificarRol";
 import { validarBody } from "../middlewares/validar";
-import { regenerarPasswordSchema, usuarioEditarSchema, usuarioNuevoSchema } from "../esquemas";
+import { regenerarPasswordSchema, usuarioEditarSchema, usuarioNuevoValidadoSchema } from "../esquemas";
 import { soloDigitos } from "../middlewares/rutas";
 
 const router = Router();
@@ -18,7 +18,7 @@ router.put("/disable/:id", soloDigitos("id"), [checkJwt,checkRole(["ADMINISTRADO
 router.put("/enable/:id", soloDigitos("id"), [checkJwt,checkRole(["ADMINISTRADOR","USUARIO-HABILITAR"])],UsuarioController.habilitar)
 router.get("/:id", soloDigitos("id"), [checkJwt,checkRole(["ADMINISTRADOR","USUARIO-DETALLE"])],UsuarioController.obtenerId)
 router.put("/edit",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-EDITAR"]),validarBody(usuarioEditarSchema)],UsuarioController.editar)
-router.post("/new",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-NUEVO"]),validarBody(usuarioNuevoSchema)],UsuarioController.nuevo)
+router.post("/new",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-NUEVO"]),validarBody(usuarioNuevoValidadoSchema)],UsuarioController.nuevo)
 
 router.post("/comment",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-COMENTARIONUEVO"])],UsuarioController.agregarComentario)
 router.delete("/comment",[checkJwt,checkRole(["ADMINISTRADOR","USUARIO-COMENTARIOBORRAR"])],UsuarioController.quitarComentario)

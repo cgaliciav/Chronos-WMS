@@ -29,7 +29,7 @@ describe("L2 · contraseña temporal con cambio obligatorio", () => {
       nombre: "Usuario temporal",
       correo,
       vencimiento: "2030-01-01",
-      rolesIds: [],
+      perfil: "visita",
       proyectosIds: [SEMILLA.proyectoAId],
       bodegasIds: [SEMILLA.bodegaId],
       areasIds: [SEMILLA.areaId],

@@ -4,6 +4,7 @@ import type {
   Movimiento,
   ParametrosTabla,
   ResultadoTabla,
+  ResultadoTransformacion,
 } from 'types/api'
 
 const recurso = 'groups'
@@ -56,6 +57,9 @@ export default class GrupoPeticiones {
     PeticionBase.generalPut<Movimiento>(recurso, 'activity', parametros)
   static agregarMovimientoCompra = (parametros: Parametros = {}) =>
     PeticionBase.generalPut<Movimiento>(recurso, 'activity-purchase', parametros)
+  /** Transforma unidades de un artículo de la producción en productos nuevos (decisión 20). */
+  static transformar = (parametros: Parametros = {}) =>
+    PeticionBase.generalPut<ResultadoTransformacion>(recurso, 'activity-transform', parametros)
   static agregarOperacionAMovimiento = (parametros: Parametros = {}) =>
     PeticionBase.generalPut<Movimiento>(recurso, 'activity-add-transaction', parametros)
   static quitarMovimiento = (parametros: Parametros = {}) =>

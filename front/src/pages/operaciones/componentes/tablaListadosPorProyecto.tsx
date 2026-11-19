@@ -7,6 +7,7 @@ import type { ParametrosTabla } from 'types/api'
 import DetalleArticuloOperacionTabla from './detalleArticuloOperacionTabla'
 import type { MovimientoOperacion, PaginacionTabla, TablaListadosPorProyectoProps } from '../tipos'
 import EncabezadoTabla from 'components/ui/EncabezadoTabla'
+import { tieneAlgunRol, useUsuarioStore } from 'stores/usuario.store'
 
 export type { TablaListadosPorProyectoProps } from '../tipos'
 
@@ -38,6 +39,11 @@ const TablaOperacionesPorProyecto = ({
     sortOrder: 'descend',
     filters: {},
   })
+
+  // Quien no puede pedir el reporte (perfil Visita) no ve el botón.
+  const puedeReportar = useUsuarioStore(estado =>
+    tieneAlgunRol(estado.permisos, ['ADMINISTRADOR', 'REPORTE-PROYECTO']),
+  )
 
   const pedirDatos = (params: ParametrosTabla = {}) => {
     setLoading(true)
@@ -157,6 +163,7 @@ const TablaOperacionesPorProyecto = ({
       total={pagination.total}
       totalItems={pagination.totalItems}
       extra={
+        puedeReportar && (
         <Dropdown
           menu={{
             items: [
@@ -188,6 +195,7 @@ const TablaOperacionesPorProyecto = ({
             <DownOutlined />
           </Button>
         </Dropdown>
+        )
       }
     />
   )

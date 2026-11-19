@@ -15,6 +15,65 @@ Los códigos `F<n>` remiten a [`docs/hallazgos-codigo.md`](../docs/hallazgos-cod
 
 Pendiente: fase 7 del plan 01 (pruebas e2e con Playwright, CI y cobertura).
 
+## [4.14.1-d] - Sin publicar
+
+### Eliminado
+
+- Botón **Actualizar** de la pantalla de acceso y su helper `limpiarCache`: las versiones nuevas ya las aplica el aviso
+  de actualización.
+
+## [4.14.0-d] - Sin publicar
+
+Perfiles de usuario (decisión 22) y usuarios sin correo (decisión 23). Requiere el API v2.93.0.
+
+### Añadido
+
+- Campo **Perfil** en el formulario de usuarios: Superadministrador, Administrador, Encargado de Producción y Visita,
+  cada uno con la descripción de lo que permite. Sustituye a la lista de roles sueltos. Los usuarios anteriores
+  aparecen como «Personalizado (roles anteriores)» hasta que se les asigna un perfil.
+- Casilla **Sin correo**: el usuario solo existe para figurar como responsable; no pide correo, perfil ni visibilidad,
+  no entra al sistema y nunca recibe correos. En el listado aparece como «SIN CORREO» y no se le restablece la contraseña.
+- Columna **Perfil** en el listado de usuarios.
+
+### Cambiado
+
+- **Configuración** solo la ve y la abre el Superadministrador (permiso `CONFIGURACION-EDITAR`): el rol
+  `ADMINISTRADOR` ya no basta ni en el menú ni en la página.
+- La pantalla inicial (`/`) de quien no puede abrir el catálogo general es la primera de su menú (Visita: préstamos
+  activos; Encargado de Producción: búsqueda por proyecto).
+- Se ocultan a quien no tiene el permiso: el botón **Reportes** de los listados por proyecto y de préstamos activos,
+  los enlaces al detalle del movimiento y del artículo, el enlace de editar precio y la pestaña **Inventarios** del
+  detalle del artículo (antes llevaban a un 401).
+
+### Corregido
+
+- Los listados de bajas por listado pedían el rol `OPERACION-BajasPORGRUPO` (mal escrito, no existía): ahora
+  `OPERACION-BAJASPORGRUPO`.
+
+## [4.13.0-d] - Sin publicar
+
+Plan 04 · bloque C: transformación de productos (decisión 20). Requiere el API v2.92.0.
+
+### Añadido
+
+- Menú **Transformaciones** (rol `GRUPOS-TRANSFORMAR`): «Nueva Transformación» crea el listado de la producción y en su
+  pantalla se captura el artículo que se transforma, las unidades usadas y uno o más productos nuevos (título,
+  descripción, cantidad y tipo). Los productos nuevos quedan a cargo de la producción hasta que los devuelva. Rutas
+  `/transformaciones/nuevo`, `/transformaciones/operacion` y `/transformaciones/por-grupo`.
+- Pestaña **Transformaciones** en el detalle del artículo: de qué artículos salió («Se creó a partir de») y en qué
+  productos se transformó («Se transformó en»), con enlace a cada uno.
+
+## [4.12.0-d] - Sin publicar
+
+Plan 04 · bloque B: modos de visibilidad por usuario (decisión 21). Requiere el API v2.91.0.
+
+### Añadido
+
+- Campo **Visibilidad** en el alta y la edición de usuarios: General (todos los artículos), Producción exclusiva (solo los
+  artículos comprados por sus proyectos o cuyo último movimiento es de ellos) o Usuario exclusivo (solo los artículos en
+  cuyos movimientos es responsable o quien registró). El filtro lo aplica el API en catálogos, listados, reportes y
+  operaciones; los administradores siempre ven todo.
+
 ## [4.11.0-d] - Sin publicar
 
 Plan 04 · bloque A: cantidades en las operaciones y expendables (decisiones 18 y 19). Requiere el API v2.90.0.
