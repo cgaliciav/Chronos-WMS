@@ -29,7 +29,7 @@ src/pages/reportes/         por-usuario, de-cierre
 src/pages/componentes/      modales/formularios compartidos (precios, claves, características, archivos, comentarios, imágenes)
 src/pages/*/tipos.ts        tipos locales de cada área (complementan types/api.ts)
 src/components/             Titulo y ui/ (Tarjeta, Encabezado, Comentario)
-src/helpers/                storage, feedback, fechas, log, limpiarCache, funcionesExtras (mapeoOpciones, filtrarOpcion, idDeEtiquetado…)
+src/helpers/                storage, feedback, fechas, log, funcionesExtras (mapeoOpciones, filtrarOpcion, idDeEtiquetado…)
 src/app/                    armazón en TS: layouts (Raiz/Main/Auth), menu (menuItems + useMenuItems),
                             auth (ACL, LoginPage), errors (ErrorPage, ErrorBoundary), notificaciones (campana),
                             actualizacion (aviso de versión nueva, PWA)

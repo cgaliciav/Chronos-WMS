@@ -15,6 +15,13 @@ Los códigos `F<n>` remiten a [`docs/hallazgos-codigo.md`](../docs/hallazgos-cod
 
 Pendiente: fase 7 del plan 01 (pruebas e2e con Playwright, CI y cobertura).
 
+## [4.14.1-d] - Sin publicar
+
+### Eliminado
+
+- Botón **Actualizar** de la pantalla de acceso y su helper `limpiarCache`: las versiones nuevas ya las aplica el aviso
+  de actualización.
+
 ## [4.14.0-d] - Sin publicar
 
 Perfiles de usuario (decisión 22) y usuarios sin correo (decisión 23). Requiere el API v2.93.0.
