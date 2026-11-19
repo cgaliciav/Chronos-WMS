@@ -29,6 +29,7 @@ Requiere el API v2.94.0.
   elegido, de una en una. El movimiento toma el proyecto y los responsables del listado destino.
 - **Proveedores / Productos por proveedor** (`/proveedores/productos`): artículos comprados a un proveedor, con
   proyecto opcional; muestra precio, factura, proyecto y fecha. También se abre desde el listado de proveedores.
+  El botón **Reportes** genera el Excel (sin foto o con foto) de lo que muestra la tabla.
 
 ### Cambiado
 

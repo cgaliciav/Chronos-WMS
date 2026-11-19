@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useLocation, Link } from 'react-router'
 import QueryString from 'query-string'
-import { Button, Form, Select, Table, type TableProps } from 'antd'
+import { Button, Dropdown, Form, Select, Table, type TableProps } from 'antd'
+import { DownOutlined, FileExcelOutlined } from '@ant-design/icons'
+import { notification } from 'helpers/feedback'
+import ReportePeticiones from 'services/axios/reportes'
 import dayjs from 'dayjs'
 import ACL from 'app/auth/ACL'
 import Titulo from 'components/Titulo'
@@ -44,6 +47,9 @@ const ProductosPorProveedor = () => {
   const [datos, setDatos] = useState<MovimientoOperacion[]>([])
   const [pagination, setPagination] = useState<PaginacionTabla>({ current: 1, pageSize: 20 })
   const [cargando, setCargando] = useState(false)
+  // Orden y filtros de la tabla: el Excel se genera con los mismos.
+  const [vista, setVista] = useState<ParametrosTabla>(ORDEN_INICIAL)
+  const [pidiendoReporte, setPidiendoReporte] = useState(false)
   const [archivosImagenes, setArchivosImagenes] = useState<Archivo[]>([])
   const [mostrarModalImagenes, setMostrarModalImagenes] = useState(false)
   const location = useLocation()
@@ -70,6 +76,7 @@ const ProductosPorProveedor = () => {
 
   const buscar = (valores: Busqueda) => {
     setBusqueda(valores)
+    setVista(ORDEN_INICIAL)
     pedirDatos(valores, { ...ORDEN_INICIAL, pagination: { ...pagination, current: 1 } })
   }
 
@@ -102,12 +109,30 @@ const ProductosPorProveedor = () => {
     const esClave = Array.isArray(field)
       ? field.includes('productoClaves')
       : String(field).includes('productoClaves')
-    pedirDatos(busqueda, {
-      sortField: (esClave ? 'inventarioActual.id' : field) as string,
-      sortOrder: order,
-      pagination: paginacion,
-      filters,
+    const sortField = (esClave ? 'inventarioActual.id' : field) as string
+    setVista({ sortField, sortOrder: order, filters })
+    pedirDatos(busqueda, { sortField, sortOrder: order, pagination: paginacion, filters })
+  }
+
+  /** Pide el Excel de lo que muestra la tabla; llega por notificación y por correo, como los demás reportes. */
+  const pedirReporte = (conFoto: boolean) => {
+    if (busqueda.proveedorId === undefined) return
+    setPidiendoReporte(true)
+    ReportePeticiones.porProveedor({
+      proveedorId: busqueda.proveedorId,
+      proyectoId: busqueda.proyectoId,
+      conFoto,
+      sortField: vista.sortField,
+      sortOrder: vista.sortOrder,
+      filters: vista.filters,
     })
+      .then(respuesta => {
+        if (respuesta !== undefined) notification.success({ title: respuesta.message })
+      })
+      .catch(() => {}) // El interceptor de axios ya mostró el error.
+      .finally(() => {
+        setPidiendoReporte(false)
+      })
   }
 
   const columns: ColumnasOperacion = [
@@ -198,6 +223,23 @@ const ProductosPorProveedor = () => {
               titulo={proveedorNombre ? `Productos de ${proveedorNombre}` : 'Productos'}
               total={pagination.total}
               totalItems={pagination.totalItems}
+              extra={
+                <Dropdown
+                  disabled={busqueda.proveedorId === undefined}
+                  menu={{
+                    items: [
+                      { key: 'sinFoto', label: 'Excel sin foto', icon: <FileExcelOutlined /> },
+                      { key: 'conFoto', label: 'Excel con foto', icon: <FileExcelOutlined /> },
+                    ],
+                    onClick: ({ key }) => pedirReporte(key === 'conFoto'),
+                  }}
+                >
+                  <Button type="link" size="small" loading={pidiendoReporte}>
+                    Reportes
+                    <DownOutlined />
+                  </Button>
+                </Dropdown>
+              }
             />
           )}
           expandable={{
