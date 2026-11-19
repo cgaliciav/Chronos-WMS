@@ -16,6 +16,8 @@ import TablaOperaciones from 'pages/operaciones/componentes/tablaOperaciones'
 import ModalArchivos from 'pages/componentes/modalArchivos'
 import ModalComentarios from 'pages/componentes/modalComentarios'
 import ColumnasOperaciones from 'pages/operaciones/componentes/columnasTablaOperaciones'
+import NombreListado from 'pages/operaciones/componentes/nombreListado'
+import { useMoverMovimiento } from 'pages/operaciones/componentes/moverMovimiento'
 import type { Archivo, Comentario, Estatus, Grupo } from 'types/api'
 
 /** El grupo que muestra la página; hasta que llega del API, vacío y sin estatus. */
@@ -53,6 +55,11 @@ const AltasOperacion = () => {
       })
   }
 
+  // Mover un movimiento a otro listado del mismo tipo (solo administradores, decisión 25).
+  const { moverMovimiento, modalMover } = useMoverMovimiento(grupo, () =>
+    setConteoRefresh(conteo => conteo + 1),
+  )
+
   const columns = [
     ColumnasOperaciones.foto(setArchivosImagenes, setMostrarModalImagenes),
     ColumnasOperaciones.producto,
@@ -61,7 +68,11 @@ const AltasOperacion = () => {
     ColumnasOperaciones.almacen,
     ColumnasOperaciones.operacion,
     ColumnasOperaciones.almacenista,
-    ColumnasOperaciones.funciones(grupo.estatus === 'activo' ? quitarMovimiento : undefined),
+    ColumnasOperaciones.funciones(
+      grupo.estatus === 'activo' ? quitarMovimiento : undefined,
+      undefined,
+      grupo.estatus === 'activo' ? moverMovimiento : undefined,
+    ),
   ]
 
   const location = useLocation()
@@ -161,9 +172,11 @@ const AltasOperacion = () => {
               <Col span={12}>
                 <Row align="middle">
                   <Col>
-                    <Typography.Title style={{ margin: '0', color: 'mediumpurple' }} level={4}>
-                      {grupoNombre}
-                    </Typography.Title>
+                    <NombreListado
+                      grupoId={grupo.id}
+                      nombre={grupoNombre}
+                      alRenombrar={actualizar}
+                    />
                   </Col>
                 </Row>
               </Col>
@@ -252,6 +265,7 @@ const AltasOperacion = () => {
         relacionId={grupo.id}
         estatus={grupo.estatus}
       />
+      {modalMover}
     </ACL>
   )
 }

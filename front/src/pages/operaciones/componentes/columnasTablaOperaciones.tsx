@@ -1,6 +1,6 @@
-import { Tag, Popconfirm, Typography, Badge } from 'antd'
+import { Tag, Popconfirm, Tooltip, Typography, Badge } from 'antd'
 import ACL from 'app/auth/ACL'
-import { DeleteOutlined, DollarOutlined, EyeOutlined } from '@ant-design/icons'
+import { DeleteOutlined, DollarOutlined, EyeOutlined, SwapOutlined } from '@ant-design/icons'
 import { conToken, urlDelApi } from 'services/axios'
 import { obtenerPropsBusquedaInput } from 'pages/componentes/filtrosTablas'
 import type { Archivo, ProductoClave } from 'types/api'
@@ -25,10 +25,12 @@ export interface ColumnasOperacionesComunes {
   almacen: ColumnaOperacion
   operacion: ColumnaOperacion
   almacenista: ColumnaOperacion
-  /** Ver, ver artículo, editar precio (opcional) y quitar (solo si se pasa `quitarMovimiento`). */
+  /** Ver, ver artículo, editar precio (opcional), mover a otro listado (opcional) y quitar (solo si se pasa `quitarMovimiento`). */
   funciones: (
     quitarMovimiento?: FnQuitarMovimiento,
     editarPrecio?: boolean | null,
+    /** Abre la ventana para mover el movimiento a otro listado (solo lo ven los administradores). */
+    moverMovimiento?: (movimientoId: number) => void,
   ) => ColumnaOperacion
 }
 
@@ -170,7 +172,7 @@ const ColumnasOperaciones: ColumnasOperacionesComunes = {
     ellipsis: true,
     ...obtenerPropsBusquedaInput(),
   },
-  funciones: (quitarMovimiento, editarPrecio = null) => ({
+  funciones: (quitarMovimiento, editarPrecio = null, moverMovimiento) => ({
     title: '',
     dataIndex: 'id',
     key: 'action',
@@ -203,6 +205,25 @@ const ColumnasOperaciones: ColumnasOperacionesComunes = {
             </Tag>
           </ACL>
         )}
+
+        {moverMovimiento ? (
+          <ACL roles={['ADMINISTRADOR']}>
+            <Tooltip title="Mover a otro listado">
+              <Tag color="gold">
+                <a
+                  href="#"
+                  aria-label="Mover a otro listado"
+                  onClick={evento => {
+                    evento.preventDefault()
+                    moverMovimiento(movimientoId)
+                  }}
+                >
+                  <SwapOutlined />
+                </a>
+              </Tag>
+            </Tooltip>
+          </ACL>
+        ) : null}
 
         {quitarMovimiento ? (
           <Popconfirm

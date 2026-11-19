@@ -15,6 +15,7 @@ import FormaTransformacion, {
 } from 'pages/operaciones/componentes/formaTransformacion'
 import TablaOperaciones from 'pages/operaciones/componentes/tablaOperaciones'
 import ColumnasOperaciones from 'pages/operaciones/componentes/columnasTablaOperaciones'
+import NombreListado from 'pages/operaciones/componentes/nombreListado'
 import type { Archivo, Estatus, Grupo } from 'types/api'
 
 /** El grupo que muestra la página; hasta que llega del API, vacío y sin estatus. */
@@ -50,7 +51,7 @@ const TransformacionesOperacion = () => {
     setGrupoId(typeof uid === 'string' ? uid : 0)
   }, [location])
 
-  useEffect(() => {
+  const actualizar = () => {
     if (grupoId !== 0) {
       setCargando(true)
       GrupoPeticiones.obtenerId(grupoId)
@@ -62,6 +63,11 @@ const TransformacionesOperacion = () => {
           setCargando(false)
         })
     }
+  }
+
+  useEffect(() => {
+    actualizar()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [grupoId])
 
   const handleFinish = async (valores: ValoresTransformacion) => {
@@ -115,9 +121,7 @@ const TransformacionesOperacion = () => {
                   {proyectoNombre}
                 </Typography.Title>
               ) : null}
-              <Typography.Title style={{ margin: '0', color: 'mediumpurple' }} level={4}>
-                {grupoNombre}
-              </Typography.Title>
+              <NombreListado grupoId={grupo.id} nombre={grupoNombre} alRenombrar={actualizar} />
             </Col>
             <Col span={12}>
               <Row justify="end">

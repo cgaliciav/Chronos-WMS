@@ -464,6 +464,12 @@ export const menuItems: EntradaMenu[] = [
         url: '/proveedores/listado',
         role: 'V-ADMINISTRACION-PROVEEDORESLISTADO',
       },
+      {
+        key: 'proveedoresProductos',
+        title: 'Productos por proveedor',
+        url: '/proveedores/productos',
+        role: 'V-ADMINISTRACION-PROVEEDORESPRODUCTOS',
+      },
     ],
   },
 ]
