@@ -3,7 +3,7 @@ import Encabezado from 'components/ui/Encabezado'
 import Tarjeta from 'components/ui/Tarjeta'
 import { Popconfirm, Tag, Tooltip } from 'antd'
 import type { TableColumnsType } from 'antd'
-import { EditOutlined, StopOutlined } from '@ant-design/icons'
+import { EditOutlined, StopOutlined, UnorderedListOutlined } from '@ant-design/icons'
 import ACL from 'app/auth/ACL'
 import ProveedoresPeticiones from 'services/axios/proveedores'
 import {
@@ -78,6 +78,13 @@ const columns: TableColumnsType<ProveedorAdmin> = [
           <Tag color="blue">
             <Link to={`/proveedores/editar?uid=${id}`}>
               <EditOutlined />
+            </Link>
+          </Tag>
+        </Tooltip>
+        <Tooltip title="Ver productos comprados al proveedor">
+          <Tag color="purple">
+            <Link to={`/proveedores/productos?uid=${id}`}>
+              <UnorderedListOutlined />
             </Link>
           </Tag>
         </Tooltip>

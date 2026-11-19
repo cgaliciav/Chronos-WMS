@@ -48,6 +48,7 @@ Plan 01, fase 0, paso 2. Sirve de checklist para las fases 1–6 (no perder ruta
 | `/proveedores/listado` | `src/pages/administracion/proveedores/listado/index.tsx` | `V-ADMINISTRACION-PROVEEDORESLISTADO` ≠ ACL `PROVEEDOR-LISTADO` ⚠️ | `PUT /supplier/disable/:id`, `POST /supplier/list-antd` |  |
 | `/proveedores/nuevo` | `src/pages/administracion/proveedores/nuevo/index.tsx` | `V-ADMINISTRACION-PROVEEDORESNUEVO` ≠ ACL `PROVEEDOR-NUEVO` ⚠️ | `POST /supplier/new` |  |
 | `/proveedores/editar` | `src/pages/administracion/proveedores/editar/index.tsx` | fuera del menú · ACL `PROVEEDOR-EDITAR` | `GET /supplier/:id`, `PUT /supplier/disable/:id`, `PUT /supplier/edit`, `PUT /supplier/enable/:id` |  |
+| `/proveedores/productos` | `src/pages/administracion/proveedores/productos/index.tsx` | `V-ADMINISTRACION-PROVEEDORESPRODUCTOS` (menú y ACL) | `GET /supplier/list-names`, `GET /project/list-names`, `POST /groups/list-by-supplier-antd`, `POST /reports/by-supplier` |  |
 | `/areas/listado` | `src/pages/administracion/areas/listado/index.tsx` | `V-ADMINISTRACION-AREASLISTADO` ≠ ACL `AREA-LISTADO` ⚠️ | `PUT /area/disable/:id`, `POST /area/list-antd` |  |
 | `/areas/nuevo` | `src/pages/administracion/areas/nuevo/index.tsx` | `V-ADMINISTRACION-AREASNUEVO` ≠ ACL `AREA-NUEVO` ⚠️ | `POST /area/new` |  |
 | `/areas/editar` | `src/pages/administracion/areas/editar/index.tsx` | fuera del menú · ACL `AREA-EDITAR` | `GET /area/:id`, `PUT /area/disable/:id`, `PUT /area/edit`, `PUT /area/enable/:id` |  |

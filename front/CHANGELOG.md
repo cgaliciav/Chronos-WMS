@@ -15,6 +15,28 @@ Los códigos `F<n>` remiten a [`docs/hallazgos-codigo.md`](../docs/hallazgos-cod
 
 Pendiente: fase 7 del plan 01 (pruebas e2e con Playwright, CI y cobertura).
 
+## [4.15.0-d] - Sin publicar
+
+Renombrar listados, mover movimientos, detalle del artículo en ventana y productos por proveedor (decisiones 24-26).
+Requiere el API v2.94.0.
+
+### Añadido
+
+- **Nombre del listado editable** (solo administradores): un lápiz junto al nombre en la cabecera de las pantallas de
+  operación (préstamos, devoluciones, bajas, compras, altas, rentas externas, previos y transformaciones).
+- **Mover un movimiento a otro listado** (solo administradores): acción nueva en cada línea de las pantallas de
+  operación. Abre una ventana con los listados del mismo tipo (con búsqueda por nombre y proyecto) y mueve la línea al
+  elegido, de una en una. El movimiento toma el proyecto y los responsables del listado destino.
+- **Proveedores / Productos por proveedor** (`/proveedores/productos`): artículos comprados a un proveedor, con
+  proyecto opcional; muestra precio, factura, proyecto y fecha. También se abre desde el listado de proveedores.
+  El botón **Reportes** genera el Excel (sin foto o con foto) de lo que muestra la tabla.
+
+### Cambiado
+
+- En los resultados de las búsquedas, el detalle del artículo se abre en una **ventana al 80 %** del área visible, sin
+  salir de la búsqueda (con enlace «Abrir en página completa»). El detalle se extrajo a
+  `pages/componentes/detalleArticulo`.
+
 ## [4.14.2-d] - Sin publicar
 
 ### Cambiado

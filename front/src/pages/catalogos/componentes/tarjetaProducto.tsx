@@ -5,6 +5,8 @@ import { EyeOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import MovimientoPeticiones from 'services/axios/movimientos'
 import ImagenesEnCarrusel from 'pages/componentes/imagenesEnCarrusel'
+import ModalDetalleArticulo from 'pages/componentes/modalDetalleArticulo'
+import { tieneAlgunRol, useUsuarioStore } from 'stores/usuario.store'
 import { formatoMonedaMexico } from 'helpers/funcionesExtras'
 import type { Disponibilidad, Movimiento } from 'types/api'
 import type { InventarioCatalogo, ProductoCatalogo } from '../tipos'
@@ -64,10 +66,17 @@ const TarjetaProducto = ({
   }, [id])
 
   const navigate = useNavigate()
+  const [verDetalle, setVerDetalle] = useState(false)
+  const puedeVerDetalle = useUsuarioStore(estado =>
+    tieneAlgunRol(estado.permisos, ['V-ARTICULOS-DETALLE', 'ADMINISTRADOR']),
+  )
 
+  // El detalle se abre en una ventana sobre los resultados; con Ctrl/⌘ o botón central el enlace abre la página.
   const onClick = (e: MouseEvent) => {
+    if (e.ctrlKey || e.metaKey || e.shiftKey) return
     e.preventDefault()
-    navigate(`/articulos/detalle?uid=${id}`)
+    if (puedeVerDetalle) setVerDetalle(true)
+    else navigate(`/articulos/detalle?uid=${id}`)
   }
 
   const claveProducto =
@@ -98,7 +107,7 @@ const TarjetaProducto = ({
               </Col>
               <Col xs={10} sm={14} xl={16}>
                 <Row justify="center">
-                  <Link to={`/articulos/detalle?uid=${id}`}>
+                  <Link to={`/articulos/detalle?uid=${id}`} onClick={onClick}>
                     <Title level={4} ellipsis>
                       {' '}
                       {claveProducto.substring(3)}{' '}
@@ -189,6 +198,10 @@ const TarjetaProducto = ({
           </Col>
         </Row>
       </Card>
+      <ModalDetalleArticulo
+        inventarioActualId={verDetalle ? id : null}
+        cerrarModal={() => setVerDetalle(false)}
+      />
     </>
   )
 }

@@ -164,37 +164,37 @@ const TablaOperacionesPorProyecto = ({
       totalItems={pagination.totalItems}
       extra={
         puedeReportar && (
-        <Dropdown
-          menu={{
-            items: [
-              {
-                key: 'sinFoto',
-                label: (
-                  <Tag color="cyan">
-                    <a href="#" onClick={generarReporte}>
-                      <PrinterFilled /> Sin Foto
-                    </a>
-                  </Tag>
-                ),
-              },
-              {
-                key: 'conFoto',
-                label: (
-                  <Tag color="purple">
-                    <a href="#" onClick={generarReporteConFoto}>
-                      <PrinterFilled /> Con Foto
-                    </a>
-                  </Tag>
-                ),
-              },
-            ],
-          }}
-        >
-          <Button type="link" size="small">
-            Reportes
-            <DownOutlined />
-          </Button>
-        </Dropdown>
+          <Dropdown
+            menu={{
+              items: [
+                {
+                  key: 'sinFoto',
+                  label: (
+                    <Tag color="cyan">
+                      <a href="#" onClick={generarReporte}>
+                        <PrinterFilled /> Sin Foto
+                      </a>
+                    </Tag>
+                  ),
+                },
+                {
+                  key: 'conFoto',
+                  label: (
+                    <Tag color="purple">
+                      <a href="#" onClick={generarReporteConFoto}>
+                        <PrinterFilled /> Con Foto
+                      </a>
+                    </Tag>
+                  ),
+                },
+              ],
+            }}
+          >
+            <Button type="link" size="small">
+              Reportes
+              <DownOutlined />
+            </Button>
+          </Dropdown>
         )
       }
     />

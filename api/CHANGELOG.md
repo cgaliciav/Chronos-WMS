@@ -9,6 +9,28 @@ La versión vive en `package.json` (la devuelve `/auth/version`, y Sentry la usa
 `desplegar.sh` publica una versión `X.Y.Z-d` como `X.Y.Z` y, si ya no lleva sufijo, sube el parche. Contrato con el
 front: [`docs/api/endpoints.md`](../docs/api/endpoints.md). Plan: [`docs/planes/02-api-relacion-movimientos.md`](../docs/planes/02-api-relacion-movimientos.md).
 
+## [2.94.0-d] - Sin publicar
+
+Renombrar listados, mover movimientos entre listados y productos por proveedor (decisiones 24-26). Requiere el front
+v4.15.0.
+
+### Añadido
+
+- `PUT /groups/rename` `{ grupoId, nombre }`: cambia el nombre de un listado. Solo `ADMINISTRADOR` (perfiles
+  Superadministrador y Administrador). En una compra cambia también el número de la factura. `409` si otro listado ya
+  tiene ese nombre.
+- `PUT /groups/activity-move` `{ movimientoId, grupoOrigenId, grupoDestinoId }` (`MovimientoService.mover`): mueve un
+  movimiento a otro listado **del mismo tipo**, que debe existir y estar activo. La operación toma el proyecto y los
+  responsables del listado destino; las existencias no cambian. Solo `ADMINISTRADOR`. `409` si cambiaría de proyecto un
+  movimiento relacionado con otros (préstamo con devoluciones, compra con bajas…) o si es de una transformación.
+- `POST /groups/list-by-supplier-antd` `{ proveedorId, proyectoId?, …tabla }`: artículos comprados a un proveedor, con
+  proyecto opcional. Roles `ADMINISTRADOR` o `GRUPOS-LISTAPORPROVEEDOR`.
+- `POST /reports/by-supplier` `{ proveedorId, proyectoId?, conFoto?, sortField?, sortOrder?, filters? }`: Excel de los
+  artículos comprados a un proveedor, con el formato del reporte de compras por proyecto (hojas MXN y USD). Se genera
+  en segundo plano y llega por notificación y correo. Mismos roles que el listado.
+- Migración `RolesProductosPorProveedor`: roles `V-ADMINISTRACION-PROVEEDORESPRODUCTOS` y `GRUPOS-LISTAPORPROVEEDOR`
+  (también en el catálogo de carga inicial).
+
 ## [2.93.0-d] - Sin publicar
 
 Perfiles de usuario (decisión 22) y usuarios sin correo (decisión 23). Requiere el front v4.14.0.

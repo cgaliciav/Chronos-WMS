@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { Brackets, SelectQueryBuilder } from "typeorm";
+import { Brackets, Not, SelectQueryBuilder } from "typeorm";
 import { AppDataSource } from "../data-source";
 import { Grupo } from "../entity/Grupo";
 import {
@@ -1281,6 +1281,70 @@ class GrupoController {
     } catch (error) {
       next(error);
     }
+  };
+
+  /**
+   * `PUT /groups/rename` `{ grupoId, nombre }`: cambia el nombre de un listado (decisión 24, solo administradores).
+   * En una compra el nombre es el número de la factura, que se cambia a la par. 409 si otro listado ya se llama así.
+   */
+  static renombrar = async (req: Request, res: Response, next: NextFunction) => {
+    const { grupoId, nombre } = req.body;
+    try {
+      const repo = AppDataSource.getRepository(Grupo);
+      const grupo = await repo.findOne({ where: { id: idSeguro(grupoId, "grupoId") }, relations: { grupoDetalle: { facturaDetalle: true } } });
+      if (grupo == null) throw new AppError("No existe el listado", 404);
+      if (await repo.existsBy({ nombre, id: Not(grupo.id) })) throw new AppError("YA EXISTE UN LISTADO CON ESE NOMBRE", 409);
+      const factura = grupo.grupoDetalle?.facturaDetalle;
+      if (factura && nombre.length > 40) throw new AppError("El número de factura no puede tener más de 40 caracteres", 400);
+      await AppDataSource.transaction(async (manager) => {
+        grupo.nombre = nombre;
+        grupo.sesionId = res.locals.jwtPayload.si;
+        await manager.save(grupo);
+        if (factura) {
+          factura.numero = nombre;
+          factura.sesionId = res.locals.jwtPayload.si;
+          await manager.save(factura);
+        }
+      });
+      res.json({ id: grupo.id, nombre });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * `PUT /groups/activity-move` `{ movimientoId, grupoOrigenId, grupoDestinoId }`: mueve un movimiento a otro listado
+   * del mismo tipo (decisión 25, solo administradores). La operación toma el proyecto y los responsables del destino.
+   */
+  static moverMovimiento = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      res.json(await MovimientoService.mover({ ...req.body, sesionId: res.locals.jwtPayload.si }));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * `POST /groups/list-by-supplier-antd` `{ proveedorId, proyectoId?, …tabla }`: artículos comprados a un proveedor
+   * (líneas de sus facturas), opcionalmente de un solo proyecto. Misma forma que `list-by-project-antd`.
+   */
+  static listaTablaMovimientosPorProveedor = (req: Request, res: Response, next: NextFunction) => {
+    const { proveedorId, proyectoId, ...body } = req.body;
+    CommonController.listaTablaQryAnd(
+      body,
+      () => {
+        const consulta = funcionQueryListadoMovimientos(alcanceDe(res.locals)).where(
+          "proveedor.id = :proveedorId AND movimientoTipo.id IN (:...tiposCompra)",
+          { proveedorId: idSeguro(proveedorId, "proveedorId"), tiposCompra: [T.COMPRA, T.COMPRA_LEGADO] }
+        );
+        const proyecto = proyectoId === undefined || proyectoId === null || proyectoId === "" || Number(proyectoId) === 0 ? undefined : idSeguro(proyectoId, "proyectoId");
+        if (proyecto !== undefined) consulta.andWhere("proyecto.id = :proyectoProveedor", { proyectoProveedor: proyecto });
+        return consulta;
+      },
+      condicionesWhereAnd
+    )
+      .then((respuesta) => res.json(respuesta))
+      .catch((error) => next(error));
   };
 
   // ** quitarMovimiento

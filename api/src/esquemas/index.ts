@@ -107,6 +107,12 @@ export const agregarOperacionSchema = z
   })
   .strip();
 
+/** PUT /groups/rename — solo administradores (decisión 24). */
+export const renombrarGrupoSchema = z.object({ grupoId: id, nombre: z.string().trim().min(3).max(255) }).strip();
+
+/** PUT /groups/activity-move — solo administradores (decisión 25). */
+export const moverMovimientoSchema = z.object({ movimientoId: id, grupoOrigenId: id, grupoDestinoId: id }).strip();
+
 /** DELETE /groups/activity */
 export const quitarMovimientoSchema = z.object({ movimientoId: id }).strip();
 

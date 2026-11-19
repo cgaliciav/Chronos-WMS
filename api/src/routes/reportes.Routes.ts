@@ -9,6 +9,7 @@ const router = Router();
 
 router.post("/by-group",[checkJwt,checkRole(["ADMINISTRADOR","REPORTE-GRUPO"])], ReportesController.reportePorGrupo);
 router.post("/by-project",[checkJwt,checkRole(["ADMINISTRADOR","REPORTE-PROYECTO"])], ReportesController.reportePorProyecto);
+router.post("/by-supplier",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-LISTAPORPROVEEDOR"])], ReportesController.reportePorProveedor);
 router.post("/by-project-final",[checkJwt,checkRole(["ADMINISTRADOR","REPORTE-CIERRE"])], ReportesController.reporteCierre);
 router.post("/by-use",[checkJwt,checkRole(["ADMINISTRADOR","REPORTE-USO"])], ReportesController.reportePorUso);
 router.post("/by-group-detail",[checkJwt,checkRole(["ADMINISTRADOR","REPORTE-GRUPODETALLE"])], ReportesController.reportePorGrupoDetalle);

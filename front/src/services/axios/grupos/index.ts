@@ -64,6 +64,22 @@ export default class GrupoPeticiones {
     PeticionBase.generalPut<Movimiento>(recurso, 'activity-add-transaction', parametros)
   static quitarMovimiento = (parametros: Parametros = {}) =>
     PeticionBase.generalDelete(recurso, 'activity', parametros)
+  /** Cambia el nombre de un listado (solo administradores, decisión 24). */
+  static renombrar = (parametros: { grupoId: number | string; nombre: string }) =>
+    PeticionBase.generalPut<{ id: number; nombre: string }>(recurso, 'rename', parametros)
+  /** Mueve un movimiento a otro listado del mismo tipo (solo administradores, decisión 25). */
+  static moverMovimiento = (parametros: {
+    movimientoId: number
+    grupoOrigenId: number
+    grupoDestinoId: number
+  }) => PeticionBase.generalPut(recurso, 'activity-move', parametros)
+  /** Artículos comprados a un proveedor (`proveedorId`), opcionalmente de un proyecto (`proyectoId`). */
+  static listadoPorProveedor = (parametros: ParametrosTabla = {}) =>
+    PeticionBase.generalPost<ResultadoTabla<Movimiento>>(
+      recurso,
+      'list-by-supplier-antd',
+      parametros,
+    )
   static nuevoListadoDeGrupo = (parametros: Parametros = {}) =>
     PeticionBase.generalPost<Grupo>(recurso, 'create-list-from-group', parametros)
   static nuevoListadoDeCatalogoGeneral = (parametros: Parametros = {}) =>

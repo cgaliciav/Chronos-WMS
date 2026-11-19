@@ -26,6 +26,7 @@ export const RUTAS: Array<[ruta: string, cargar: Cargador]> = [
   ['/proveedores/listado', () => import('pages/administracion/proveedores/listado')],
   ['/proveedores/nuevo', () => import('pages/administracion/proveedores/nuevo')],
   ['/proveedores/editar', () => import('pages/administracion/proveedores/editar')],
+  ['/proveedores/productos', () => import('pages/administracion/proveedores/productos')],
   ['/areas/listado', () => import('pages/administracion/areas/listado')],
   ['/areas/nuevo', () => import('pages/administracion/areas/nuevo')],
   ['/areas/editar', () => import('pages/administracion/areas/editar')],
