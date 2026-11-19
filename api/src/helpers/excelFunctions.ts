@@ -19,6 +19,7 @@ import { Archivo } from "../entity/Archivo";
 import { Area } from "../entity/Area";
 import { Grupo } from "../entity/Grupo";
 import { Movimiento } from "../entity/Movimiento";
+import { Proveedor } from "../entity/Proveedor";
 import { Proyecto } from "../entity/Proyecto";
 import { Usuario } from "../entity/Usuario";
 import sharp, { Sharp } from "sharp";
@@ -1500,12 +1501,16 @@ const reportePorProyectoCompras = async (body: any) => {
     filters,
   });
 
-  const proyectoNombre = (await nombreProyecto(proyectoId));
+  // Reporte por proveedor (`reportePorProveedor`): las compras de un proveedor; el proyecto es opcional.
+  const proveedorId = body.proveedorId === undefined ? undefined : idSeguro(body.proveedorId, "proveedorId");
+  const sinProyecto = proyectoId === undefined || proyectoId === null || proyectoId === "" || Number(proyectoId) === 0;
+  const proyectoNombre = proveedorId !== undefined && sinProyecto ? "TODOS LOS PROYECTOS" : (await nombreProyecto(proyectoId));
+  const proveedorNombre: string | undefined = body.proveedorNombre;
 
   const areasNombres = areasIds ? (await AppDataSource.getRepository(Area).findBy({ id: In(areasIds) })).map(area => area.nombre).join(' - ') : '';
 
   const t0 = performance.now();
-  const nameProposal = [movimientoTipoNombre, areasNombres, proyectoNombre, idArchivo()]
+  const nameProposal = [movimientoTipoNombre, proveedorNombre, areasNombres, proyectoNombre, idArchivo()]
     .filter(item => item !== null && item !== undefined)
     .join('_');
 
@@ -1513,6 +1518,7 @@ const reportePorProyectoCompras = async (body: any) => {
   logger.debug(
     `"Iniciando generacion de reporte......${nombreReporte}.........." ${proyectoId}`
   );
+  const tituloReporte = [`REPORTE ${movimientoTipoNombre ?? ""}`, proveedorNombre, proyectoNombre ?? ""].filter((parte) => parte !== undefined).join(" - ");
 
   const workbook = new Workbook();
 
@@ -1532,14 +1538,14 @@ const reportePorProyectoCompras = async (body: any) => {
     sheet,
     workbook,
     columnasDetalleGrupoCompras.length,
-    `REPORTE ${movimientoTipoNombre ?? ""} - ${proyectoNombre ?? ""} - PESOS`
+    `${tituloReporte} - PESOS`
   );
 
   await agregarTituloHojaExcel(
     sheetUSD,
     workbook,
     columnasDetalleGrupoCompras.length,
-    `REPORTE ${movimientoTipoNombre ?? ""} - ${proyectoNombre ?? ""} - DÓLARES`
+    `${tituloReporte} - DÓLARES`
   );
 
   const campoOrden: string | string[] = sortField
@@ -1554,10 +1560,19 @@ const reportePorProyectoCompras = async (body: any) => {
     ? movimientoTipoId
     : [movimientoTipoId];
 
-  const qry = funcionQueryListadoMovimientos(body.alcance).where(
-    "proyecto.id=:proyectoId and movimientoTipo.id IN (:tiposMovimineto)",
-    { proyectoId, tiposMovimineto }
-  );
+  const qry =
+    proveedorId === undefined
+      ? funcionQueryListadoMovimientos(body.alcance).where(
+          "proyecto.id=:proyectoId and movimientoTipo.id IN (:tiposMovimineto)",
+          { proyectoId, tiposMovimineto }
+        )
+      : funcionQueryListadoMovimientos(body.alcance).where(
+          "proveedor.id=:proveedorId and movimientoTipo.id IN (:tiposMovimineto)",
+          { proveedorId, tiposMovimineto }
+        );
+  if (proveedorId !== undefined && !sinProyecto) {
+    qry.andWhere("proyecto.id=:proyectoId", { proyectoId: idSeguro(proyectoId, "proyectoId") });
+  }
 
   if ((usuariosIds?.length ?? 0) > 0) {
     qry.andWhere(
@@ -1792,6 +1807,29 @@ const reportePorPrestamosRentasActivas = async (body: any) => {
  * @param filename - The filename to be sanitized.
  * @returns The sanitized filename.
  */
+/**
+ * Excel de los artículos comprados a un proveedor (decisión 26): mismo formato que el reporte de compras por
+ * proyecto (hojas MXN y USD), con el proyecto opcional. 404 si el proveedor no existe.
+ */
+const reportePorProveedor = async (body: any) => {
+  const proveedor = await AppDataSource.getRepository(Proveedor).findOne({
+    where: { id: idSeguro(body.proveedorId, "proveedorId") },
+    select: { id: true, nombre: true },
+    loadEagerRelations: false,
+  });
+  if (!proveedor) throw new AppError("Proveedor no encontrado", 404);
+  return reportePorProyectoCompras({
+    ...body,
+    proveedorId: proveedor.id,
+    proveedorNombre: proveedor.nombre,
+    movimientoTipoNombre: "COMPRAS",
+    movimientoTipoId: [T.COMPRA, T.COMPRA_LEGADO],
+    usuariosIds: [],
+    areasIds: undefined,
+    bodegasIds: undefined,
+  });
+};
+
 function sanitizeFilename(filename: string): string {
   // Define the invalid characters
   const invalidChars = /[\/\\:*?"<>|]/g; // Note the 'g' flag for global replacement
@@ -1822,6 +1860,7 @@ export {
   reportePorPrestamosRentasActivas,
   reportePorProyecto,
   reportePorProyectoCompras,
+  reportePorProveedor,
   reportePorGrupoFotoGrande
 };
 

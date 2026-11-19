@@ -6,6 +6,7 @@
  *  - `POST /groups/list-by-supplier-antd`: artículos comprados a un proveedor, con proyecto opcional.
  */
 import "./env";
+import { Workbook } from "exceljs";
 import { Express } from "express";
 import { AppDataSource } from "../data-source";
 import { crearApp } from "../app";
@@ -14,6 +15,7 @@ import { Perfil } from "../entity/common/Perfil";
 import { Proveedor } from "../entity/Proveedor";
 import { Sesion } from "../entity/Sesion";
 import { Usuario } from "../entity/Usuario";
+import { reportePorProveedor } from "../helpers/excelFunctions";
 import { cerrarPruebas, conectarPruebas } from "./conexion";
 import { Cliente, clienteAdmin, clienteCon, crearArticulo, crearGrupoCompra, crearGrupoDetalle, inventarioDe, nombreUnico, registrarOperacion, tokenPara } from "./factories";
 import { SEMILLA } from "./seed";
@@ -198,6 +200,47 @@ describe("listados: renombrar, mover movimientos y productos por proveedor", () 
       expect(res.body.pagination.total).toBe(1);
       expect((await admin.post("/groups/list-by-supplier-antd").send(TABLA)).status).toBe(400);
       expect((await encargado.post("/groups/list-by-supplier-antd").send({ ...TABLA, proveedorId: proveedor.id })).status).toBe(401);
+    });
+
+    it("POST /reports/by-supplier genera el Excel de las compras del proveedor, con proyecto opcional", async () => {
+      const proveedor = await AppDataSource.getRepository(Proveedor).save(Object.assign(new Proveedor(), { nombre: nombreUnico("PROV EXCEL"), RFCEmite: "XAXX010101000" }));
+      const factura = async (proyectoId: number) =>
+        (
+          await admin.post("/groups/new-purchase").send({
+            nombre: nombreUnico("FACT"), proyectoId, movimientoTipoId: 15, usuariosIds: [SEMILLA.adminId], numero: nombreUnico("F"), fechaEmision: "2026-01-15",
+            total: 1160, impuestos: 160, montoIngresado: 1160, proveedorId: proveedor.id, facturaTipoId: SEMILLA.facturaTipoId,
+          })
+        ).body.id as number;
+      const enA = await crearArticulo(admin, { grupoId: await factura(A), proyectoId: A });
+      const enB = await crearArticulo(admin, { grupoId: await factura(B), proyectoId: B });
+
+      /** Texto de todas las celdas de la primera hoja (MXN) y nombre del archivo. */
+      const contenido = async (cuerpo: object) => {
+        const { path, nombreReporte } = await reportePorProveedor({ conFoto: false, ...cuerpo });
+        const libro = await new Workbook().xlsx.readFile(path);
+        const celdas: string[] = [];
+        libro.worksheets[0].eachRow((fila) => fila.eachCell((celda) => void celdas.push(String(celda.text))));
+        return { nombreReporte, hojas: libro.worksheets.map((h) => h.name), texto: celdas.join(" | ") };
+      };
+      const todos = await contenido({ proveedorId: proveedor.id });
+      expect(todos.hojas).toEqual(["COMPRAS MXN", "COMPRAS USD"]);
+      expect(todos.texto).toContain(`REPORTE COMPRAS - ${proveedor.nombre} - TODOS LOS PROYECTOS - PESOS`);
+      expect(todos.texto).toContain(enA.codigo);
+      expect(todos.texto).toContain(enB.codigo);
+      expect(todos.nombreReporte).toMatch(/^Compras_.*todos Los Proyectos_\d+\.xlsx$/i);
+
+      const soloB = await contenido({ proveedorId: proveedor.id, proyectoId: B });
+      expect(soloB.texto).toContain("PROYECTO B - PESOS");
+      expect(soloB.texto).toContain(enB.codigo);
+      expect(soloB.texto).not.toContain(enA.codigo);
+
+      // la ruta responde de inmediato y genera en segundo plano
+      const peticion = await admin.post("/reports/by-supplier").send({ proveedorId: proveedor.id, conFoto: false });
+      expect(peticion.status).toBe(200);
+      expect(peticion.body.message).toMatch(/se está generando/);
+      expect((await admin.post("/reports/by-supplier").send({ proveedorId: 99999999 })).status).toBe(404);
+      expect((await admin.post("/reports/by-supplier").send({})).status).toBe(400);
+      expect((await encargado.post("/reports/by-supplier").send({ proveedorId: proveedor.id })).status).toBe(401);
     });
   });
 });

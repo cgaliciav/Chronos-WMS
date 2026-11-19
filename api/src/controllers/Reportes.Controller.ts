@@ -1,15 +1,18 @@
 import { Request, Response, NextFunction } from "express";
 import { stat } from "fs/promises";
 import { AppDataSource } from "../data-source";
+import { Proveedor } from "../entity/Proveedor";
 import { Usuario } from "../entity/Usuario";
 import EnviarMail from "../helpers/enviarMail";
 import { AppError } from "../helpers/errorClases";
+import { idSeguro } from "../helpers/ids";
 import { MovimientoTipoId as T } from "../entity/common/MovimientoTipoId";
 import {
   reportePorGrupo,
   reportePorProyecto,
   reportePorPrestamosRentasActivas,
   reportePorProyectoCompras,
+  reportePorProveedor,
   reporteGeneral,
   reportePorGrupoFotoGrande
 } from "../helpers/excelFunctions";
@@ -109,6 +112,28 @@ class ReporteController {
           compras ? reportePorProyectoCompras(body) : reportePorProyecto(body)
         );
       }
+      res.json({ message: MENSAJE_EN_PROCESO });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * `POST /reports/by-supplier` `{ proveedorId, proyectoId?, conFoto?, sortField?, sortOrder?, filters? }`: Excel de
+   * los artículos comprados a un proveedor (decisión 26). 404 si el proveedor no existe.
+   */
+  static reportePorProveedor = async (req: Request, res: Response, next: NextFunction) => {
+    const { jwtPayload } = res.locals;
+    try {
+      const proveedor = await AppDataSource.getRepository(Proveedor).findOne({
+        where: { id: idSeguro(req.body.proveedorId, "proveedorId") },
+        select: { id: true },
+        loadEagerRelations: false,
+      });
+      if (!proveedor) throw new AppError("Proveedor no encontrado", 404);
+      const destinatario = await destinatarioDe(jwtPayload);
+      const body = { ...req.body, alcance: alcanceDe(res.locals) };
+      void generarEnSegundoPlano("por proveedor", destinatario, () => reportePorProveedor(body));
       res.json({ message: MENSAJE_EN_PROCESO });
     } catch (error) {
       next(error);

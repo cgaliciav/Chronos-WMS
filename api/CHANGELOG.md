@@ -25,6 +25,9 @@ v4.15.0.
   movimiento relacionado con otros (préstamo con devoluciones, compra con bajas…) o si es de una transformación.
 - `POST /groups/list-by-supplier-antd` `{ proveedorId, proyectoId?, …tabla }`: artículos comprados a un proveedor, con
   proyecto opcional. Roles `ADMINISTRADOR` o `GRUPOS-LISTAPORPROVEEDOR`.
+- `POST /reports/by-supplier` `{ proveedorId, proyectoId?, conFoto?, sortField?, sortOrder?, filters? }`: Excel de los
+  artículos comprados a un proveedor, con el formato del reporte de compras por proyecto (hojas MXN y USD). Se genera
+  en segundo plano y llega por notificación y correo. Mismos roles que el listado.
 - Migración `RolesProductosPorProveedor`: roles `V-ADMINISTRACION-PROVEEDORESPRODUCTOS` y `GRUPOS-LISTAPORPROVEEDOR`
   (también en el catálogo de carga inicial).
 

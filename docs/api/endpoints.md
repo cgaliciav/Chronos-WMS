@@ -36,6 +36,9 @@ del usuario. `ADMIN` = `ADMINISTRADOR` (siempre incluido salvo que se indique). 
 - `POST /groups/list-by-supplier-antd` `{ proveedorId, proyectoId?, pagination, sortField, sortOrder, filters }`: misma
   respuesta que `list-by-project-antd` (movimientos de compra con su listado y factura). Roles `ADMINISTRADOR` o
   `GRUPOS-LISTAPORPROVEEDOR`.
+- `POST /reports/by-supplier` `{ proveedorId, proyectoId?, conFoto?, sortField?, sortOrder?, filters? }` →
+  `{ message }`: Excel de esos mismos artículos (hojas MXN y USD), generado en segundo plano como los demás reportes.
+  `404` si el proveedor no existe. Mismos roles.
 
 **Cambios de v2.93.0 (perfiles y usuarios sin correo, decisiones 22 y 23):**
 - ⚠ `POST /user/new` exige `perfil` (`superadministrador | administrador | encargado-produccion | visita | sin-acceso`) y
