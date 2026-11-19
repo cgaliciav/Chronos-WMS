@@ -11,6 +11,7 @@ import { Length, IsEmail } from "class-validator";
 import * as bcrypt from "bcryptjs";
 
 import { ModoVisibilidad } from "./common/ModoVisibilidad";
+import { Perfil } from "./common/Perfil";
 
 @Entity()
 export class Usuario {
@@ -52,6 +53,13 @@ export class Usuario {
      */
     @Column({ type: "enum", enum: ModoVisibilidad, default: ModoVisibilidad.GENERAL })
     modoVisibilidad: ModoVisibilidad;
+
+    /**
+     * Perfil del que salen los permisos (decisión 22, `services/perfiles.ts`). `personalizado`: usuario anterior a los
+     * perfiles, conserva sus roles sueltos. `sin-acceso`: usuario sin correo que no entra al sistema (decisión 23).
+     */
+    @Column({ type: "enum", enum: Perfil, default: Perfil.PERSONALIZADO })
+    perfil: Perfil;
 
     @Column({type:"enum" , enum: EstatusEstado ,  default:EstatusEstado.ACTIVO})
     estatus:EstatusEstado;

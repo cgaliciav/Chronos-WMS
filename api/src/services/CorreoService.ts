@@ -9,6 +9,7 @@ import { AppError } from "../helpers/errorClases";
 import { logger } from "../helpers/logger";
 import ConfiguracionService from "./ConfiguracionService";
 import { horasPasswordTemporal } from "./PasswordService";
+import { esCorreoFalso } from "./perfiles";
 import { DescriptorTransporte, elegirTransporte, plantillaDe, remitente, renderizar, TipoPlantilla } from "./reglas/correo";
 
 /** Lo que el servicio necesita de un transporte de nodemailer (las pruebas lo sustituyen). */
@@ -65,6 +66,8 @@ export default class CorreoService {
 
   /** Envía el correo de `tipo` con su plantilla. Lanza si el SMTP falla (quien llama decide si lo registra). */
   static enviar = async (tipo: TipoPlantilla, destino: string, variables: Record<string, string | number>, adjuntos?: Adjunto[]) => {
+    // A los usuarios sin correo (dirección inventada, decisión 23) nunca se les envía nada.
+    if (esCorreoFalso(destino)) return { omitido: true, response: "Usuario sin correo: no se envía" };
     const base = await CorreoService.variablesBase();
     const todas = { ...base.variables, correo: destino, ...variables };
     const plantilla = plantillaDe(base.correo, tipo);

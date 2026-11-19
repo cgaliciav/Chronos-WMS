@@ -9,6 +9,37 @@ La versión vive en `package.json` (la devuelve `/auth/version`, y Sentry la usa
 `desplegar.sh` publica una versión `X.Y.Z-d` como `X.Y.Z` y, si ya no lleva sufijo, sube el parche. Contrato con el
 front: [`docs/api/endpoints.md`](../docs/api/endpoints.md). Plan: [`docs/planes/02-api-relacion-movimientos.md`](../docs/planes/02-api-relacion-movimientos.md).
 
+## [2.93.0-d] - Sin publicar
+
+Perfiles de usuario (decisión 22) y usuarios sin correo (decisión 23). Requiere el front v4.14.0.
+
+### Añadido
+
+- `usuario.perfil` (migración `PerfilDeUsuario`): `superadministrador`, `administrador`, `encargado-produccion`, `visita`,
+  `sin-acceso` o `personalizado`. Los permisos salen del perfil (`services/perfiles.ts`): `checkRole` y
+  `GET /user/current` traducen el perfil a códigos de rol, así que un perfil nunca queda incompleto y no depende de la
+  tabla `rol`. Solo `personalizado` (usuarios anteriores) sigue usando sus roles sueltos.
+  - **Superadministrador:** todo. **Administrador:** todo menos la Configuración. **Encargado de Producción:** búsqueda
+    por proyecto, compras completas, reportes y listados por proyecto de préstamos, devoluciones y bajas con proyecto
+    (sin registrarlos). **Visita:** solo el listado de préstamos activos.
+  - La migración pasa a `superadministrador` a quien tenía el rol `ADMINISTRADOR`; el resto queda `personalizado`.
+- Usuarios **sin correo** (perfil `sin-acceso`): el API inventa `nombre@fake.exogrid.io`, no envía la contraseña, rechaza
+  su inicio de sesión y `PUT /user/renewpassword`, y `CorreoService` nunca envía a ese dominio. Siguen saliendo en las
+  listas de usuarios para asignarlos como responsables.
+- En modo PRODUCCIÓN EXCLUSIVA `POST /groups/list-by-group-antd` solo lista los listados de las producciones del usuario.
+
+### Cambiado
+
+- ⚠ `/config` (salvo `/config/public*`) exige `CONFIGURACION-EDITAR`; `ADMINISTRADOR` ya no basta.
+- ⚠ `POST /user/new` exige `perfil` y ya no acepta `rolesIds`; `PUT /user/edit` acepta `perfil` (sin él conserva el
+  actual) y al asignar uno retira los roles sueltos. `correo` solo puede faltar con `sin-acceso`.
+- Solo un Superadministrador asigna o edita a un Superadministrador (403) y nadie cambia su propio perfil (400).
+- La carga inicial (`sembrar`) crea al primer administrador con perfil `superadministrador`.
+
+### Corregido
+
+- Rol `OPERACION-BAJASPORGRUPO` (el front lo pedía mal escrito y no existía): lo crea la migración y está en el catálogo.
+
 ## [2.92.1-d] - Sin publicar
 
 Roles que faltaban en el catálogo de carga inicial (hallazgo F23).

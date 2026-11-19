@@ -29,6 +29,7 @@ import { autogenerarCodigo, autogenerarCodigos } from "./ProductoClave.Controlle
 
 /** `precio_tipo` 2 = COMPRA ORIGEN: el precio original del artículo (decisión 13). */
 const PRECIO_TIPO_COMPRA_ORIGEN = 2;
+import { ModoVisibilidad } from "../entity/common/ModoVisibilidad";
 import { Alcance, alcanceDe, exigirMovimientoVisible, exigirProyectoPermitido, sqlAlcance } from "../services/alcance";
 
 // Filtros de las tablas antd, parametrizados (hallazgos C1/C3). Las llaves traen alias ("grupo.nombre", "proyecto.id").
@@ -304,12 +305,21 @@ class GrupoController {
 
     let fnQuery: () => SelectQueryBuilder<any>;
 
+    // En modo PRODUCCIÓN EXCLUSIVA (decisión 21) solo se listan los listados de las producciones del usuario.
+    const alcance = alcanceDe(res.locals);
+    const soloSusProyectos = (qb: SelectQueryBuilder<any>) =>
+      alcance.modo !== ModoVisibilidad.PRODUCCION
+        ? qb
+        : alcance.proyectos.length === 0
+          ? qb.andWhere("1=0")
+          : qb.andWhere("proyecto.id IN (:...proyectosAlcance)", { proyectosAlcance: alcance.proyectos });
+
     if (movimientoTipoId !== undefined) {
       // Uno o varios tipos: los listados de bajas piden [13, 16, 5] (justificadas, injustificadas y BAJA* antiguos).
       const tipos = idsSeguros(Array.isArray(movimientoTipoId) ? movimientoTipoId : [movimientoTipoId], "movimientoTipoId");
-      fnQuery = () => funcionQueryListado().where("movimientoTipo.id IN (:...tiposListado)", { tiposListado: tipos });
+      fnQuery = () => soloSusProyectos(funcionQueryListado().where("movimientoTipo.id IN (:...tiposListado)", { tiposListado: tipos }));
     } else {
-      fnQuery = () => funcionQueryListado().where("grupoDetalle.id is NULL");
+      fnQuery = () => soloSusProyectos(funcionQueryListado().where("grupoDetalle.id is NULL"));
     }
     CommonController.listaTablaQryAnd(body, fnQuery, condicionesWhereAnd)
       .then((respuesta) => {

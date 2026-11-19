@@ -458,6 +458,11 @@
       "estatus": "activo"
     },
     {
+      "nombre": "OPERACION-BAJASPORGRUPO",
+      "codigoRol": "OPERACION-BAJASPORGRUPO",
+      "estatus": "activo"
+    },
+    {
       "nombre": "GRUPOS-MOVIMIENTONUEVOCOMPRA",
       "codigoRol": "GRUPOS-MOVIMIENTONUEVOCOMPRA",
       "estatus": "activo"

@@ -33,7 +33,7 @@ describe("esquemas zod", () => {
       nombre: "Ana",
       correo: "ana@x.mx",
       vencimiento: "2027-01-01",
-      rolesIds: [1],
+      perfil: "administrador",
       password: "pwned",
       estatus: "inactivo",
       id: 1,

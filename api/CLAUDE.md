@@ -35,7 +35,8 @@ src/services/           MovimientoService (registrar/deshacer/relacionar, transa
                         reglas/efectosInventario.ts, reglas/planificarRelaciones.ts y reglas/notificaciones.ts (puras)
 src/routes/*.Routes.ts  un router por recurso; cada ruta lleva [checkJwt, checkRole([...])]; los ids numéricos usan
                         `"/x/:id", soloDigitos("id")` (middlewares/rutas.ts): Express 5 no admite `:id([0-9]+)`
-src/middlewares/        verificarJwt (cabecera `auth`; checkJwtArchivos y checkJwtConsulta aceptan `?auth=`), verificarRol (roles + áreas/bodegas/proyectos en res.locals), manejoErrores (AppError → JSON {code,message}), pasada (log)
+src/middlewares/        verificarJwt (cabecera `auth`; checkJwtArchivos y checkJwtConsulta aceptan `?auth=`), verificarRol (permisos del perfil del usuario
+                        según services/perfiles.ts, decisión 22, + áreas/bodegas/proyectos en res.locals), manejoErrores (AppError → JSON {code,message}), pasada (log)
 src/controllers/        clases con métodos estáticos (req,res,next); parsean, llaman a servicios o hacen CRUD y responden.
                         Los movimientos ya pasan por src/services; el resto de la lógica sigue en controladores
 src/controllers/common/Common.Controller.ts  CRUD genérico: listaTabla(Qry/And), nuevo, editar, habilitar/deshabilitar/finalizar, comentarios, archivos

@@ -93,7 +93,7 @@ describe("fase 2 · seguridad", () => {
     it("POST /user/new ignora password/estatus/id del body y valida el correo", async () => {
       const correo = `${nombreUnico("u").toLowerCase()}@pruebas.local`;
       const res = await api.post("/user/new").send({
-        nombre: "Nuevo Usuario", correo, vencimiento: "2027-12-31", rolesIds: [2], proyectosIds: [], bodegasIds: [], areasIds: [],
+        nombre: "Nuevo Usuario", correo, vencimiento: "2027-12-31", perfil: "visita", proyectosIds: [], bodegasIds: [], areasIds: [],
         password: "Pwned123!", estatus: "inactivo", id: 999,
       });
       expect(res.status).toBe(200);

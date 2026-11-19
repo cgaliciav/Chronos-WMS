@@ -1,4 +1,5 @@
 import { DataSource } from "typeorm";
+import { Perfil } from "../entity/common/Perfil";
 import { Area } from "../entity/Area";
 import { Bodega } from "../entity/Bodega";
 import { EstatusEstado } from "../entity/common/NombreEstatus";
@@ -84,7 +85,7 @@ export const sembrar = async (connection: DataSource) => {
     const vencimiento = new Date("2099-12-31");
     const admin = Object.assign(new Usuario(), {
       id: SEMILLA.adminId, nombre: "Admin Pruebas", correo: SEMILLA.adminCorreo, password: SEMILLA.adminPassword,
-      vencimiento, estatus: EstatusEstado.ACTIVO, roles: [rolAdmin], areas: [area], bodegas: [bodega], proyectos: [proyectoA, proyectoB, proyectoExterno],
+      vencimiento, estatus: EstatusEstado.ACTIVO, perfil: Perfil.SUPERADMINISTRADOR, roles: [rolAdmin], areas: [area], bodegas: [bodega], proyectos: [proyectoA, proyectoB, proyectoExterno],
     });
     admin.hashPassword();
     const operador = Object.assign(new Usuario(), {

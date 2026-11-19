@@ -230,9 +230,24 @@ describe("plan 04 · bloque B · visibilidad por usuario", () => {
     expect((await adminRestringido.get(`/current-inventory/${articulo.inventarioActualId}`)).status).toBe(200);
   });
 
+  it("en modo producción el listado de listados (facturas, préstamos…) solo trae los de sus producciones", async () => {
+    await crearGrupoCompra(admin, A);
+    await crearGrupoCompra(admin, B);
+    const cuerpo = { pagination: { current: 1, pageSize: 200 }, sortField: "grupo.id", sortOrder: "descend", filters: {}, movimientoTipoId: 15 };
+    const proyectosDe = async (api: Cliente) => {
+      const res = await api.post("/groups/list-by-group-antd").send(cuerpo);
+      expect(res.status).toBe(200);
+      return [...new Set((res.body.results as any[]).map((g) => g.grupoDetalle.proyecto.id))];
+    };
+    expect(await proyectosDe(deProduccionB)).toEqual([B]);
+    expect(await proyectosDe(sinProducciones)).toEqual([]);
+    expect(await proyectosDe(admin)).toEqual(expect.arrayContaining([A, B]));
+    expect(await proyectosDe(general)).toEqual(expect.arrayContaining([A, B]));
+  });
+
   it("el modo se guarda al crear y editar usuarios, y GET /user/current lo devuelve", async () => {
     const correo = `${nombreUnico("modo").toLowerCase()}@pruebas.local`;
-    const datos = { nombre: "Usuario con modo", correo, vencimiento: "2099-12-31", rolesIds: [], proyectosIds: [B], bodegasIds: [], areasIds: [] };
+    const datos = { nombre: "Usuario con modo", correo, vencimiento: "2099-12-31", perfil: "visita", proyectosIds: [B], bodegasIds: [], areasIds: [] };
     expect((await admin.post("/user/new").send({ ...datos, modoVisibilidad: "produccion" })).status).toBe(200);
     const leer = async () => (await AppDataSource.query("SELECT id, modoVisibilidad FROM usuario WHERE correo = ?", [correo]))[0];
     expect((await leer()).modoVisibilidad).toBe("produccion");

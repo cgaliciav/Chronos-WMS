@@ -70,7 +70,7 @@ describe("plan 03 · fase 2 · correo y reportes desde la configuración", () =>
     expect(guardado.status).toBe(200);
 
     const correo = `${nombreUnico("c").toLowerCase()}@pruebas.local`;
-    const alta = await admin.post("/user/new").send({ nombre: "Con plantilla", correo, vencimiento: "2030-01-01", rolesIds: [], proyectosIds: [], bodegasIds: [], areasIds: [] });
+    const alta = await admin.post("/user/new").send({ nombre: "Con plantilla", correo, vencimiento: "2030-01-01", perfil: "visita", proyectosIds: [], bodegasIds: [], areasIds: [] });
     expect(alta.status).toBe(200);
     const mensaje = await esperarHasta(() => enviados.find((m) => m.to === correo), (m) => m !== undefined);
     expect(mensaje).toMatchObject({ from: '"Almacén Demo" <envios@demo.mx>', subject: "Hola desde Chronos WMS" });

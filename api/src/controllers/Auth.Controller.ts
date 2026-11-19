@@ -4,6 +4,7 @@ import { firmarToken, olvidarSesion } from "../middlewares/verificarJwt";
 import { AppDataSource } from "../data-source";
 import { Sesion } from "../entity/Sesion";
 import { Usuario } from "../entity/Usuario";
+import { Perfil } from "../entity/common/Perfil";
 import { AppError } from "../helpers/errorClases";
 import { versionPaquete as version } from "../helpers/paquete";
 import { passwordTemporalVencida } from "../services/PasswordService";
@@ -32,12 +33,13 @@ class AuthController {
       }
 
       usuario = await AppDataSource.getRepository(Usuario).findOneOrFail({
-        select:{ id: true, nombre: true, correo: true, vencimiento: true, estatus: true, password: true, debeCambiarPassword: true, vencePasswordTemporal: true }, 
+        select:{ id: true, nombre: true, correo: true, vencimiento: true, estatus: true, password: true, debeCambiarPassword: true, vencePasswordTemporal: true, perfil: true }, 
         where: { correo: c },
         loadEagerRelations:false, 
       });
 
-      if (!usuario.checkIfUnencryptedPasswordIsValid(p)) {
+      // Un usuario sin correo (perfil `sin-acceso`, decisión 23) no entra nunca, aunque alguien conociera su contraseña.
+      if (usuario.perfil === Perfil.SIN_ACCESO || !usuario.checkIfUnencryptedPasswordIsValid(p)) {
         throw new AppError("Usuario y/o contraseña incorrectos",401);
       }
 
