@@ -68,8 +68,10 @@ grande que incluya la versión.
   `<ACL>` y el de cada ruta del API que llama. Hecho en código; falta ensayo en staging y despliegue.
 - `docs/superpowers/specs/2026-11-10-caddy-docker-amz-design.md` y `docs/superpowers/plans/2026-11-10-caddy-docker-amz.md`:
   Caddy en Docker, imágenes en Docker Hub y cliente AMZ (decisión 17). Procedimientos: `docs/infra/`. El alta de producción de AMZ
-  se hizo el 2026-11-17 (web `v4.10.0`, api `v2.89.0`, Linode de 2 GB) siguiendo `docs/infra/procedimiento-alta-amz.md`;
-  falta que una persona ejecute la aceptación en staging.
+  se hizo el 2026-11-17 (web `v4.10.0`, api `v2.89.0`, Linode de 2 GB) siguiendo `docs/infra/procedimiento-alta-amz.md`.
+  Desde el 2026-11-19 producción corre web `v4.15.0` y api `v2.95.0`, con la carga inicial de inventario subida
+  (`api/scripts/carga-inicial/README.md`); la versión vigente es la última línea de `~/chronos-amz/despliegues.log` en el servidor.
+  Falta que una persona ejecute la aceptación en staging.
 - `docs/infra/procedimiento-migracion-sony-caddy.md`: migración de producción de Sony a la versión actual, Caddy y
   MariaDB 10.11 en tres pasos (ensayada en la VM `chronos-ensayo`). La ejecuta una persona; ninguna sesión automatizada toca `linode-prod`.
 
