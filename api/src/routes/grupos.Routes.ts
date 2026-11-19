@@ -3,7 +3,7 @@ import GrupoController from "../controllers/Grupo.Controller";
 import { checkJwt } from "../middlewares/verificarJwt";
 import { checkRole } from "../middlewares/verificarRol";
 import { validarBody } from "../middlewares/validar";
-import { actividadCompraSchema, actividadTransformarSchema, actividadSchema, agregarOperacionSchema, quitarMovimientoSchema } from "../esquemas";
+import { actividadCompraSchema, actividadTransformarSchema, actividadSchema, agregarOperacionSchema, quitarMovimientoSchema, moverMovimientoSchema, renombrarGrupoSchema } from "../esquemas";
 import { soloDigitos } from "../middlewares/rutas";
 
 const router = Router();
@@ -23,6 +23,10 @@ router.put("/closure/:id", soloDigitos("id"), [checkJwt,checkRole(["ADMINISTRADO
 router.get("/:id", soloDigitos("id"), [checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-DETALLE"])], GrupoController.obtenerId)
 router.put("/edit",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-EDITAR"])],GrupoController.editar)
 router.post("/new",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-NUEVO"])],GrupoController.nuevo)
+// Solo administradores (perfiles Superadministrador y Administrador): decisiones 24 y 25.
+router.put("/rename",[checkJwt,checkRole(["ADMINISTRADOR"]),validarBody(renombrarGrupoSchema)],GrupoController.renombrar)
+router.put("/activity-move",[checkJwt,checkRole(["ADMINISTRADOR"]),validarBody(moverMovimientoSchema)],GrupoController.moverMovimiento)
+router.post("/list-by-supplier-antd",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-LISTAPORPROVEEDOR"])], GrupoController.listaTablaMovimientosPorProveedor);
 router.delete("/remove",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-BORRAR"])],GrupoController.borrar)
 
 router.post("/new-details",[checkJwt,checkRole(["ADMINISTRADOR","GRUPOS-NUEVODETALLE"])],GrupoController.nuevoConDetalle)

@@ -24,6 +24,19 @@ del usuario. `ADMIN` = `ADMINISTRADOR` (siempre incluido salvo que se indique). 
 - Token sin firma válida o ausente → `401`; registro inexistente → `404 REGISTRO NO ENCONTRADO`.
 - Las columnas `numeric` (`cantidad`, `cantidadAlmacen`, precios, totales) llegan como **número** en el JSON (antes string `"5.0000"`).
 
+**Cambios de v2.94.0 (decisiones 24-26):**
+- `PUT /groups/rename` `{ grupoId, nombre }` → `{ id, nombre }`. Solo `ADMINISTRADOR`. Nombre de 3 a 255 caracteres
+  (40 en una compra, donde también cambia `facturaDetalle.numero`). `409` si el nombre ya existe; `404` si no existe
+  el listado.
+- `PUT /groups/activity-move` `{ movimientoId, grupoOrigenId, grupoDestinoId }` →
+  `{ movimientoId, grupoDestinoId, grupoDestinoNombre, proyectoCambiado }`. Solo `ADMINISTRADOR`. `400` si el movimiento
+  no está en el listado de origen, si los listados no son del mismo tipo o si el destino no está activo; `404` si el
+  destino no existe; `409 { movimientos }` si cambiaría de proyecto un movimiento con relaciones, o si es de una
+  transformación.
+- `POST /groups/list-by-supplier-antd` `{ proveedorId, proyectoId?, pagination, sortField, sortOrder, filters }`: misma
+  respuesta que `list-by-project-antd` (movimientos de compra con su listado y factura). Roles `ADMINISTRADOR` o
+  `GRUPOS-LISTAPORPROVEEDOR`.
+
 **Cambios de v2.93.0 (perfiles y usuarios sin correo, decisiones 22 y 23):**
 - ⚠ `POST /user/new` exige `perfil` (`superadministrador | administrador | encargado-produccion | visita | sin-acceso`) y
   ya no acepta `rolesIds`. `PUT /user/edit` acepta `perfil` (opcional: sin él se conserva; al asignar uno se retiran los

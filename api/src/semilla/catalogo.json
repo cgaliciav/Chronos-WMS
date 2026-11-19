@@ -458,6 +458,16 @@
       "estatus": "activo"
     },
     {
+      "nombre": "V-ADMINISTRACION-PROVEEDORESPRODUCTOS",
+      "codigoRol": "V-ADMINISTRACION-PROVEEDORESPRODUCTOS",
+      "estatus": "activo"
+    },
+    {
+      "nombre": "GRUPOS-LISTAPORPROVEEDOR",
+      "codigoRol": "GRUPOS-LISTAPORPROVEEDOR",
+      "estatus": "activo"
+    },
+    {
       "nombre": "OPERACION-BAJASPORGRUPO",
       "codigoRol": "OPERACION-BAJASPORGRUPO",
       "estatus": "activo"

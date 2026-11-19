@@ -28,6 +28,7 @@ import { LogTipo } from "../entity/LogGeneral";
 import { Movimiento } from "../entity/Movimiento";
 import { MovimientoRelacion } from "../entity/MovimientoRelacion";
 import { RelacionTipo } from "../entity/common/RelacionTipo";
+import { Operacion } from "../entity/Operacion";
 import { OperacionDetalle } from "../entity/OperacionDetalle";
 import { Producto } from "../entity/Producto";
 import { InventarioEstado, ProductoInventariado } from "../entity/ProductoInventariado";
@@ -570,6 +571,80 @@ export default class MovimientoService {
   };
 
   /** Movimiento con sus relaciones en ambos sentidos y su saldo pendiente (GET /activity/:id/chain). */
+  /**
+   * Mueve un movimiento a otro listado del mismo tipo (decisión 25): préstamo con préstamo, compra con compra…
+   * La operación toma el proyecto y los responsables del listado destino. No cambia existencias.
+   *  - 400 si el movimiento no está en el listado de origen, si los listados no son del mismo tipo o si el destino
+   *    no está activo; 404 si el destino no existe.
+   *  - 409 si cambiaría de proyecto un movimiento relacionado con otros (regla 1 de `movimiento_relacion`) o si es
+   *    una transformación (sus líneas van juntas).
+   */
+  static mover = async (datos: { movimientoId: number | string; grupoOrigenId: number | string; grupoDestinoId: number | string; sesionId: number }) => {
+    const movimientoId = idSeguro(datos.movimientoId, "movimientoId");
+    const origenId = idSeguro(datos.grupoOrigenId, "grupoOrigenId");
+    const destinoId = idSeguro(datos.grupoDestinoId, "grupoDestinoId");
+    if (origenId === destinoId) throw new AppError("El listado destino es el mismo que el de origen", 400);
+    const [previo] = await AppDataSource.query("SELECT inventarioActualId FROM movimiento WHERE id = ?", [movimientoId]);
+    if (!previo) throw new AppError("Movimiento desconocido", 400);
+
+    return enTransaccion(async (manager) => {
+      await bloquearInventario(manager, Number(previo.inventarioActualId));
+      const listado = async (id: number): Promise<{ nombre: string; estatus: string; detalleId: number | null; tipo: number | null; proyectoId: number | null } | undefined> =>
+        (
+          await manager.query(
+            "SELECT g.nombre, g.estatus, gd.id AS detalleId, gd.movimientoTipoId AS tipo, gd.proyectoId FROM grupo g LEFT JOIN grupo_detalle gd ON gd.id = g.grupoDetalleId WHERE g.id = ?",
+            [id]
+          )
+        )[0];
+      const origen = await listado(origenId);
+      const destino = await listado(destinoId);
+      if (!destino) throw new AppError("No existe el listado destino", 404);
+      const enOrigen = await manager.query("SELECT 1 FROM grupo_movimientos_movimiento WHERE grupoId = ? AND movimientoId = ?", [origenId, movimientoId]);
+      if (!origen || enOrigen.length === 0) throw new AppError("El movimiento no pertenece al listado de origen", 400);
+      if (destino.estatus !== EstatusEstado.ACTIVO) throw new AppError(`El listado ${destino.nombre} no está activo`, 400);
+      const tipoOrigen = origen.tipo === null ? null : Number(origen.tipo);
+      const tipoDestino = destino.tipo === null ? null : Number(destino.tipo);
+      if (tipoOrigen !== tipoDestino) throw new AppError("Solo se puede mover entre listados del mismo tipo", 400);
+
+      const [fila] = await manager.query(
+        "SELECT m.operacionId, o.movimientoTipoId AS tipo, o.proyectoId FROM movimiento m LEFT JOIN operacion o ON o.id = m.operacionId WHERE m.id = ?",
+        [movimientoId]
+      );
+      let proyectoCambiado = false;
+      if (fila.operacionId !== null) {
+        const tipo = Number(fila.tipo);
+        if (TIPOS_TRANSFORMACION.includes(tipo)) throw new AppError("Los movimientos de una transformación no se pueden mover de listado", 409);
+        if (tipoDestino !== null && !tiposAdmitidosEnListado(tipoDestino).includes(tipo)) {
+          throw new AppError(`El listado ${destino.nombre} no admite movimientos de ese tipo`, 400);
+        }
+        const proyectoActual = fila.proyectoId === null ? null : Number(fila.proyectoId);
+        const proyectoDestino = destino.proyectoId === null ? null : Number(destino.proyectoId);
+        proyectoCambiado = proyectoActual !== proyectoDestino;
+        if (proyectoCambiado) {
+          const relacionado = await manager.query("SELECT 1 FROM movimiento_relacion WHERE origenId = ? OR derivadoId = ? LIMIT 1", [movimientoId, movimientoId]);
+          if (relacionado.length > 0) {
+            throw new AppError(
+              "No se puede mover a un listado de otro proyecto: el movimiento está relacionado con otros (préstamo con devoluciones, compra con bajas, etc.). Deshaga primero esas operaciones.",
+              409,
+              { movimientos: [movimientoId] }
+            );
+          }
+        }
+        // La operación queda con el proyecto y los responsables del listado destino.
+        const operacion = await manager.findOneOrFail(Operacion, { where: { id: Number(fila.operacionId) }, loadEagerRelations: false });
+        const usuarios: { usuarioId: number }[] = destino.detalleId === null ? [] : await manager.query("SELECT usuarioId FROM grupo_detalle_usuarios_usuario WHERE grupoDetalleId = ?", [destino.detalleId]);
+        operacion.proyecto = (proyectoDestino === null ? null : { id: proyectoDestino }) as Proyecto;
+        operacion.usuarios = usuarios.map((u) => ({ id: Number(u.usuarioId) })) as Operacion["usuarios"];
+        operacion.sesionId = datos.sesionId;
+        await manager.save(operacion);
+      }
+      await manager.query("DELETE FROM grupo_movimientos_movimiento WHERE grupoId = ? AND movimientoId = ?", [origenId, movimientoId]);
+      await manager.query("INSERT IGNORE INTO grupo_movimientos_movimiento (grupoId, movimientoId) VALUES (?, ?)", [destinoId, movimientoId]);
+      advertir("Movimiento movido de listado", { movimientoId, origenId, destinoId, proyectoCambiado, sesionId: datos.sesionId });
+      return { movimientoId, grupoDestinoId: destinoId, grupoDestinoNombre: destino.nombre, proyectoCambiado };
+    });
+  };
+
   static cadena = async (movimientoId: number | string) => {
     const id = idSeguro(movimientoId, "movimientoId");
     const movimiento = await AppDataSource.getRepository(Movimiento)
