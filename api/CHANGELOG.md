@@ -9,6 +9,26 @@ La versión vive en `package.json` (la devuelve `/auth/version`, y Sentry la usa
 `desplegar.sh` publica una versión `X.Y.Z-d` como `X.Y.Z` y, si ya no lleva sufijo, sube el parche. Contrato con el
 front: [`docs/api/endpoints.md`](../docs/api/endpoints.md). Plan: [`docs/planes/02-api-relacion-movimientos.md`](../docs/planes/02-api-relacion-movimientos.md).
 
+## [2.95.0-d] - Sin publicar
+
+Cola de reportes y generación en un proceso aparte con recursos limitados (decisión 27). Sin cambios en el front.
+
+### Añadido
+
+- **Cola de reportes** (`services/ReporteService`, `reglas/colaEnSerie`): se genera un solo reporte a la vez; los demás
+  esperan su turno. Si hay otros por delante, la respuesta de `POST /reports/*` lo dice («Tu reporte está en cola: hay
+  N reportes antes que el tuyo…») y el usuario recibe además la notificación «Reporte en cola».
+- **Proceso de reportes** (`src/reporteProceso.ts`): cada reporte se genera en un proceso hijo del API con el heap
+  limitado (`REPORTES_MEMORIA_MB`, 768 por defecto), prioridad mínima, un hilo para imágenes y un tiempo máximo
+  (`REPORTES_MINUTOS_MAX`, 30). Si se pasa de memoria o de tiempo se cancela ese proceso y el usuario recibe el aviso
+  de error con la causa; el API sigue atendiendo. `REPORTES_PROCESO=interno` lo genera dentro del API.
+- El proceso de reportes registra al terminar la memoria que usó (`rssMb`, `heapMb`).
+
+### Cambiado
+
+- Los generadores de reportes se registran por nombre en `helpers/generadoresReporte.ts`; el controlador ya no lanza
+  promesas sueltas (antes todos los reportes pedidos a la vez se generaban a la vez dentro del API).
+
 ## [2.94.0-d] - Sin publicar
 
 Renombrar listados, mover movimientos entre listados y productos por proveedor (decisiones 24-26). Requiere el front

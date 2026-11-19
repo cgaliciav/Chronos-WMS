@@ -24,6 +24,12 @@ del usuario. `ADMIN` = `ADMINISTRADOR` (siempre incluido salvo que se indique). 
 - Token sin firma válida o ausente → `401`; registro inexistente → `404 REGISTRO NO ENCONTRADO`.
 - Las columnas `numeric` (`cantidad`, `cantidadAlmacen`, precios, totales) llegan como **número** en el JSON (antes string `"5.0000"`).
 
+**Cambios de v2.95.0 (decisión 27, cola de reportes):** `POST /reports/by-group`, `/by-project`, `/by-supplier` y
+`/by-project-final` siguen respondiendo `{ message }` de inmediato, pero el reporte entra a una cola y se genera uno a
+la vez en un proceso aparte. Si hay otros por delante, `message` lo indica y se crea la notificación «Reporte en cola».
+Un reporte que supera la memoria (`REPORTES_MEMORIA_MB`) o el tiempo (`REPORTES_MINUTOS_MAX`) se cancela y llega la
+notificación «Error al generar el reporte» con la causa.
+
 **Cambios de v2.94.0 (decisiones 24-26):**
 - `PUT /groups/rename` `{ grupoId, nombre }` → `{ id, nombre }`. Solo `ADMINISTRADOR`. Nombre de 3 a 255 caracteres
   (40 en una compra, donde también cambia `facturaDetalle.numero`). `409` si el nombre ya existe; `404` si no existe
