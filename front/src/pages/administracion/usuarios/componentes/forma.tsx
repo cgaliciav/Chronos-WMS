@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react'
 
 import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
-import { Form, Button, Select, Input, DatePicker, Divider, Tag, Spin } from 'antd'
+import { Form, Button, Checkbox, Select, Input, DatePicker, Divider, Tag, Spin } from 'antd'
 import { mapeoOpciones } from 'helpers/funcionesExtras'
 import AreaPeticiones from 'services/axios/areas'
-import RolPeticiones from 'services/axios/roles'
 import BodegaPeticiones from 'services/axios/bodegas'
 import ProyectoPeticiones from 'services/axios/proyectos'
 import type { ElementoListado } from 'services/axios'
-import { OPCIONES_MODO_VISIBILIDAD } from 'types/api'
+import { ETIQUETA_PERFIL, OPCIONES_MODO_VISIBILIDAD, OPCIONES_PERFIL } from 'types/api'
+import { useUsuarioStore } from 'stores/usuario.store'
 import type { PropsForma, ValoresFormaUsuario } from '../../tipos'
 
 const formItemLayout = {
@@ -56,7 +56,6 @@ const FormaUsuario = ({
   handleFinish,
 }: PropsForma<ValoresFormaUsuario>) => {
   const [habilitadoInterno, setHabilitadoInterno] = useState(false)
-  const [listadoRoles, setListadoRoles] = useState<ElementoListado[]>([])
   const [listadoBodegas, setListadoBodegas] = useState<ElementoListado[]>([])
   const [listadoProyectos, setListadoProyectos] = useState<ElementoListado[]>([])
   const [listadoAreas, setListadoAreas] = useState<ElementoListado[]>([])
@@ -68,18 +67,16 @@ const FormaUsuario = ({
   useEffect(() => {
     setHabilitadoInterno(false)
     Promise.all([
-      RolPeticiones.listadoSimple(),
       BodegaPeticiones.listadoSimple(),
       ProyectoPeticiones.listadoSimple(),
       AreaPeticiones.listadoSimple(),
     ])
       .then(resp => {
         if (resp !== undefined) {
-          const [roles, bodegas, proyectos, areas] = resp
+          const [bodegas, proyectos, areas] = resp
           setListadoAreas(areas)
           setListadoBodegas(bodegas)
           setListadoProyectos(proyectos)
-          setListadoRoles(roles)
         }
       })
       // El interceptor de axios ya mostró el error.
@@ -111,6 +108,27 @@ const FormaUsuario = ({
     }
   }, [form, valores])
 
+  const sinCorreo = Form.useWatch('sinCorreo', form) === true
+  // Solo un Superadministrador (el único con el permiso de Configuración) asigna ese perfil; el API también lo exige.
+  const esSuperadministrador = useUsuarioStore(estado => estado.permisos.includes('CONFIGURACION-EDITAR'))
+  const opcionesPerfil = [
+    ...OPCIONES_PERFIL.map(opcion => ({
+      ...opcion,
+      disabled: opcion.value === 'superadministrador' && !esSuperadministrador,
+    })),
+    // Un usuario anterior a los perfiles conserva sus roles sueltos mientras no se le asigne otro perfil.
+    ...(valores?.perfil === 'personalizado'
+      ? [
+          {
+            value: 'personalizado' as const,
+            label: ETIQUETA_PERFIL.personalizado,
+            descripcion: 'Conserva los roles que tenía antes de los perfiles',
+            disabled: false,
+          },
+        ]
+      : []),
+  ]
+
   const listadoProyectosInternos = listadoProyectos.filter(it => !it.esExterno)
   const listadoProyectosExternos = listadoProyectos.filter(it => it.esExterno)
 
@@ -140,22 +158,34 @@ const FormaUsuario = ({
           <Input placeholder="Nombre" disabled={!habilitadoInterno || guardando || !habilitado} />
         </Form.Item>
         <Form.Item
-          label="Correo"
-          name="correo"
-          rules={[
-            {
-              required: true,
-              type: 'email',
-              message: 'Debe ser un correo electrónico válido',
-            },
-          ]}
+          label="Sin correo"
+          name="sinCorreo"
+          valuePropName="checked"
+          tooltip="Para personas que solo figuran como responsables de préstamos, devoluciones, etc. No entran al sistema y nunca reciben correos ni reportes."
         >
-          <Input
-            placeholder="Correo"
-            type="email"
-            disabled={!habilitadoInterno || guardando || !habilitado}
-          />
+          <Checkbox disabled={!habilitadoInterno || guardando || !habilitado}>
+            Solo existe en el sistema: no entra ni recibe correos
+          </Checkbox>
         </Form.Item>
+        {!sinCorreo && (
+          <Form.Item
+            label="Correo"
+            name="correo"
+            rules={[
+              {
+                required: true,
+                type: 'email',
+                message: 'Debe ser un correo electrónico válido',
+              },
+            ]}
+          >
+            <Input
+              placeholder="Correo"
+              type="email"
+              disabled={!habilitadoInterno || guardando || !habilitado}
+            />
+          </Form.Item>
+        )}
         <Form.Item label="Vencimiento">
           <Form.Item
             name="fechaVencimiento"
@@ -177,32 +207,34 @@ const FormaUsuario = ({
           <Divider orientation="vertical" />
           <Tag color={vencimientoAviso.color}> {vencimientoAviso.texto} </Tag>
         </Form.Item>
-        <Form.Item
-          label="Roles"
-          name="roles"
-          rules={[
-            {
-              required: true,
-              message: 'El usuario debe tener al menos un rol asignado',
-            },
-          ]}
-        >
-          <Select
-            showSearch={busqueda}
-            placeholder="Selecciona los roles asociados"
-            allowClear
-            mode="multiple"
-            disabled={!habilitadoInterno || guardando || !habilitado}
+        {!sinCorreo && (
+          <Form.Item
+            label="Perfil"
+            name="perfil"
+            tooltip="Del perfil salen todos los permisos del usuario."
+            rules={[{ required: true, message: 'Indica el perfil del usuario' }]}
           >
-            {mapeoOpciones(listadoRoles)}
-          </Select>
-        </Form.Item>
+            <Select
+              placeholder="Selecciona el perfil"
+              disabled={!habilitadoInterno || guardando || !habilitado}
+              options={opcionesPerfil}
+              optionRender={opcion => (
+                <div>
+                  <div>{opcion.label}</div>
+                  <div style={{ fontSize: 12, opacity: 0.65, whiteSpace: 'normal' }}>
+                    {opcion.data.descripcion}
+                  </div>
+                </div>
+              )}
+            />
+          </Form.Item>
+        )}
         <Form.Item
           label="Areas"
           name="areas"
           rules={[
             {
-              required: true,
+              required: !sinCorreo,
               message: 'El usuario debe tener al menos un area asignada',
             },
           ]}
@@ -222,7 +254,7 @@ const FormaUsuario = ({
           name="bodegas"
           rules={[
             {
-              required: true,
+              required: !sinCorreo,
               message: 'El usuario debe tener al menos un almacén asignada',
             },
           ]}
@@ -249,17 +281,19 @@ const FormaUsuario = ({
           </Select>
         </Form.Item>
 
-        <Form.Item
-          label="Visibilidad"
-          name="modoVisibilidad"
-          tooltip="Producción exclusiva: solo ve los artículos comprados por sus proyectos o cuyo último movimiento es de ellos. Usuario exclusivo: solo ve los artículos en cuyos movimientos es responsable o quien registró. Lo que no ve tampoco lo puede operar. Los administradores siempre ven todo."
-          rules={[{ required: true, message: 'Indica qué artículos puede ver el usuario' }]}
-        >
-          <Select
-            disabled={!habilitadoInterno || guardando || !habilitado}
-            options={OPCIONES_MODO_VISIBILIDAD}
-          />
-        </Form.Item>
+        {!sinCorreo && (
+          <Form.Item
+            label="Visibilidad"
+            name="modoVisibilidad"
+            tooltip="Producción exclusiva: solo ve los artículos comprados por sus proyectos o cuyo último movimiento es de ellos. Usuario exclusivo: solo ve los artículos en cuyos movimientos es responsable o quien registró. Lo que no ve tampoco lo puede operar. Los administradores siempre ven todo."
+            rules={[{ required: true, message: 'Indica qué artículos puede ver el usuario' }]}
+          >
+            <Select
+              disabled={!habilitadoInterno || guardando || !habilitado}
+              options={OPCIONES_MODO_VISIBILIDAD}
+            />
+          </Form.Item>
+        )}
 
         <Form.Item label="Proyectos Externos" name="proyectosExternos">
           <Select

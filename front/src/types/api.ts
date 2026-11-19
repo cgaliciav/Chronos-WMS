@@ -48,12 +48,45 @@ export const OPCIONES_MODO_VISIBILIDAD: { value: ModoVisibilidad; label: string 
   { value: 'usuario', label: 'Usuario exclusivo: solo los de sus movimientos' },
 ]
 
+/**
+ * Perfil del usuario (decisión 22): de él salen todos sus permisos (los traduce el API). `personalizado` es de usuarios
+ * anteriores a los perfiles (conservan sus roles sueltos) y `sin-acceso` de los usuarios sin correo (decisión 23).
+ */
+export type Perfil =
+  | 'superadministrador'
+  | 'administrador'
+  | 'encargado-produccion'
+  | 'visita'
+  | 'sin-acceso'
+  | 'personalizado'
+export const ETIQUETA_PERFIL: Record<Perfil, string> = {
+  superadministrador: 'Superadministrador',
+  administrador: 'Administrador',
+  'encargado-produccion': 'Encargado de Producción',
+  visita: 'Visita',
+  'sin-acceso': 'Sin correo (sin acceso)',
+  personalizado: 'Personalizado (roles anteriores)',
+}
+/** Perfiles que se eligen en el formulario, con lo que permite cada uno. */
+export const OPCIONES_PERFIL: { value: Perfil; label: string; descripcion: string }[] = [
+  { value: 'superadministrador', label: 'Superadministrador', descripcion: 'Puede hacer todo en el sistema' },
+  { value: 'administrador', label: 'Administrador', descripcion: 'Todo, excepto la Configuración' },
+  {
+    value: 'encargado-produccion',
+    label: 'Encargado de Producción',
+    descripcion:
+      'Búsqueda por proyecto, compras y listados por proyecto de préstamos, devoluciones y bajas (sin registrarlos)',
+  },
+  { value: 'visita', label: 'Visita', descripcion: 'Solo ve el listado de préstamos activos' },
+]
+
 export interface Usuario {
   id: number
   nombre: string
   correo: string
   estatus: Estatus
   vencimiento?: string
+  perfil?: Perfil
   modoVisibilidad?: ModoVisibilidad
   roles?: Rol[]
   areas?: Area[]

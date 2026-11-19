@@ -13,7 +13,7 @@ describe('FormaUsuario · visibilidad (plan 04, decisión 21)', () => {
     nombre: 'Usuario de prueba',
     correo: 'usuario@pruebas.local',
     fechaVencimiento: dayjs('2099-12-31'),
-    roles: [1],
+    perfil: 'visita',
     areas: [1],
     bodegas: [1],
     proyectosInternos: [1],
@@ -68,5 +68,39 @@ describe('FormaUsuario · visibilidad (plan 04, decisión 21)', () => {
     await guardar()
     await waitFor(() => expect(handleFinish).toHaveBeenCalledOnce())
     expect(handleFinish.mock.calls[0][0]).toMatchObject({ modoVisibilidad: 'produccion' })
+  })
+
+  it('muestra y envía el perfil; ya no hay selector de roles (decisión 22)', async () => {
+    const handleFinish = pintar({ perfil: 'encargado-produccion' })
+    expect(await screen.findByText('Encargado de Producción')).toBeInTheDocument()
+    expect(screen.queryByText('Roles')).toBeNull()
+    await guardar()
+    await waitFor(() => expect(handleFinish).toHaveBeenCalledOnce())
+    expect(handleFinish.mock.calls[0][0]).toMatchObject({ perfil: 'encargado-produccion' })
+  })
+
+  it('sin perfil no guarda', async () => {
+    const handleFinish = pintar({ perfil: undefined })
+    await guardar()
+    expect(await screen.findByText('Indica el perfil del usuario')).toBeInTheDocument()
+    expect(handleFinish).not.toHaveBeenCalled()
+  })
+
+  it('un usuario sin correo no pide correo, perfil ni visibilidad (decisión 23)', async () => {
+    const handleFinish = pintar({ sinCorreo: true, correo: undefined, perfil: undefined })
+    await waitFor(() => expect(screen.queryByPlaceholderText('Correo')).toBeNull())
+    expect(screen.queryByText('Perfil')).toBeNull()
+    expect(screen.queryByText('Visibilidad')).toBeNull()
+    await guardar()
+    await waitFor(() => expect(handleFinish).toHaveBeenCalledOnce())
+    expect(handleFinish.mock.calls[0][0]).toMatchObject({ sinCorreo: true })
+  })
+
+  it('al marcar "Sin correo" desaparece el campo del correo', async () => {
+    pintar({})
+    expect(await screen.findByPlaceholderText('Correo')).toBeInTheDocument()
+    await waitFor(() => expect(document.querySelector('.ant-spin-blur')).toBeNull())
+    await userEvent.setup({ pointerEventsCheck: 0 }).click(screen.getByRole('checkbox'))
+    await waitFor(() => expect(screen.queryByPlaceholderText('Correo')).toBeNull())
   })
 })

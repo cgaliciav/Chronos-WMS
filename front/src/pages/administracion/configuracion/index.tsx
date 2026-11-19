@@ -9,7 +9,8 @@ import TabRegional from './componentes/TabRegional'
 import TabReportes from './componentes/TabReportes'
 import ExportarImportar from './componentes/ExportarImportar'
 
-export const ROLES_CONFIGURACION = ['ADMINISTRADOR', 'CONFIGURACION-EDITAR']
+/** Solo el perfil Superadministrador tiene este permiso (decisión 22): `ADMINISTRADOR` no basta. */
+export const ROLES_CONFIGURACION = ['CONFIGURACION-EDITAR']
 
 /** Configuración del cliente (plan 03, fase 4): marca, correo, reportes y regional, sin redesplegar. */
 export default function Configuracion() {

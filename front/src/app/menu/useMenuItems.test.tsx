@@ -1,10 +1,21 @@
 import { describe, expect, it } from 'vitest'
-import { caminoEnMenu, filtrarMenu } from './useMenuItems'
+import { caminoEnMenu, filtrarMenu, primeraRutaPermitida } from './useMenuItems'
 import { menuItems } from './menuItems'
 
 describe('menú por permisos', () => {
-  it('ADMINISTRADOR ve todo el menú', () => {
-    expect(filtrarMenu(menuItems, ['ADMINISTRADOR'])).toHaveLength(menuItems.length)
+  it('el Superadministrador ve todo el menú; el Administrador, todo menos la Configuración', () => {
+    expect(filtrarMenu(menuItems, ['ADMINISTRADOR', 'CONFIGURACION-EDITAR'])).toHaveLength(
+      menuItems.length,
+    )
+    const administrador = filtrarMenu(menuItems, ['ADMINISTRADOR'])
+    expect(administrador).toHaveLength(menuItems.length - 1)
+    expect(administrador.map(e => e.title)).not.toContain('Configuración')
+  })
+
+  it('la primera pantalla permitida es la del menú del usuario (perfil Visita)', () => {
+    const visita = ['V-OPERACIONES-TITULO', 'V-OPERACION-PRESTAMO', 'V-OPERACION-PRESTAMOSACTIVOS']
+    expect(primeraRutaPermitida(visita)).toBe('/prestamos/activos')
+    expect(primeraRutaPermitida([])).toBeUndefined()
   })
 
   it('un usuario solo ve las entradas de sus roles y sin submenús vacíos', () => {
