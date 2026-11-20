@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" width="900" height="400" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="Qué tipo de baja usar: con proyecto (justificada o injustificada) o sin proyecto">
+<title>Qué tipo de baja usar: con proyecto (justificada o injustificada) o sin proyecto</title>
+<defs><marker id="f0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#475569"/></marker><marker id="f1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#1d4ed8"/></marker><marker id="f2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b45309"/></marker><marker id="f3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#15803d"/></marker><marker id="f4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b91c1c"/></marker><marker id="f5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#7e22ce"/></marker></defs>
+<rect width="900" height="400" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="450" y="40" font-size="24" fill="#0f172a" text-anchor="middle" font-weight="700">¿Qué baja uso?</text>
+<rect x="310" y="70" width="280" height="70" rx="12" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+<text x="450.0" y="100" font-size="16" fill="#475569" text-anchor="middle" font-weight="700">¿El artículo lo tenía</text>
+<text x="450.0" y="121" font-size="16" fill="#475569" text-anchor="middle" font-weight="700">una producción?</text>
+<path d="M380 140L230 196" fill="none" stroke="#b45309" stroke-width="2.5" marker-end="url(#f2)"/>
+<text x="285" y="166" font-size="14" fill="#b45309" text-anchor="end" font-weight="700">SÍ</text>
+<path d="M520 140L670 196" fill="none" stroke="#1d4ed8" stroke-width="2.5" marker-end="url(#f1)"/>
+<text x="615" y="166" font-size="14" fill="#1d4ed8" text-anchor="start" font-weight="700">NO, estaba en el almacén</text>
+<rect x="100" y="200" width="260" height="60" rx="12" fill="#fef3c7" stroke="#b45309" stroke-width="2"/>
+<text x="230.0" y="236" font-size="16" fill="#b45309" text-anchor="middle" font-weight="700">BAJA CON PROYECTO</text>
+<rect x="560" y="200" width="260" height="60" rx="12" fill="#dbeafe" stroke="#1d4ed8" stroke-width="2"/>
+<text x="690.0" y="236" font-size="16" fill="#1d4ed8" text-anchor="middle" font-weight="700">BAJA SIN PROYECTO</text>
+<path d="M170 260L130 296" fill="none" stroke="#15803d" stroke-width="2.5" marker-end="url(#f3)"/>
+<path d="M290 260L330 296" fill="none" stroke="#b91c1c" stroke-width="2.5" marker-end="url(#f4)"/>
+<rect x="30" y="300" width="200" height="70" rx="12" fill="#dcfce7" stroke="#15803d" stroke-width="2"/>
+<text x="130.0" y="330" font-size="15" fill="#15803d" text-anchor="middle" font-weight="700">JUSTIFICADA</text>
+<text x="130.0" y="351" font-size="13" fill="#0f172a" text-anchor="middle">se gastó, se rompió en uso…</text>
+<rect x="250" y="300" width="200" height="70" rx="12" fill="#fee2e2" stroke="#b91c1c" stroke-width="2"/>
+<text x="350.0" y="330" font-size="15" fill="#b91c1c" text-anchor="middle" font-weight="700">INJUSTIFICADA</text>
+<text x="350.0" y="351" font-size="13" fill="#0f172a" text-anchor="middle">se perdió, no lo regresaron</text>
+<text x="690" y="290" font-size="13" fill="#0f172a" text-anchor="middle">Se descuenta de lo que</text>
+<text x="690" y="307" font-size="13" fill="#0f172a" text-anchor="middle">hay en el almacén</text>
+<text x="450" y="390" font-size="14" fill="#475569" text-anchor="middle">Se da de baja la cantidad que se indique. El artículo solo desaparece cuando su total llega a cero.</text>
+</svg>

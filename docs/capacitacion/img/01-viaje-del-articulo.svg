@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" width="900" height="520" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="El viaje de un artículo: del proveedor a la producción, al almacén y a la baja">
+<title>El viaje de un artículo: del proveedor a la producción, al almacén y a la baja</title>
+<defs><marker id="f0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#475569"/></marker><marker id="f1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#1d4ed8"/></marker><marker id="f2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b45309"/></marker><marker id="f3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#15803d"/></marker><marker id="f4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b91c1c"/></marker><marker id="f5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#7e22ce"/></marker></defs>
+<rect width="900" height="520" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="450" y="40" font-size="24" fill="#0f172a" text-anchor="middle" font-weight="700">El viaje de un artículo</text>
+<rect x="40" y="150" width="170" height="90" rx="12" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+<text x="125.0" y="190" font-size="17" fill="#475569" text-anchor="middle" font-weight="700">PROVEEDOR</text>
+<text x="125.0" y="215" font-size="13" fill="#0f172a" text-anchor="middle">vende el artículo</text>
+<rect x="360" y="130" width="190" height="130" rx="12" fill="#fef3c7" stroke="#b45309" stroke-width="2"/>
+<text x="455.0" y="182" font-size="17" fill="#b45309" text-anchor="middle" font-weight="700">PRODUCCIÓN</text>
+<text x="455.0" y="206" font-size="13" fill="#0f172a" text-anchor="middle">(proyecto)</text>
+<text x="455.0" y="223" font-size="13" fill="#0f172a" text-anchor="middle">usa el artículo</text>
+<rect x="690" y="130" width="170" height="130" rx="12" fill="#dbeafe" stroke="#1d4ed8" stroke-width="2"/>
+<text x="775.0" y="190" font-size="17" fill="#1d4ed8" text-anchor="middle" font-weight="700">ALMACÉN</text>
+<text x="775.0" y="215" font-size="13" fill="#0f172a" text-anchor="middle">guarda el artículo</text>
+<rect x="360" y="400" width="190" height="80" rx="12" fill="#fee2e2" stroke="#b91c1c" stroke-width="2"/>
+<text x="455.0" y="436" font-size="17" fill="#b91c1c" text-anchor="middle" font-weight="700">BAJA</text>
+<text x="455.0" y="460" font-size="13" fill="#0f172a" text-anchor="middle">el artículo ya no existe</text>
+<path d="M210 195L356 195" fill="none" stroke="#15803d" stroke-width="2.5" marker-end="url(#f3)"/>
+<text x="283.0" y="187" font-size="13" fill="#15803d" text-anchor="middle" font-weight="700">COMPRA</text>
+<path d="M550 165L686 165" fill="none" stroke="#1d4ed8" stroke-width="2.5" marker-end="url(#f1)"/>
+<text x="618.0" y="157" font-size="13" fill="#1d4ed8" text-anchor="middle" font-weight="700">DEVOLUCIÓN</text>
+<path d="M690 225L554 225" fill="none" stroke="#b45309" stroke-width="2.5" marker-end="url(#f2)"/>
+<text x="622.0" y="247" font-size="13" fill="#b45309" text-anchor="middle" font-weight="700">PRÉSTAMO</text>
+<path d="M455 260L455 396" fill="none" stroke="#b91c1c" stroke-width="2.5" marker-end="url(#f4)"/>
+<text x="445" y="328" font-size="13" fill="#b91c1c" text-anchor="end" font-weight="700">BAJA con proyecto</text>
+<path d="M775 260L554 430" fill="none" stroke="#b91c1c" stroke-width="2.5" marker-end="url(#f4)"/>
+<text x="690" y="372" font-size="13" fill="#b91c1c" text-anchor="start" font-weight="700">BAJA sin proyecto</text>
+<path d="M775 66L775 126" fill="none" stroke="#15803d" stroke-width="2.5" marker-end="url(#f3)"/>
+<text x="790" y="88" font-size="13" fill="#15803d" text-anchor="start" font-weight="700">ALTA</text>
+<text x="790" y="104" font-size="12" fill="#475569" text-anchor="start">(sin factura)</text>
+<path d="M400 130Q455 40 510 130" fill="none" stroke="#7e22ce" stroke-width="2.5" marker-end="url(#f5)"/>
+<text x="455.0" y="63" font-size="13" fill="#7e22ce" text-anchor="middle" font-weight="700">TRANSFORMACIÓN</text>
+<text x="450" y="505" font-size="14" fill="#475569" text-anchor="middle">Cada flecha es un movimiento. Cada movimiento queda guardado con fecha, proyecto y responsable.</text>
+</svg>

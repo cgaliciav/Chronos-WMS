@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" width="900" height="430" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="Ejemplo con números: cómo cambian las existencias con préstamo, devolución y baja">
+<title>Ejemplo con números: cómo cambian las existencias con préstamo, devolución y baja</title>
+<defs><marker id="f0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#475569"/></marker><marker id="f1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#1d4ed8"/></marker><marker id="f2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b45309"/></marker><marker id="f3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#15803d"/></marker><marker id="f4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b91c1c"/></marker><marker id="f5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#7e22ce"/></marker></defs>
+<rect width="900" height="430" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="450" y="40" font-size="24" fill="#0f172a" text-anchor="middle" font-weight="700">¿Dónde están mis 25 chalecos?</text>
+<rect x="30" y="80" width="186" height="280" rx="12" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="123" y="108" font-size="17" fill="#0f172a" text-anchor="middle" font-weight="700">Al inicio</text>
+<rect x="44" y="124" width="158" height="70" rx="10" fill="#dbeafe" stroke="#1d4ed8"/>
+<text x="123" y="150" font-size="13" fill="#1d4ed8" text-anchor="middle" font-weight="700">En el almacén</text>
+<text x="123" y="182" font-size="28" fill="#1d4ed8" text-anchor="middle" font-weight="700">25</text>
+<rect x="44" y="204" width="158" height="70" rx="10" fill="#fef3c7" stroke="#b45309"/>
+<text x="123" y="230" font-size="13" fill="#b45309" text-anchor="middle" font-weight="700">Con la producción</text>
+<text x="123" y="262" font-size="28" fill="#b45309" text-anchor="middle" font-weight="700">0</text>
+<text x="123" y="304" font-size="13" fill="#475569" text-anchor="middle" font-weight="700">Total que existe</text>
+<text x="123" y="338" font-size="28" fill="#0f172a" text-anchor="middle" font-weight="700">25</text>
+<path d="M220 220L244 220" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#f0)"/>
+<rect x="248" y="80" width="186" height="280" rx="12" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="341" y="108" font-size="17" fill="#0f172a" text-anchor="middle" font-weight="700">Presto 5</text>
+<rect x="262" y="124" width="158" height="70" rx="10" fill="#dbeafe" stroke="#1d4ed8"/>
+<text x="341" y="150" font-size="13" fill="#1d4ed8" text-anchor="middle" font-weight="700">En el almacén</text>
+<text x="341" y="182" font-size="28" fill="#1d4ed8" text-anchor="middle" font-weight="700">20</text>
+<rect x="262" y="204" width="158" height="70" rx="10" fill="#fef3c7" stroke="#b45309"/>
+<text x="341" y="230" font-size="13" fill="#b45309" text-anchor="middle" font-weight="700">Con la producción</text>
+<text x="341" y="262" font-size="28" fill="#b45309" text-anchor="middle" font-weight="700">5</text>
+<text x="341" y="304" font-size="13" fill="#475569" text-anchor="middle" font-weight="700">Total que existe</text>
+<text x="341" y="338" font-size="28" fill="#0f172a" text-anchor="middle" font-weight="700">25</text>
+<path d="M438 220L462 220" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#f0)"/>
+<rect x="466" y="80" width="186" height="280" rx="12" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="559" y="108" font-size="17" fill="#0f172a" text-anchor="middle" font-weight="700">Devuelven 3</text>
+<rect x="480" y="124" width="158" height="70" rx="10" fill="#dbeafe" stroke="#1d4ed8"/>
+<text x="559" y="150" font-size="13" fill="#1d4ed8" text-anchor="middle" font-weight="700">En el almacén</text>
+<text x="559" y="182" font-size="28" fill="#1d4ed8" text-anchor="middle" font-weight="700">23</text>
+<rect x="480" y="204" width="158" height="70" rx="10" fill="#fef3c7" stroke="#b45309"/>
+<text x="559" y="230" font-size="13" fill="#b45309" text-anchor="middle" font-weight="700">Con la producción</text>
+<text x="559" y="262" font-size="28" fill="#b45309" text-anchor="middle" font-weight="700">2</text>
+<text x="559" y="304" font-size="13" fill="#475569" text-anchor="middle" font-weight="700">Total que existe</text>
+<text x="559" y="338" font-size="28" fill="#0f172a" text-anchor="middle" font-weight="700">25</text>
+<path d="M656 220L680 220" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#f0)"/>
+<rect x="684" y="80" width="186" height="280" rx="12" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="777" y="108" font-size="17" fill="#0f172a" text-anchor="middle" font-weight="700">Baja de 2</text>
+<rect x="698" y="124" width="158" height="70" rx="10" fill="#dbeafe" stroke="#1d4ed8"/>
+<text x="777" y="150" font-size="13" fill="#1d4ed8" text-anchor="middle" font-weight="700">En el almacén</text>
+<text x="777" y="182" font-size="28" fill="#1d4ed8" text-anchor="middle" font-weight="700">23</text>
+<rect x="698" y="204" width="158" height="70" rx="10" fill="#fef3c7" stroke="#b45309"/>
+<text x="777" y="230" font-size="13" fill="#b45309" text-anchor="middle" font-weight="700">Con la producción</text>
+<text x="777" y="262" font-size="28" fill="#b45309" text-anchor="middle" font-weight="700">0</text>
+<text x="777" y="304" font-size="13" fill="#475569" text-anchor="middle" font-weight="700">Total que existe</text>
+<text x="777" y="338" font-size="28" fill="#b91c1c" text-anchor="middle" font-weight="700">23</text>
+<text x="450" y="392" font-size="14" fill="#475569" text-anchor="middle">Préstamo y devolución solo mueven el artículo de lugar. La baja es la única que reduce el total.</text>
+<text x="450" y="414" font-size="13" fill="#475569" text-anchor="middle">En pantalla: «Cantidad» = lo que hay en el almacén · «Pendiente» = lo que tiene la producción.</text>
+</svg>

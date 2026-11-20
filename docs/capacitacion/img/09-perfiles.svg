@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" width="900" height="520" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="Qué puede hacer cada perfil de usuario">
+<title>Qué puede hacer cada perfil de usuario</title>
+<defs><marker id="f0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#475569"/></marker><marker id="f1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#1d4ed8"/></marker><marker id="f2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b45309"/></marker><marker id="f3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#15803d"/></marker><marker id="f4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b91c1c"/></marker><marker id="f5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#7e22ce"/></marker></defs>
+<rect width="900" height="520" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="450" y="40" font-size="24" fill="#0f172a" text-anchor="middle" font-weight="700">¿Quién puede hacer qué?</text>
+<text x="477.5" y="84" font-size="13" fill="#0f172a" text-anchor="middle" font-weight="700">Super-</text>
+<text x="477.5" y="101" font-size="13" fill="#0f172a" text-anchor="middle" font-weight="700">administrador</text>
+<text x="592.5" y="94" font-size="13" fill="#0f172a" text-anchor="middle" font-weight="700">Administrador</text>
+<text x="707.5" y="84" font-size="13" fill="#0f172a" text-anchor="middle" font-weight="700">Encargado de</text>
+<text x="707.5" y="101" font-size="13" fill="#0f172a" text-anchor="middle" font-weight="700">Producción</text>
+<text x="822.5" y="94" font-size="13" fill="#0f172a" text-anchor="middle" font-weight="700">Visita</text>
+<rect x="20" y="120" width="860" height="40" rx="6" fill="#f8fafc" stroke="none"/>
+<text x="34" y="145" font-size="14" fill="#0f172a" text-anchor="start">Ver Préstamos Activos</text>
+<circle cx="477.5" cy="140" r="12" fill="#15803d"/>
+<path d="M471.5 140l4 5l8 -9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="592.5" cy="140" r="12" fill="#15803d"/>
+<path d="M586.5 140l4 5l8 -9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="707.5" cy="140" r="12" fill="#15803d"/>
+<path d="M701.5 140l4 5l8 -9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="822.5" cy="140" r="12" fill="#15803d"/>
+<path d="M816.5 140l4 5l8 -9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="34" y="185" font-size="14" fill="#0f172a" text-anchor="start">Buscar artículos por proyecto</text>
+<circle cx="477.5" cy="180" r="12" fill="#15803d"/>
+<path d="M471.5 180l4 5l8 -9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="592.5" cy="180" r="12" fill="#15803d"/>
+<path d="M586.5 180l4 5l8 -9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="707.5" cy="180" r="12" fill="#15803d"/>
+<path d="M701.5 180l4 5l8 -9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="815.5" y1="180" x2="829.5" y2="180" stroke="#cbd5e1" stroke-width="3"/>
+<rect x="20" y="200" width="860" height="40" rx="6" fill="#f8fafc" stroke="none"/>
+<text x="34" y="225" font-size="14" fill="#0f172a" text-anchor="start">Registrar compras (facturas)</text>
+<circle cx="477.5" cy="220" r="12" fill="#15803d"/>
+<path d="M471.5 220l4 5l8 -9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="592.5" cy="220" r="12" fill="#15803d"/>
+<path d="M586.5 220l4 5l8 -9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="707.5" cy="220" r="12" fill="#15803d"/>
+<path d="M701.5 220l4 5l8 -9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="815.5" y1="220" x2="829.5" y2="220" stroke="#cbd5e1" stroke-width="3"/>
+<text x="34" y="265" font-size="14" fill="#0f172a" text-anchor="start">Consultar préstamos, devoluciones y bajas por proyecto</text>
+<circle cx="477.5" cy="260" r="12" fill="#15803d"/>
+<path d="M471.5 260l4 5l8 -9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="592.5" cy="260" r="12" fill="#15803d"/>
+<path d="M586.5 260l4 5l8 -9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="707.5" cy="260" r="12" fill="#15803d"/>
+<path d="M701.5 260l4 5l8 -9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="815.5" y1="260" x2="829.5" y2="260" stroke="#cbd5e1" stroke-width="3"/>
+<rect x="20" y="280" width="860" height="40" rx="6" fill="#f8fafc" stroke="none"/>
+<text x="34" y="305" font-size="14" fill="#0f172a" text-anchor="start">Registrar préstamos, devoluciones y bajas</text>
+<circle cx="477.5" cy="300" r="12" fill="#15803d"/>
+<path d="M471.5 300l4 5l8 -9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="592.5" cy="300" r="12" fill="#15803d"/>
+<path d="M586.5 300l4 5l8 -9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="700.5" y1="300" x2="714.5" y2="300" stroke="#cbd5e1" stroke-width="3"/>
+<line x1="815.5" y1="300" x2="829.5" y2="300" stroke="#cbd5e1" stroke-width="3"/>
+<text x="34" y="345" font-size="14" fill="#0f172a" text-anchor="start">Altas, rentas externas y transformaciones</text>
+<circle cx="477.5" cy="340" r="12" fill="#15803d"/>
+<path d="M471.5 340l4 5l8 -9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="592.5" cy="340" r="12" fill="#15803d"/>
+<path d="M586.5 340l4 5l8 -9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="700.5" y1="340" x2="714.5" y2="340" stroke="#cbd5e1" stroke-width="3"/>
+<line x1="815.5" y1="340" x2="829.5" y2="340" stroke="#cbd5e1" stroke-width="3"/>
+<rect x="20" y="360" width="860" height="40" rx="6" fill="#f8fafc" stroke="none"/>
+<text x="34" y="385" font-size="14" fill="#0f172a" text-anchor="start">Renombrar listados y mover movimientos</text>
+<circle cx="477.5" cy="380" r="12" fill="#15803d"/>
+<path d="M471.5 380l4 5l8 -9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="592.5" cy="380" r="12" fill="#15803d"/>
+<path d="M586.5 380l4 5l8 -9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="700.5" y1="380" x2="714.5" y2="380" stroke="#cbd5e1" stroke-width="3"/>
+<line x1="815.5" y1="380" x2="829.5" y2="380" stroke="#cbd5e1" stroke-width="3"/>
+<text x="34" y="425" font-size="14" fill="#0f172a" text-anchor="start">Usuarios, proyectos, áreas, almacenes, proveedores</text>
+<circle cx="477.5" cy="420" r="12" fill="#15803d"/>
+<path d="M471.5 420l4 5l8 -9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="592.5" cy="420" r="12" fill="#15803d"/>
+<path d="M586.5 420l4 5l8 -9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="700.5" y1="420" x2="714.5" y2="420" stroke="#cbd5e1" stroke-width="3"/>
+<line x1="815.5" y1="420" x2="829.5" y2="420" stroke="#cbd5e1" stroke-width="3"/>
+<rect x="20" y="440" width="860" height="40" rx="6" fill="#f8fafc" stroke="none"/>
+<text x="34" y="465" font-size="14" fill="#0f172a" text-anchor="start">Configuración del sistema (marca, correo…)</text>
+<circle cx="477.5" cy="460" r="12" fill="#15803d"/>
+<path d="M471.5 460l4 5l8 -9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="585.5" y1="460" x2="599.5" y2="460" stroke="#cbd5e1" stroke-width="3"/>
+<line x1="700.5" y1="460" x2="714.5" y2="460" stroke="#cbd5e1" stroke-width="3"/>
+<line x1="815.5" y1="460" x2="829.5" y2="460" stroke="#cbd5e1" stroke-width="3"/>
+<text x="450" y="505" font-size="14" fill="#475569" text-anchor="middle">Los usuarios «sin correo» no entran al sistema: solo existen para ponerlos como responsables.</text>
+</svg>
