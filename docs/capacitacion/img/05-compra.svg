@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 330" width="900" height="330" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="Compra: la factura crea el artículo con su clave y queda con la producción hasta que lo devuelve">
+<title>Compra: la factura crea el artículo con su clave y queda con la producción hasta que lo devuelve</title>
+<defs><marker id="f0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#475569"/></marker><marker id="f1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#1d4ed8"/></marker><marker id="f2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b45309"/></marker><marker id="f3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#15803d"/></marker><marker id="f4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b91c1c"/></marker><marker id="f5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#7e22ce"/></marker></defs>
+<rect width="900" height="330" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="450" y="40" font-size="24" fill="#0f172a" text-anchor="middle" font-weight="700">Una compra, paso a paso</text>
+<rect x="24" y="100" width="196" height="120" rx="12" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+<text x="122.0" y="146" font-size="15" fill="#475569" text-anchor="middle" font-weight="700">FACTURA</text>
+<text x="122.0" y="168" font-size="13" fill="#0f172a" text-anchor="middle">Proveedor, proyecto,</text>
+<text x="122.0" y="185" font-size="13" fill="#0f172a" text-anchor="middle">número y fecha</text>
+<circle cx="28" cy="102" r="16" fill="#475569"/>
+<text x="28" y="108" font-size="17" fill="#ffffff" text-anchor="middle" font-weight="700">1</text>
+<path d="M222 160L240 160" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#f0)"/>
+<rect x="242" y="100" width="196" height="120" rx="12" fill="#dcfce7" stroke="#15803d" stroke-width="2"/>
+<text x="340.0" y="146" font-size="15" fill="#15803d" text-anchor="middle" font-weight="700">ARTÍCULO NUEVO</text>
+<text x="340.0" y="168" font-size="13" fill="#0f172a" text-anchor="middle">Título, área, precio,</text>
+<text x="340.0" y="185" font-size="13" fill="#0f172a" text-anchor="middle">cantidad y fotos</text>
+<circle cx="246" cy="102" r="16" fill="#15803d"/>
+<text x="246" y="108" font-size="17" fill="#ffffff" text-anchor="middle" font-weight="700">2</text>
+<path d="M440 160L458 160" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#f0)"/>
+<rect x="460" y="100" width="196" height="120" rx="12" fill="#fef3c7" stroke="#b45309" stroke-width="2"/>
+<text x="558.0" y="146" font-size="15" fill="#b45309" text-anchor="middle" font-weight="700">CON LA PRODUCCIÓN</text>
+<text x="558.0" y="168" font-size="13" fill="#0f172a" text-anchor="middle">Nace «no disponible»:</text>
+<text x="558.0" y="185" font-size="13" fill="#0f172a" text-anchor="middle">lo tiene quien lo compró</text>
+<circle cx="464" cy="102" r="16" fill="#b45309"/>
+<text x="464" y="108" font-size="17" fill="#ffffff" text-anchor="middle" font-weight="700">3</text>
+<path d="M658 160L676 160" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#f0)"/>
+<rect x="678" y="100" width="196" height="120" rx="12" fill="#dbeafe" stroke="#1d4ed8" stroke-width="2"/>
+<text x="776.0" y="146" font-size="15" fill="#1d4ed8" text-anchor="middle" font-weight="700">EN EL ALMACÉN</text>
+<text x="776.0" y="168" font-size="13" fill="#0f172a" text-anchor="middle">Queda «disponible»</text>
+<text x="776.0" y="185" font-size="13" fill="#0f172a" text-anchor="middle">para prestarse</text>
+<circle cx="682" cy="102" r="16" fill="#1d4ed8"/>
+<text x="682" y="108" font-size="17" fill="#ffffff" text-anchor="middle" font-weight="700">4</text>
+<text x="341" y="250" font-size="13" fill="#15803d" text-anchor="middle" font-weight="700">El sistema le pone</text>
+<text x="341" y="267" font-size="13" fill="#15803d" text-anchor="middle" font-weight="700">su clave (código)</text>
+<text x="777" y="250" font-size="13" fill="#1d4ed8" text-anchor="middle" font-weight="700">Cuando la producción</text>
+<text x="777" y="267" font-size="13" fill="#1d4ed8" text-anchor="middle" font-weight="700">hace la DEVOLUCIÓN</text>
+<text x="450" y="310" font-size="14" fill="#475569" text-anchor="middle">Lo comprado no aparece como disponible hasta que la producción lo entrega al almacén.</text>
+</svg>

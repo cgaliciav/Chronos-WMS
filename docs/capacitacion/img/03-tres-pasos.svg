@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 300" width="900" height="300" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="Toda operación se hace en tres pasos: crear el listado, agregar artículos y revisar">
+<title>Toda operación se hace en tres pasos: crear el listado, agregar artículos y revisar</title>
+<defs><marker id="f0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#475569"/></marker><marker id="f1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#1d4ed8"/></marker><marker id="f2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b45309"/></marker><marker id="f3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#15803d"/></marker><marker id="f4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b91c1c"/></marker><marker id="f5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#7e22ce"/></marker></defs>
+<rect width="900" height="300" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="450" y="40" font-size="24" fill="#0f172a" text-anchor="middle" font-weight="700">Toda operación se hace en 3 pasos</text>
+<rect x="40" y="90" width="240" height="130" rx="12" fill="#dbeafe" stroke="#1d4ed8" stroke-width="2"/>
+<text x="160.0" y="143" font-size="19" fill="#1d4ed8" text-anchor="middle" font-weight="700">Crear el listado</text>
+<text x="160.0" y="169" font-size="13" fill="#0f172a" text-anchor="middle">Proyecto, responsables</text>
+<text x="160.0" y="186" font-size="13" fill="#0f172a" text-anchor="middle">y nombre</text>
+<circle cx="44" cy="92" r="16" fill="#1d4ed8"/>
+<text x="44" y="98" font-size="17" fill="#ffffff" text-anchor="middle" font-weight="700">1</text>
+<path d="M284 155L326 155" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#f0)"/>
+<rect x="330" y="90" width="240" height="130" rx="12" fill="#fef3c7" stroke="#b45309" stroke-width="2"/>
+<text x="450.0" y="143" font-size="19" fill="#b45309" text-anchor="middle" font-weight="700">Agregar artículos</text>
+<text x="450.0" y="169" font-size="13" fill="#0f172a" text-anchor="middle">Escribir o escanear la clave,</text>
+<text x="450.0" y="186" font-size="13" fill="#0f172a" text-anchor="middle">poner la cantidad y Buscar</text>
+<circle cx="334" cy="92" r="16" fill="#b45309"/>
+<text x="334" y="98" font-size="17" fill="#ffffff" text-anchor="middle" font-weight="700">2</text>
+<path d="M574 155L616 155" fill="none" stroke="#475569" stroke-width="2.5" marker-end="url(#f0)"/>
+<rect x="620" y="90" width="240" height="130" rx="12" fill="#dcfce7" stroke="#15803d" stroke-width="2"/>
+<text x="740.0" y="143" font-size="19" fill="#15803d" text-anchor="middle" font-weight="700">Revisar</text>
+<text x="740.0" y="169" font-size="13" fill="#0f172a" text-anchor="middle">Ver la tabla, corregir</text>
+<text x="740.0" y="186" font-size="13" fill="#0f172a" text-anchor="middle">y pedir el reporte</text>
+<circle cx="624" cy="92" r="16" fill="#15803d"/>
+<text x="624" y="98" font-size="17" fill="#ffffff" text-anchor="middle" font-weight="700">3</text>
+<text x="450" y="265" font-size="14" fill="#475569" text-anchor="middle">Sirve igual para préstamos, devoluciones, bajas, compras, altas y transformaciones.</text>
+</svg>

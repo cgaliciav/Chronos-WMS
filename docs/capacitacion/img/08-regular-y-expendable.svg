@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 330" width="900" height="330" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="Diferencia entre un artículo regular y un expendable al prestarse">
+<title>Diferencia entre un artículo regular y un expendable al prestarse</title>
+<defs><marker id="f0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#475569"/></marker><marker id="f1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#1d4ed8"/></marker><marker id="f2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b45309"/></marker><marker id="f3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#15803d"/></marker><marker id="f4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b91c1c"/></marker><marker id="f5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#7e22ce"/></marker></defs>
+<rect width="900" height="330" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="450" y="40" font-size="24" fill="#0f172a" text-anchor="middle" font-weight="700">Regular y expendable: ¿qué pasa al prestar 5?</text>
+<rect x="40" y="80" width="380" height="190" rx="12" fill="#ffffff" stroke="#1d4ed8" stroke-width="2"/>
+<text x="230.0" y="181" font-size="17" fill="#1d4ed8" text-anchor="middle" font-weight="700"></text>
+<text x="230" y="112" font-size="19" fill="#1d4ed8" text-anchor="middle" font-weight="700">REGULAR</text>
+<text x="230" y="136" font-size="13" fill="#475569" text-anchor="middle" font-style="italic">silla, lámpara, vestuario…</text>
+<text x="230" y="176" font-size="15" fill="#0f172a" text-anchor="middle" font-weight="700">La producción queda debiendo 5</text>
+<text x="230" y="204" font-size="13" fill="#0f172a" text-anchor="middle">Aparece en «Préstamos Activos»</text>
+<text x="230" y="221" font-size="13" fill="#0f172a" text-anchor="middle">hasta que los devuelve o se dan de baja</text>
+<rect x="480" y="80" width="380" height="190" rx="12" fill="#ffffff" stroke="#15803d" stroke-width="2"/>
+<text x="670.0" y="181" font-size="17" fill="#15803d" text-anchor="middle" font-weight="700"></text>
+<text x="670" y="112" font-size="19" fill="#15803d" text-anchor="middle" font-weight="700">EXPENDABLE</text>
+<text x="670" y="136" font-size="13" fill="#475569" text-anchor="middle" font-style="italic">cinta, pilas, pintura, desechables…</text>
+<text x="670" y="176" font-size="15" fill="#0f172a" text-anchor="middle" font-weight="700">Se da por consumido: no debe nada</text>
+<text x="670" y="204" font-size="13" fill="#0f172a" text-anchor="middle">No aparece como pendiente.</text>
+<text x="670" y="221" font-size="13" fill="#0f172a" text-anchor="middle">Si sobran y los devuelven, vuelven a sumar</text>
+<text x="450" y="305" font-size="14" fill="#475569" text-anchor="middle">El tipo se elige al crear el artículo (Regular / Expendable).</text>
+</svg>
