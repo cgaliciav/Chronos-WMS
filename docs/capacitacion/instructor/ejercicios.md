@@ -52,9 +52,10 @@ DECORACIÓN · almacén BODEGA CEDRO · 21 proveedores (AMAZON, HOME DEPOT MEXIC
 
 ### Ejercicio 1 · Encontrar un artículo
 
-1. Catálogos → **Búsqueda General**. Buscar `ANTEOJOS`.
+1. Catálogos → **Búsqueda General**. Buscar `ANTEOJOS`, con Areas `UTILERÍA` y Estado `Disponible`.
 2. Hacer clic en **ANTEOJOS**: se abre la ventana de detalle.
-3. Mostrar: clave `0000005747`, existencia 51, y su historia (una compra y una devolución de EL NEGRO).
+3. Mostrar: clave `0000005747`, 51 piezas y, en la pestaña **Movimientos**, su historia (una compra y una
+   devolución de EL NEGRO).
 
 **Qué enseña:** la clave, las existencias y que cada artículo guarda su historia.
 **Pregunta para el grupo:** «¿Por qué tiene una devolución si nadie lo ha prestado?» → Porque lo compró la producción
@@ -62,8 +63,8 @@ y lo entregó al almacén.
 
 ### Ejercicio 2 · Ver lo que está fuera
 
-1. Operaciones → Préstamos → **Préstamos Activos**.
-2. Aparecen los 4 artículos prestados a EL NEGRO, con **Pendiente** 1.
+1. Operaciones → Préstamos → **Préstamos Activos**. Proyecto `EL NEGRO`, todas las áreas, **Buscar**.
+2. Aparecen los 4 artículos prestados a EL NEGRO, con **Pendiente** «1 de 1».
 
 **Qué enseña:** «con la producción» y «pendiente».
 
@@ -122,7 +123,7 @@ Historia: *«LA VENTA compró en Amazon 2 lámparas y 10 rollos de cinta.»*
 
 1. Compras / Facturas → **Nueva Factura**.
 2. Proyecto `LA VENTA` · Proveedor: escribir `AMAZON` · Tipo Factura `Ticket` · Fecha factura: hoy ·
-   Número Factura `CAP-001` · responsables · **Crear factura**.
+   Número Factura `CAP-001` (el campo trae un número propuesto; se puede cambiar) · responsables · **Crear factura**.
 3. Artículo 1: título `LÁMPARA DE PIE CAPACITACIÓN`, área `DECORACIÓN`, cantidad `2`, precio `850`, tipo **Regular** →
    **Guardar y siguiente**. Anotar la clave nueva (debería ser `0000005768`).
 4. Artículo 2: título `CINTA GAFFER CAPACITACIÓN`, área `PRODUCCIÓN`, cantidad `10`, precio `120`, tipo
@@ -192,7 +193,7 @@ solo ve los préstamos donde él es responsable (los del listado `EN-UTILERÍA-P
 ### Ejercicio 12 · Renombrar y mover
 
 1. Abrir el listado `EN-PRODUCCIÓN-P1` → lápiz → renombrar a `EN-PRODUCCIÓN-P1 LOCACIÓN`.
-2. En el renglón de CARTULINAS NEGRAS → **Mover a otro listado** → elegir `EN-UTILERÍA-P1`.
+2. En el renglón de CARTULINAS NEGRAS → icono ⇆ **Mover a otro listado** → en `EN-UTILERÍA-P1` pulsar **Mover aquí**.
 3. Abrir `EN-UTILERÍA-P1`: ahí está el renglón, con los responsables de ese listado.
 4. Hacer notar que en la ventana solo se ofrecen listados del mismo tipo: un préstamo no se puede mover a una
    devolución.

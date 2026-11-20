@@ -34,7 +34,8 @@ al sistema real y **no** envía correos a nadie (los correos se quedan en un buz
 
 - Los diagramas de `img/` son SVG. Si cambia un nombre de menú o una regla, se corrige el texto del diagrama y la guía
   que lo usa.
-- Las capturas de pantalla van en `img/capturas/` (pendientes: todavía no hay ninguna).
+- Las capturas de pantalla están en `img/capturas/`. Se tomaron en staging de AMZ el 19 de noviembre de 2026;
+  si cambia una pantalla, se vuelve a tomar la captura con el mismo nombre de archivo.
 - Presentación para proyectar (Canva, editable): <https://canva.link/hw796y1doo3qcxi>. Tiene el mismo contenido que
   [El flujo de datos](01-flujo-de-datos.md).
 - Los nombres de menús y botones de estas guías corresponden al front `v4.15.0` y al API `v2.95.0`.

@@ -9,6 +9,8 @@ todo lo de la [guía del operador](02-operador-almacen.md). Antes lee [El flujo 
 
 **Menú:** Administración → Usuarios → **Nuevo** / **Listado**
 
+![Formulario de usuario nuevo](img/capturas/12-usuario-nuevo.png)
+
 Al crear un usuario eliges tres cosas:
 
 **1. Perfil** — qué menús ve.
@@ -57,7 +59,7 @@ Reglas:
 ### Cambiar el nombre de un listado
 
 1. Abre el listado.
-2. Junto al nombre, pulsa el lápiz **Cambiar el nombre del listado**.
+2. Junto al nombre, pulsa el lápiz ✎ **Cambiar el nombre del listado**.
 3. Escribe el nombre nuevo y guarda. El nombre no se puede repetir.
 
 ### Mover un renglón a otro listado
@@ -65,8 +67,10 @@ Reglas:
 ![Mover un movimiento](img/11-mover-movimiento.svg)
 
 1. Abre el listado donde está el renglón equivocado.
-2. En ese renglón, pulsa **Mover a otro listado**.
-3. En la ventana, elige el listado destino y confirma.
+2. En ese renglón, pulsa el icono de flechas ⇆ **Mover a otro listado**.
+3. En la ventana, busca el listado destino y pulsa **Mover aquí**.
+
+![Ventana para mover un movimiento a otro listado](img/capturas/08-mover-movimiento.png)
 
 Reglas:
 
@@ -86,6 +90,8 @@ Reglas:
 3. Aparece la lista de productos comprados a ese proveedor.
 4. Botón **Reportes** → Excel sin foto o con foto.
 
+![Productos por proveedor](img/capturas/13-productos-por-proveedor.png)
+
 ## E. Reportes
 
 ![¿Cómo llega un reporte?](img/10-reportes.svg)
@@ -94,6 +100,7 @@ Reglas:
 |---|---|
 | Por listado | Dentro de cada listado o en **Por Listado** → Reportes |
 | Por proyecto | Pantallas **Por Proyecto** → Reportes |
+| Préstamos activos | Préstamos → **Préstamos Activos** → Reportes |
 | Por proveedor | Proveedores → Productos por proveedor |
 | Por usuario | Reportes → **Por Usuario** |
 | Cierre de proyecto | Reportes → **Cierre de Proyecto** |

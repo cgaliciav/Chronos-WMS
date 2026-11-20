@@ -27,7 +27,12 @@ Para quien entrega, recibe y registra artículos. Antes lee [El flujo de datos](
 **Paso 3 · Revisar**
 
 - La tabla de abajo es tu hoja. Cuenta los renglones contra lo que tienes físicamente.
-- Si te equivocaste, usa **Quitar producto** en ese renglón: el sistema deshace el movimiento.
+- Si te equivocaste, pulsa el **bote de basura** 🗑 del renglón (Quitar producto): el sistema deshace el movimiento.
+
+![Pantalla de un listado: encabezado, clave y cantidad, y la tabla de renglones](img/capturas/07-prestamo-operacion.png)
+
+Los iconos de cada renglón: 👁 ver el artículo o el movimiento · ⇆ mover a otro listado (solo administradores) ·
+🗑 quitar.
 
 > 💡 Puedes cerrar la pantalla y volver después: el listado se queda guardado. Lo encuentras en **Por Listado**.
 
@@ -38,6 +43,9 @@ Para quien entrega, recibe y registra artículos. Antes lee [El flujo de datos](
 **Menú:** Operaciones → Préstamos → **Salida**
 
 1. Llena el encabezado y pulsa **Crear préstamo**.
+
+   ![Encabezado de un préstamo nuevo](img/capturas/05-prestamo-nuevo.png)
+
 2. Escanea cada artículo con su cantidad.
 3. Revisa la tabla.
 
@@ -48,8 +56,10 @@ Qué pasa con los datos: el artículo pasa de 🟦 almacén a 🟧 producción. 
 | NO HAY EXISTENCIA DISPONIBLE DEL ARTÍCULO | Todas las unidades están prestadas o recién compradas y sin entregar. |
 | NO HAY EXISTENCIA SUFICIENTE… EXISTENCIA: 3 SOLICITADO: 5 | Pediste más de lo que hay. Baja la cantidad. |
 
-**Para consultar:** Préstamos → **Préstamos Activos** muestra todo lo que está fuera y lo que falta por regresar
-(columna **Pendiente**).
+**Para consultar:** Préstamos → **Préstamos Activos**. Elige el proyecto y pulsa **Buscar**: muestra todo lo que está
+fuera y lo que falta por regresar (columna **Pendiente**, por ejemplo «1 de 1»).
+
+![Préstamos Activos de un proyecto](img/capturas/04-prestamos-activos.png)
 
 ## B. Devolución (regreso al almacén)
 
@@ -70,6 +80,9 @@ Qué pasa con los datos: el artículo vuelve de 🟧 producción a 🟦 almacén
 **Con proyecto** (lo tenía una producción): Operaciones → Bajas → con Proyecto → **Baja**
 
 1. Llena el encabezado, elige **Tipo de baja** (Justificada o Injustificada) y pulsa **Crear baja**.
+
+   ![Encabezado de una baja con proyecto](img/capturas/10-baja-nueva.png)
+
 2. Escanea el artículo y pon **cuántas unidades** se dan de baja.
 
 **Sin proyecto** (estaba en el almacén): Operaciones → Bajas → Sin Proyecto → **Baja Sin Proyecto**
@@ -84,12 +97,17 @@ Qué pasa con los datos: el artículo vuelve de 🟧 producción a 🟦 almacén
 
 1. Encabezado: **Proyecto Interno**, **Proveedor** (escribe para buscarlo), **Tipo Factura**, **Fecha factura**,
    **Número Factura** y **Usuarios Responsables**. Pulsa **Crear factura**.
+
+   ![Encabezado de una factura nueva](img/capturas/09-factura-nueva.png)
+
 2. Por cada artículo de la factura hay 4 pantallitas:
-   1. **Datos generales**: título, descripción, área, cantidad, precio y **Tipo** (Regular o Expendable) →
-      **Guardar y siguiente**.
+   1. **Datos generales**: título, descripción, **Tipo** (Regular o Expendable), cantidad, precio unitario, moneda,
+      área y almacén → **Guardar y siguiente**.
    2. **Fotos**: sube la foto del artículo.
    3. **Características** y 4. **Comentarios**: opcionales.
 3. El sistema crea el artículo y le pone su **clave**. Imprime o anota la etiqueta.
+
+![Los cuatro pasos para agregar un artículo a la factura](img/capturas/15-compra-articulo.png)
 
 Qué pasa con los datos: el artículo nace 🟧 con la producción que lo compró. Cuando lo entregue, se recibe con una
 **devolución** (sección B).
@@ -118,19 +136,23 @@ directo al 🟦 almacén, disponible.
 
 | Búsqueda | Para qué |
 |---|---|
-| **Búsqueda General** | Buscar por nombre o descripción. |
+| **Búsqueda General** | Buscar por nombre o descripción. Hay que elegir también **Areas** y **Estado**. |
 | **Búsqueda por Códigos** | Tengo la clave y quiero ver el artículo. |
 | **Búsqueda por Proyecto** | Qué tiene o qué movió una producción. |
 | **Búsqueda Bajas** | Lo que ya se dio de baja. |
 
+![Búsqueda General con resultados](img/capturas/02-busqueda-general.png)
+
 Al hacer clic en un resultado se abre una **ventana** con el detalle: fotos, existencias y la historia de movimientos
-del artículo. Ciérrala y sigues en tu búsqueda.
+del artículo (pestaña **Movimientos**). Ciérrala y sigues en tu búsqueda.
+
+![Ventana con el detalle del artículo](img/capturas/03-detalle-articulo.png)
 
 ## H. Pedir un reporte
 
 ![¿Cómo llega un reporte?](img/10-reportes.svg)
 
-En las pantallas **Por Proyecto** y **Por Listado** hay un botón **Reportes**. Elige con foto o sin foto. El sistema
+Dentro de cada listado, en **Préstamos Activos** y en las pantallas **Por Proyecto** hay un botón **Reportes**. Elige con foto o sin foto. El sistema
 te avisa en la campana 🔔 y te manda el Excel por correo. Con foto tarda más.
 
 ---
@@ -139,8 +161,10 @@ te avisa en la campana 🔔 y te manda el Excel por correo. Con foto tarda más.
 
 | Problema | Qué hacer |
 |---|---|
-| Escaneé el artículo equivocado. | **Quitar producto** en ese renglón. |
+| Escaneé el artículo equivocado. | Bote de basura 🗑 (Quitar producto) en ese renglón. |
 | Puse el artículo en el listado equivocado. | Pide al administrador que lo **mueva** a otro listado. |
 | El nombre del listado está mal. | El administrador puede **cambiarle el nombre**. |
 | No me deja devolver. | Revisa que el listado sea del **mismo proyecto** que tiene el artículo. |
-| No encuentro mi listado. | Entra a **Por Listado** del mismo menú. |
+| No encuentro mi listado. | Entra a **Por Listado** del mismo menú y haz clic en su nombre. |
+
+![Por Listado: todos los listados de préstamo](img/capturas/06-prestamos-por-listado.png)

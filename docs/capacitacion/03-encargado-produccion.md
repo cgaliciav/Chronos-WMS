@@ -27,7 +27,10 @@ Antes lee [El flujo de datos](01-flujo-de-datos.md).
 
 **Menú:** Operaciones → Préstamos → **Préstamos Activos**
 
-Muestra cada artículo que está fuera del almacén, con cuántas unidades faltan por regresar (columna **Pendiente**).
+Elige tu proyecto y pulsa **Buscar**. Muestra cada artículo que está fuera del almacén, con cuántas unidades faltan
+por regresar (columna **Pendiente**).
+
+![Préstamos Activos de un proyecto](img/capturas/04-prestamos-activos.png)
 
 ## B. Consultar por proyecto
 
@@ -44,9 +47,12 @@ En cada pantalla: elige el proyecto, pulsa buscar y abre el listado que te inter
 
 **Menú:** Catálogos → **Búsqueda por Proyecto**
 
-1. Elige el **proyecto**.
+1. Elige las **Areas**.
 2. Elige la **Operación**: Préstamo, Devolución, Baja Justificada, Baja Injustificada, Renta Externa o Compra.
-3. Pulsa buscar. Haz clic en un resultado para ver su detalle en una ventana.
+3. Elige el **Proyecto**.
+4. Pulsa **Buscar**. Haz clic en un resultado para ver su detalle en una ventana.
+
+![Búsqueda por Proyecto: préstamos de un proyecto](img/capturas/11-busqueda-por-proyecto.png)
 
 ## D. Registrar una compra
 
@@ -56,11 +62,16 @@ En cada pantalla: elige el proyecto, pulsa buscar y abre el listado que te inter
 
 1. Llena el encabezado: proyecto, proveedor, tipo de factura, fecha, número de factura y responsables.
    Pulsa **Crear factura**.
-2. Por cada artículo: título, descripción, área, cantidad, precio y tipo (**Regular** o **Expendable**).
-   Pulsa **Guardar y siguiente** y sube la foto.
+2. Por cada artículo: título, descripción, tipo (**Regular** o **Expendable**), cantidad, precio unitario, moneda,
+   área y almacén. Pulsa **Guardar y siguiente** y sube la foto.
+
+   ![Los cuatro pasos para agregar un artículo a la factura](img/capturas/15-compra-articulo.png)
+
 3. El sistema le da una clave a cada artículo.
 
 Para ver tus facturas: Compras / Facturas → **Listado de facturas**.
+
+![Listado de facturas](img/capturas/14-listado-de-facturas.png)
 
 > 💡 ¿Regular o expendable? Si se gasta al usarlo (cinta, pilas, pintura, desechables), es **expendable**.
 

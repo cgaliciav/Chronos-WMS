@@ -46,6 +46,11 @@ Cada flecha del dibujo es un **movimiento**:
 - Después se agrega **un renglón por artículo**: se escanea la clave y se pone la cantidad.
 - Todos los renglones de una hoja comparten el tipo, el proyecto y los responsables.
 
+Así se ve un listado de préstamo en el sistema: arriba el encabezado, en medio el campo para escanear y abajo los
+renglones.
+
+![Un listado de préstamo en pantalla](img/capturas/07-prestamo-operacion.png)
+
 > 💡 Si en papel harías «una hoja de salida para Utilería de EL NEGRO», en el sistema es un listado de préstamo.
 
 ## 4. Siempre son 3 pasos
@@ -107,6 +112,8 @@ nuevos, con su propia clave, a cargo de la misma producción.
 ![¿Quién puede hacer qué?](img/09-perfiles.svg)
 
 Cada persona entra con su usuario y ve **solo los menús de su perfil**. Si no ves un menú, tu perfil no lo incluye.
+
+![Pantalla de acceso](img/capturas/01-acceso.png)
 
 ## 11. Los reportes
 
